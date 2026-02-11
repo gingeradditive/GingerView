@@ -317,7 +317,7 @@
 	}
 </script>
 
-<div class="fixed bottom-4 left-4 z-50">
+<div class="fixed bottom-4 left-4 z-40">
 	<div class="relative">
 		<!-- Main button -->
 		<button
@@ -337,14 +337,16 @@
 		<!-- Main Details Popup -->
 		{#if showDetails}
 			<div
-				class="fixed inset-0 z-50 flex items-center justify-center p-4"
+				class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="network-status-title"
+				onclick={() => showDetails = false}
 			>
 				<div
 					class="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
 					role="document"
+					onclick={(e) => e.stopPropagation()}
 				>
 					<!-- Header -->
 					<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
@@ -419,14 +421,16 @@
 		<!-- Network Selection Popup -->
 		{#if showNetworkList}
 			<div
-				class="fixed inset-0 z-50 flex items-center justify-center p-4"
+				class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="network-list-title"
+				onclick={() => showNetworkList = false}
 			>
 				<div
 					class="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
 					role="document"
+					onclick={(e) => e.stopPropagation()}
 				>
 					<!-- Header -->
 					<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
@@ -513,14 +517,16 @@
 		<!-- Password Dialog -->
 		{#if showPasswordDialog}
 			<div
-				class="fixed inset-0 z-50 flex items-center justify-center p-4"
+				class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="password-dialog-title"
+				onclick={cancelConnection}
 			>
 				<div
 					class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col border border-gray-200"
 					role="document"
+					onclick={(e) => e.stopPropagation()}
 				>
 					<!-- Header -->
 					<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">

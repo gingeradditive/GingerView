@@ -309,14 +309,16 @@
 <!-- Console Popup -->
 {#if isOpen}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4"
+		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="console-title"
+		onclick={closeModal}
 	>
 		<div
-			class="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-gray-200"
+			class="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-gray-200 relative z-[60]"
 			role="document"
+			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
