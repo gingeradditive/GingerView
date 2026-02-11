@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket CORS Test</h1>
+    <div id="output"></div>
+    <button onclick="testConnection()">Test WebSocket Connection</button>
+    
+    <script>
+        let ws = null;
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += message + '<br>';
+            console.log(message);
+        }
+        
+        function testConnection() {
+            if (ws) ws.close();
+            
+            log('Attempting connection to ws://192.168.1.20:7125/websocket');
+            
+            try {
+                ws = new WebSocket('ws://192.168.1.20:7125/websocket');
+                
+                ws.onopen = () => {
+                    log('✅ WebSocket connected successfully!');
+                };
+                
+                ws.onmessage = (event) => {
+                    log('📨 Message received: ' + event.data.substring(0, 100) + '...');
+                };
+                
+                ws.onerror = (error) => {
+                    log('❌ WebSocket error: ' + error);
+                };
+                
+                ws.onclose = (event) => {
+                    log('🔌 WebSocket closed. Code: ' + event.code + ', Reason: ' + event.reason);
+                    
+                    if (event.code === 1006) {
+                        log('💡 Code 1006 usually means CORS or network issue');
+                        log('💡 Check Moonraker CORS settings in moonraker.conf');
+                    }
+                };
+            } catch (error) {
+                log('❌ Exception: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

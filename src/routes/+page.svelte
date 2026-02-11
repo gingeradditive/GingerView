@@ -5,8 +5,7 @@
 	let consoleOpen = $state(false);
 </script>
 
-<div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-	<DemoComponent />
+<div class="min-h-screen bg-gray-50">
 </div>
 
 <KlipperConsole bind:isOpen={consoleOpen} />

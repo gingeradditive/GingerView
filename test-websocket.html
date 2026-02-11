@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <div id="output"></div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="sendCommand()">Send M115</button>
+    
+    <script>
+        let ws = null;
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += message + '<br>';
+        }
+        
+        function testConnection() {
+            if (ws) ws.close();
+            
+            ws = new WebSocket('ws://192.168.1.20:7125/websocket');
+            
+            ws.onopen = () => {
+                log('Connected to WebSocket');
+            };
+            
+            ws.onmessage = (event) => {
+                log('Message received: ' + event.data);
+            };
+            
+            ws.onerror = (error) => {
+                log('Error: ' + error);
+            };
+            
+            ws.onclose = (event) => {
+                log('Closed: ' + event.code + ' - ' + event.reason);
+            };
+        }
+        
+        function sendCommand() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected');
+                return;
+            }
+            
+            const message = {
+                jsonrpc: "2.0",
+                method: "printer.gcode.script",
+                params: {
+                    script: "M115"
+                },
+                id: Date.now()
+            };
+            
+            log('Sending: ' + JSON.stringify(message));
+            ws.send(JSON.stringify(message));
+        }
+    </script>
+</body>
+</html>
