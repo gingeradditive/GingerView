@@ -1,6 +1,6 @@
-# sv
+# GingerView
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+GingerView - A modern web application powered by [`SvelteKit`](https://svelte.dev/docs/kit).
 
 ## Creating a project
 

@@ -1,5 +1,6 @@
 {
 	"name": "gingerview",
+	"description": "GingerView - A modern web application",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
@@ -36,6 +37,8 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
-		"@tailwindcss/postcss": "^4.1.18"
+		"@tailwindcss/forms": "^0.5.11",
+		"@tailwindcss/postcss": "^4.1.18",
+		"lucide-svelte": "^0.563.0"
 	}
 }
