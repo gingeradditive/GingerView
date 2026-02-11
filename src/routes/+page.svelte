@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DemoComponent from '$lib/components/DemoComponent.svelte';
 	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
+	import NetworkManager from '$lib/components/NetworkManager.svelte';
 	
 	let consoleOpen = $state(false);
 </script>
@@ -9,3 +10,4 @@
 </div>
 
 <KlipperConsole bind:isOpen={consoleOpen} />
+<NetworkManager />
