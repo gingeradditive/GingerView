@@ -1,24 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Wifi, WifiOff, RefreshCw, Settings, X } from 'lucide-svelte';
+	import { networkAPI, NetworkAPIError } from '$lib/services/network-api';
+	import type { WiFiNetwork, NetworkStatus } from '$lib/types/wifi';
 
-	// TODO: Define proper network types based on backend API response
-	interface NetworkInfo {
-		ssid: string;
-		signal: number; // 1-4 bars
-		secured: boolean;
+	interface NetworkInfo extends WiFiNetwork {
 		current: boolean;
+		signal: number; // 1-4 bars converted from signal_strength
+		secured: boolean; // derived from security field
 	}
 
 	let networkManager = $state({
 		isOnline: navigator.onLine,
-		connectionType: 'wifi', // TODO: Get from backend network service
-		signalStrength: 4, // TODO: Get actual signal strength from backend
-		ipAddress: '192.168.1.100', // TODO: Get real local IP from backend service
-		isConnected: true, // TODO: Get actual connection status from backend
-		availableNetworks: [] as NetworkInfo[], // TODO: Get list of available networks from backend
-		currentNetwork: 'MyWiFiNetwork', // TODO: Get current connected network from backend
-		isScanning: false // TODO: Implement network scanning via backend
+		connectionType: 'wifi',
+		signalStrength: 4,
+		ipAddress: '192.168.1.100',
+		isConnected: true,
+		availableNetworks: [] as NetworkInfo[],
+		currentNetwork: 'MyWiFiNetwork',
+		isScanning: false,
+		error: null as string | null,
+		lastUpdated: new Date()
 	});
 
 	let showDetails = $state(false);
@@ -42,81 +44,90 @@
 		};
 	});
 
-	// TODO: Replace with backend API call to get network status
+	// Convert WiFiNetwork to NetworkInfo and calculate signal bars
+	function convertToNetworkInfo(network: WiFiNetwork, currentNetwork: string | null): NetworkInfo {
+		// Signal strength is already a percentage (0-100), convert to 1-4 bars
+		const signalBars = Math.ceil(network.signal_strength / 25);
+		return {
+			...network,
+			current: network.ssid === currentNetwork,
+			signal: Math.max(1, Math.min(4, signalBars)) as 1 | 2 | 3 | 4,
+			secured: network.security !== null && network.security !== '' && network.security !== 'Open'
+		};
+	}
+
 	async function updateNetworkStatus() {
-		// TODO: Call backend API: GET /api/network/status
-		// const response = await fetch('/api/network/status');
-		// const data = await response.json();
-		// networkManager = { ...networkManager, ...data };
-		
-		// Mock data for now
-		networkManager.isOnline = navigator.onLine;
-		networkManager.isConnected = true;
-		networkManager.ipAddress = '192.168.1.100';
-		networkManager.connectionType = 'wifi';
-		networkManager.signalStrength = 4;
-		networkManager.currentNetwork = 'MyWiFiNetwork';
+		try {
+			networkManager.error = null;
+			const status: NetworkStatus = await networkAPI.getNetworkStatus();
+			
+			networkManager.isOnline = status.adapter.state === 'connected';
+			networkManager.isConnected = status.adapter.state === 'connected';
+			networkManager.ipAddress = status.ip.ipv4 || 'Unknown';
+			networkManager.connectionType = status.adapter.type || 'wifi';
+			networkManager.currentNetwork = status.signal_info.current_ssid || 'Not connected';
+			networkManager.signalStrength = Math.ceil(status.signal_info.current_connection_signal / 25);
+			networkManager.lastUpdated = new Date();
+		} catch (error) {
+			console.error('Failed to update network status:', error);
+			networkManager.error = error instanceof NetworkAPIError ? error.message : 'Failed to update network status';
+			// Keep existing values on error, but mark as disconnected
+			networkManager.isOnline = navigator.onLine;
+		}
 	}
 
-	// TODO: Replace with backend API call to scan for available networks
 	async function scanNetworks() {
-		// TODO: Call backend API: POST /api/network/scan
-		// const response = await fetch('/api/network/scan', { method: 'POST' });
-		// const data = await response.json();
-		// networkManager.availableNetworks = data.networks;
-		
-		// Mock data for now
-		networkManager.isScanning = true;
-		setTimeout(() => {
-			networkManager.availableNetworks = [
-				{ ssid: 'MyWiFiNetwork', signal: 4, secured: true, current: true },
-				{ ssid: 'NeighborWiFi', signal: 3, secured: true, current: false },
-				{ ssid: 'GuestNetwork', signal: 2, secured: false, current: false },
-				{ ssid: 'Office_5G', signal: 4, secured: true, current: false }
-			];
+		try {
+			networkManager.isScanning = true;
+			networkManager.error = null;
+			
+			const scanResult = await networkAPI.scanNetworks();
+			const networks = scanResult.networks.map(network => 
+				convertToNetworkInfo(network, networkManager.currentNetwork)
+			);
+			
+			networkManager.availableNetworks = networks;
+		} catch (error) {
+			console.error('Failed to scan networks:', error);
+			networkManager.error = error instanceof NetworkAPIError ? error.message : 'Failed to scan for networks';
+			// Keep existing networks on error
+		} finally {
 			networkManager.isScanning = false;
-		}, 2000);
+		}
 	}
 
-	// TODO: Replace with backend API call to connect to a network
 	async function connectToNetwork(ssid: string, password?: string) {
-		// TODO: Call backend API: POST /api/network/connect
-		// const response = await fetch('/api/network/connect', {
-		//   method: 'POST',
-		//   headers: { 'Content-Type': 'application/json' },
-		//   body: JSON.stringify({ ssid, password })
-		// });
-		// const data = await response.json();
-		// if (data.success) {
-		//   await updateNetworkStatus();
-		//   showPasswordDialog = false;
-		// }
-		
-		// Mock connection for now
-		console.log(`TODO: Connect to network: ${ssid}${password ? ' with password' : ' (open)'}`);
-		networkManager.currentNetwork = ssid;
-		networkManager.isConnected = true;
-		await updateNetworkStatus();
-		showPasswordDialog = false;
-		networkPassword = '';
-		hiddenSSID = '';
-		selectedNetwork = '';
+		try {
+			networkManager.error = null;
+			const result = await networkAPI.connectToNetwork({
+				ssid,
+				password: password || null
+			});
+
+			if (result.success) {
+				await updateNetworkStatus();
+				showPasswordDialog = false;
+				networkPassword = '';
+				hiddenSSID = '';
+				selectedNetwork = '';
+			} else {
+				networkManager.error = result.message || 'Failed to connect to network';
+			}
+		} catch (error) {
+			console.error('Failed to connect to network:', error);
+			networkManager.error = error instanceof NetworkAPIError ? error.message : 'Failed to connect to network';
+		}
 	}
 
-	// TODO: Replace with backend API call to disconnect from current network
 	async function disconnectNetwork() {
-		// TODO: Call backend API: POST /api/network/disconnect
-		// const response = await fetch('/api/network/disconnect', { method: 'POST' });
-		// const data = await response.json();
-		// if (data.success) {
-		//   await updateNetworkStatus();
-		// }
-		
-		// Mock disconnection for now
-		console.log('TODO: Disconnect from current network');
-		networkManager.currentNetwork = '';
-		networkManager.isConnected = false;
-		await updateNetworkStatus();
+		try {
+			networkManager.error = null;
+			await networkAPI.disconnectNetwork();
+			await updateNetworkStatus();
+		} catch (error) {
+			console.error('Failed to disconnect from network:', error);
+			networkManager.error = error instanceof NetworkAPIError ? error.message : 'Failed to disconnect from network';
+		}
 	}
 
 	function openNetworkSelection() {
@@ -364,6 +375,19 @@
 
 					<!-- Status Content -->
 					<div class="p-4 space-y-4">
+						<!-- Error Display -->
+						{#if networkManager.error}
+							<div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+								<div class="flex items-start space-x-2">
+									<div class="w-4 h-4 text-red-500 mt-0.5">⚠️</div>
+									<div class="flex-1">
+										<div class="text-sm font-medium text-red-800">Error</div>
+										<div class="text-sm text-red-600">{networkManager.error}</div>
+									</div>
+								</div>
+							</div>
+						{/if}
+						
 						<!-- IP Address -->
 						<div class="p-3 bg-gray-50 rounded-lg">
 							<div class="text-sm text-gray-600 mb-1">IP Address</div>
@@ -404,15 +428,25 @@
 					<!-- Actions -->
 					<div class="flex justify-between items-center p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
 						<div class="text-xs text-gray-500">
-							Auto-refresh every 5s
+							Last updated: {networkManager.lastUpdated.toLocaleTimeString()}
 						</div>
-						<button
-							onclick={openNetworkSelection}
-							class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center space-x-2"
-						>
-							<Wifi class="w-4 h-4" />
-							<span>Change Network</span>
-						</button>
+						<div class="flex space-x-2">
+							{#if networkManager.error}
+								<button
+									onclick={() => networkManager.error = null}
+									class="px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+								>
+									Clear Error
+								</button>
+							{/if}
+							<button
+								onclick={openNetworkSelection}
+								class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center space-x-2"
+							>
+								<Wifi class="w-4 h-4" />
+								<span>Change Network</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -448,6 +482,19 @@
 
 					<!-- Network List -->
 					<div class="p-4">
+						<!-- Error Display -->
+						{#if networkManager.error}
+							<div class="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
+								<div class="flex items-start space-x-2">
+									<div class="w-4 h-4 text-red-500 mt-0.5">⚠️</div>
+									<div class="flex-1">
+										<div class="text-sm font-medium text-red-800">Error</div>
+										<div class="text-sm text-red-600">{networkManager.error}</div>
+									</div>
+								</div>
+							</div>
+						{/if}
+						
 						<div class="flex items-center justify-between mb-3">
 							<div class="text-sm text-gray-600">Available Networks</div>
 							<button
