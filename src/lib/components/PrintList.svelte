@@ -2,6 +2,7 @@
 	import PrintCard from './PrintCard.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
+	import { mdiFolderPlus, mdiUpload } from '@mdi/js';
 
 	const mockPrints: PrintItem[] = [
 		{ id: 1, name: 'Benchy', material: 'PLA', duration: '6h 25 min' },
@@ -22,6 +23,18 @@
 <div class="print-list-page">
 	<div class="page-header">
 		<CurrentDirectory />
+		<div class="header-actions">
+			<button class="action-btn" title="Crea Cartella">
+				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
+					<path d={mdiFolderPlus} />
+				</svg>
+			</button>
+			<button class="action-btn" title="Upload File">
+				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
+					<path d={mdiUpload} />
+				</svg>
+			</button>
+		</div>
 	</div>
 
 	<div class="grid">
@@ -33,7 +46,6 @@
 
 <style>
 	.print-list-page {
-		padding: 24px;
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
@@ -42,9 +54,30 @@
 	.page-header {
 		display: flex;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: 12px;
+	}
+
+	.header-actions {
+		display: flex;
+		gap: 12px;
+		align-items: center;
+	}
+
+	.action-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 8px;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		transition: opacity 0.2s;
+	}
+
+	.action-btn:hover {
+		opacity: 0.7;
 	}
 
 	
