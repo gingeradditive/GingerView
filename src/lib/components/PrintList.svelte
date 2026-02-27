@@ -72,11 +72,6 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="header-actions">
-			<button class="action-btn" title="Crea Cartella">
-				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
-					<path d={mdiFolderPlus} />
-				</svg>
-			</button>
 			<button class="action-btn" title="Upload File">
 				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
 					<path d={mdiUpload} />
