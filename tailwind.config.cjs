@@ -6,30 +6,37 @@ module.exports = {
         sans: ['Montserrat', 'sans-serif'],
       },
       colors: {
-        background: '#f8fafc',
-        card: '#ffffff',
-        border: '#e2e8f0',
-        input: '#ffffff',
-        ring: '#0ea5e9',
+        // GingerView Color Palette
+        white: '#FFFFFF',
+        background: '#F5F5F5',
+        gray: '#C8C8C8',
+        redGinger: '#D72E28',
+        black: '#111111',
+        
+        // Semantic mappings
+        card: '#FFFFFF',
+        border: '#C8C8C8',
+        input: '#FFFFFF',
+        ring: '#D72E28',
         primary: {
-          DEFAULT: '#0ea5e9',
-          foreground: '#ffffff',
+          DEFAULT: '#D72E28',
+          foreground: '#FFFFFF',
         },
         secondary: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#475569',
+          DEFAULT: '#F5F5F5',
+          foreground: '#111111',
         },
         muted: {
-          DEFAULT: '#f8fafc',
-          foreground: '#64748b',
+          DEFAULT: '#F5F5F5',
+          foreground: '#C8C8C8',
         },
         accent: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#0ea5e9',
+          DEFAULT: '#F5F5F5',
+          foreground: '#D72E28',
         },
         destructive: {
-          DEFAULT: '#ef4444',
-          foreground: '#ffffff',
+          DEFAULT: '#D72E28',
+          foreground: '#FFFFFF',
         },
       },
       borderRadius: {

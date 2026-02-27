@@ -357,26 +357,26 @@
 			<!-- Terminal Output -->
 			<div
 				bind:this={terminalRef}
-				class="flex-1 p-4 overflow-y-auto font-mono text-sm bg-gray-50"
+				class="flex-1 p-4 overflow-y-auto font-mono text-sm bg-background"
 			>
 				{#each outputHistory as entry}
 					<div class="mb-1">
-						<span class="text-gray-500 text-xs">
+			<span class="text-gray text-xs">
 							{entry.timestamp.toLocaleTimeString()}
 						</span>
 						{#if entry.type === 'command'}
 							<span class="text-blue-600 ml-2 font-semibold">&gt; {entry.content}</span>
 						{:else if entry.type === 'response'}
-							<span class="text-gray-700 ml-2">{entry.content}</span>
+							<span class="text-gray ml-2">{entry.content}</span>
 						{:else if entry.type === 'error'}
-							<span class="text-red-600 ml-2">{entry.content}</span>
+							<span class="text-redGinger ml-2">{entry.content}</span>
 						{/if}
 					</div>
 				{/each}
 			</div>
 			
 			<!-- Command Input -->
-			<div class="p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+			<div class="p-4 border-t border-gray bg-background rounded-b-lg">
 				<div class="flex items-center gap-2">
 					<span class="text-blue-600 font-mono font-semibold">&gt;</span>
 					<input

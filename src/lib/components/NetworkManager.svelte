@@ -285,22 +285,22 @@
 	}
 
 	function getSignalColorFromBars(bars: number): string {
-		if (bars === 0) return 'text-gray-400';
+			if (bars === 0) return 'text-gray';
 		if (bars === 1) return 'text-red-500';
 		if (bars === 2) return 'text-yellow-500';
 		if (bars === 3) return 'text-green-500';
 		if (bars === 4) return 'text-green-600';
-		return 'text-gray-400';
+		return 'text-gray';
 	}
 
 	function getSignalColor() {
 		const signalBars = getSignalBars();
-		if (signalBars === 0) return 'text-gray-400';
+		if (signalBars === 0) return 'text-gray';
 		if (signalBars === 1) return 'text-red-500';
 		if (signalBars === 2) return 'text-yellow-500';
 		if (signalBars === 3) return 'text-green-500';
 		if (signalBars === 4) return 'text-green-600';
-		return 'text-gray-400';
+		return 'text-gray';
 	}
 
 	function getNetworkInterface() {
@@ -332,13 +332,13 @@
 	<div class="relative">
 		<!-- Main button -->
 		<button
-			class="bg-white hover:bg-gray-100 text-gray-700 p-3 rounded-full shadow-lg transition-colors duration-200 flex items-center justify-center"
+			class="bg-white hover:bg-background text-black p-3 rounded-full shadow-lg transition-colors duration-200 flex items-center justify-center"
 			onclick={() => showDetails = !showDetails}
 			title="Network Status"
 		>
 			<div class="flex items-center space-x-2">
 				{#if getNetworkIcon() === WifiOff}
-					<WifiOff class="w-5 h-5 text-gray-400" />
+					<WifiOff class="w-5 h-5 text-gray" />
 				{:else}
 					<Wifi class={`w-5 h-5 ${getSignalColor()}`} />
 				{/if}

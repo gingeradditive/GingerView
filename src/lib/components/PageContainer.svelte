@@ -15,7 +15,7 @@
 		display: flex;
 		height: 100vh;
 		width: 100vw;
-		background: #f1f5f9;
+		background: #F5F5F5;
 		font-family: 'Montserrat', sans-serif;
 	}
 

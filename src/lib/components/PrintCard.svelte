@@ -68,7 +68,7 @@
 	<div class="card-inner">
 		<div class="image-wrapper">
 			<img
-				src={item.imageUrl ?? 'https://placehold.co/250x250'}
+				src={item.imageUrl ?? '/MOCK_THUMBNAIL.png'}
 				alt={item.name}
 				width="250"
 				height="250"
@@ -110,7 +110,7 @@
 	}
 
 	.card-inner {
-		background: white;
+		background: #FFFFFF;
 		border-radius: 20px;
 		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 		width: 100%;
@@ -131,7 +131,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: #f1f5f9;
+		background: #F5F5F5;
 	}
 
 	.image-wrapper img {
@@ -166,7 +166,7 @@
 		left: 12px;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: black;
+		color: #111111;
 		background: transparent;
 		padding: 0;
 		border-radius: 0;
@@ -178,7 +178,7 @@
 		right: 12px;
 		font-size: 1.05rem;
 		font-weight: 600;
-		color: black;
+		color: #111111;
 		background: transparent;
 		padding: 0;
 		border-radius: 0;
@@ -187,7 +187,7 @@
 	.name-label {
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #1e293b;
+		color: #111111;
 		text-align: center;
 		max-width: 250px;
 		overflow: hidden;
@@ -211,8 +211,8 @@
 
 	.context-menu {
 		position: fixed;
-		background: white;
-		border: 1px solid #e2e8f0;
+		background: #FFFFFF;
+		border: 1px solid #C8C8C8;
 		border-radius: 8px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		z-index: 1000;
@@ -228,11 +228,11 @@
 		text-align: left;
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #1e293b;
+		color: #111111;
 		transition: background-color 0.2s;
 	}
 
 	.context-menu-item:hover {
-		background-color: #f1f5f9;
+		background-color: #F5F5F5;
 	}
 </style>

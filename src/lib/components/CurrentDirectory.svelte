@@ -33,7 +33,7 @@
 		gap: 8px;
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #1e293b;
+		color: #111111;
 		font-family: 'Montserrat', sans-serif;
 		flex-wrap: wrap;
 	}
@@ -43,7 +43,7 @@
 	}
 
 	.separator {
-		color: #94a3b8;
+		color: #C8C8C8;
 		font-weight: 400;
 		user-select: none;
 	}
