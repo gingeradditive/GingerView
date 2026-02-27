@@ -121,7 +121,7 @@
 
 	.name-label {
 		font-size: 1.25rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: #1e293b;
 		text-align: center;
 		max-width: 250px;

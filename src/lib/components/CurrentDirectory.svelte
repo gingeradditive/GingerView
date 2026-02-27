@@ -34,7 +34,7 @@
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: #1e293b;
-		font-family: 'Roboto', sans-serif;
+		font-family: 'Montserrat', sans-serif;
 		flex-wrap: wrap;
 	}
 

@@ -16,7 +16,7 @@
 		height: 100vh;
 		width: 100vw;
 		background: #f1f5f9;
-		font-family: 'Roboto', 'Inter', sans-serif;
+		font-family: 'Montserrat', sans-serif;
 	}
 
 	.content-area {
