@@ -1,6 +1,17 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
-	export let item: PrintItem;
+	import { onMount } from 'svelte';
+
+	let { item }: { item: PrintItem } = $props();
+
+	let nameElement: HTMLSpanElement;
+	let isOverflowing = $state(false);
+
+	onMount(() => {
+		if (nameElement) {
+			isOverflowing = nameElement.scrollWidth > 250;
+		}
+	});
 </script>
 
 <div class="print-card">
@@ -18,7 +29,9 @@
 			<div class="duration-label">{item.duration}</div>
 		</div>
 	</div>
-	<div class="name-label">{item.name}</div>
+	<div class="name-label" class:marquee={isOverflowing}>
+		<span class="name-text" bind:this={nameElement}>{item.name}</span>
+	</div>
 </div>
 
 <style>
@@ -111,5 +124,23 @@
 		font-weight: 800;
 		color: #1e293b;
 		text-align: center;
+		max-width: 250px;
+		overflow: hidden;
+		position: relative;
+		white-space: nowrap;
+	}
+
+	.name-text {
+		display: inline-block;
+	}
+
+	.marquee .name-text {
+		animation: marquee 20s ease-in-out infinite;
+	}
+
+	@keyframes marquee {
+		0% { transform: translateX(0); }
+		83.33% { transform: translateX(calc(-100% + 250px)); }
+		100% { transform: translateX(0); }
 	}
 </style>

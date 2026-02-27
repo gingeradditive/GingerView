@@ -14,7 +14,7 @@
 		{ id: 9, name: 'Tool Holder', material: 'ASA', duration: '4h 40 min' },
 		{ id: 10, name: 'Lattice Sphere', material: 'PLA+', duration: '8h 15 min' },
 		{ id: 11, name: 'Octocat Figure', material: 'ABS', duration: '7h 00 min' },
-		{ id: 12, name: 'Snap-fit Box', material: 'PETG', duration: '3h 35 min' },
+		{ id: 12, name: 'Very Long Articulated Dragon with Wings Extended', material: 'PETG', duration: '3h 35 min' },
 	];
 </script>
 
