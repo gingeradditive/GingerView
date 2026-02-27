@@ -1,13 +1,12 @@
 <script lang="ts">
-	import DemoComponent from '$lib/components/DemoComponent.svelte';
+	import PageContainer from '$lib/components/PageContainer.svelte';
 	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
 	import NetworkManager from '$lib/components/NetworkManager.svelte';
-	
+
 	let consoleOpen = $state(false);
 </script>
 
-<div class="min-h-screen bg-gray-50">
-</div>
+<PageContainer />
 
 <KlipperConsole bind:isOpen={consoleOpen} />
 <NetworkManager />
