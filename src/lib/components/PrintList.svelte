@@ -7,6 +7,24 @@
 
 	const PAGE_SIZE = 20;
 
+	let fileInput: HTMLInputElement;
+
+	function handleFileUpload() {
+		fileInput?.click();
+	}
+
+	function handleFileSelect(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		
+		if (file && file.name.toLowerCase().endsWith('.gcode')) {
+			console.log('File GCODE selezionato:', file.name);
+			// Qui puoi aggiungere la logica per processare il file
+		} else if (file) {
+			alert('Per favore seleziona un file .gcode');
+		}
+	}
+
 	const mockPrints: PrintItem[] = [
 		{ id: 1, name: 'Benchy', material: 'PLA', duration: '6h 25 min' },
 		{ id: 2, name: 'Calibration Cube', material: 'PETG', duration: '45 min' },
@@ -72,11 +90,18 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="header-actions">
-			<button class="action-btn" title="Upload File">
+			<button class="action-btn" title="Upload File" on:click={handleFileUpload}>
 				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
 					<path d={mdiUpload} />
 				</svg>
 			</button>
+			<input 
+				type="file" 
+				bind:this={fileInput} 
+				accept=".gcode" 
+				on:change={handleFileSelect} 
+				style="display: none" 
+			/>
 		</div>
 	</div>
 
