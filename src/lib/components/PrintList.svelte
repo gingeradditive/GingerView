@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PrintCard from './PrintCard.svelte';
+	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
 
 	const mockPrints: PrintItem[] = [
@@ -20,7 +21,7 @@
 
 <div class="print-list-page">
 	<div class="page-header">
-		<h2 class="page-title">Stampe disponibili</h2>
+		<CurrentDirectory />
 	</div>
 
 	<div class="grid">
@@ -46,14 +47,7 @@
 		gap: 12px;
 	}
 
-	.page-title {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: #1e293b;
-		margin: 0;
-		font-family: 'Roboto', sans-serif;
-	}
-
+	
 	.grid {
 		display: flex;
 		flex-wrap: wrap;
