@@ -1,20 +1,70 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
 	import { onMount } from 'svelte';
+	import { activeContextMenuId } from '$lib/stores/contextMenuStore';
 
 	let { item }: { item: PrintItem } = $props();
 
 	let nameElement: HTMLSpanElement;
 	let isOverflowing = $state(false);
+	let showContextMenu = $state(false);
+	let contextMenuX = $state(0);
+	let contextMenuY = $state(0);
+
+	// Subscribe to global context menu store
+	let activeContextMenuIdValue = $state<number | null>(null);
 
 	onMount(() => {
 		if (nameElement) {
 			isOverflowing = nameElement.scrollWidth > 250;
 		}
+		
+		// Subscribe to store changes
+		const unsubscribe = activeContextMenuId.subscribe((value) => {
+			activeContextMenuIdValue = value;
+		});
+		
+		return unsubscribe;
+	});
+
+	function handleContextMenu(event: MouseEvent) {
+		event.preventDefault();
+		
+		contextMenuX = event.clientX;
+		contextMenuY = event.clientY;
+		showContextMenu = true;
+		// Set this card as the active context menu globally
+		activeContextMenuId.set(item.id);
+	}
+
+	function handleDelete() {
+		console.log('Elimina stampa:', item.name);
+		closeContextMenu();
+		// Qui puoi aggiungere la logica per eliminare la stampa
+	}
+
+	function closeContextMenu() {
+		showContextMenu = false;
+		if (activeContextMenuIdValue === item.id) {
+			activeContextMenuId.set(null);
+		}
+	}
+
+	function handleClickOutside() {
+		closeContextMenu();
+	}
+
+	// Close context menu if another one is opened
+	$effect(() => {
+		if (activeContextMenuIdValue !== null && activeContextMenuIdValue !== item.id) {
+			showContextMenu = false;
+		}
 	});
 </script>
 
-<div class="print-card">
+<svelte:window onclick={handleClickOutside} />
+
+<div class="print-card" role="button" tabindex="0" oncontextmenu={handleContextMenu}>
 	<div class="card-inner">
 		<div class="image-wrapper">
 			<img
@@ -33,6 +83,21 @@
 		<span class="name-text" bind:this={nameElement}>{item.name}</span>
 	</div>
 </div>
+
+{#if showContextMenu}
+	<div 
+		class="context-menu" 
+		role="menu"
+		tabindex="0"
+		style="left: {contextMenuX}px; top: {contextMenuY}px;"
+		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
+	>
+		<button class="context-menu-item" role="menuitem" onclick={handleDelete}>
+			Elimina stampa
+		</button>
+	</div>
+{/if}
 
 <style>
 	.print-card {
@@ -142,5 +207,32 @@
 		0% { transform: translateX(0); }
 		83.33% { transform: translateX(calc(-100% + 250px)); }
 		100% { transform: translateX(0); }
+	}
+
+	.context-menu {
+		position: fixed;
+		background: white;
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		z-index: 1000;
+		min-width: 150px;
+		padding: 4px 0;
+	}
+
+	.context-menu-item {
+		width: 100%;
+		padding: 8px 16px;
+		background: none;
+		border: none;
+		text-align: left;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #1e293b;
+		transition: background-color 0.2s;
+	}
+
+	.context-menu-item:hover {
+		background-color: #f1f5f9;
 	}
 </style>
