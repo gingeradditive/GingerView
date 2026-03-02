@@ -3,7 +3,7 @@
 	import PrintCard from './PrintCard.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
-	import { mdiFolderPlus, mdiUpload } from '@mdi/js';
+	import { mdiFolderPlus, mdiUpload, mdiFolder } from '@mdi/js';
 	import {
 		fetchDirectory,
 		getThumbnailUrl,
@@ -12,17 +12,20 @@
 		getFileMetadata,
 		getFilamentType,
 		extractThumbnailFromGcode,
-		getErrorThumbnailUrl
+		getErrorThumbnailUrl,
+		createDirectory
 	} from '$lib/services/moonraker-files';
 	import { currentDirPath, navigateToDir } from '$lib/stores/directoryStore';
 
 	const PAGE_SIZE = 20;
 
 	let fileInput: HTMLInputElement;
-	let allItems: PrintItem[] = [];
-	let loading = true;
-	let error: string | null = null;
+	let allItems: PrintItem[] = $state([]);
+	let loading = $state(true);
+	let error = $state<string | null>(null);
 	let dirPath = '';
+	let showCreateFolderModal = $state(false);
+	let folderName = $state('');
 	let visibleCount = PAGE_SIZE;
 
 	const unsubscribe = currentDirPath.subscribe((value) => {
@@ -158,14 +161,29 @@
 		}
 	}
 
-	$: visiblePrints = allItems.slice(0, visibleCount);
-	$: hasMore = visibleCount < allItems.length;
+	async function handleCreateFolder() {
+		if (!folderName.trim()) return;
+		
+		try {
+			const fullPath = dirPath ? `gcodes/${dirPath}/${folderName}` : `gcodes/${folderName}`;
+			await createDirectory(fullPath);
+			showCreateFolderModal = false;
+			folderName = '';
+			await loadDirectory();
+		} catch (e) {
+			console.error('Create folder failed:', e);
+			alert('Create folder failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+		}
+	}
+
+	const visiblePrints = $derived(() => allItems.slice(0, visibleCount));
+	const hasMore = $derived(() => visibleCount < allItems.length);
 
 	let sentinel: HTMLElement;
 	let observer: IntersectionObserver;
 
 	function loadMore() {
-		if (hasMore) {
+		if (hasMore()) {
 			visibleCount = Math.min(visibleCount + PAGE_SIZE, allItems.length);
 		}
 	}
@@ -203,21 +221,44 @@
 <div class="print-list-page">
 	<div class="page-header">
 		<CurrentDirectory />
-		<div class="header-actions">
-			<button class="action-btn" title="Upload File" on:click={handleFileUpload}>
-				<svg width="39" height="39" viewBox="0 0 24 24" fill="#D72E28">
-					<path d={mdiUpload} />
-				</svg>
+		<div class="actions">
+			<button class="action-button" onclick={() => (showCreateFolderModal = true)} aria-label="Crea cartella">
+				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiFolderPlus} fill="#D72E28" /></svg>
 			</button>
-			<input 
-				type="file" 
-				bind:this={fileInput} 
-				accept=".gcode" 
-				on:change={handleFileSelect} 
-				style="display: none" 
-			/>
+			<button class="action-button" onclick={() => fileInput.click()} aria-label="Upload file">
+				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiUpload} fill="#D72E28" /></svg>
+			</button>
 		</div>
+		<input 
+			type="file" 
+			bind:this={fileInput} 
+			accept=".gcode" 
+			onchange={handleFileSelect} 
+			style="display: none" 
+		/>
 	</div>
+
+	{#if showCreateFolderModal}
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<div class="modal-overlay" role="dialog" tabindex="0" onclick={() => (showCreateFolderModal = false)} onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}>
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+				<h3>Crea nuova cartella</h3>
+				<input 
+					type="text" 
+					bind:value={folderName} 
+					placeholder="Nome cartella" 
+					class="folder-input"
+					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
+					autofocus
+				/>
+				<div class="modal-actions">
+					<button class="modal-confirm" onclick={handleCreateFolder}>Crea</button>
+					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}>Annulla</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	{#if loading}
 		<div class="status-message">Loading...</div>
@@ -227,15 +268,15 @@
 		<div class="status-message">No files found</div>
 	{:else}
 		<div class="grid">
-			{#each visiblePrints as item (item.id)}
+			{#each visiblePrints() as item (item.id)}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div on:click={() => handleItemClick(item)} role="button" tabindex="0">
+				<div onclick={() => handleItemClick(item)} role="button" tabindex="0">
 					<PrintCard {item} />
 				</div>
 			{/each}
 		</div>
 
-		{#if hasMore}
+		{#if hasMore()}
 			<div bind:this={sentinel} class="sentinel"></div>
 		{/if}
 	{/if}
@@ -256,28 +297,27 @@
 		gap: 12px;
 	}
 
-	.header-actions {
+	.actions {
 		display: flex;
 		gap: 12px;
 		align-items: center;
 	}
 
-	.action-btn {
+	.action-button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		padding: 8px;
+		padding: 4px;
 		background: transparent;
 		border: none;
 		cursor: pointer;
 		transition: opacity 0.2s;
 	}
 
-	.action-btn:hover {
+	.action-button:hover {
 		opacity: 0.7;
 	}
 
-	
 	.grid {
 		display: flex;
 		flex-wrap: wrap;
@@ -295,5 +335,85 @@
 
 	.status-message.error {
 		color: #D72E28;
+	}
+
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.4);
+		z-index: 2000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.modal-content {
+		background: #fff;
+		border-radius: 16px;
+		padding: 24px;
+		min-width: 300px;
+		max-width: 400px;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	}
+
+	.modal-content h3 {
+		margin: 0 0 16px 0;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: #111;
+	}
+
+	.folder-input {
+		width: 100%;
+		padding: 12px;
+		border: 1px solid #C8C8C8;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		margin-bottom: 16px;
+		box-sizing: border-box;
+	}
+
+	.folder-input:focus {
+		outline: none;
+		border-color: #D72E28;
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+
+	.modal-confirm {
+		padding: 8px 20px;
+		border: none;
+		border-radius: 8px;
+		background: #D72E28;
+		color: white;
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: background-color 0.15s;
+	}
+
+	.modal-confirm:hover {
+		background: #B82520;
+	}
+
+	.modal-cancel {
+		padding: 8px 20px;
+		border: 1px solid #C8C8C8;
+		border-radius: 8px;
+		background: #fff;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #666;
+		transition: background-color 0.15s;
+	}
+
+	.modal-cancel:hover {
+		background-color: #F5F5F5;
 	}
 </style>

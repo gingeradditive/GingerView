@@ -2,7 +2,7 @@
 	import type { PrintItem } from '$lib/types/print';
 	import { onMount } from 'svelte';
 	import { activeContextMenuId } from '$lib/stores/contextMenuStore';
-	import { deleteFile } from '$lib/services/moonraker-files';
+	import { deleteFile, deleteDirectory, moveFile, fetchDirectoriesRecursive } from '$lib/services/moonraker-files';
 	import { mdiFolder } from '@mdi/js';
 
 	let { item }: { item: PrintItem } = $props();
@@ -12,6 +12,9 @@
 	let showContextMenu = $state(false);
 	let contextMenuX = $state(0);
 	let contextMenuY = $state(0);
+	let showMoveModal = $state(false);
+	let availableDirs: { name: string; path: string }[] = $state([]);
+	let loadingDirs = $state(false);
 
 	// Subscribe to global context menu store
 	let activeContextMenuIdValue = $state<string | null>(null);
@@ -41,19 +44,55 @@
 
 	async function handleDelete() {
 		closeContextMenu();
-		if (!item.isDirectory) {
-			try {
-				// Moonraker delete API needs the full path including gcodes/
-				const fullPath = `gcodes/${item.filepath}`;
+		try {
+			// Moonraker delete API needs the full path including gcodes/
+			const fullPath = `gcodes/${item.filepath}`;
+			if (item.isDirectory) {
+				await deleteDirectory(fullPath);
+			} else {
 				await deleteFile(fullPath);
-				// Dispatch a custom event so the parent can refresh the list
-				if (typeof window !== 'undefined') {
-					window.dispatchEvent(new CustomEvent('moonraker-file-deleted'));
-				}
-			} catch (e) {
-				console.error('Delete failed:', e);
-				alert('Delete failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
 			}
+			// Dispatch a custom event so the parent can refresh the list
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(new CustomEvent('moonraker-file-deleted'));
+			}
+		} catch (e) {
+			console.error('Delete failed:', e);
+			alert('Delete failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+		}
+	}
+
+	async function handleMove() {
+		closeContextMenu();
+		loadingDirs = true;
+		showMoveModal = true;
+		try {
+			availableDirs = await fetchDirectoriesRecursive();
+			// Filter out the current directory and its subdirectories to prevent circular moves
+			if (item.isDirectory) {
+				const currentPath = item.filepath;
+				availableDirs = availableDirs.filter(dir => !dir.path.startsWith(currentPath));
+			}
+		} catch (e) {
+			console.error('Failed to fetch directories:', e);
+			availableDirs = [];
+		} finally {
+			loadingDirs = false;
+		}
+	}
+
+	async function confirmMove(destDir: string) {
+		try {
+			const source = `gcodes/${item.filepath}`;
+			const dest = destDir ? `gcodes/${destDir}/${item.filename}` : `gcodes/${item.filename}`;
+			await moveFile(source, dest);
+			showMoveModal = false;
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(new CustomEvent('moonraker-file-deleted'));
+			}
+		} catch (e) {
+			console.error('Move failed:', e);
+			alert('Move failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
 		}
 	}
 
@@ -115,9 +154,39 @@
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
 	>
-		<button class="context-menu-item" role="menuitem" onclick={handleDelete}>
-			Elimina stampa
+		<button class="context-menu-item" role="menuitem" onclick={handleMove}>
+			Sposta
 		</button>
+		<button class="context-menu-item delete" role="menuitem" onclick={handleDelete}>
+			{item.isDirectory ? 'Elimina cartella' : 'Elimina stampa'}
+		</button>
+	</div>
+{/if}
+
+{#if showMoveModal}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<div class="modal-overlay" role="dialog" tabindex="0" onclick={() => (showMoveModal = false)} onkeydown={(e) => e.key === 'Escape' && (showMoveModal = false)}>
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+			<h3>Sposta "{item.name}"</h3>
+			{#if loadingDirs}
+				<p class="modal-loading">Caricamento cartelle...</p>
+			{:else}
+				<div class="folder-list">
+					<button class="folder-option" onclick={() => confirmMove('')}>
+						<svg viewBox="0 0 24 24" width="20" height="20"><path d={mdiFolder} fill="#D72E28" /></svg>
+						/ (Root)
+					</button>
+					{#each availableDirs as dir}
+						<button class="folder-option" onclick={() => confirmMove(dir.path)}>
+							<svg viewBox="0 0 24 24" width="20" height="20"><path d={mdiFolder} fill="#D72E28" /></svg>
+							/{dir.path}
+						</button>
+					{/each}
+				</div>
+			{/if}
+			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Annulla</button>
+		</div>
 	</div>
 {/if}
 
@@ -260,6 +329,91 @@
 	}
 
 	.context-menu-item:hover {
+		background-color: #F5F5F5;
+	}
+
+	.context-menu-item.delete {
+		color: #D72E28;
+	}
+
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.4);
+		z-index: 2000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.modal-content {
+		background: #fff;
+		border-radius: 16px;
+		padding: 24px;
+		min-width: 300px;
+		max-width: 400px;
+		max-height: 60vh;
+		display: flex;
+		flex-direction: column;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+	}
+
+	.modal-content h3 {
+		margin: 0 0 16px 0;
+		font-size: 1.1rem;
+		font-weight: 700;
+		color: #111;
+	}
+
+	.modal-loading {
+		color: #666;
+		font-size: 0.9rem;
+	}
+
+	.folder-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		overflow-y: auto;
+		max-height: 40vh;
+		margin-bottom: 16px;
+	}
+
+	.folder-option {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		border: none;
+		background: none;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #111;
+		border-radius: 8px;
+		text-align: left;
+		transition: background-color 0.15s;
+	}
+
+	.folder-option:hover {
+		background-color: #F5F5F5;
+	}
+
+	.modal-cancel {
+		align-self: flex-end;
+		padding: 8px 20px;
+		border: 1px solid #C8C8C8;
+		border-radius: 8px;
+		background: #fff;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: #666;
+		transition: background-color 0.15s;
+	}
+
+	.modal-cancel:hover {
 		background-color: #F5F5F5;
 	}
 </style>

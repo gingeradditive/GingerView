@@ -109,11 +109,14 @@ export function getErrorThumbnailUrl(): string {
 export async function extractThumbnailFromGcode(filename: string, dirPath: string = 'gcodes'): Promise<string | null> {
 	try {
 		const apiUrl = getApiUrl();
-		// For direct file access, construct the path without gcodes prefix since it's already part of the API endpoint
-		const pathOnly = dirPath === 'gcodes' ? filename : `${dirPath}/${filename}`;
+		// Construct the full path - if dirPath already includes gcodes/, don't double-prefix
+		const fullPath = dirPath === 'gcodes' ? `gcodes/${filename}` : `${dirPath}/${filename}`;
 		
 		// Only fetch the first 32KB — thumbnails are always in the header
-		const res = await fetch(`${apiUrl}/server/files/gcodes/${encodeURIComponent(pathOnly)}`, {
+		// Split the path and encode each part separately (same as deleteFile)
+		const parts = fullPath.split('/');
+		const encodedPath = parts.map(part => encodeURIComponent(part)).join('/');
+		const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, {
 			headers: { Range: 'bytes=0-32767' }
 		});
 		if (!res.ok && res.status !== 206) {
@@ -181,6 +184,50 @@ export async function deleteFile(path: string): Promise<void> {
 	const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, { method: 'DELETE' });
 	if (!res.ok) {
 		throw new Error(`Failed to delete file: ${res.status} ${res.statusText}`);
+	}
+}
+
+export async function deleteDirectory(path: string): Promise<void> {
+	const apiUrl = getApiUrl();
+	const res = await fetch(`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}&force=true`, { method: 'DELETE' });
+	if (!res.ok) {
+		throw new Error(`Failed to delete directory: ${res.status} ${res.statusText}`);
+	}
+}
+
+export async function moveFile(source: string, dest: string): Promise<void> {
+	const apiUrl = getApiUrl();
+	const res = await fetch(`${apiUrl}/server/files/move`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ source, dest })
+	});
+	if (!res.ok) {
+		throw new Error(`Failed to move file: ${res.status} ${res.statusText}`);
+	}
+}
+
+export async function fetchDirectoriesRecursive(path: string = 'gcodes'): Promise<{ name: string; path: string }[]> {
+	const result = await fetchDirectory(path);
+	const dirs: { name: string; path: string }[] = [];
+	for (const d of result.dirs) {
+		if (d.dirname.startsWith('.')) continue;
+		const dirRelPath = path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
+		const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
+		dirs.push({ name: d.dirname, path: dirRelPath });
+		const subDirs = await fetchDirectoriesRecursive(dirFullPath);
+		dirs.push(...subDirs);
+	}
+	return dirs;
+}
+
+export async function createDirectory(path: string): Promise<void> {
+	const apiUrl = getApiUrl();
+	const res = await fetch(`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}`, {
+		method: 'POST'
+	});
+	if (!res.ok) {
+		throw new Error(`Failed to create directory: ${res.status} ${res.statusText}`);
 	}
 }
 
