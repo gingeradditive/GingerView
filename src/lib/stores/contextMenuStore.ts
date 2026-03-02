@@ -1,3 +1,3 @@
 import { writable } from 'svelte/store';
 
-export const activeContextMenuId = writable<number | null>(null);
+export const activeContextMenuId = writable<string | null>(null);

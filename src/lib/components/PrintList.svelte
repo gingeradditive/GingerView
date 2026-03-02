@@ -4,71 +4,174 @@
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
 	import { mdiFolderPlus, mdiUpload } from '@mdi/js';
+	import {
+		fetchDirectory,
+		getThumbnailUrl,
+		formatEstimatedTime,
+		uploadFile,
+		getFileMetadata,
+		getFilamentType,
+		extractThumbnailFromGcode,
+		getErrorThumbnailUrl
+	} from '$lib/services/moonraker-files';
+	import { currentDirPath, navigateToDir } from '$lib/stores/directoryStore';
 
 	const PAGE_SIZE = 20;
 
 	let fileInput: HTMLInputElement;
+	let allItems: PrintItem[] = [];
+	let loading = true;
+	let error: string | null = null;
+	let dirPath = '';
+	let visibleCount = PAGE_SIZE;
+
+	const unsubscribe = currentDirPath.subscribe((value) => {
+		dirPath = value;
+		loadDirectory();
+	});
+
+	async function loadDirectory() {
+		loading = true;
+		error = null;
+		allItems = [];
+		visibleCount = PAGE_SIZE;
+
+		try {
+			const moonrakerPath = dirPath ? `gcodes/${dirPath}` : 'gcodes';
+			const result = await fetchDirectory(moonrakerPath);
+
+			const dirItems: PrintItem[] = result.dirs
+				.filter(d => !d.dirname.startsWith('.'))
+				.map((d) => ({
+					id: `dir-${d.dirname}`,
+					name: d.dirname,
+					material: '',
+					duration: '',
+					filename: d.dirname,
+					filepath: dirPath ? `${dirPath}/${d.dirname}` : d.dirname,
+					modified: d.modified,
+					size: d.size,
+					isDirectory: true
+				}));
+
+			// Fetch metadata for all files to get filament information and thumbnails
+			const fileMetadataPromises = result.files.map(async (f) => {
+				try {
+					const metadata = await getFileMetadata(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+					
+					// Try to get thumbnail from multiple sources
+					let thumbnailUrl = getThumbnailUrl(f, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+					
+					// If no thumbnail from Moonraker, try to extract from G-code
+					if (!thumbnailUrl) {
+						const extractedThumbnail = await extractThumbnailFromGcode(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+						if (extractedThumbnail) {
+							thumbnailUrl = extractedThumbnail;
+						}
+					}
+					
+					// If still no thumbnail, use error thumbnail
+					if (!thumbnailUrl) {
+						thumbnailUrl = getErrorThumbnailUrl();
+					}
+					
+					return {
+						id: `file-${f.filename}`,
+						name: f.filename.replace(/\.gcode$/i, ''),
+						material: getFilamentType(metadata),
+						duration: formatEstimatedTime(metadata.estimated_time),
+						imageUrl: thumbnailUrl,
+						filename: f.filename,
+						filepath: dirPath ? `${dirPath}/${f.filename}` : f.filename,
+						modified: f.modified,
+						size: f.size,
+						isDirectory: false
+					};
+				} catch (e) {
+					// Fallback to basic file info if metadata fetch fails
+					console.warn(`Failed to fetch metadata for ${f.filename}:`, e);
+					
+					// Still try to get thumbnail from G-code even if metadata fails
+					let thumbnailUrl = getThumbnailUrl(f, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+					if (!thumbnailUrl) {
+						const extractedThumbnail = await extractThumbnailFromGcode(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+						if (extractedThumbnail) {
+							thumbnailUrl = extractedThumbnail;
+						}
+					}
+					if (!thumbnailUrl) {
+						thumbnailUrl = getErrorThumbnailUrl();
+					}
+					
+					return {
+						id: `file-${f.filename}`,
+						name: f.filename.replace(/\.gcode$/i, ''),
+						material: f.slicer ?? '',
+						duration: formatEstimatedTime(f.estimated_time),
+						imageUrl: thumbnailUrl,
+						filename: f.filename,
+						filepath: dirPath ? `${dirPath}/${f.filename}` : f.filename,
+						modified: f.modified,
+						size: f.size,
+						isDirectory: false
+					};
+				}
+			});
+
+			const fileItems = await Promise.all(fileMetadataPromises);
+
+			allItems = [...dirItems, ...fileItems];
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to load files';
+			console.error('Error loading directory:', e);
+		} finally {
+			loading = false;
+		}
+	}
 
 	function handleFileUpload() {
 		fileInput?.click();
 	}
 
-	function handleFileSelect(event: Event) {
+	async function handleFileSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const file = target.files?.[0];
 		
 		if (file && file.name.toLowerCase().endsWith('.gcode')) {
-			console.log('File GCODE selezionato:', file.name);
-			// Qui puoi aggiungere la logica per processare il file
+			try {
+				await uploadFile(file, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+				await loadDirectory();
+			} catch (e) {
+				console.error('Upload failed:', e);
+				alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			}
 		} else if (file) {
 			alert('Per favore seleziona un file .gcode');
 		}
+		// Reset input so re-selecting same file triggers change
+		if (target) target.value = '';
 	}
 
-	const mockPrints: PrintItem[] = [
-		{ id: 1, name: 'Benchy', material: 'PLA', duration: '6h 25 min' },
-		{ id: 2, name: 'Calibration Cube', material: 'PETG', duration: '45 min' },
-		{ id: 3, name: 'Vase Mode Pot', material: 'PLA+', duration: '3h 10 min' },
-		{ id: 4, name: 'Articulated Dragon', material: 'TPU', duration: '14h 00 min' },
-		{ id: 5, name: 'Phone Stand', material: 'ABS', duration: '2h 50 min' },
-		{ id: 6, name: 'Gear Set', material: 'PETG', duration: '5h 30 min' },
-		{ id: 7, name: 'Miniature Tower', material: 'Resin', duration: '1h 20 min' },
-		{ id: 8, name: 'Cable Organizer', material: 'PLA', duration: '1h 05 min' },
-		{ id: 9, name: 'Tool Holder', material: 'ASA', duration: '4h 40 min' },
-		{ id: 10, name: 'Lattice Sphere', material: 'PLA+', duration: '8h 15 min' },
-		{ id: 11, name: 'Octocat Figure', material: 'ABS', duration: '7h 00 min' },
-		{ id: 12, name: 'Very Long Articulated Dragon with Wings Extended', material: 'PETG', duration: '3h 35 min' },
-		{ id: 13, name: 'Mechanical Keyboard Case', material: 'PLA', duration: '12h 30 min' },
-		{ id: 14, name: 'Plant Pot', material: 'PETG', duration: '2h 15 min' },
-		{ id: 15, name: 'Dice Tower', material: 'ABS', duration: '9h 45 min' },
-		{ id: 16, name: 'Wall Mount Shelf', material: 'PLA+', duration: '3h 20 min' },
-		{ id: 17, name: 'Flexible Octopus', material: 'TPU', duration: '1h 50 min' },
-		{ id: 18, name: 'Camera Lens Cap', material: 'Resin', duration: '0h 45 min' },
-		{ id: 19, name: 'Desk Organizer', material: 'PETG', duration: '6h 10 min' },
-		{ id: 20, name: 'Honeycomb Storage Box', material: 'PLA', duration: '4h 30 min' },
-		{ id: 21, name: 'Spiral Vase', material: 'PLA+', duration: '5h 00 min' },
-		{ id: 22, name: 'Robot Arm Parts', material: 'ABS', duration: '11h 20 min' },
-		{ id: 23, name: 'Coaster Set', material: 'PETG', duration: '1h 30 min' },
-		{ id: 24, name: 'Pencil Holder', material: 'PLA', duration: '2h 40 min' },
-		{ id: 25, name: ' articulated Worm', material: 'TPU', duration: '3h 15 min' },
-		{ id: 26, name: 'Mini Chess Set', material: 'Resin', duration: '7h 50 min' },
-		{ id: 27, name: 'Cable Management Clip', material: 'PLA+', duration: '0h 30 min' },
-		{ id: 28, name: '3D Puzzle Cube', material: 'PETG', duration: '4h 10 min' },
-		{ id: 29, name: 'Wall Hook Set', material: 'ABS', duration: '2h 55 min' },
-		{ id: 30, name: 'Gears of War Figure', material: 'PLA', duration: '16h 40 min' },
-	];
+	function handleItemClick(item: PrintItem) {
+		if (item.isDirectory) {
+			navigateToDir(item.filename);
+		}
+	}
 
-	let visibleCount = Math.min(PAGE_SIZE, mockPrints.length);
-	$: visiblePrints = mockPrints.slice(0, visibleCount);
-	$: hasMore = visibleCount < mockPrints.length;
+	$: visiblePrints = allItems.slice(0, visibleCount);
+	$: hasMore = visibleCount < allItems.length;
 
 	let sentinel: HTMLElement;
 	let observer: IntersectionObserver;
 
 	function loadMore() {
 		if (hasMore) {
-			visibleCount = Math.min(visibleCount + PAGE_SIZE, mockPrints.length);
+			visibleCount = Math.min(visibleCount + PAGE_SIZE, allItems.length);
 		}
+	}
+
+	function handleFileDeleted() {
+		loadDirectory();
 	}
 
 	onMount(() => {
@@ -79,10 +182,21 @@
 			{ rootMargin: '200px' }
 		);
 		if (sentinel) observer.observe(sentinel);
+		
+		// Only add window event listeners in browser environment
+		if (typeof window !== 'undefined') {
+			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
+		}
 	});
 
 	onDestroy(() => {
 		observer?.disconnect();
+		unsubscribe();
+		
+		// Only remove window event listeners in browser environment
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('moonraker-file-deleted', handleFileDeleted);
+		}
 	});
 </script>
 
@@ -105,14 +219,25 @@
 		</div>
 	</div>
 
-	<div class="grid">
-		{#each visiblePrints as item (item.id)}
-			<PrintCard {item} />
-		{/each}
-	</div>
+	{#if loading}
+		<div class="status-message">Loading...</div>
+	{:else if error}
+		<div class="status-message error">{error}</div>
+	{:else if allItems.length === 0}
+		<div class="status-message">No files found</div>
+	{:else}
+		<div class="grid">
+			{#each visiblePrints as item (item.id)}
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<div on:click={() => handleItemClick(item)} role="button" tabindex="0">
+					<PrintCard {item} />
+				</div>
+			{/each}
+		</div>
 
-	{#if hasMore}
-		<div bind:this={sentinel} class="sentinel"></div>
+		{#if hasMore}
+			<div bind:this={sentinel} class="sentinel"></div>
+		{/if}
 	{/if}
 </div>
 
@@ -158,5 +283,17 @@
 		flex-wrap: wrap;
 		gap: 24px;
 		justify-content: center;
+	}
+
+	.status-message {
+		text-align: center;
+		padding: 48px 16px;
+		font-size: 1.1rem;
+		color: #888;
+		font-family: 'Montserrat', sans-serif;
+	}
+
+	.status-message.error {
+		color: #D72E28;
 	}
 </style>

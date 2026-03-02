@@ -1,24 +1,32 @@
 <script lang="ts">
-	interface DirectoryPath {
-		name: string;
-		path: string;
-	}
+	import { mdiChevronLeft } from '@mdi/js';
+	import { currentDirPath, navigateToRoot, navigateToSegment, navigateUp } from '$lib/stores/directoryStore';
 
-	const currentPath: DirectoryPath[] = [
-		{ name: 'Home', path: '/home' }
-	];
+	let dirPath = '';
+	const unsubscribe = currentDirPath.subscribe((value) => {
+		dirPath = value;
+	});
+
+	$: segments = dirPath ? dirPath.split('/') : [];
+	$: currentFolder = segments.length > 0 ? segments[segments.length - 1] : 'Home';
+	$: hasParent = segments.length > 0;
+
+	function handleSegmentClick(index: number) {
+		navigateToSegment(index, segments);
+	}
 </script>
 
 <div class="current-directory">
 	<div class="breadcrumb">
-		{#each currentPath as segment, index}
-			<span class="path-segment">
-				{segment.name}
+		{#if hasParent}
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<span class="back-button clickable" role="button" tabindex="0" on:click={navigateUp}>
+				<svg viewBox="0 0 24 24" width="24" height="24">
+					<path d={mdiChevronLeft} fill="currentColor" />
+				</svg>
 			</span>
-			{#if index < currentPath.length - 1}
-				<span class="separator">/</span>
-			{/if}
-		{/each}
+		{/if}
+		<span class="current-folder">{currentFolder}</span>
 	</div>
 </div>
 
@@ -30,21 +38,34 @@
 	.breadcrumb {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 12px;
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: #111111;
 		font-family: 'Montserrat', sans-serif;
-		flex-wrap: wrap;
 	}
 
-	.path-segment {
+	.back-button {
+		color: #D72E28;
+		padding: 4px;
+		border-radius: 4px;
+		transition: color 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+	}
+
+	.current-folder {
 		white-space: nowrap;
 	}
 
-	.separator {
-		color: #C8C8C8;
-		font-weight: 400;
-		user-select: none;
+	.clickable {
+		cursor: pointer;
+	}
+
+	.clickable:hover {
+		color: #D72E28;
 	}
 </style>

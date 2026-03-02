@@ -1,7 +1,12 @@
 export interface PrintItem {
-	id: number;
+	id: string;
 	name: string;
 	material: string;
 	duration: string;
 	imageUrl?: string;
+	filename: string;
+	filepath: string;
+	modified: number;
+	size: number;
+	isDirectory: boolean;
 }

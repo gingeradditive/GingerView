@@ -2,6 +2,8 @@
 	import type { PrintItem } from '$lib/types/print';
 	import { onMount } from 'svelte';
 	import { activeContextMenuId } from '$lib/stores/contextMenuStore';
+	import { deleteFile } from '$lib/services/moonraker-files';
+	import { mdiFolder } from '@mdi/js';
 
 	let { item }: { item: PrintItem } = $props();
 
@@ -12,7 +14,7 @@
 	let contextMenuY = $state(0);
 
 	// Subscribe to global context menu store
-	let activeContextMenuIdValue = $state<number | null>(null);
+	let activeContextMenuIdValue = $state<string | null>(null);
 
 	onMount(() => {
 		if (nameElement) {
@@ -37,10 +39,22 @@
 		activeContextMenuId.set(item.id);
 	}
 
-	function handleDelete() {
-		console.log('Elimina stampa:', item.name);
+	async function handleDelete() {
 		closeContextMenu();
-		// Qui puoi aggiungere la logica per eliminare la stampa
+		if (!item.isDirectory) {
+			try {
+				// Moonraker delete API needs the full path including gcodes/
+				const fullPath = `gcodes/${item.filepath}`;
+				await deleteFile(fullPath);
+				// Dispatch a custom event so the parent can refresh the list
+				if (typeof window !== 'undefined') {
+					window.dispatchEvent(new CustomEvent('moonraker-file-deleted'));
+				}
+			} catch (e) {
+				console.error('Delete failed:', e);
+				alert('Delete failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			}
+		}
 	}
 
 	function closeContextMenu() {
@@ -67,16 +81,24 @@
 <div class="print-card" role="button" tabindex="0" oncontextmenu={handleContextMenu}>
 	<div class="card-inner">
 		<div class="image-wrapper">
-			<img
-				src={item.imageUrl ?? '/MOCK_THUMBNAIL.png'}
-				alt={item.name}
-				width="250"
-				height="250"
-			/>
+			{#if item.isDirectory}
+				<svg class="folder-icon" width="80" height="80" viewBox="0 0 24 24" fill="#D72E28">
+					<path d={mdiFolder} />
+				</svg>
+			{:else}
+				<img
+					src={item.imageUrl ?? '/MOCK_THUMBNAIL.png'}
+					alt={item.name}
+					width="250"
+					height="250"
+				/>
+			{/if}
 			<div class="gradient-top"></div>
 			<div class="gradient-bottom"></div>
-			<div class="material-label">{item.material}</div>
-			<div class="duration-label">{item.duration}</div>
+			{#if !item.isDirectory}
+				<div class="material-label">{item.material}</div>
+				<div class="duration-label">{item.duration}</div>
+			{/if}
 		</div>
 	</div>
 	<div class="name-label" class:marquee={isOverflowing}>
@@ -139,6 +161,10 @@
 		height: calc(100% - 40px);
 		object-fit: cover;
 		padding: 20px;
+	}
+
+	.folder-icon {
+		opacity: 0.85;
 	}
 
 	.gradient-top {
