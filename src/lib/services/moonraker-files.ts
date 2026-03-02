@@ -175,7 +175,10 @@ export function getFilamentType(metadata: MoonrakerFileMetadata): string {
 
 export async function deleteFile(path: string): Promise<void> {
 	const apiUrl = getApiUrl();
-	const res = await fetch(`${apiUrl}/server/files/${encodeURIComponent(path)}`, { method: 'DELETE' });
+	// Split the path and encode each part separately
+	const parts = path.split('/');
+	const encodedPath = parts.map(part => encodeURIComponent(part)).join('/');
+	const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, { method: 'DELETE' });
 	if (!res.ok) {
 		throw new Error(`Failed to delete file: ${res.status} ${res.statusText}`);
 	}
