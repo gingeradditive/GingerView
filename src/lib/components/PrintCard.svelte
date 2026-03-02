@@ -15,6 +15,8 @@
 	let showMoveModal = $state(false);
 	let availableDirs: { name: string; path: string }[] = $state([]);
 	let loadingDirs = $state(false);
+	let showRenameModal = $state(false);
+	let newName = $state('');
 
 	// Subscribe to global context menu store
 	let activeContextMenuIdValue = $state<string | null>(null);
@@ -96,6 +98,47 @@
 		}
 	}
 
+	function handleRename() {
+		closeContextMenu();
+		// Pre-fill with current name (without extension for files)
+		if (item.isDirectory) {
+			newName = item.filename;
+		} else {
+			const dotIndex = item.filename.lastIndexOf('.');
+			newName = dotIndex > 0 ? item.filename.substring(0, dotIndex) : item.filename;
+		}
+		showRenameModal = true;
+	}
+
+	async function confirmRename() {
+		if (!newName.trim()) return;
+		try {
+			const source = `gcodes/${item.filepath}`;
+			// For files, preserve the extension
+			let finalName = newName.trim();
+			if (!item.isDirectory) {
+				const dotIndex = item.filename.lastIndexOf('.');
+				const ext = dotIndex > 0 ? item.filename.substring(dotIndex) : '';
+				if (!finalName.endsWith(ext)) {
+					finalName += ext;
+				}
+			}
+			// Build dest: same parent directory, new name
+			const parentPath = item.filepath.includes('/') 
+				? item.filepath.substring(0, item.filepath.lastIndexOf('/')) 
+				: '';
+			const dest = parentPath ? `gcodes/${parentPath}/${finalName}` : `gcodes/${finalName}`;
+			await moveFile(source, dest);
+			showRenameModal = false;
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(new CustomEvent('moonraker-file-deleted'));
+			}
+		} catch (e) {
+			console.error('Rename failed:', e);
+			alert('Rename failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+		}
+	}
+
 	function closeContextMenu() {
 		showContextMenu = false;
 		if (activeContextMenuIdValue === item.id) {
@@ -154,12 +197,36 @@
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
 	>
+		<button class="context-menu-item" role="menuitem" onclick={handleRename}>
+			Rinomina
+		</button>
 		<button class="context-menu-item" role="menuitem" onclick={handleMove}>
 			Sposta
 		</button>
 		<button class="context-menu-item delete" role="menuitem" onclick={handleDelete}>
 			{item.isDirectory ? 'Elimina cartella' : 'Elimina stampa'}
 		</button>
+	</div>
+{/if}
+
+{#if showRenameModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<div class="modal-overlay" role="dialog" tabindex="0" onclick={() => (showRenameModal = false)} onkeydown={(e) => e.key === 'Escape' && (showRenameModal = false)}>
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+			<h3>Rinomina</h3>
+			<input 
+				type="text" 
+				bind:value={newName} 
+				placeholder="Nuovo nome" 
+				class="rename-input"
+				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
+			/>
+			<div class="modal-actions">
+				<button class="modal-confirm" onclick={confirmRename}>Rinomina</button>
+				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Annulla</button>
+			</div>
+		</div>
 	</div>
 {/if}
 
@@ -308,7 +375,7 @@
 	.context-menu {
 		position: fixed;
 		background: #FFFFFF;
-		border: 1px solid #C8C8C8;
+		border: none;
 		border-radius: 8px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		z-index: 1000;
@@ -415,5 +482,41 @@
 
 	.modal-cancel:hover {
 		background-color: #F5F5F5;
+	}
+
+	.rename-input {
+		width: 100%;
+		padding: 12px;
+		border: 1px solid #C8C8C8;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		margin-bottom: 16px;
+		box-sizing: border-box;
+	}
+
+	.rename-input:focus {
+		outline: none;
+		border-color: #D72E28;
+	}
+
+	.modal-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+
+	.modal-confirm {
+		padding: 8px 20px;
+		border: none;
+		border-radius: 8px;
+		background: #D72E28;
+		color: white;
+		cursor: pointer;
+		font-size: 0.9rem;
+		transition: background-color 0.15s;
+	}
+
+	.modal-confirm:hover {
+		background: #B82520;
 	}
 </style>

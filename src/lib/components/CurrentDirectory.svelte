@@ -21,7 +21,7 @@
 		{#if hasParent}
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<span class="back-button clickable" role="button" tabindex="0" on:click={navigateUp}>
-				<svg viewBox="0 0 24 24" width="24" height="24">
+				<svg viewBox="0 0 24 24" width="40" height="40">
 					<path d={mdiChevronLeft} fill="currentColor" />
 				</svg>
 			</span>
@@ -48,13 +48,12 @@
 	.back-button {
 		color: #D72E28;
 		padding: 4px;
-		border-radius: 4px;
-		transition: color 0.2s;
+		background: transparent;
+		border: none;
+		transition: opacity 0.2s;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
 	}
 
 	.current-folder {
@@ -66,6 +65,6 @@
 	}
 
 	.clickable:hover {
-		color: #D72E28;
+		opacity: 0.7;
 	}
 </style>
