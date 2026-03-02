@@ -1,4 +1,4 @@
-// WiFi API Types based on actual API responses from http://discovery.local:8000
+// WiFi API Types based on actual API responses from http://192.168.1.201:8000
 
 export interface ValidationError {
 	loc: (string | number)[];

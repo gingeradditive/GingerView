@@ -14,7 +14,7 @@
 		isOnline: navigator.onLine,
 		connectionType: 'wifi',
 		signalStrength: 4,
-		ipAddress: '192.168.1.100',
+		ipAddress: '192.168.1.201',
 		isConnected: true,
 		availableNetworks: [] as NetworkInfo[],
 		currentNetwork: 'MyWiFiNetwork',

@@ -8,7 +8,7 @@ import type {
 	HTTPValidationError 
 } from '$lib/types/wifi';
 
-const API_BASE_URL = 'http://discovery.local:8000';
+const API_BASE_URL = 'http://192.168.1.201:8000';
 
 class NetworkAPIError extends Error {
 	constructor(

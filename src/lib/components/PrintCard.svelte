@@ -135,9 +135,10 @@
 	}
 
 	.image-wrapper img {
-		width: 100%;
-		height: 100%;
+		width: calc(100% - 40px);
+		height: calc(100% - 40px);
 		object-fit: cover;
+		padding: 20px;
 	}
 
 	.gradient-top {
