@@ -23,7 +23,7 @@
 
 	onMount(() => {
 		if (nameElement) {
-			isOverflowing = nameElement.scrollWidth > 250;
+			isOverflowing = nameElement.scrollWidth > (nameElement.parentElement?.clientWidth ?? 250);
 		}
 		
 		// Subscribe to store changes
@@ -161,28 +161,24 @@
 <svelte:window onclick={handleClickOutside} />
 
 <div class="print-card" role="button" tabindex="0" oncontextmenu={handleContextMenu}>
-	<div class="card-inner">
-		<div class="image-wrapper">
-			{#if item.isDirectory}
-				<svg class="folder-icon" width="80" height="80" viewBox="0 0 24 24" fill="#D72E28">
-					<path d={mdiFolder} />
-				</svg>
-			{:else}
+	{#if item.isDirectory}
+		<img class="folder-image" src="/Folder.svg" alt={item.name} width="250" height="250" />
+	{:else}
+		<div class="card-inner">
+			<div class="image-wrapper">
 				<img
 					src={item.imageUrl ?? '/MOCK_THUMBNAIL.png'}
 					alt={item.name}
 					width="250"
 					height="250"
 				/>
-			{/if}
-			<div class="gradient-top"></div>
-			<div class="gradient-bottom"></div>
-			{#if !item.isDirectory}
+				<div class="gradient-top"></div>
+				<div class="gradient-bottom"></div>
 				<div class="material-label">{item.material}</div>
 				<div class="duration-label">{item.duration}</div>
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 	<div class="name-label" class:marquee={isOverflowing}>
 		<span class="name-text" bind:this={nameElement}>{item.name}</span>
 	</div>
@@ -259,11 +255,12 @@
 
 <style>
 	.print-card {
+		--card-size: 325px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 8px;
-		width: 250px;
+		width: var(--card-size);
 		cursor: pointer;
 	}
 
@@ -281,8 +278,8 @@
 	}
 
 	.image-wrapper {
-		width: 250px;
-		height: 250px;
+		width: var(--card-size);
+		height: var(--card-size);
 		border-radius: 20px;
 		overflow: hidden;
 		position: relative;
@@ -299,8 +296,11 @@
 		padding: 20px;
 	}
 
-	.folder-icon {
-		opacity: 0.85;
+	.folder-image {
+		width: var(--card-size);
+		height: var(--card-size);
+		padding: 32px;
+		object-fit: contain;
 	}
 
 	.gradient-top {
@@ -352,7 +352,7 @@
 		font-weight: 600;
 		color: #111111;
 		text-align: center;
-		max-width: 250px;
+		max-width: var(--card-size);
 		overflow: hidden;
 		position: relative;
 		white-space: nowrap;
@@ -368,8 +368,26 @@
 
 	@keyframes marquee {
 		0% { transform: translateX(0); }
-		83.33% { transform: translateX(calc(-100% + 250px)); }
+		83.33% { transform: translateX(calc(-100% + var(--card-size))); }
 		100% { transform: translateX(0); }
+	}
+
+	@media (max-width: 768px) {
+		.print-card {
+			--card-size: 162.5px;
+		}
+
+		.material-label {
+			font-size: 0.8rem;
+		}
+
+		.duration-label {
+			font-size: 0.75rem;
+		}
+
+		.name-label {
+			font-size: 0.9rem;
+		}
 	}
 
 	.context-menu {
