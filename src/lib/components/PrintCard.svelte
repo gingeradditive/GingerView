@@ -286,14 +286,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: #F5F5F5;
+		background: #fff;
 	}
 
 	.image-wrapper img {
-		width: calc(100% - 40px);
-		height: calc(100% - 40px);
+		width: calc(100% - 10px);
+		height: calc(100% - 10px);
 		object-fit: cover;
-		padding: 20px;
+		padding: 10px; 
 	}
 
 	.folder-image {
