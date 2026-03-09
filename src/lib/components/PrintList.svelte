@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import PrintCard from './PrintCard.svelte';
+	import PrintDetailsPopup from './PrintDetailsPopup.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
 	import { mdiFolderPlus, mdiUpload, mdiFolder } from '@mdi/js';
@@ -27,6 +28,8 @@
 	let showCreateFolderModal = $state(false);
 	let folderName = $state('');
 	let visibleCount = PAGE_SIZE;
+	let showPrintDetailsModal = $state(false);
+	let selectedPrint = $state<PrintItem | null>(null);
 
 	const unsubscribe = currentDirPath.subscribe((value) => {
 		dirPath = value;
@@ -158,7 +161,34 @@
 	function handleItemClick(item: PrintItem) {
 		if (item.isDirectory) {
 			navigateToDir(item.filename);
+			return;
 		}
+
+		selectedPrint = item;
+		showPrintDetailsModal = true;
+	}
+
+	function closePrintDetailsModal() {
+		showPrintDetailsModal = false;
+	}
+
+	function openMockPrintDetails() {
+		const firstFile = allItems.find((entry) => !entry.isDirectory) ?? null;
+		selectedPrint =
+			firstFile ??
+			({
+				id: 'mock-print-item',
+				name: 'mock-benchy',
+				material: 'Draft 0.20 PLA',
+				duration: '2h 34m',
+				imageUrl: '/error-thumbnail.png',
+				filename: 'mock-benchy.gcode',
+				filepath: 'mock-benchy.gcode',
+				modified: Date.now() / 1000,
+				size: 0,
+				isDirectory: false
+			} satisfies PrintItem);
+		showPrintDetailsModal = true;
 	}
 
 	async function handleCreateFolder() {
@@ -204,6 +234,8 @@
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
+			(window as Window & { openPrintDetailsMock?: () => void }).openPrintDetailsMock =
+				openMockPrintDetails;
 		}
 	});
 
@@ -214,6 +246,7 @@
 		// Only remove window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('moonraker-file-deleted', handleFileDeleted);
+			delete (window as Window & { openPrintDetailsMock?: () => void }).openPrintDetailsMock;
 		}
 	});
 </script>
@@ -222,6 +255,7 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="actions">
+			<button class="dev-button" onclick={openMockPrintDetails}>Apri mock popup</button>
 			<button class="action-button" onclick={() => (showCreateFolderModal = true)} aria-label="Crea cartella">
 				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiFolderPlus} fill="#D72E28" /></svg>
 			</button>
@@ -280,6 +314,8 @@
 			<div bind:this={sentinel} class="sentinel"></div>
 		{/if}
 	{/if}
+
+	<PrintDetailsPopup item={selectedPrint} isOpen={showPrintDetailsModal} onClose={closePrintDetailsModal} />
 </div>
 
 <style>
@@ -301,6 +337,22 @@
 		display: flex;
 		gap: 12px;
 		align-items: center;
+	}
+
+	.dev-button {
+		padding: 10px 16px;
+		border: none;
+		border-radius: 10px;
+		background: #111111;
+		color: #ffffff;
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: opacity 0.2s;
+	}
+
+	.dev-button:hover {
+		opacity: 0.85;
 	}
 
 	.action-button {

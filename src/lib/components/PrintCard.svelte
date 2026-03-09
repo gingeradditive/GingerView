@@ -167,7 +167,7 @@
 		<div class="card-inner">
 			<div class="image-wrapper">
 				<img
-					src={item.imageUrl ?? '/MOCK_THUMBNAIL.png'}
+					src={item.imageUrl ?? '/error-thumbnail.png'}
 					alt={item.name}
 					width="250"
 					height="250"
