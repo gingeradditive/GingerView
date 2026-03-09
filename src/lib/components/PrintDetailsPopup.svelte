@@ -42,7 +42,7 @@
 				<div class="preview-image-wrapper">
 					<img src={item.imageUrl ?? '/error-thumbnail.png'} alt={item.name} width="500" height="500" />
 					<div class="rotate-overlay">
-						<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+						<svg viewBox="0 0 24 24" width="48" height="48" aria-hidden="true">
 							<path d={mdiRotate3d} fill="#D72E28" />
 						</svg>
 					</div>
@@ -134,10 +134,15 @@
 		position: absolute;
 		top: 12px;
 		left: 12px;
+		width: 40px;
+		height: 40px;
 		background: rgba(255, 255, 255, 0.9);
-		border-radius: 6px;
-		padding: 4px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		backdrop-filter: blur(4px);
+		padding: 4px;
 	}
 
 	.info-pane {
