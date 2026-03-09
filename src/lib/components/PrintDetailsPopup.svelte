@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
 	import { mdiRotate3d } from '@mdi/js';
+	import { formatEstimatedTime } from '$lib/services/moonraker-files';
 
 	let {
 		item,
@@ -12,12 +13,19 @@
 		onClose: () => void;
 	} = $props();
 
-	const mockStats = [
-		{ icon: '/PrintTime.svg', label: 'Tempo', value: '6h 21m' },
-		{ icon: '/Weight.svg', label: 'Peso', value: '4000g' },
-		{ icon: '/Nozzle.svg', label: 'Ugello', value: '3mm' },
-		{ icon: '/Material.svg', label: 'Materiale', value: 'PLA' }
-	];
+	function formatNozzleDiameter(value?: number): string {
+		if (value == null || value <= 0) return '--';
+		return `${value}mm`;
+	}
+
+	function formatFilamentWeight(value?: number): string {
+		if (value == null || value <= 0) return '--';
+		return `${Math.round(value)}g`;
+	}
+
+	function getDurationValue(file: PrintItem): string {
+		return formatEstimatedTime(file.lastPrintDuration ?? file.printTime);
+	}
 </script>
 
 {#if isOpen && item}
@@ -27,7 +35,7 @@
 		<div class="details-modal" role="document" onclick={(e) => e.stopPropagation()}>
 			<div class="mobile-header">
 				<h2>{item.name}</h2>
-				<p class="subtitle">{item.material || 'Draft 0.20 PLA'}</p>
+				<p class="subtitle">{item.filamentName || item.material || '--'}</p>
 			</div>
 
 			<div class="preview-pane">
@@ -44,16 +52,26 @@
 			<div class="info-pane">
 				<div class="desktop-header">
 					<h2>{item.name}</h2>
-					<p class="subtitle">{item.material || 'Draft 0.20 PLA'}</p>
+					<p class="subtitle">{item.filamentName || item.material || '--'}</p>
 				</div>
 
 				<div class="stats-grid">
-					{#each mockStats as stat}
-						<div class="stat-card">
-							<img src={stat.icon} alt={stat.label} width="36" height="36" />
-							<span>{stat.value}</span>
-						</div>
-					{/each}
+					<div class="stat-card">
+						<img src="/PrintTime.svg" alt="Print duration" width="36" height="36" />
+						<span>{getDurationValue(item)}</span>
+					</div>
+					<div class="stat-card">
+						<img src="/Weight.svg" alt="Filament weight" width="36" height="36" />
+						<span>{formatFilamentWeight(item.filamentWeight)}</span>
+					</div>
+					<div class="stat-card">
+						<img src="/Nozzle.svg" alt="Nozzle diameter" width="36" height="36" />
+						<span>{formatNozzleDiameter(item.nozzleDiameter)}</span>
+					</div>
+					<div class="stat-card">
+						<img src="/Material.svg" alt="Filament type" width="36" height="36" />
+						<span>{item.filamentType || item.material || '--'}</span>
+					</div>
 				</div>
 
 				<div class="actions-row">
@@ -68,7 +86,9 @@
 	.details-overlay {
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.45);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22));
+		backdrop-filter: blur(12px) saturate(130%);
+		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		display: flex;
 		align-items: center;
 		justify-content: center;

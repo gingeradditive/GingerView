@@ -3,6 +3,12 @@ export interface PrintItem {
 	name: string;
 	material: string;
 	duration: string;
+	filamentName?: string;
+	filamentType?: string;
+	filamentWeight?: number;
+	nozzleDiameter?: number;
+	lastPrintDuration?: number;
+	printTime?: number;
 	imageUrl?: string;
 	filename: string;
 	filepath: string;

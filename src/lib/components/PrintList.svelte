@@ -53,6 +53,12 @@
 					name: d.dirname,
 					material: '',
 					duration: '',
+					filamentName: '',
+					filamentType: '',
+					filamentWeight: undefined,
+					nozzleDiameter: undefined,
+					lastPrintDuration: undefined,
+					printTime: undefined,
 					filename: d.dirname,
 					filepath: dirPath ? `${dirPath}/${d.dirname}` : d.dirname,
 					modified: d.modified,
@@ -85,6 +91,12 @@
 						id: `file-${f.filename}`,
 						name: f.filename.replace(/\.gcode$/i, ''),
 						material: getFilamentType(metadata),
+						filamentName: metadata.filament_name,
+						filamentType: metadata.filament_type ?? getFilamentType(metadata),
+						filamentWeight: metadata.filament_weight_total,
+						nozzleDiameter: metadata.nozzle_diameter,
+						lastPrintDuration: metadata.last_print_duration,
+						printTime: metadata.print_time ?? metadata.estimated_time,
 						duration: formatEstimatedTime(metadata.estimated_time),
 						imageUrl: thumbnailUrl,
 						filename: f.filename,
@@ -113,6 +125,12 @@
 						id: `file-${f.filename}`,
 						name: f.filename.replace(/\.gcode$/i, ''),
 						material: f.slicer ?? '',
+						filamentName: '',
+						filamentType: f.slicer ?? '',
+						filamentWeight: undefined,
+						nozzleDiameter: undefined,
+						lastPrintDuration: f.last_print_duration,
+						printTime: f.print_time ?? f.estimated_time,
 						duration: formatEstimatedTime(f.estimated_time),
 						imageUrl: thumbnailUrl,
 						filename: f.filename,
@@ -172,25 +190,6 @@
 		showPrintDetailsModal = false;
 	}
 
-	function openMockPrintDetails() {
-		const firstFile = allItems.find((entry) => !entry.isDirectory) ?? null;
-		selectedPrint =
-			firstFile ??
-			({
-				id: 'mock-print-item',
-				name: 'mock-benchy',
-				material: 'Draft 0.20 PLA',
-				duration: '2h 34m',
-				imageUrl: '/error-thumbnail.png',
-				filename: 'mock-benchy.gcode',
-				filepath: 'mock-benchy.gcode',
-				modified: Date.now() / 1000,
-				size: 0,
-				isDirectory: false
-			} satisfies PrintItem);
-		showPrintDetailsModal = true;
-	}
-
 	async function handleCreateFolder() {
 		if (!folderName.trim()) return;
 		
@@ -234,8 +233,6 @@
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
-			(window as Window & { openPrintDetailsMock?: () => void }).openPrintDetailsMock =
-				openMockPrintDetails;
 		}
 	});
 
@@ -246,7 +243,6 @@
 		// Only remove window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('moonraker-file-deleted', handleFileDeleted);
-			delete (window as Window & { openPrintDetailsMock?: () => void }).openPrintDetailsMock;
 		}
 	});
 </script>
@@ -255,7 +251,6 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="actions">
-			<button class="dev-button" onclick={openMockPrintDetails}>Apri mock popup</button>
 			<button class="action-button" onclick={() => (showCreateFolderModal = true)} aria-label="Crea cartella">
 				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiFolderPlus} fill="#D72E28" /></svg>
 			</button>
@@ -339,22 +334,6 @@
 		align-items: center;
 	}
 
-	.dev-button {
-		padding: 10px 16px;
-		border: none;
-		border-radius: 10px;
-		background: #111111;
-		color: #ffffff;
-		font-size: 0.85rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: opacity 0.2s;
-	}
-
-	.dev-button:hover {
-		opacity: 0.85;
-	}
-
 	.action-button {
 		display: inline-flex;
 		align-items: center;
@@ -395,7 +374,9 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: rgba(0, 0, 0, 0.4);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22));
+		backdrop-filter: blur(12px) saturate(130%);
+		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2000;
 		display: flex;
 		align-items: center;

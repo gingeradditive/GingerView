@@ -309,7 +309,8 @@
 <!-- Console Popup -->
 {#if isOpen}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+		class="fixed inset-0 z-50 flex items-center justify-center p-4"
+		style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22)); backdrop-filter: blur(12px) saturate(130%); -webkit-backdrop-filter: blur(12px) saturate(130%);"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="console-title"

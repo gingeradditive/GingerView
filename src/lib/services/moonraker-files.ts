@@ -20,6 +20,8 @@ export interface MoonrakerFileItem {
 	object_height?: number;
 	filament_total?: number;
 	estimated_time?: number;
+	print_time?: number;
+	last_print_duration?: number;
 	thumbnails?: MoonrakerThumbnail[];
 }
 
@@ -75,6 +77,8 @@ export interface MoonrakerFileMetadata {
 	filament_weight_total?: number;
 	nozzle_diameter?: number;
 	estimated_time?: number;
+	print_time?: number;
+	last_print_duration?: number;
 	first_layer_extr_temp?: number;
 	first_layer_bed_temp?: number;
 	extruder_temp?: number;
