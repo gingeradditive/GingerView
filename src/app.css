@@ -19,15 +19,22 @@ html, body {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
+/* Global button styles */
+button {
+  font-weight: 600;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  transition: color 0.2s, background-color 0.2s;
+  font-weight: 600;
+  transition: color 0.2s, background-color 0.2s, box-shadow 0.15s;
   outline: none;
+  box-shadow: 0 2px 8px rgba(215, 46, 40, 0.3);
 }
 
 .btn:focus-visible {

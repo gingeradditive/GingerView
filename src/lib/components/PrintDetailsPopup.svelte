@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
-	import { mdiRotate3d } from '@mdi/js';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
 
 	let {
@@ -42,9 +41,7 @@
 				<div class="preview-image-wrapper">
 					<img src={item.imageUrl ?? '/error-thumbnail.png'} alt={item.name} width="500" height="500" />
 					<div class="rotate-overlay">
-						<svg viewBox="0 0 24 24" width="48" height="48" aria-hidden="true">
-							<path d={mdiRotate3d} fill="#D72E28" />
-						</svg>
+						<img src="/3DView.svg" alt="3D View" width="40" height="40" />
 					</div>
 				</div>
 			</div>
@@ -161,7 +158,7 @@
 		margin: 0;
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		color: #111;
-		font-weight: 500;
+		font-weight: 600;
 	}
 
 	.subtitle {
@@ -196,11 +193,12 @@
 		background: #d72e28;
 		color: #fff;
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
-		font-weight: 400;
+		font-weight: 600;
 		padding: 14px 56px;
 		border-radius: 14px;
 		cursor: pointer;
-		transition: background-color 0.15s;
+		transition: background-color 0.15s, box-shadow 0.15s;
+		box-shadow: 0 2px 8px rgba(215, 46, 40, 0.3);
 	}
 
 	.print-button:hover {
