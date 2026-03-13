@@ -293,17 +293,18 @@
 	}
 </script>
 
-<!-- Floating Console Button -->
+<!-- Console Trigger Button -->
 <button
 	type="button"
 	onclick={() => {
 		console.log('Opening console');
 		isOpen = true;
 	}}
-	class="fixed bottom-4 right-4 z-40 bg-white hover:bg-gray-100 text-gray-700 p-3 rounded-full shadow-lg transition-colors duration-200 flex items-center justify-center"
+	class="inline-flex items-center gap-3 bg-white hover:bg-gray-100 text-gray-700 px-5 py-3 rounded-xl border border-gray-200 shadow-sm transition-colors duration-200"
 	title="Open Klipper Console"
 >
 	<Terminal class="w-5 h-5" />
+	<span class="text-sm font-semibold">Apri Console</span>
 </button>
 
 <!-- Console Popup -->

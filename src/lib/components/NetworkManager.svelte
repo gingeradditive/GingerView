@@ -328,11 +328,12 @@
 	}
 </script>
 
-<div class="fixed bottom-4 left-4 z-40">
+
+<div>
 	<div class="relative">
 		<!-- Main button -->
 		<button
-			class="bg-white hover:bg-background text-black p-3 rounded-full shadow-lg transition-colors duration-200 flex items-center justify-center"
+			class="inline-flex items-center gap-3 bg-white hover:bg-background text-black px-5 py-3 rounded-xl border border-gray-200 shadow-sm transition-colors duration-200"
 			onclick={() => showDetails = !showDetails}
 			title="Network Status"
 		>
@@ -342,6 +343,7 @@
 				{:else}
 					<Wifi class={`w-5 h-5 ${getSignalColor()}`} />
 				{/if}
+				<span class="text-sm font-semibold text-gray-800">Network Manager</span>
 			</div>
 		</button>
 
