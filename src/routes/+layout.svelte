@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
+	import logoImage from '/Printers/G2/Logo.svg';
+	import { mdiTabletDashboard, mdiFileMultiple, mdiCog } from '@mdi/js';
 	import '../app.css';
 
 	let { children } = $props();
@@ -13,9 +15,12 @@
 <main class="page-content">{@render children()}</main>
 
 <nav class="dock" aria-label="Navigazione principale">
+	<div class="logo-container">
+		<img src={logoImage} alt="Logo" class="logo-image" />
+	</div>
 	<a href="/" class:active={$page.url.pathname === '/'} aria-label="Dashboard" title="Dashboard">
 		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<path d="M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h5v8H3v-8zm7 0h11v8H10v-8z" />
+			<path d={mdiTabletDashboard} />
 		</svg>
 	</a>
 
@@ -26,7 +31,7 @@
 		title="FileList"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<path d="M4 11.5L12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-8.5z" />
+			<path d={mdiFileMultiple} />
 		</svg>
 	</a>
 
@@ -35,9 +40,10 @@
 		class:active={$page.url.pathname.startsWith('/settings')}
 		aria-label="Settings"
 		title="Settings"
+		class="settings-icon"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.46 7.46 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.57.23-1.11.54-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.51.4 1.05.71 1.62.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.57-.23 1.11-.54 1.62-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z" />
+			<path d={mdiCog} />
 		</svg>
 	</a>
 </nav>
@@ -53,13 +59,13 @@
 		bottom: 20px;
 		transform: translateX(-50%);
 		display: flex;
-		gap: 8px;
-		padding: 8px;
+		gap: 0.8rem;
+		padding: 12px;
 		background: rgba(255, 255, 255, 0.85);
-		border: 1px solid #c8c8c8;
-		border-radius: 16px;
+		border-radius: 24px;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 		z-index: 1000;
 	}
 
@@ -67,20 +73,21 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 44px;
-		height: 44px;
-		color: #111111;
-		border-radius: 12px;
+		width: 66px;
+		height: 66px;
+		color: #ffffff;
+		border-radius: 18px;
 		text-decoration: none;
-		background: transparent;
+		background: #C8C8C8;
 	}
 
 	.dock a:hover {
-		background: #ececec;
+		background: #C8C8C8;
 	}
 
 	.dock a.active {
-		background: #e5e5e5;
+		background: #828282;
+		border: 3px solid #D72E28;
 	}
 
 	.dock a:focus-visible {
@@ -89,8 +96,42 @@
 	}
 
 	.dock svg {
-		width: 22px;
-		height: 22px;
+		width: 40px;
+		height: 40px;
 		fill: currentColor;
 	}
+
+	.settings-icon {
+		background: transparent !important;
+		margin-left: 24px;
+	}
+
+	.settings-icon svg {
+		fill: #828282;
+	}
+
+	.settings-icon:hover {
+		background: transparent !important;
+	}
+
+	.settings-icon.active {
+		background: transparent !important;
+		border: 3px solid #D72E28;
+	}
+
+	.logo-container {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 85px;
+		height: 66px;
+		margin-right: 20px;
+	}
+
+	.logo-image {
+		width: 60px;
+		height: 60px;
+		object-fit: contain;
+	}
+
 </style>
