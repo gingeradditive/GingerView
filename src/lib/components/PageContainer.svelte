@@ -13,18 +13,20 @@
 <style>
 	.app-shell {
 		display: flex;
-		height: 100vh;
-		width: 100vw;
+		min-height: 100vh;
+		width: 100%;
 		background: #F5F5F5;
 		font-family: 'Montserrat', sans-serif;
+		overflow-x: hidden;
 	}
 
 	.content-area {
 		flex: 1;
 		overflow-y: auto;
-		padding: 24px;
+		padding: 24px 24px 92px;
 		display: flex;
 		flex-direction: column;
+		min-width: 0;
 	}
 
 	.page-panel {
@@ -35,7 +37,8 @@
 		border: none;
 		box-shadow: none;
 		flex: 1;
-		overflow: auto;
+		overflow-x: hidden;
+		overflow-y: visible;
 		min-height: 0;
 	}
 </style>
