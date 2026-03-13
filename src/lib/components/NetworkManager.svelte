@@ -358,7 +358,8 @@
 				onclick={() => showDetails = false}
 			>
 				<div
-					class="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
+					class="bg-white shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
+					style="border-radius: 54px;"
 					role="document"
 					onclick={(e) => e.stopPropagation()}
 				>
@@ -466,7 +467,8 @@
 				onclick={() => showNetworkList = false}
 			>
 				<div
-					class="bg-white rounded-lg shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
+					class="bg-white shadow-2xl w-full max-w-md flex flex-col border border-gray-200"
+					style="border-radius: 54px;"
 					role="document"
 					onclick={(e) => e.stopPropagation()}
 				>
@@ -576,7 +578,8 @@
 				onclick={cancelConnection}
 			>
 				<div
-					class="bg-white rounded-lg shadow-2xl w-full max-w-sm flex flex-col border border-gray-200"
+					class="bg-white shadow-2xl w-full max-w-sm flex flex-col border border-gray-200"
+					style="border-radius: 54px;"
 					role="document"
 					onclick={(e) => e.stopPropagation()}
 				>

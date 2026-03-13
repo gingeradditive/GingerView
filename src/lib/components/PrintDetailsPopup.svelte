@@ -97,7 +97,7 @@
 		width: min(800px, 100%);
 		min-height: 400px;
 		background: #ffffff;
-		border-radius: 24px;
+		border-radius: 54px;
 		display: grid;
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
@@ -123,7 +123,6 @@
 		height: auto;
 		aspect-ratio: 1 / 1;
 		object-fit: contain;
-		border-radius: 16px;
 		background: #fff;
 	}
 
@@ -134,7 +133,7 @@
 		width: 40px;
 		height: 40px;
 		background: rgba(255, 255, 255, 0.9);
-		border-radius: 50%;
+		border-radius: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -198,7 +197,7 @@
 		border-radius: 14px;
 		cursor: pointer;
 		transition: background-color 0.15s, box-shadow 0.15s;
-		box-shadow: 0 2px 8px rgba(215, 46, 40, 0.3);
+		box-shadow: 0px 4px 4px 0px #00000040;
 	}
 
 	.print-button:hover {

@@ -318,7 +318,8 @@
 		onclick={closeModal}
 	>
 		<div
-			class="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-gray-200 relative z-[60]"
+			class="bg-white shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-gray-200 relative z-[60]"
+			style="border-radius: 54px;"
 			role="document"
 			onclick={(e) => e.stopPropagation()}
 		>
