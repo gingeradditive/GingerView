@@ -173,14 +173,6 @@
 		onclick={(e) => e.target === e.currentTarget && closePopup()}
 	>
 		<div class="modal-content" role="document">
-			{#if popupId !== 'console'}
-				<div class="modal-header">
-					<h3 id="mock-title">{popupTitle}</h3>
-					<button class="close" type="button" onclick={closePopup} aria-label="Close">
-						<span class="icon-sm"><X /></span>
-					</button>
-				</div>
-			{/if}
 			<div class="modal-body">
 				{#if popupId === 'wifi'}
 					<NetworkManager embedded={true} />
@@ -264,12 +256,9 @@
 		display: flex; align-items: center; justify-content: center; z-index: 2200;
 	}
 	.modal-content {
-		width: min(900px, calc(100vw - 32px)); background: #fff; border: 1px solid #d8d8d8; border-radius: 16px; padding: 16px;
-		max-height: calc(100vh - 64px); overflow-y: auto;
+		width: min(900px, calc(100vw - 32px)); background: #fff; border-radius: 54px; padding: 32px;
+		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
 	}
-	.modal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-	.modal-header h3 { margin: 0; font-size: 1rem; }
-	.close { border: none; background: transparent; padding: 4px; cursor: pointer; color: #666; }
 	.modal-body { min-height: 120px; color: #666; font-size: 0.95rem; }
 	.icon-lg { width: 20px; height: 20px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
 	.icon-sm { width: 16px; height: 16px; color: #d72e28; flex-shrink: 0; display: inline-flex; }

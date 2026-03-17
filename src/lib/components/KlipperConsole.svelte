@@ -199,11 +199,6 @@
 			<h3>Console</h3>
 			<span class="state {isConnected ? 'connected' : 'disconnected'}">{isConnected ? 'Connected' : 'Disconnected'}</span>
 		</div>
-		{#if onClose}
-			<button type="button" class="icon-btn close-btn" onclick={onClose} aria-label="Close console">
-				<X size={16} />
-			</button>
-		{/if}
 	</div>
 
 	<div bind:this={terminalRef} class="terminal-output">
@@ -221,6 +216,17 @@
 		{/each}
 	</div>
 
+	<div class="footer">
+		{#if config}
+			<span>Moonraker {config.moonrakerHost}:{config.moonrakerPort}</span>
+		{:else}
+			<span>Moonraker configuration not available</span>
+		{/if}
+		{#if connectionError}
+			<span>• {connectionError}</span>
+		{/if}
+	</div>
+
 	<div class="terminal-input">
 		<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
 		<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
@@ -232,18 +238,7 @@
 		<button type="button" class="icon-btn" onclick={clearTerminal} aria-label="Clear terminal">
 			<Trash2 size={16} />
 		</button>
-	</div>
-
-	<div class="footer">
-		{#if config}
-			<span>Moonraker {config.moonrakerHost}:{config.moonrakerPort}</span>
-		{:else}
-			<span>Moonraker configuration not available</span>
-		{/if}
-		{#if connectionError}
-			<span>• {connectionError}</span>
-		{/if}
-	</div>
+	</div>	
 </div>
 
 <style>
@@ -252,7 +247,7 @@
 	}
 	.panel-header {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-start;
 		align-items: center;
 		gap: 10px;
 		padding: 0 0 12px 0;
@@ -301,15 +296,10 @@
 		color: #555;
 		padding: 12px;
 	}
-	.close-btn {
-		margin-left: auto;
-	}
 	.terminal-output {
-		min-height: 280px;
-		max-height: 46vh;
+		height: 280px;
 		overflow-y: auto;
 		padding: 12px 0;
-		background: #fafafa;
 		border-bottom: 1px solid #ececec;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 		font-size: 0.84rem;
@@ -337,7 +327,6 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 12px 0;
 	}
 	.terminal-input input {
 		flex: 1;
@@ -363,5 +352,6 @@
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
+		padding: 12px 0;
 	}
 </style>
