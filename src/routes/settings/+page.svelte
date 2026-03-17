@@ -121,7 +121,7 @@
 
 	<div class="accordion-list">
 		{#each groups as group (group.id)}
-			<details class="accordion" open>
+			<details class="accordion">
 				<summary>
 					<span>{group.title}</span>
 					<span class="chevron"><ChevronDown class="icon-sm" /></span>
@@ -191,11 +191,11 @@
 	.top-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 	.action-wrap { position: relative; }
 	.top-card {
-		background: #fff; border: 1px solid #d8d8d8; border-radius: 14px; padding: 16px; display: flex; gap: 12px;
-		align-items: flex-start; text-align: left; cursor: pointer; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-		width: 100%;
+		background: #FFFFFF; border: 1px solid #d8d8d8; border-radius: 20px; padding: 16px; display: flex; gap: 12px;
+		align-items: flex-start; text-align: left; cursor: pointer; transition: box-shadow 0.2s;
+		width: 100%; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 	}
-	.top-card:hover { transform: translateY(-1px); border-color: #d72e28; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08); }
+	.top-card:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16); }
 	.top-card h2 { margin: 0; font-size: 1rem; }
 	.top-card p { margin: 5px 0 0; font-size: 0.85rem; color: #6e6e6e; }
 	.accordion-list { display: flex; flex-direction: column; gap: 10px; }
@@ -210,9 +210,9 @@
 	.mini-grid { padding: 4px 0 10px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 	.mini-wrap .item-btn { padding-right: 40px; }
 	.item-btn {
-		border: 1px solid #c8c8c8;
-		border-radius: 10px;
-		background: #ffffff;
+		border: 1px solid #d8d8d8;
+		border-radius: 20px;
+		background: #FFFFFF;
 		min-height: 52px;
 		padding: 10px 12px;
 		display: flex;
@@ -221,10 +221,10 @@
 		text-align: left;
 		cursor: pointer;
 		color: #111111;
-		transition: transform 0.15s, background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
-		width: 100%;
+		transition: box-shadow 0.2s;
+		width: 100%; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 	}
-	.item-btn:hover { transform: translateY(-1px); border-color: #d72e28; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08); }
+	.item-btn:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16); }
 	.item-btn span { font-size: 0.84rem; line-height: 1.2; }
 	.pin-btn {
 		position: absolute;
@@ -232,16 +232,16 @@
 		top: 8px;
 		width: 28px;
 		height: 28px;
-		border: 1px solid #c8c8c8;
-		border-radius: 8px;
-		background: #ffffff;
+		border: none;
+		border-radius: 20px;
+		background: transparent;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
 		color: #666666;
 	}
-	.pin-btn:hover { border-color: #d72e28; color: #d72e28; }
+	.pin-btn:hover { color: #d72e28; }
 	.pin-btn.active { background: #d72e28; border-color: #d72e28; color: #ffffff; }
 	.pin-btn.active .icon-sm :global(svg) { color: #ffffff; }
 	.toggle-btn.active {
@@ -256,8 +256,8 @@
 		display: flex; align-items: center; justify-content: center; z-index: 2200;
 	}
 	.modal-content {
-		width: min(900px, calc(100vw - 32px)); background: #fff; border-radius: 54px; padding: 32px;
-		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+		width: min(900px, calc(100vw - 32px)); background: #FFFFFF; border-radius: 20px; padding: 32px;
+		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10); transition: box-shadow 0.2s; border: 1px solid #d8d8d8;
 	}
 	.modal-body { min-height: 120px; color: #666; font-size: 0.95rem; }
 	.icon-lg { width: 20px; height: 20px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
