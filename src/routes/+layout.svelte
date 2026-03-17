@@ -56,13 +56,13 @@
 	.dock {
 		position: fixed;
 		left: 50%;
-		bottom: 20px;
+		bottom: 16px;
 		transform: translateX(-50%);
 		display: flex;
-		gap: 0.8rem;
-		padding: 12px;
+		gap: 0.64rem;
+		padding: 9.6px;
 		background: rgba(255, 255, 255, 0.85);
-		border-radius: 24px;
+		border-radius: 19.2px;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -73,10 +73,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 66px;
-		height: 66px;
+		width: 52.8px;
+		height: 52.8px;
 		color: #ffffff;
-		border-radius: 18px;
+		border-radius: 14.4px;
 		text-decoration: none;
 		background: #C8C8C8;
 	}
@@ -87,7 +87,7 @@
 
 	.dock a.active {
 		background: #828282;
-		border: 3px solid #D72E28;
+		border: 2.4px solid #D72E28;
 	}
 
 	.dock a:focus-visible {
@@ -96,14 +96,14 @@
 	}
 
 	.dock svg {
-		width: 40px;
-		height: 40px;
+		width: 32px;
+		height: 32px;
 		fill: currentColor;
 	}
 
 	.settings-icon {
 		background: transparent !important;
-		margin-left: 24px;
+		margin-left: 19.2px;
 	}
 
 	.settings-icon svg {
@@ -114,23 +114,27 @@
 		background: transparent !important;
 	}
 
+	.settings-icon.active svg {
+		fill: #D72E28;
+	}
+
 	.settings-icon.active {
 		background: transparent !important;
-		border: 3px solid #D72E28;
+		border: none !important;
 	}
 
 	.logo-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 85px;
-		height: 66px;
-		margin-right: 20px;
+		width: 68px;
+		height: 52.8px;
+		margin-right: 16px;
 	}
 
 	.logo-image {
-		width: 60px;
-		height: 60px;
+		width: 48px;
+		height: 48px;
 		object-fit: contain;
 	}
 

@@ -6,9 +6,6 @@
 </script>
 
 <section class="settings-page">
-	<h1>Settings</h1>
-	<p>Gestione rete e console di sistema.</p>
-
 	<div class="settings-actions">
 		<NetworkManager />
 		<KlipperConsole bind:isOpen={consoleOpen} />
