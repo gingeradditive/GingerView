@@ -12,30 +12,32 @@
 	const PINNED_ACTIONS_KEY = 'gingerview:pinned-actions';
 
 	const topCards: Card[] = [
-		{ id: 'wifi', title: 'Wifi configuration', description: 'Manage current network and Wi-Fi setup.', icon: Wifi },
-		{ id: 'console', title: 'Console', description: 'Open diagnostics and command interface.', icon: Terminal },
-		{ id: 'tbd', title: '[TBD]', description: 'Reserved slot for upcoming settings.', icon: PanelTop }
+		{ id: 'wifi', title: 'Wifi Configuration', description: 'Manage current network and Wi-Fi setup.', icon: Wifi },
+		{ id: 'material', title: 'Change material', description: 'Switch printing material settings.', icon: Droplets },
+		{ id: 'nozzle', title: 'Change nozzle', description: 'Configure nozzle settings and replacement.', icon: CircleDot }
 	];
 
 	const groups: Group[] = [
 		{
 			id: 'network',
-			title: 'Network settings',
+			title: 'Network Settings',
 			items: [{ id: 'tablet-network', title: 'Show tablet network settings', icon: Network, type: 'toggle' }]
 		},
 		{
-			id: 'maintenance',
-			title: 'Printer maintenance',
+			id: 'printer',
+			title: 'Printer settings',
 			items: [
-				{ id: 'material', title: 'Change material', icon: Droplets, type: 'action' },
-				{ id: 'nozzle', title: 'Change nozzle', icon: CircleDot, type: 'action' },
-				{ id: 'screw', title: 'Screw adjustment', icon: Wrench, type: 'action' }
+				{ id: 'screw', title: 'Screw Adjustment', icon: Wrench, type: 'action' },
+				{ id: 'advanced', title: 'Advanced user mode', icon: Shield, type: 'toggle' }
 			]
 		},
 		{
-			id: 'system',
-			title: 'System settings',
-			items: [{ id: 'advanced', title: 'Advanced user mode', icon: Shield, type: 'toggle' }]
+			id: 'troubleshooting',
+			title: 'Troubleshooting',
+			items: [
+				{ id: 'console', title: 'Console', icon: Terminal, type: 'action' },
+				{ id: 'log-viewer', title: 'Log Viewer', icon: PanelTop, type: 'action' }
+			]
 		}
 	];
 
