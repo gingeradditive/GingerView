@@ -7,6 +7,7 @@ import type {
 	APIResponse,
 	HTTPValidationError 
 } from '$lib/types/wifi';
+import { toastActions } from '$lib/stores/toastStore';
 
 const API_BASE_URL = 'http://192.168.1.201:8000';
 
@@ -64,10 +65,14 @@ class NetworkAPI {
 			}
 			
 			if (error instanceof TypeError && error.message.includes('fetch')) {
-				throw new NetworkAPIError('Failed to connect to the network service. Please check if the service is running.');
+				const msg = 'Failed to connect to the network service. Please check if the service is running.';
+				toastActions.error('network', 'Service unavailable', msg);
+				throw new NetworkAPIError(msg);
 			}
 			
-			throw new NetworkAPIError(`Network request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			const msg = `Network request failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+			toastActions.error('network', 'Request failed', msg);
+			throw new NetworkAPIError(msg);
 		}
 	}
 

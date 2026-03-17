@@ -5,6 +5,8 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { Wifi, Terminal, PanelTop, Droplets, CircleDot, Wrench } from 'lucide-svelte';
 	import { mdiTabletDashboard, mdiFileMultiple, mdiCog } from '@mdi/js';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
+	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
 	import '../app.css';
 
 	type PinnedAction = { id: string; title: string };
@@ -60,6 +62,8 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
+<ToastContainer />
+<MoonrakerNotifier />
 <main class="page-content">{@render children()}</main>
 
 <nav class="dock" aria-label="Navigazione principale">

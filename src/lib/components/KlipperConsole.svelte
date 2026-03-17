@@ -2,6 +2,7 @@
 	import { RotateCcw, Terminal, Trash2, X } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
+	import { toastActions } from '$lib/stores/toastStore';
 
 	let { onClose } = $props<{ onClose?: () => void }>();
 
@@ -63,6 +64,7 @@
 				connectionError = '';
 				connectionAttempts = 0;
 				addOutput('Connected to Moonraker', 'response');
+				toastActions.success('moonraker', 'Console connected', 'Successfully connected to Moonraker');
 			};
 
 			websocket.onmessage = (event) => {
@@ -96,19 +98,24 @@
 				isConnected = false;
 				connectionError = 'WebSocket connection error';
 				addOutput('WebSocket connection error', 'error');
+				toastActions.error('moonraker', 'Console error', 'WebSocket connection error to Moonraker');
 			};
 
 			websocket.onclose = (event) => {
 				clearTimeout(timeout);
 				isConnecting = false;
 				isConnected = false;
-				if (event.code !== 1000) addOutput('Disconnected from Moonraker', 'error');
+				if (event.code !== 1000) {
+					addOutput('Disconnected from Moonraker', 'error');
+					toastActions.warning('moonraker', 'Console disconnected', 'Lost connection to Moonraker console');
+				}
 			};
 		} catch {
 			isConnecting = false;
 			isConnected = false;
 			connectionError = 'Failed to create WebSocket connection';
 			addOutput('Failed to create WebSocket connection', 'error');
+			toastActions.error('moonraker', 'Connection failed', 'Failed to create WebSocket connection to Moonraker');
 		}
 	}
 

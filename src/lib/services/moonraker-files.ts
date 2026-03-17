@@ -1,4 +1,5 @@
 import { configService } from './config';
+import { toastActions } from '$lib/stores/toastStore';
 
 export interface MoonrakerThumbnail {
 	width: number;
@@ -54,7 +55,9 @@ export async function fetchDirectory(path: string = 'gcodes'): Promise<Moonraker
 	const apiUrl = getApiUrl();
 	const res = await fetch(`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}`);
 	if (!res.ok) {
-		throw new Error(`Failed to fetch directory: ${res.status} ${res.statusText}`);
+		const msg = `Failed to fetch directory: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Directory error', msg);
+		throw new Error(msg);
 	}
 	const json = await res.json();
 	return json.result;
@@ -91,7 +94,9 @@ export async function getFileMetadata(filename: string, dirPath: string = 'gcode
 	const fullPath = dirPath === 'gcodes' ? filename : `${dirPath}/${filename}`;
 	const res = await fetch(`${apiUrl}/server/files/metadata?filename=${encodeURIComponent(fullPath)}`);
 	if (!res.ok) {
-		throw new Error(`Failed to fetch file metadata: ${res.status} ${res.statusText}`);
+		const msg = `Failed to fetch file metadata: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Metadata error', msg);
+		throw new Error(msg);
 	}
 	const json = await res.json();
 	return json.result;
@@ -187,7 +192,9 @@ export async function deleteFile(path: string): Promise<void> {
 	const encodedPath = parts.map(part => encodeURIComponent(part)).join('/');
 	const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, { method: 'DELETE' });
 	if (!res.ok) {
-		throw new Error(`Failed to delete file: ${res.status} ${res.statusText}`);
+		const msg = `Failed to delete file: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Delete error', msg);
+		throw new Error(msg);
 	}
 }
 
@@ -195,7 +202,9 @@ export async function deleteDirectory(path: string): Promise<void> {
 	const apiUrl = getApiUrl();
 	const res = await fetch(`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}&force=true`, { method: 'DELETE' });
 	if (!res.ok) {
-		throw new Error(`Failed to delete directory: ${res.status} ${res.statusText}`);
+		const msg = `Failed to delete directory: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Delete error', msg);
+		throw new Error(msg);
 	}
 }
 
@@ -207,7 +216,9 @@ export async function moveFile(source: string, dest: string): Promise<void> {
 		body: JSON.stringify({ source, dest })
 	});
 	if (!res.ok) {
-		throw new Error(`Failed to move file: ${res.status} ${res.statusText}`);
+		const msg = `Failed to move file: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Move error', msg);
+		throw new Error(msg);
 	}
 }
 
@@ -231,7 +242,9 @@ export async function createDirectory(path: string): Promise<void> {
 		method: 'POST'
 	});
 	if (!res.ok) {
-		throw new Error(`Failed to create directory: ${res.status} ${res.statusText}`);
+		const msg = `Failed to create directory: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Directory error', msg);
+		throw new Error(msg);
 	}
 }
 
@@ -246,6 +259,8 @@ export async function uploadFile(file: File, path: string = 'gcodes'): Promise<v
 		body: formData
 	});
 	if (!res.ok) {
-		throw new Error(`Failed to upload file: ${res.status} ${res.statusText}`);
+		const msg = `Failed to upload file: ${res.status} ${res.statusText}`;
+		toastActions.error('moonraker', 'Upload error', msg);
+		throw new Error(msg);
 	}
 }
