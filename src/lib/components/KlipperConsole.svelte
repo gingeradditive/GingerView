@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { RotateCcw, Terminal, Trash2 } from 'lucide-svelte';
+	import { RotateCcw, Terminal, Trash2, X } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
+
+	let { onClose } = $props<{ onClose?: () => void }>();
 
 	type OutputEntry = {
 		type: 'command' | 'response' | 'error';
@@ -197,6 +199,11 @@
 			<h3>Console</h3>
 			<span class="state {isConnected ? 'connected' : 'disconnected'}">{isConnected ? 'Connected' : 'Disconnected'}</span>
 		</div>
+		{#if onClose}
+			<button type="button" class="icon-btn close-btn" onclick={onClose} aria-label="Close console">
+				<X size={16} />
+			</button>
+		{/if}
 	</div>
 
 	<div bind:this={terminalRef} class="terminal-output">
@@ -248,7 +255,7 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: 10px;
-		padding: 12px 0;
+		padding: 0 0 12px 0;
 		border-bottom: 1px solid #ececec;
 	}
 	.head-left {
@@ -294,6 +301,9 @@
 		justify-content: center;
 		background: #fff;
 		color: #555;
+	}
+	.close-btn {
+		margin-left: auto;
 	}
 	.terminal-output {
 		min-height: 280px;
@@ -349,7 +359,6 @@
 		opacity: 0.55;
 	}
 	.footer {
-		padding: 0 0 12px;
 		color: #666;
 		font-size: 0.74rem;
 		display: flex;

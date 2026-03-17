@@ -173,21 +173,19 @@
 		onclick={(e) => e.target === e.currentTarget && closePopup()}
 	>
 		<div class="modal-content" role="document">
-			<div class="modal-header">
-				{#if popupId !== 'console'}
+			{#if popupId !== 'console'}
+				<div class="modal-header">
 					<h3 id="mock-title">{popupTitle}</h3>
-				{:else}
-					<span aria-hidden="true"></span>
-				{/if}
-				<button class="close" type="button" onclick={closePopup} aria-label="Close">
-					<span class="icon-sm"><X /></span>
-				</button>
-			</div>
+					<button class="close" type="button" onclick={closePopup} aria-label="Close">
+						<span class="icon-sm"><X /></span>
+					</button>
+				</div>
+			{/if}
 			<div class="modal-body">
 				{#if popupId === 'wifi'}
 					<NetworkManager embedded={true} />
 				{:else if popupId === 'console'}
-					<KlipperConsole />
+					<KlipperConsole onClose={closePopup} />
 				{:else}
 					<p>Empty popup mock.</p>
 				{/if}
