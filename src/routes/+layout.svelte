@@ -83,10 +83,11 @@
 		</svg>
 	</a>
 
-	{#each pinnedActions as action (action.id)}
+	{#each pinnedActions as action, index (action.id)}
 		<button
 			type="button"
 			class="pinned-action"
+			class:first-pinned={index === 0}
 			onclick={() => openPinnedPopup(action.title)}
 			aria-label={action.title}
 			title={action.title}
@@ -196,11 +197,15 @@
 	}
 
 	.pinned-action {
-		background: #D72E28 !important;
+		background: #C8C8C8 !important;
+	}
+
+	.first-pinned {
+		margin-left: 19.2px;
 	}
 
 	.pinned-action:hover {
-		background: #B82520 !important;
+		background: #C8C8C8 !important;
 	}
 
 	.dock svg {
