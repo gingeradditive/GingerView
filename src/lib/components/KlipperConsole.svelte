@@ -294,7 +294,7 @@
 		border-color: #ffcdd2;
 	}
 	.icon-btn {
-		border: 1px solid #d8d8d8;
+		
 		border-radius: 8px;
 		display: inline-flex;
 		align-items: center;

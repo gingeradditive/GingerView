@@ -353,7 +353,7 @@
 		color: #111;
 	}
 	.network-panel {
-		border: 1px solid #d8d8d8;
+		
 		border-radius: 14px;
 		background: #fff;
 		padding: 16px;
@@ -503,7 +503,7 @@
 	.icon-btn {
 		width: 30px;
 		height: 30px;
-		border: 1px solid #d8d8d8;
+		
 		border-radius: 8px;
 		display: inline-flex;
 		align-items: center;
@@ -524,7 +524,7 @@
 	.modal {
 		width: min(520px, calc(100vw - 32px));
 		background: #fff;
-		border: 1px solid #d8d8d8;
+		
 		border-radius: 16px;
 		overflow: hidden;
 	}

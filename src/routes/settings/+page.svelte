@@ -193,7 +193,7 @@
 	.top-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 	.action-wrap { position: relative; }
 	.top-card {
-		background: #FFFFFF; border: 1px solid #d8d8d8; border-radius: 20px; padding: 16px; display: flex; gap: 12px;
+		background: #FFFFFF;  border-radius: 20px; padding: 16px; display: flex; gap: 12px;
 		align-items: flex-start; text-align: left; cursor: pointer; transition: box-shadow 0.2s;
 		width: 100%; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
 	}
@@ -212,7 +212,7 @@
 	.mini-grid { padding: 4px 0 10px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 	.mini-wrap .item-btn { padding-right: 40px; }
 	.item-btn {
-		border: 1px solid #d8d8d8;
+		
 		border-radius: 20px;
 		background: #FFFFFF;
 		min-height: 52px;
@@ -259,7 +259,7 @@
 	}
 	.modal-content {
 		width: min(900px, calc(100vw - 32px)); background: #FFFFFF; border-radius: 20px; padding: 32px;
-		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10); transition: box-shadow 0.2s; border: 1px solid #d8d8d8;
+		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10); transition: box-shadow 0.2s; 
 	}
 	.modal-body { min-height: 120px; color: #666; font-size: 0.95rem; }
 	.icon-lg { width: 20px; height: 20px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
