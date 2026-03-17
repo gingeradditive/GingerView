@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { Wifi, Terminal, PanelTop, Network, Wrench, Droplets, CircleDot, Shield, ChevronDown, X, Pin } from 'lucide-svelte';
+	import NetworkManager from '$lib/components/NetworkManager.svelte';
+	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
 
 	type Card = { id: string; title: string; description: string; icon: typeof Wifi };
 	type Item = { id: string; title: string; icon: typeof Wifi; type: 'action' | 'toggle' };
@@ -38,6 +40,7 @@
 	];
 
 	let popupOpen = $state(false);
+	let popupId = $state('');
 	let popupTitle = $state('');
 	let toggles = $state<Record<string, boolean>>({ 'tablet-network': false, advanced: false });
 	let pinnedActions = $state<PinnedAction[]>(browser ? readPinnedActions() : []);
@@ -54,15 +57,16 @@
 		}
 	}
 
-	function openPopup(title: string) {
+	function openPopup(id: string, title: string) {
+		popupId = id;
 		popupTitle = title;
 		popupOpen = true;
 	}
 
-	function handleOpenPopup(event: MouseEvent, title: string) {
+	function handleOpenPopup(event: MouseEvent, id: string, title: string) {
 		event.preventDefault();
 		event.stopPropagation();
-		openPopup(title);
+		openPopup(id, title);
 	}
 
 	function toggleItem(id: string) {
@@ -71,6 +75,7 @@
 
 	function closePopup() {
 		popupOpen = false;
+		popupId = '';
 		popupTitle = '';
 	}
 
@@ -94,7 +99,7 @@
 	<div class="top-grid">
 		{#each topCards as card (card.id)}
 			<div class="action-wrap">
-				<button class="top-card" type="button" onclick={(e) => handleOpenPopup(e, card.title)}>
+				<button class="top-card" type="button" onclick={(e) => handleOpenPopup(e, card.id, card.title)}>
 					<span class="icon-lg"><card.icon /></span>
 					<div>
 						<h2>{card.title}</h2>
@@ -135,7 +140,7 @@
 							</button>
 						{:else}
 							<div class="action-wrap mini-wrap">
-								<button class="item-btn" type="button" onclick={(e) => handleOpenPopup(e, item.title)}>
+								<button class="item-btn" type="button" onclick={(e) => handleOpenPopup(e, item.id, item.title)}>
 									<span class="icon-sm"><item.icon /></span>
 									<span>{item.title}</span>
 								</button>
@@ -174,15 +179,21 @@
 					<span class="icon-sm"><X /></span>
 				</button>
 			</div>
-			<div class="modal-body"><p>Empty popup mock.</p></div>
+			<div class="modal-body">
+				{#if popupId === 'wifi'}
+					<NetworkManager embedded={true} />
+				{:else if popupId === 'console'}
+					<KlipperConsole embedded={true} />
+				{:else}
+					<p>Empty popup mock.</p>
+				{/if}
+			</div>
 		</div>
 	</div>
 {/if}
 
 <style>
 	.settings-page { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-	.header h1 { margin: 0; font-size: 1.6rem; }
-	.header p { margin: 6px 0 0; color: #666; font-size: 0.95rem; }
 	.top-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 	.action-wrap { position: relative; }
 	.top-card {
@@ -251,12 +262,13 @@
 		display: flex; align-items: center; justify-content: center; z-index: 2200;
 	}
 	.modal-content {
-		width: min(460px, calc(100vw - 32px)); background: #fff; border: 1px solid #d8d8d8; border-radius: 16px; padding: 16px;
+		width: min(900px, calc(100vw - 32px)); background: #fff; border: 1px solid #d8d8d8; border-radius: 16px; padding: 16px;
+		max-height: calc(100vh - 64px); overflow-y: auto;
 	}
 	.modal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 	.modal-header h3 { margin: 0; font-size: 1rem; }
 	.close { border: none; background: transparent; padding: 4px; cursor: pointer; color: #666; }
-	.modal-body { min-height: 120px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.95rem; }
+	.modal-body { min-height: 120px; color: #666; font-size: 0.95rem; }
 	.icon-lg { width: 20px; height: 20px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
 	.icon-sm { width: 16px; height: 16px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
 	.icon-lg :global(svg) { width: 20px; height: 20px; color: #d72e28; }

@@ -1,231 +1,150 @@
 <script lang="ts">
-	import { Terminal, X } from 'lucide-svelte';
+	import { Terminal, RotateCcw, Trash2, X } from 'lucide-svelte';
 	import { configService } from '$lib/services/config';
 	import { onMount } from 'svelte';
-	
-	let { isOpen = $bindable(false) } = $props();
-	
+
+	let { isOpen = $bindable(false), embedded = false } = $props<{ isOpen?: boolean; embedded?: boolean }>();
+
 	let commandHistory: string[] = [];
 	let outputHistory = $state<Array<{ type: 'command' | 'response' | 'error'; content: string; timestamp: Date }>>([]);
 	let currentCommand = $state('');
 	let terminalRef: HTMLDivElement;
 	let isConnected = $state(false);
-	let connectionError = $state<string>('');
+	let connectionError = $state('');
 	let connectionAttempts = $state(0);
 	const maxConnectionAttempts = 3;
-	let historyIndex = $state(-1); // -1 means not browsing history
-	let tempCommand = $state(''); // Store current command when browsing history
-	
-	// Load configuration only on client side
+	let historyIndex = $state(-1);
+	let tempCommand = $state('');
 	let config = $state<any>(null);
 	let websocket: WebSocket | null = null;
+	let isConnecting = $state(false);
 
-	// Ensure config is loaded on mount
 	onMount(() => {
-		console.log('KlipperConsole component mounted');
 		config = configService.getKlipperConfig();
-		console.log('Config loaded:', config);
+		if (embedded && config) {
+			connectWebSocket();
+		}
+		return () => disconnectWebSocket();
 	});
-	
+
+	$effect(() => {
+		if (embedded || !config) return;
+		if (isOpen && !isConnected && !isConnecting && connectionAttempts === 0) {
+			connectWebSocket();
+		} else if (!isOpen && websocket) {
+			disconnectWebSocket();
+		}
+	});
+
 	function addOutput(content: string, type: 'command' | 'response' | 'error') {
 		outputHistory = [...outputHistory, { type, content, timestamp: new Date() }];
-		// Auto-scroll to bottom
 		setTimeout(() => {
-			if (terminalRef) {
-				terminalRef.scrollTop = terminalRef.scrollHeight;
-			}
+			if (terminalRef) terminalRef.scrollTop = terminalRef.scrollHeight;
 		}, 10);
 	}
-	
+
 	function connectWebSocket() {
-		if (websocket && websocket.readyState === WebSocket.OPEN) {
-			console.log('Already connected');
-			return;
-		}
-
-		if (!config) {
-			console.log('Config not loaded, cannot connect');
-			addOutput('Configuration not loaded yet', 'error');
-			return;
-		}
-
+		if (!config || (websocket && websocket.readyState === WebSocket.OPEN) || isConnecting) return;
 		if (connectionAttempts >= maxConnectionAttempts) {
-			console.log('Max connection attempts reached');
-			addOutput('Max connection attempts reached. Please check your network and Moonraker configuration.', 'error');
+			addOutput('Max connection attempts reached. Check Moonraker configuration.', 'error');
 			return;
 		}
 
 		connectionAttempts++;
-		console.log(`Connection attempt ${connectionAttempts}/${maxConnectionAttempts}`);
-		
-		console.log('Starting WebSocket connection to:', config.moonrakerWsUrl);
-		addOutput(`Connecting to ${config.moonrakerWsUrl}... (Attempt ${connectionAttempts}/${maxConnectionAttempts})`, 'response');
+		isConnecting = true;
+		addOutput(`Connecting to ${config.moonrakerWsUrl}...`, 'response');
 
 		try {
 			websocket = new WebSocket(config.moonrakerWsUrl!);
-			console.log('WebSocket object created:', websocket);
-
-			// Set a timeout for connection
-			const connectionTimeout = setTimeout(() => {
-				if (websocket?.readyState === WebSocket.CONNECTING) {
-					console.log('Connection timeout');
-					websocket.close();
-					isConnected = false;
-					connectionError = 'Connection timeout';
-					addOutput('Connection timeout - check if Moonraker is running', 'error');
-				}
+			const timeout = setTimeout(() => {
+				if (websocket?.readyState === WebSocket.CONNECTING) websocket.close();
 			}, 5000);
 
 			websocket.onopen = () => {
-				console.log('WebSocket onopen event fired');
-				clearTimeout(connectionTimeout);
+				clearTimeout(timeout);
+				isConnecting = false;
 				isConnected = true;
 				connectionError = '';
-				connectionAttempts = 0; // Reset attempts on successful connection
+				connectionAttempts = 0;
 				addOutput('Connected to Moonraker', 'response');
 			};
 
 			websocket.onmessage = (event) => {
-				console.log('WebSocket message received:', event.data);
 				try {
 					const data = JSON.parse(event.data);
-					
-					// Handle G-code responses
 					if (data.method === 'notify_gcode_response') {
 						const response = data.params?.[0] || '';
-						if (response.trim()) {
-							// Split multiple lines and display each
-							const lines = response.split('\n').filter((line: string) => line.trim());
-							
-							lines.forEach((line: string) => {
-								const trimmedLine = line.trim();
-								
-								// Completely skip "ok" responses
-								if (trimmedLine === 'ok') {
-									return;
-								}
-								
-								// Remove comment prefixes for cleaner display
-								const cleanLine = line.replace(/^\/\/\s*/, '').replace(/^;\s*/, '');
-								if (cleanLine.trim()) {
-									addOutput(cleanLine, 'response');
-								}
-							});
-						}
-					}
-					// Handle JSON-RPC responses
-					else if (data.result) {
-						if (data.result === 'ok') {
-							// Skip "ok" responses completely
-							return;
-						}
-						if (typeof data.result === 'string') {
-							addOutput(data.result, 'response');
-						}
-					}
-					// Handle other notifications (don't spam the console)
-					else if (data.method && data.method !== 'notify_proc_stat_update' && data.method !== 'notify_gcode_response') {
-						addOutput(`Notification: ${data.method}`, 'response');
-					}
-					// Handle error responses
-					else if (data.error) {
+						const lines = response.split('\n').filter((line: string) => line.trim() && line.trim() !== 'ok');
+						lines.forEach((line: string) => {
+							const cleanLine = line.replace(/^\/\/\s*/, '').replace(/^;\s*/, '');
+							if (cleanLine.trim()) addOutput(cleanLine, 'response');
+						});
+					} else if (typeof data.result === 'string' && data.result !== 'ok') {
+						addOutput(data.result, 'response');
+					} else if (data.error?.message) {
 						addOutput(`Error: ${data.error.message}`, 'error');
 					}
-				} catch (error) {
+				} catch {
 					addOutput(`Received: ${event.data}`, 'response');
 				}
 			};
 
-			websocket.onerror = (error) => {
-				console.error('WebSocket error event:', error);
-				clearTimeout(connectionTimeout);
+			websocket.onerror = () => {
+				isConnecting = false;
 				isConnected = false;
 				connectionError = 'WebSocket connection error';
-				addOutput('WebSocket connection error - check network and firewall', 'error');
+				addOutput('WebSocket connection error', 'error');
 			};
 
 			websocket.onclose = (event) => {
-				console.log('WebSocket close event:', event.code, event.reason);
-				clearTimeout(connectionTimeout);
+				clearTimeout(timeout);
+				isConnecting = false;
 				isConnected = false;
-				// Only show error for abnormal closures
-				if (event.code !== 1000 && event.code !== 1006) {
-					addOutput(`Disconnected from Moonraker (Code: ${event.code}) - ${event.reason || 'Unknown reason'}`, 'error');
-				}
+				if (event.code !== 1000) addOutput('Disconnected from Moonraker', 'error');
 			};
-		} catch (error) {
-			console.error('Failed to create WebSocket:', error);
+		} catch {
+			isConnecting = false;
 			isConnected = false;
 			connectionError = 'Failed to create WebSocket connection';
-			addOutput('Failed to create WebSocket connection - check URL format', 'error');
+			addOutput('Failed to create WebSocket connection', 'error');
 		}
 	}
 
 	function disconnectWebSocket() {
-		if (websocket) {
-			websocket.close();
-			websocket = null;
-		}
+		if (websocket) websocket.close();
+		websocket = null;
+		isConnecting = false;
 		isConnected = false;
-		connectionAttempts = 0; // Reset attempts when manually disconnecting
+		connectionAttempts = 0;
 	}
 
-	async function sendCommand() {
-		console.log('sendCommand called, currentCommand:', currentCommand);
-		console.log('isConnected:', isConnected);
-		console.log('websocket state:', websocket?.readyState);
-		
+	function sendCommand() {
 		if (!currentCommand.trim()) return;
-		
-		if (!isConnected) {
-			console.log('Cannot send command - not connected');
+		if (!isConnected || !websocket) {
 			addOutput('Not connected to Moonraker', 'error');
 			return;
 		}
 
 		addOutput(currentCommand, 'command');
-		
-		// Add to history (avoid duplicates)
-		if (!commandHistory.includes(currentCommand)) {
-			commandHistory = [...commandHistory, currentCommand];
-		}
-		
-		// Reset history browsing
+		if (!commandHistory.includes(currentCommand)) commandHistory = [...commandHistory, currentCommand];
 		historyIndex = -1;
 		tempCommand = '';
 
 		try {
-			const message = {
-				jsonrpc: "2.0",
-				method: "printer.gcode.script",
-				params: {
-					script: currentCommand
-				},
-				id: Date.now()
-			};
-
-			console.log('Sending command:', message);
-			websocket!.send(JSON.stringify(message));
-			console.log('Command sent successfully');
-		} catch (error) {
-			console.error('Failed to send command:', error);
+			websocket.send(
+				JSON.stringify({
+					jsonrpc: '2.0',
+					method: 'printer.gcode.script',
+					params: { script: currentCommand },
+					id: Date.now()
+				})
+			);
+		} catch {
 			addOutput('Failed to send command', 'error');
 		}
 
 		currentCommand = '';
 	}
-	
-	// Connect when console opens
-	$effect(() => {
-		console.log('isOpen changed:', isOpen);
-		if (isOpen && config && !isConnected && connectionAttempts === 0) {
-			console.log('Console is opening, connecting WebSocket');
-			connectWebSocket();
-		} else if (!isOpen && websocket) {
-			console.log('Console is closing, disconnecting WebSocket');
-			disconnectWebSocket();
-		}
-	});
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' && !event.shiftKey) {
@@ -233,177 +152,254 @@
 			sendCommand();
 		} else if (event.key === 'ArrowUp') {
 			event.preventDefault();
-			navigateHistory(1); // Up arrow = newer commands
+			navigateHistory(1);
 		} else if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			navigateHistory(-1); // Down arrow = older commands
+			navigateHistory(-1);
 		}
 	}
-	
+
 	function navigateHistory(direction: number) {
 		if (commandHistory.length === 0) return;
-		
-		// Save current command if we're just starting to browse history
-		if (historyIndex === -1) {
-			tempCommand = currentCommand;
-		}
-		
-		// Calculate new index
+		if (historyIndex === -1) tempCommand = currentCommand;
+
 		let newIndex = historyIndex + direction;
-		
-		// Handle boundaries
-		if (newIndex < -1) {
-			newIndex = -1;
-		} else if (newIndex >= commandHistory.length) {
-			newIndex = commandHistory.length - 1;
-		}
-		
+		if (newIndex < -1) newIndex = -1;
+		if (newIndex >= commandHistory.length) newIndex = commandHistory.length - 1;
 		historyIndex = newIndex;
-		
-		// Update current command based on index
-		if (historyIndex === -1) {
-			// Return to the command we were typing before browsing history
-			currentCommand = tempCommand;
-		} else {
-			// Show command from history
-			currentCommand = commandHistory[commandHistory.length - 1 - historyIndex];
-		}
+		currentCommand = historyIndex === -1 ? tempCommand : commandHistory[commandHistory.length - 1 - historyIndex];
 	}
-	
+
 	function clearTerminal() {
 		outputHistory = [];
 	}
-	
+
 	function manualReconnect() {
-		console.log('Manual reconnect requested');
-		connectionAttempts = 0;
-		isConnected = false;
+		disconnectWebSocket();
 		connectionError = '';
-		if (websocket) {
-			websocket.close();
-			websocket = null;
-		}
 		connectWebSocket();
 	}
-	
-	function closeModal() {
-		console.log('Closing modal');
-		isOpen = false;
-		connectionAttempts = 0; // Reset attempts when closing
+
+	function closeConsole() {
+		if (!embedded) isOpen = false;
 	}
 </script>
 
-<!-- Console Trigger Button -->
-<button
-	type="button"
-	onclick={() => {
-		console.log('Opening console');
-		isOpen = true;
-	}}
-	class="inline-flex items-center gap-3 bg-white hover:bg-gray-100 text-gray-700 px-5 py-3 rounded-xl border border-gray-200 shadow-sm transition-colors duration-200"
-	title="Open Klipper Console"
->
-	<Terminal class="w-5 h-5" />
-	<span class="text-sm font-semibold">Apri Console</span>
-</button>
+{#if !embedded}
+	<button type="button" onclick={() => (isOpen = true)} class="trigger-btn" title="Open Klipper Console">
+		<Terminal class="icon" />
+		<span>Apri Console</span>
+	</button>
+{/if}
 
-<!-- Console Popup -->
-{#if isOpen}
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4"
-		style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22)); backdrop-filter: blur(12px) saturate(130%); -webkit-backdrop-filter: blur(12px) saturate(130%);"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="console-title"
-		onclick={closeModal}
-	>
-		<div
-			class="bg-white shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col border border-gray-200 relative z-[60]"
-			style="border-radius: 54px;"
-			role="document"
-			onclick={(e) => e.stopPropagation()}
-		>
-			<!-- Header -->
-			<div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-				<div class="flex items-center gap-3">
-					<Terminal class="w-5 h-5 text-blue-600" />
-					<h2 id="console-title" class="text-lg font-semibold text-gray-900">{config?.printerName || 'Klipper Console'}</h2>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 rounded-full {isConnected ? 'bg-green-500' : 'bg-red-500'}"></div>
-						<span class="text-sm text-gray-600">{isConnected ? 'Connected' : 'Disconnected'}</span>
-					</div>
+{#if embedded}
+	<div class="console-shell">
+		<div class="console-panel">
+			<div class="panel-header">
+				<div class="head-left">
+					<Terminal class="icon red" />
+					<h3>{config?.printerName || 'Klipper Console'}</h3>
+					<span class="state {isConnected ? 'connected' : 'disconnected'}">{isConnected ? 'Connected' : 'Disconnected'}</span>
 				</div>
-				<div class="flex items-center gap-2">
+				<div class="head-actions">
 					{#if !isConnected}
-						<button
-							onclick={manualReconnect}
-							class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
-						>
-							Reconnect
+						<button type="button" class="icon-btn" onclick={manualReconnect} aria-label="Reconnect">
+							<RotateCcw class="icon-sm" />
 						</button>
 					{/if}
-					<button
-						onclick={clearTerminal}
-						class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-					>
-						Clear
-					</button>
-					<button
-						onclick={closeModal}
-						class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-					>
-						<X class="w-5 h-5" />
+					<button type="button" class="icon-btn" onclick={clearTerminal} aria-label="Clear terminal">
+						<Trash2 class="icon-sm" />
 					</button>
 				</div>
 			</div>
-			
-			<!-- Terminal Output -->
-			<div
-				bind:this={terminalRef}
-				class="flex-1 p-4 overflow-y-auto font-mono text-sm bg-background"
-			>
+			<div bind:this={terminalRef} class="terminal-output">
 				{#each outputHistory as entry}
-					<div class="mb-1">
-			<span class="text-gray text-xs">
-							{entry.timestamp.toLocaleTimeString()}
-						</span>
+					<div class="line">
+						<span class="time">{entry.timestamp.toLocaleTimeString()}</span>
 						{#if entry.type === 'command'}
-							<span class="text-blue-600 ml-2 font-semibold">&gt; {entry.content}</span>
-						{:else if entry.type === 'response'}
-							<span class="text-gray ml-2">{entry.content}</span>
+							<span class="cmd">&gt; {entry.content}</span>
 						{:else if entry.type === 'error'}
-							<span class="text-redGinger ml-2">{entry.content}</span>
+							<span class="err">{entry.content}</span>
+						{:else}
+							<span class="res">{entry.content}</span>
 						{/if}
 					</div>
 				{/each}
 			</div>
-			
-			<!-- Command Input -->
-			<div class="p-4 border-t border-gray bg-background rounded-b-lg">
-				<div class="flex items-center gap-2">
-					<span class="text-blue-600 font-mono font-semibold">&gt;</span>
-					<input
-						type="text"
-						bind:value={currentCommand}
-						onkeydown={handleKeydown}
-						placeholder="Enter Klipper command..."
-						class="flex-1 bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-					/>
-					<button
-						onclick={sendCommand}
-						disabled={!currentCommand.trim()}
-						class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded transition-colors"
-					>
-						Send
+			<div class="terminal-input">
+				<span class="prompt">&gt;</span>
+				<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
+				<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
+			</div>
+			<div class="footer">
+				{config ? `Moonraker ${config.moonrakerHost}:${config.moonrakerPort}` : 'Loading configuration...'}
+				{#if connectionError}
+					<span>• {connectionError}</span>
+				{/if}
+			</div>
+		</div>
+	</div>
+{:else if isOpen}
+	<div class="overlay" role="dialog" aria-modal="true" aria-labelledby="console-title" tabindex="0" onkeydown={(e) => e.key === 'Escape' && closeConsole()} onclick={(e) => e.target === e.currentTarget && closeConsole()}>
+		<div class="console-panel popup">
+			<div class="panel-header">
+				<div class="head-left">
+					<Terminal class="icon red" />
+					<h3 id="console-title">{config?.printerName || 'Klipper Console'}</h3>
+					<span class="state {isConnected ? 'connected' : 'disconnected'}">{isConnected ? 'Connected' : 'Disconnected'}</span>
+				</div>
+				<div class="head-actions">
+					{#if !isConnected}
+						<button type="button" class="icon-btn" onclick={manualReconnect} aria-label="Reconnect">
+							<RotateCcw class="icon-sm" />
+						</button>
+					{/if}
+					<button type="button" class="icon-btn" onclick={clearTerminal} aria-label="Clear terminal">
+						<Trash2 class="icon-sm" />
+					</button>
+					<button type="button" class="icon-btn" onclick={closeConsole} aria-label="Close console">
+						<X class="icon-sm" />
 					</button>
 				</div>
-				<div class="mt-2 text-xs text-gray-500">
-					Press Enter to send • {config ? `Connected to ${config.moonrakerHost}:${config.moonrakerPort}` : 'Loading configuration...'}
-					{#if historyIndex >= 0}
-						• History: {historyIndex + 1}/{commandHistory.length}
-					{/if}
-				</div>
+			</div>
+			<div bind:this={terminalRef} class="terminal-output">
+				{#each outputHistory as entry}
+					<div class="line">
+						<span class="time">{entry.timestamp.toLocaleTimeString()}</span>
+						{#if entry.type === 'command'}
+							<span class="cmd">&gt; {entry.content}</span>
+						{:else if entry.type === 'error'}
+							<span class="err">{entry.content}</span>
+						{:else}
+							<span class="res">{entry.content}</span>
+						{/if}
+					</div>
+				{/each}
+			</div>
+			<div class="terminal-input">
+				<span class="prompt">&gt;</span>
+				<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
+				<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
+			</div>
+			<div class="footer">
+				{config ? `Moonraker ${config.moonrakerHost}:${config.moonrakerPort}` : 'Loading configuration...'}
+				{#if connectionError}
+					<span>• {connectionError}</span>
+				{/if}
 			</div>
 		</div>
 	</div>
 {/if}
+
+<style>
+	.trigger-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 14px;
+		border: 1px solid #c8c8c8;
+		border-radius: 10px;
+		background: #fff;
+		color: #111;
+	}
+	.console-shell { width: 100%; }
+	.overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 2300;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 16px;
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(245, 245, 245, 0.28));
+		backdrop-filter: blur(10px);
+	}
+	.console-panel {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid #d8d8d8;
+		border-radius: 14px;
+		background: #fff;
+		overflow: hidden;
+	}
+	.console-panel.popup {
+		width: min(980px, calc(100vw - 32px));
+		max-height: calc(100vh - 64px);
+	}
+	.panel-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 10px;
+		padding: 12px 14px;
+		border-bottom: 1px solid #ececec;
+		background: #fff;
+	}
+	.head-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+	.head-left h3 { margin: 0; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.state { font-size: 0.75rem; border-radius: 999px; padding: 2px 8px; border: 1px solid; }
+	.state.connected { color: #1a7f37; background: #e8f5e9; border-color: #c8e6c9; }
+	.state.disconnected { color: #c62828; background: #ffebee; border-color: #ffcdd2; }
+	.head-actions { display: flex; gap: 8px; }
+	.icon-btn {
+		width: 30px;
+		height: 30px;
+		border: 1px solid #d8d8d8;
+		border-radius: 8px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #fff;
+		color: #555;
+	}
+	.terminal-output {
+		min-height: 280px;
+		max-height: 46vh;
+		overflow-y: auto;
+		padding: 12px 14px;
+		background: #fafafa;
+		border-bottom: 1px solid #ececec;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.84rem;
+	}
+	.line { margin-bottom: 4px; }
+	.time { color: #888; margin-right: 8px; font-size: 0.72rem; }
+	.cmd { color: #d72e28; font-weight: 600; }
+	.res { color: #2e2e2e; }
+	.err { color: #b71c1c; }
+	.terminal-input {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 14px;
+	}
+	.prompt {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		color: #d72e28;
+		font-weight: 700;
+	}
+	.terminal-input input {
+		flex: 1;
+		border: 1px solid #d0d0d0;
+		border-radius: 9px;
+		padding: 8px 10px;
+		font-size: 0.9rem;
+		outline: none;
+	}
+	.send-btn {
+		border: 1px solid #d72e28;
+		background: #d72e28;
+		color: #fff;
+		border-radius: 9px;
+		padding: 8px 12px;
+	}
+	.send-btn:disabled { opacity: 0.55; }
+	.footer {
+		padding: 0 14px 12px;
+		color: #666;
+		font-size: 0.74rem;
+	}
+	.icon { width: 18px; height: 18px; }
+	.icon-sm { width: 16px; height: 16px; }
+	.red { color: #d72e28; }
+</style>
