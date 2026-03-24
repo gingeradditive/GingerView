@@ -1,1 +1,5 @@
-<!-- Dashboard page intentionally left empty -->
+<script lang="ts">
+	import DashboardTemperaturePanel from '$lib/components/DashboardTemperaturePanel.svelte';
+</script>
+
+<DashboardTemperaturePanel />
