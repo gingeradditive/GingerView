@@ -17,8 +17,8 @@
 	let bedTarget = $state<number | null>(null);
 
 	const formatTemperature = (value: number | null): string => {
-		if (value == null || Number.isNaN(value)) return '--°';
-		return `${Math.round(value)}°`;
+		if (value == null || Number.isNaN(value)) return '--';
+		return `${Math.round(value)}`;
 	};
 
 	const setTolerance = 5;
@@ -135,7 +135,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 9px;
-		padding: 11px 8px 16px;
+		padding: 4rem 8px 16px;
 		width: 25vw;
 		height: auto;
 	}
@@ -176,7 +176,7 @@
 		justify-content: flex-start;
 		position: relative;
 		width: 144px;
-		height: 61px;
+		height: 81px;
 		padding: 7px 8px;
 		border-radius: 7px;
 		border: 1px solid #8f8f93;
@@ -203,25 +203,27 @@
 
 	.bed-temperature-stack {
 		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+		bottom: 7px;
+		right: 8px;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: center;
 		gap: 1px;
 	}
 
-	.bed-temperature-stack.with-set {
-		transform: translate(-50%, -43%);
-	}
 
 	.bed-value {
 		font-size: 1.5rem;
-		font-weight: 700;
+		font-weight: 600;
 		color: #7a7a7e;
 		line-height: 1;
+	}
+
+	.bed-value::after {
+		content: '°';
+		font-size: 0.8em;
+		margin-left: 0.1em;
 	}
 
 	.bed-value.heating {

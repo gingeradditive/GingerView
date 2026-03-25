@@ -24,8 +24,8 @@
 	const showSet = $derived(hasSet && !isReady);
 
 	const formatTemperature = (value: number | null): string => {
-		if (value == null || Number.isNaN(value)) return '--°';
-		return `${Math.round(value)}°`;
+		if (value == null || Number.isNaN(value)) return '--';
+		return `${Math.round(value)}`;
 	};
 </script>
 
@@ -89,9 +89,15 @@
 
 	.temperature {
 		font-size: 1.5rem;
-		font-weight: 700;
+		font-weight: 600;
 		color: #7a7a7e;
 		line-height: 1;
+	}
+
+	.temperature::after {
+		content: '°';
+		font-size: 0.8em;
+		margin-left: 0.1em;
 	}
 
 	.temperature.heating {
