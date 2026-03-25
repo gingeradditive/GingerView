@@ -20,10 +20,10 @@
         function testConnection() {
             if (ws) ws.close();
             
-            log('Attempting connection to ws://192.168.1.201:7125/websocket');
+            log('Attempting connection to ws://192.168.1.163:7125/websocket');
             
             try {
-                ws = new WebSocket('ws://192.168.1.201:7125/websocket');
+                ws = new WebSocket('ws://192.168.1.163:7125/websocket');
                 
                 ws.onopen = () => {
                     log('✅ WebSocket connected successfully!');

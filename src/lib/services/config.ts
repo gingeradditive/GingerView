@@ -13,10 +13,10 @@ class ConfigService {
 			// Server-side default config
 			this.config = {
 				klipper: {
-					moonrakerHost: '192.168.1.201',
+					moonrakerHost: '192.168.1.163',
 					moonrakerPort: 7125,
-					moonrakerWsUrl: 'ws://192.168.1.201:7125/websocket',
-					moonrakerApiUrl: 'http://192.168.1.201:7125',
+					moonrakerWsUrl: 'ws://192.168.1.163:7125/websocket',
+					moonrakerApiUrl: 'http://192.168.1.163:7125',
 					printerName: 'Discovery',
 					connectionTimeout: 5000
 				}
@@ -25,7 +25,7 @@ class ConfigService {
 		}
 
 		const klipperConfig: KlipperConfig = {
-			moonrakerHost: this.getEnvVar('VITE_MOONRAKER_HOST', '192.168.1.201'),
+			moonrakerHost: this.getEnvVar('VITE_MOONRAKER_HOST', '192.168.1.163'),
 			moonrakerPort: parseInt(this.getEnvVar('VITE_MOONRAKER_PORT', '7125')),
 			moonrakerWsUrl: this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL'),
 			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL'),

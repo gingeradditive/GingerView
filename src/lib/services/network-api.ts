@@ -9,7 +9,7 @@ import type {
 } from '$lib/types/wifi';
 import { toastActions } from '$lib/stores/toastStore';
 
-const API_BASE_URL = 'http://192.168.1.201:8000';
+const API_BASE_URL = 'http://192.168.1.163:8000';
 
 class NetworkAPIError extends Error {
 	constructor(

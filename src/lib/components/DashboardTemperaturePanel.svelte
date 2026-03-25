@@ -12,14 +12,51 @@
 	const pollIntervalMs = 1500;
 	const useMockData = true;
 	const mockExtruderBase = [105, 55, 35, 45];
+	const mockExtruderTargets = [220, 200, 0, 180];
 	const mockBedBase = 23;
 
 	let extruderTemperatures = $state<(number | null)[]>([null, null, null, null]);
+	let extruderTargets = $state<(number | null)[]>([null, null, null, null]);
 	let bedTemperature = $state<number | null>(null);
+	let bedTarget = $state<number | null>(null);
+	let mockTick = 0;
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--°';
 		return `${Math.round(value)}°`;
+	};
+
+	const setTolerance = 5;
+
+	const isBedHeating = (): boolean => {
+		return (
+			bedTarget != null &&
+			!Number.isNaN(bedTarget) &&
+			bedTarget > 0 &&
+			bedTemperature != null &&
+			!Number.isNaN(bedTemperature) &&
+			bedTemperature < bedTarget
+		);
+	};
+
+	const isBedReady = (): boolean => {
+		return (
+			bedTarget != null &&
+			!Number.isNaN(bedTarget) &&
+			bedTarget > 0 &&
+			bedTemperature != null &&
+			!Number.isNaN(bedTemperature) &&
+			Math.abs(bedTemperature - bedTarget) <= setTolerance
+		);
+	};
+
+	const showBedSet = (): boolean => {
+		return (
+			bedTarget != null &&
+			!Number.isNaN(bedTarget) &&
+			bedTarget > 0 &&
+			!isBedReady()
+		);
 	};
 
 	const getApiUrl = (): string => {
@@ -38,8 +75,18 @@
 	};
 
 	const updateMockTemperatures = (): void => {
-		extruderTemperatures = mockExtruderBase.map((base) => withJitter(base, 1.8));
-		bedTemperature = withJitter(mockBedBase, 0.8);
+		mockTick += 1;
+		const isFourthHeating = mockTick % 8 < 4;
+
+		extruderTargets = mockExtruderTargets.map((target) => (target > 0 ? target : null));
+		extruderTemperatures = [
+			withJitter(186 + (mockTick % 6), 1.4),
+			withJitter(200, 1.2),
+			withJitter(mockExtruderBase[2], 0.9),
+			withJitter(isFourthHeating ? 170 : 179, 1.1)
+		];
+		bedTarget = 60;
+		bedTemperature = withJitter(mockTick % 12 < 6 ? 54 : 58, 0.8);
 	};
 
 	const updateTemperatures = async (): Promise<void> => {
@@ -66,8 +113,17 @@
 				return typeof temperature === 'number' ? temperature : null;
 			});
 
+			extruderTargets = extruderKeys.map((key) => {
+				const target = status[key]?.target;
+				if (typeof target !== 'number' || Number.isNaN(target)) return null;
+				return target > 0 ? target : null;
+			});
+
 			const heaterBed = status.heater_bed?.temperature;
 			bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
+
+			const heaterBedTarget = status.heater_bed?.target;
+			bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 		} catch {
 			updateMockTemperatures();
 		}
@@ -83,16 +139,22 @@
 <section class="temperature-panel" aria-label="Pannello temperature Klipper">
 	<div class="extruders">
 		{#each extruderTemperatures as temperature, index}
-			<ExtruderTemperatureCard index={index + 1} {temperature} />
+			<ExtruderTemperatureCard index={index + 1} {temperature} target={extruderTargets[index] ?? null} />
 		{/each}
 	</div>
 
 	<div class="bed-section" aria-label="Temperatura bed">
 		<div class="bed-triangle">
+			<img src="/NozzleHead.svg" alt="Nozzle" class="bed-triangle-icon" />
 		</div>
-		<div class="bed-card">
+		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
 			<span class="bed-label">BED</span>
-			<span class="bed-value">{formatTemperature(bedTemperature)}</span>
+			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
+				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>{formatTemperature(bedTemperature)}</span>
+				{#if showBedSet()}
+					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
+				{/if}
+			</div>
 		</div>
 	</div>
 </section>
@@ -122,26 +184,44 @@
 	}
 
 	.bed-triangle {
-		width: 0;
-		height: 0;
-		border-left: 31px solid transparent;
-		border-right: 31px solid transparent;
-		border-top: 31px solid #8f8f93;
+		width: 62px;
+		height: 33px;
 		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transform: translateY(-2px);
+	}
+
+	.bed-triangle-icon {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
 	}
 
 	
 	.bed-card {
 		display: flex;
 		align-items: baseline;
-		justify-content: space-between;
-		width: 115px;
-		height: 49px;
+		justify-content: flex-start;
+		position: relative;
+		width: 144px;
+		height: 61px;
 		padding: 7px 8px;
 		border-radius: 7px;
 		border: 1px solid #8f8f93;
 		background: #b9b9bc;
 		box-sizing: border-box;
+		transition: background-color 220ms ease, border-color 220ms ease;
+	}
+
+	.bed-card.heating {
+		border-color: #d72e28;
+	}
+
+	.bed-card.ready {
+		border-color: #d72e28;
+		background: #d72e28;
 	}
 
 	.bed-label {
@@ -151,10 +231,42 @@
 		line-height: 1;
 	}
 
+	.bed-temperature-stack {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1px;
+	}
+
+	.bed-temperature-stack.with-set {
+		transform: translate(-50%, -43%);
+	}
+
 	.bed-value {
 		font-size: 1.5rem;
 		font-weight: 700;
-		line-height: 1;
 		color: #7a7a7e;
+		line-height: 1;
+	}
+
+	.bed-value.heating {
+		color: #d72e28;
+	}
+
+	.bed-value.ready {
+		color: #ffffff;
+	}
+
+	.bed-set-temperature {
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1;
+		color: #ffffff;
+		opacity: 1;
 	}
 </style>
