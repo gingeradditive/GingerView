@@ -1,4 +1,4 @@
-import type { Config, KlipperConfig } from '$lib/types/config';
+import type { Config, KlipperConfig, NetworkConfig } from '$lib/types/config';
 
 class ConfigService {
 	private config: Config | null = null;
@@ -8,29 +8,19 @@ class ConfigService {
 			return this.config;
 		}
 
-		// Check if we're in browser environment
-		if (typeof window === 'undefined') {
-			// Server-side default config
-			this.config = {
-				klipper: {
-					moonrakerHost: '192.168.1.163',
-					moonrakerPort: 7125,
-					moonrakerWsUrl: 'ws://192.168.1.163:7125/websocket',
-					moonrakerApiUrl: 'http://192.168.1.163:7125',
-					printerName: 'Discovery',
-					connectionTimeout: 5000
-				}
-			};
-			return this.config;
-		}
-
 		const klipperConfig: KlipperConfig = {
-			moonrakerHost: this.getEnvVar('VITE_MOONRAKER_HOST', '192.168.1.163'),
-			moonrakerPort: parseInt(this.getEnvVar('VITE_MOONRAKER_PORT', '7125')),
+			moonrakerHost: this.getEnvVar('VITE_MOONRAKER_HOST', 'localhost'),
+			moonrakerPort: this.getNumberEnvVar('VITE_MOONRAKER_PORT', 7125),
 			moonrakerWsUrl: this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL'),
 			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL'),
-			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Discovery'),
-			connectionTimeout: parseInt(this.getEnvVar('VITE_CONNECTION_TIMEOUT', '5000'))
+			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Klipper Printer'),
+			connectionTimeout: this.getNumberEnvVar('VITE_CONNECTION_TIMEOUT', 5000)
+		};
+
+		const networkConfig: NetworkConfig = {
+			apiHost: this.getEnvVar('VITE_NETWORK_API_HOST', klipperConfig.moonrakerHost),
+			apiPort: this.getNumberEnvVar('VITE_NETWORK_API_PORT', 8000),
+			apiBaseUrl: this.getOptionalEnvVar('VITE_NETWORK_API_BASE_URL')
 		};
 
 		// Construct URLs if not explicitly provided
@@ -42,7 +32,11 @@ class ConfigService {
 			klipperConfig.moonrakerApiUrl = `http://${klipperConfig.moonrakerHost}:${klipperConfig.moonrakerPort}`;
 		}
 
-		this.config = { klipper: klipperConfig };
+		if (!networkConfig.apiBaseUrl) {
+			networkConfig.apiBaseUrl = `http://${networkConfig.apiHost}:${networkConfig.apiPort}`;
+		}
+
+		this.config = { klipper: klipperConfig, network: networkConfig };
 		return this.config;
 	}
 
@@ -62,8 +56,20 @@ class ConfigService {
 		return value === undefined ? undefined : value;
 	}
 
+	private getNumberEnvVar(key: string, defaultValue: number): number {
+		const parsedValue = parseInt(this.getEnvVar(key, String(defaultValue)), 10);
+		if (Number.isNaN(parsedValue)) {
+			return defaultValue;
+		}
+		return parsedValue;
+	}
+
 	getKlipperConfig(): KlipperConfig {
 		return this.loadConfig().klipper;
+	}
+
+	getNetworkConfig(): NetworkConfig {
+		return this.loadConfig().network;
 	}
 
 	validateConfig(): { isValid: boolean; errors: string[] } {
@@ -83,6 +89,15 @@ class ConfigService {
 		// Validate timeout
 		if (config.connectionTimeout && config.connectionTimeout < 1000) {
 			errors.push('Connection timeout should be at least 1000ms');
+		}
+
+		const networkConfig = this.getNetworkConfig();
+		if (!networkConfig.apiHost) {
+			errors.push('Network API host is required');
+		}
+
+		if (!networkConfig.apiPort || networkConfig.apiPort < 1 || networkConfig.apiPort > 65535) {
+			errors.push('Network API port must be between 1 and 65535');
 		}
 
 		return {

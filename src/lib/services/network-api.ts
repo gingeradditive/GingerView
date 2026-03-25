@@ -8,8 +8,12 @@ import type {
 	HTTPValidationError 
 } from '$lib/types/wifi';
 import { toastActions } from '$lib/stores/toastStore';
+import { configService } from '$lib/services/config';
 
-const API_BASE_URL = 'http://192.168.1.163:8000';
+function getApiBaseUrl(): string {
+	const config = configService.getNetworkConfig();
+	return config.apiBaseUrl ?? `http://${config.apiHost}:${config.apiPort}`;
+}
 
 class NetworkAPIError extends Error {
 	constructor(
@@ -27,7 +31,7 @@ class NetworkAPI {
 		endpoint: string,
 		options: RequestInit = {}
 	): Promise<T> {
-		const url = `${API_BASE_URL}${endpoint}`;
+		const url = `${getApiBaseUrl()}${endpoint}`;
 		console.log(`Making request to: ${url}`);
 		
 		try {

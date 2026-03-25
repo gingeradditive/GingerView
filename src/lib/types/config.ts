@@ -7,6 +7,13 @@ export interface KlipperConfig {
 	connectionTimeout?: number;
 }
 
+export interface NetworkConfig {
+	apiHost: string;
+	apiPort: number;
+	apiBaseUrl?: string;
+}
+
 export interface Config {
 	klipper: KlipperConfig;
+	network: NetworkConfig;
 }

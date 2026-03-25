@@ -1,5 +1,3 @@
-// WiFi API Types based on actual API responses from http://192.168.1.163:8000
-
 export interface ValidationError {
 	loc: (string | number)[];
 	msg: string;
