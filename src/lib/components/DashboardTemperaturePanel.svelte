@@ -10,16 +10,11 @@
 
 	const extruderKeys = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
 	const pollIntervalMs = 1500;
-	const useMockData = true;
-	const mockExtruderBase = [105, 55, 35, 45];
-	const mockExtruderTargets = [220, 200, 0, 180];
-	const mockBedBase = 23;
 
 	let extruderTemperatures = $state<(number | null)[]>([null, null, null, null]);
 	let extruderTargets = $state<(number | null)[]>([null, null, null, null]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
-	let mockTick = 0;
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--°';
@@ -61,7 +56,8 @@
 
 	const getApiUrl = (): string => {
 		const config = configService.getKlipperConfig();
-		return config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+		return baseUrl.replace(/\/$/, '');
 	};
 
 	const getQueryPath = (): string => {
@@ -69,36 +65,10 @@
 		return `/printer/objects/query?${objects.join('&')}`;
 	};
 
-	const withJitter = (base: number, spread: number): number => {
-		const delta = (Math.random() * 2 - 1) * spread;
-		return Math.max(0, base + delta);
-	};
-
-	const updateMockTemperatures = (): void => {
-		mockTick += 1;
-		const isFourthHeating = mockTick % 8 < 4;
-
-		extruderTargets = mockExtruderTargets.map((target) => (target > 0 ? target : null));
-		extruderTemperatures = [
-			withJitter(186 + (mockTick % 6), 1.4),
-			withJitter(200, 1.2),
-			withJitter(mockExtruderBase[2], 0.9),
-			withJitter(isFourthHeating ? 170 : 179, 1.1)
-		];
-		bedTarget = 60;
-		bedTemperature = withJitter(mockTick % 12 < 6 ? 54 : 58, 0.8);
-	};
-
 	const updateTemperatures = async (): Promise<void> => {
-		if (useMockData) {
-			updateMockTemperatures();
-			return;
-		}
-
 		try {
 			const response = await fetch(`${getApiUrl()}${getQueryPath()}`);
 			if (!response.ok) {
-				updateMockTemperatures();
 				return;
 			}
 
@@ -125,7 +95,7 @@
 			const heaterBedTarget = status.heater_bed?.target;
 			bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 		} catch {
-			updateMockTemperatures();
+			return;
 		}
 	};
 
