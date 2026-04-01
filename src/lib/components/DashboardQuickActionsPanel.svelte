@@ -87,7 +87,7 @@
 	}
 
 	.circle-bg {
-		stroke: #f3f4f6;
+		stroke: #828282;
 		stroke-width: 4;
 		fill: none;
 	}
