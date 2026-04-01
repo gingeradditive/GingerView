@@ -11,7 +11,7 @@
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray="75.4, 100.53" />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20"><path d={mdiFan} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="20" height="20" class="fan-spinning"><path d={mdiFan} fill="#d72e28" /></svg>
 					</div>
 				</foreignObject>
 			</svg>
@@ -100,4 +100,17 @@
 		transition: stroke-dasharray 0.3s ease;
 	}
 
-	</style>
+	.fan-spinning {
+		animation: spin 2s linear infinite;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+</style>
