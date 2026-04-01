@@ -1,20 +1,67 @@
 <script lang="ts">
-	// Mock data for Z Height
-	const currentHeight = 350.5;
-	const maxHeight = 950;
-	const totalSections = 10; // 10 sections representing 1m total
-	const sectionHeight = 100; // Each section represents 100mm
-	
-	// Calculate fill percentage
-	const fillPercentage = (currentHeight / maxHeight) * 100;
-	
-	// Generate section marks
-	const sections = Array.from({ length: totalSections }, (_, i) => {
-		const value = (i + 1) * sectionHeight;
-		return {
-			mark: value,
-			label: value === 1000 ? '1m' : `${value}mm`
-		};
+	import { onMount } from 'svelte';
+	import { configService } from '$lib/services/config';
+
+	const pollIntervalMs = 1500;
+	const totalSections = 10;
+	const sectionHeight = 100;
+
+	let currentHeight = $state(0);
+	let maxHeight = $state(950);
+	let isIdle = $state(true);
+
+	let fillPercentage = $derived(maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0);
+
+	let sections = $derived(
+		Array.from({ length: totalSections }, (_, i) => {
+			const value = (i + 1) * sectionHeight;
+			return {
+				mark: value,
+				label: value === 1000 ? '1m' : `${value}mm`
+			};
+		})
+	);
+
+	const getApiUrl = (): string => {
+		const config = configService.getKlipperConfig();
+		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+		return baseUrl.replace(/\/$/, '');
+	};
+
+	const updateZHeight = async (): Promise<void> => {
+		try {
+			const response = await fetch(`${getApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
+			if (!response.ok) return;
+
+			const payload = await response.json();
+			const status = payload?.result?.status;
+			if (!status) return;
+
+			const printState = status.print_stats?.state ?? 'standby';
+			isIdle = printState !== 'printing' && printState !== 'paused';
+
+			const toolhead = status.toolhead;
+			if (toolhead) {
+				if (Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
+					maxHeight = toolhead.axis_maximum[2];
+				}
+			}
+
+			const gcodeMove = status.gcode_move;
+			if (gcodeMove && Array.isArray(gcodeMove.gcode_position) && gcodeMove.gcode_position.length > 2) {
+				currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
+			} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+				currentHeight = Math.max(0, toolhead.position[2]);
+			}
+		} catch {
+			return;
+		}
+	};
+
+	onMount(() => {
+		updateZHeight();
+		const interval = window.setInterval(updateZHeight, pollIntervalMs);
+		return () => window.clearInterval(interval);
 	});
 </script>
 
@@ -39,7 +86,12 @@
 	</div>
 	<div class="z-info">
 		<span class="z-label">Z HEIGHT</span>
-		<span class="z-value">{currentHeight} / {maxHeight} mm</span>
+		{#if isIdle}
+			<span class="z-value">Infinity and beyond!</span>
+			<span class="z-value-sub">Joking just a meter :(</span>
+		{:else}
+			<span class="z-value">{currentHeight.toFixed(1)} / {maxHeight} mm</span>
+		{/if}
 	</div>
 </section>
 
@@ -136,5 +188,11 @@
 		font-size: 0.85rem;
 		color: #666666;
 		font-weight: 500;
+	}
+
+	.z-value-sub {
+		font-size: 0.75rem;
+		color: #999999;
+		font-weight: 400;
 	}
 </style>

@@ -175,23 +175,23 @@
 		justify-content: center;
 		width: 52.8px;
 		height: 52.8px;
-		color: #ffffff;
+		color: #828282;
 		border-radius: 14.4px;
 		text-decoration: none;
-		background: #C8C8C8;
-		border: none;
+		background: #ffffff;
+		border: 3px solid transparent;
 		cursor: pointer;
 		padding: 0;
 	}
 
 	.dock a:hover,
 	.dock button:hover {
-		background: #C8C8C8;
+		background: #ffffff;
 	}
 
 	.dock a.active {
-		background: #828282;
-		border: 2.4px solid #D72E28;
+		background: #ffffff;
+		border: 3px solid #D72E28;
 	}
 
 	.dock a:focus-visible,
@@ -201,7 +201,9 @@
 	}
 
 	.pinned-action {
-		background: #C8C8C8 !important;
+		background: #ffffff !important;
+		color: #828282 !important;
+		border: 3px solid transparent !important;
 	}
 
 	.first-pinned {
@@ -209,7 +211,7 @@
 	}
 
 	.pinned-action:hover {
-		background: #C8C8C8 !important;
+		background: #ffffff !important;
 	}
 
 	.dock svg {
@@ -219,16 +221,18 @@
 	}
 
 	.settings-icon {
-		background: transparent !important;
+		background: #ffffff !important;
 		margin-left: 19.2px;
+		color: #828282 !important;
+		border: 3px solid transparent !important;
 	}
 
 	.settings-icon svg {
-		fill: #828282;
+		fill: currentColor;
 	}
 
 	.settings-icon:hover {
-		background: transparent !important;
+		background: #ffffff !important;
 	}
 
 	.settings-icon.active svg {
@@ -236,8 +240,8 @@
 	}
 
 	.settings-icon.active {
-		background: transparent !important;
-		border: none !important;
+		background: #ffffff !important;
+		border: 3px solid #D72E28 !important;
 	}
 
 	.logo-container {

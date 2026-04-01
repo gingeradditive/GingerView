@@ -1,30 +1,105 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
-	// TODO: Quick action buttons - fan control, light control, etc.
+	import { configService } from '$lib/services/config';
+
+	const pollIntervalMs = 2000;
+	const circumference = 2 * Math.PI * 16;
+
+	let fanSpeed = $state(0);
+	let lightValue = $state(0);
+	let fanOn = $state(false);
+	let lightOn = $state(false);
+
+	let fanDash = $derived(`${fanSpeed * circumference} ${circumference}`);
+	let lightDash = $derived(`${lightValue * circumference} ${circumference}`);
+
+	const getApiUrl = (): string => {
+		const config = configService.getKlipperConfig();
+		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+		return baseUrl.replace(/\/$/, '');
+	};
+
+	const sendGcode = async (gcode: string): Promise<void> => {
+		try {
+			await fetch(`${getApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+		} catch {
+			// ignore
+		}
+	};
+
+	const updateStatus = async (): Promise<void> => {
+		try {
+			const response = await fetch(`${getApiUrl()}/printer/objects/query?fan&led LED_CAMERA`);
+			if (!response.ok) return;
+
+			const payload = await response.json();
+			const status = payload?.result?.status;
+			if (!status) return;
+
+			const fan = status.fan;
+			if (fan) {
+				fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
+				fanOn = fanSpeed > 0;
+			}
+
+			const led = status['led LED_CAMERA'];
+			if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
+				// color_data is [[r, g, b, w]] — white channel is index 3
+				const white = led.color_data[0][3] ?? 0;
+				lightValue = typeof white === 'number' ? white : 0;
+				lightOn = lightValue > 0;
+			}
+		} catch {
+			return;
+		}
+	};
+
+	const toggleFan = (): void => {
+		if (fanOn) {
+			sendGcode('M106 S0');
+		} else {
+			sendGcode('M106 S255');
+		}
+	};
+
+	const toggleLight = (): void => {
+		if (lightOn) {
+			sendGcode('SET_LED LED=LED_CAMERA WHITE=0');
+		} else {
+			sendGcode('SET_LED LED=LED_CAMERA WHITE=1');
+		}
+	};
+
+	onMount(() => {
+		updateStatus();
+		const interval = window.setInterval(updateStatus, pollIntervalMs);
+		return () => window.clearInterval(interval);
+	});
 </script>
 
 <section class="quick-actions-panel" aria-label="Quick Actions">
 	<div class="action-subpanel">
-		<button class="action-btn" aria-label="Fan">
+		<button class="action-btn" aria-label="Fan" onclick={toggleFan}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
-				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray="75.4, 100.53" />
+				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20" class="fan-spinning"><path d={mdiFan} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="20" height="20" class={fanOn ? 'fan-spinning' : ''}><path d={mdiFan} fill="#d72e28" /></svg>
 					</div>
 				</foreignObject>
 			</svg>
 		</button>
 	</div>
 	<div class="action-subpanel">
-		<button class="action-btn" aria-label="Light">
+		<button class="action-btn" aria-label="Light" onclick={toggleLight}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
-				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray="42.2, 100.53" />
+				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"><path d={mdiLightbulb} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg>
 					</div>
 				</foreignObject>
 			</svg>

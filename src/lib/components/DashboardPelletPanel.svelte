@@ -1,15 +1,99 @@
 <script lang="ts">
-	let currentPellet = 2.5;
-	let maxPellet = 5;
-	let percentage = (currentPellet / maxPellet) * 100;
+	import { onMount } from 'svelte';
+	import { configService } from '$lib/services/config';
+	import { getFileMetadata } from '$lib/services/moonraker-files';
+
+	const pollIntervalMs = 3000;
+	const maxPelletKg = 5;
+
+	let usedKg = $state(0);
+	let totalKg = $state(maxPelletKg);
+	let isIdle = $state(true);
+	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
+	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
+
+	let lastFilename: string | null = null;
+	let filamentWeightTotal: number | null = null;
+
+	const getApiUrl = (): string => {
+		const config = configService.getKlipperConfig();
+		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+		return baseUrl.replace(/\/$/, '');
+	};
+
+	const loadFileWeight = async (filename: string): Promise<void> => {
+		if (!filename || filename === lastFilename) return;
+		lastFilename = filename;
+		try {
+			const metadata = await getFileMetadata(filename);
+			// filament_weight_total is in grams
+			if (metadata.filament_weight_total && metadata.filament_weight_total > 0) {
+				filamentWeightTotal = metadata.filament_weight_total;
+				totalKg = filamentWeightTotal / 1000;
+			} else {
+				filamentWeightTotal = null;
+				totalKg = maxPelletKg;
+			}
+		} catch {
+			filamentWeightTotal = null;
+			totalKg = maxPelletKg;
+		}
+	};
+
+	const updatePellet = async (): Promise<void> => {
+		try {
+			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
+			if (!response.ok) return;
+
+			const payload = await response.json();
+			const status = payload?.result?.status;
+			if (!status) return;
+
+			const printStats = status.print_stats;
+			if (!printStats) return;
+
+			const printState = printStats.state ?? 'standby';
+			isIdle = printState !== 'printing' && printState !== 'paused';
+
+			const filename = printStats.filename ?? '';
+			if (filename) {
+				loadFileWeight(filename);
+			} else {
+				lastFilename = null;
+				filamentWeightTotal = null;
+				totalKg = maxPelletKg;
+			}
+
+			// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
+			// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
+			const filamentUsedMm = printStats.filament_used ?? 0;
+			const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
+			const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
+			usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
+		} catch {
+			return;
+		}
+	};
+
+	onMount(() => {
+		updatePellet();
+		const interval = window.setInterval(updatePellet, pollIntervalMs);
+		return () => window.clearInterval(interval);
+	});
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">
 	<div class="pellet-visual">
-		<div class="pellet-fill" style="height: {percentage}%"></div>
+		{#if !isIdle}
+			<div class="pellet-fill" style="height: {percentage}%"></div>
+		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
-			<span class="pellet-value">{currentPellet}/{maxPellet} KG</span>
+			{#if isIdle}
+				<span class="pellet-value">Waiting for<br/>your material!</span>
+			{:else}
+				<span class="pellet-value">{remainingKg.toFixed(1)}/{totalKg.toFixed(1)} KG</span>
+			{/if}
 		</div>
 	</div>
 </section>
