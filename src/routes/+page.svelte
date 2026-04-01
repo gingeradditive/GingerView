@@ -45,7 +45,7 @@
 		display: grid;
 		grid-template-columns: repeat(6, 1fr);
 		grid-template-rows: auto auto;
-		gap: 36px;
+		gap: 20px;
 		padding: 16px;
 		box-sizing: border-box;
 		width: 100%;

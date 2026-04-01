@@ -39,7 +39,7 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 36px;
+		gap: 20px;
 		align-items: stretch;
 		justify-content: center;
 		height: 100%;
