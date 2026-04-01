@@ -131,13 +131,17 @@
 
 <style>
 	.temperature-panel {
+		background: #ffffff;
+		border-radius: 16px;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 9px;
-		padding: 4rem 8px 16px;
-		width: 25vw;
-		height: auto;
+		width: 100%;
+		height: 100%;
+		box-sizing: border-box;
+		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	.extruders {
