@@ -24,7 +24,7 @@
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray="42.2, 100.53" />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"><path d={mdiLightbulbOff} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"><path d={mdiLightbulb} fill="#d72e28" /></svg>
 					</div>
 				</foreignObject>
 			</svg>
