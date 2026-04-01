@@ -1,14 +1,16 @@
 <script lang="ts">
-	// TODO: Pellet level display - fill visualization with current/max KG
+	let currentPellet = 2.5;
+	let maxPellet = 5;
+	let percentage = (currentPellet / maxPellet) * 100;
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">
 	<div class="pellet-visual">
-		<div class="pellet-fill"></div>
-	</div>
-	<div class="pellet-info">
-		<span class="pellet-label">PELLET</span>
-		<span class="pellet-value">-- / -- KG</span>
+		<div class="pellet-fill" style="height: {percentage}%"></div>
+		<div class="pellet-text">
+			<span class="pellet-label">PELLET</span>
+			<span class="pellet-value">{currentPellet}/{maxPellet} KG</span>
+		</div>
 	</div>
 </section>
 
@@ -16,12 +18,11 @@
 	.pellet-panel {
 		background: #ffffff;
 		border-radius: 16px;
-		padding: 20px;
+		padding: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 12px;
 		height: 100%;
 		box-sizing: border-box;
 		overflow: hidden;
@@ -31,11 +32,14 @@
 
 	.pellet-visual {
 		width: 100%;
-		height: 60px;
-		background: #f0f0f0;
-		border-radius: 8px;
+		height: 100%;
+		background: #ffffff;
+		border-radius: 16px;
 		overflow: hidden;
 		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.pellet-fill {
@@ -43,26 +47,34 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		height: 0%;
-		background: #d72e28;
+		background: #D72E28;
 		transition: height 0.3s ease;
+		z-index: 1;
 	}
 
-	.pellet-info {
+	.pellet-text {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 4px;
+		z-index: 2;
+		color: #000000;
+		text-align: center;
 	}
 
 	.pellet-label {
-		font-size: 1.1rem;
+		font-size: 1rem;
 		font-weight: 700;
-		color: #111111;
+		color: #000000;
 	}
 
 	.pellet-value {
-		font-size: 0.95rem;
-		color: #666666;
+		font-size: 0.85rem;
+		color: #000000;
+		font-weight: 500;
 	}
 </style>
