@@ -1,19 +1,26 @@
 <script lang="ts">
-	// TODO: Flow rate display - circular gauge with mm³/s value
+	export let flowValue = 550;
+
+	const minValue = 0;
+	const maxValue = 800;
+	const radius = 88;
+	const circumference = 2 * Math.PI * radius;
+
+	$: clampedValue = Math.min(maxValue, Math.max(minValue, flowValue));
+	$: progress = (clampedValue - minValue) / (maxValue - minValue);
+	$: strokeDasharray = `${progress * circumference} ${circumference}`;
 </script>
 
 <section class="flow-panel" aria-label="Flow Rate">
 	<div class="flow-gauge">
-		<svg viewBox="0 0 100 100" class="gauge-ring">
-			<circle cx="50" cy="50" r="40" fill="none" stroke="#e0e0e0" stroke-width="8" />
-			<circle cx="50" cy="50" r="40" fill="none" stroke="#d72e28" stroke-width="8"
-				stroke-dasharray="251.2" stroke-dashoffset="251.2"
-				stroke-linecap="round" transform="rotate(-90 50 50)" />
+		<svg viewBox="0 0 220 220" class="circular-progress" role="img" aria-label={`Flow ${Math.round(clampedValue)} mm³/s`}>
+			<circle class="circle-bg" cx="110" cy="110" r={radius} />
+			<circle class="circle" cx="110" cy="110" r={radius} stroke-dasharray={strokeDasharray} />
 		</svg>
-	</div>
-	<div class="flow-info">
-		<span class="flow-label">FLOW</span>
-		<span class="flow-value">-- mm³/s</span>
+		<div class="gauge-content">
+			<div class="flow-label">FLOW</div>
+			<div class="flow-value">{Math.round(clampedValue)} mm³/s</div>
+		</div>
 	</div>
 </section>
 
@@ -21,42 +28,69 @@
 	.flow-panel {
 		background: #ffffff;
 		border-radius: 16px;
-		padding: 20px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 12px;
-		height: 100%;
+		padding: 16px;
+		width: 100%;
+		aspect-ratio: 1 / 1;
 		box-sizing: border-box;
 		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	.flow-gauge {
-		width: 100px;
-		height: 100px;
-	}
-
-	.gauge-ring {
+		position: relative;
 		width: 100%;
 		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.flow-info {
+	.circular-progress {
+		width: 100%;
+		height: 100%;
+		transform: rotate(-90deg);
+	}
+
+	.circle-bg {
+		stroke: #828282;
+		stroke-width: 10;
+		fill: none;
+		stroke-dasharray: none;
+		stroke-linecap: round;
+	}
+
+	.circle {
+		stroke: #d72e28;
+		stroke-width: 14;
+		fill: none;
+		stroke-linecap: round;
+		transition: stroke-dasharray 0.3s ease;
+	}
+
+	.gauge-content {
+		position: absolute;
+		inset: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
+		justify-content: center;
+		gap: 10px;
+		text-align: center;
+		pointer-events: none;
 	}
 
 	.flow-label {
-		font-size: 1.1rem;
-		font-weight: 700;
+		font-size: 1rem;
+    	font-weight: 700;
+    	color: #000000;
 		color: #111111;
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.flow-value {
-		font-size: 0.95rem;
+		font-size: 0.85rem;
+		font-weight: 500;
 		color: #666666;
+		line-height: 1.3;
 	}
 </style>
