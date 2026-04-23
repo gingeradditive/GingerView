@@ -432,9 +432,8 @@ type: git_repo
 path: $PROJECT_DIR
 origin: https://github.com/gingeradditive/GingerView.git
 primary_branch: main
-managed_services: nginx
+managed_services: GingerView
 install_script: $PROJECT_DIR/script/install.sh
-update_script: $PROJECT_DIR/script/update.sh
 is_system_service: False
 EOF
 
