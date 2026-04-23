@@ -205,11 +205,11 @@ rm -f /etc/nginx/sites-enabled/default
 
 # Nginx test/restart is executed after both GingerView and Mainsail sites are configured.
 
-# Create systemd service for auto-rebuild (optional)
-print_info "Creating systemd service for GingerView..."
+# Create systemd service used by Moonraker updates only
+print_info "Creating GingerView build service (update-triggered only)..."
 cat > /etc/systemd/system/GingerView.service << EOF
 [Unit]
-Description=GingerView Auto-Rebuild Service
+Description=GingerView Build Service (Moonraker-triggered)
 After=network.target
 
 [Service]
@@ -247,7 +247,8 @@ EOF
 print_info "Systemd services created (GingerView.service, GingerView-watcher.service)"
 print_info "Note: For production, nginx serves static files. GingerView-watcher is for development only."
 systemctl daemon-reload
-systemctl enable GingerView.service >/dev/null 2>&1 || true
+systemctl disable GingerView.service >/dev/null 2>&1 || true
+print_info "GingerView.service is intentionally disabled at boot (build runs only on updates)"
 
 # Set ownership of project directory
 print_info "Setting ownership..."
@@ -435,6 +436,7 @@ type: git_repo
 path: $PROJECT_DIR
 origin: https://github.com/gingeradditive/GingerView.git
 primary_branch: main
+# Trigger build only when an update is applied
 managed_services: GingerView
 is_system_service: False
 EOF
