@@ -389,11 +389,24 @@ if [ -f "$MAINSAIL_DIR/config.json" ]; then
     cp "$MAINSAIL_DIR/config.json" "$MAINSAIL_DIR/config.json.bak"
     
     # Mainsail and Moonraker are always on the same server, use localhost
-    # Update Moonraker connection to use localhost:7125
-    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"[0-9.]*"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"port":\s*8081/"port": 7125/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"[0-9.]*:8081"/"127.0.0.1:7125"/g' "$MAINSAIL_DIR/config.json"
+    # Create proper config with Moonraker instance
+    sudo -u "$SUDO_USER" cat > "$MAINSAIL_DIR/config.json" << 'EOF'
+{
+    "defaultLocale": "en",
+    "defaultMode": "dark",
+    "defaultTheme": "mainsail",
+    "hostname": "127.0.0.1",
+    "port": 7125,
+    "path": null,
+    "instancesDB": "moonraker",
+    "instances": [
+        {
+            "hostname": "127.0.0.1",
+            "port": 7125
+        }
+    ]
+}
+EOF
     
     print_success "Mainsail configured to connect to Moonraker at 127.0.0.1:7125"
 else
