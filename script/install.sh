@@ -84,8 +84,17 @@ npm install
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     print_info "Creating .env file from .env.example..."
     cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
-    print_success ".env file created"
-    print_info "You may need to edit .env to match your Moonraker configuration"
+    
+    # Detect server IP for remote access configuration
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+    print_info "Detected server IP: $SERVER_IP"
+    
+    # Update .env with detected server IP for remote access
+    # Keep 127.0.0.1 for local connections, but add comment with server IP
+    sudo -u "$SUDO_USER" sed -i "s|# For remote deployment, use the actual IP address of the Moonraker server|# For remote deployment, use: $SERVER_IP|g" "$PROJECT_DIR/.env"
+    
+    print_success ".env file created with localhost configuration (127.0.0.1)"
+    print_info "For remote access, update VITE_MOONRAKER_HOST to: $SERVER_IP"
 else
     print_info ".env file already exists, skipping creation"
 fi
@@ -351,16 +360,14 @@ if [ -f "$MAINSAIL_DIR/config.json" ]; then
     # Backup original config
     cp "$MAINSAIL_DIR/config.json" "$MAINSAIL_DIR/config.json.bak"
     
-    # Get the Raspberry Pi IP address
-    RASPBERRY_PI_IP=$(hostname -I | awk '{print $1}')
-    
-    # Update Moonraker connection to use the correct IP and port 7125
-    sudo -u "$SUDO_USER" sed -i 's/"192.168.1.201:8081"/"'$RASPBERRY_PI_IP':7125"/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "'$RASPBERRY_PI_IP'"/g' "$MAINSAIL_DIR/config.json"
+    # Mainsail and Moonraker are always on the same server, use localhost
+    # Update Moonraker connection to use localhost:7125
+    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"[0-9.]*"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
     sudo -u "$SUDO_USER" sed -i 's/"port":\s*8081/"port": 7125/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"127.0.0.1"/"hostname": "'$RASPBERRY_PI_IP'"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"[0-9.]*:8081"/"127.0.0.1:7125"/g' "$MAINSAIL_DIR/config.json"
     
-    print_success "Mainsail configured to connect to Moonraker at $RASPBERRY_PI_IP:7125"
+    print_success "Mainsail configured to connect to Moonraker at 127.0.0.1:7125"
 else
     print_info "Mainsail config.json not found, skipping Moonraker configuration"
 fi
