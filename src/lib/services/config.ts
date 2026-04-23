@@ -8,33 +8,28 @@ class ConfigService {
 			return this.config;
 		}
 
+		// Use current page location for dynamic IP handling
+		// This works regardless of server IP changes
+		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+	 const httpProtocol = window.location.protocol;
+		const hostname = window.location.hostname;
+		const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+		const moonrakerPath = this.getEnvVar('VITE_MOONRAKER_PATH', '/moonraker');
+
 		const klipperConfig: KlipperConfig = {
-			moonrakerHost: this.getEnvVar('VITE_MOONRAKER_HOST', 'localhost'),
-			moonrakerPort: this.getNumberEnvVar('VITE_MOONRAKER_PORT', 7125),
-			moonrakerWsUrl: this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL'),
-			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL'),
+			moonrakerHost: hostname,
+			moonrakerPort: parseInt(port, 10),
+			moonrakerWsUrl: this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL') || `${protocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}${moonrakerPath}/websocket`,
+			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL') || `${httpProtocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}${moonrakerPath}`,
 			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Klipper Printer'),
 			connectionTimeout: this.getNumberEnvVar('VITE_CONNECTION_TIMEOUT', 5000)
 		};
 
 		const networkConfig: NetworkConfig = {
-			apiHost: this.getEnvVar('VITE_NETWORK_API_HOST', klipperConfig.moonrakerHost),
-			apiPort: this.getNumberEnvVar('VITE_NETWORK_API_PORT', 8000),
-			apiBaseUrl: this.getOptionalEnvVar('VITE_NETWORK_API_BASE_URL')
+			apiHost: hostname,
+			apiPort: parseInt(port, 10),
+			apiBaseUrl: this.getOptionalEnvVar('VITE_NETWORK_API_BASE_URL') || `${httpProtocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}/network`
 		};
-
-		// Construct URLs if not explicitly provided
-		if (!klipperConfig.moonrakerWsUrl) {
-			klipperConfig.moonrakerWsUrl = `ws://${klipperConfig.moonrakerHost}:${klipperConfig.moonrakerPort}/websocket`;
-		}
-
-		if (!klipperConfig.moonrakerApiUrl) {
-			klipperConfig.moonrakerApiUrl = `http://${klipperConfig.moonrakerHost}:${klipperConfig.moonrakerPort}`;
-		}
-
-		if (!networkConfig.apiBaseUrl) {
-			networkConfig.apiBaseUrl = `http://${networkConfig.apiHost}:${networkConfig.apiPort}`;
-		}
 
 		this.config = { klipper: klipperConfig, network: networkConfig };
 		return this.config;

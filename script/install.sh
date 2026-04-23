@@ -84,20 +84,9 @@ npm install
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     print_info "Creating .env file from .env.example..."
     cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
-    
-    # Detect server IP for remote access configuration
-    SERVER_IP=$(hostname -I | awk '{print $1}')
-    print_info "Detected server IP: $SERVER_IP"
-    
-    # Update .env with detected server IP for remote access
-    # Keep 127.0.0.1 for local connections, but add comment with server IP
-    sudo -u "$SUDO_USER" sed -i "s|# For remote deployment, use the actual IP address of the Moonraker server|# For remote deployment, use: $SERVER_IP|g" "$PROJECT_DIR/.env"
-    
-    print_success ".env file created with localhost configuration (127.0.0.1)"
-    print_info "For remote access, update VITE_MOONRAKER_HOST to: $SERVER_IP"
-else
-    print_info ".env file already exists, skipping creation"
 fi
+
+print_success ".env file configured"
 
 # Build the application
 print_info "Building GingerView..."
@@ -178,6 +167,32 @@ server {
         deny all;
         access_log off;
         log_not_found off;
+    }
+
+    # Proxy Moonraker API
+    location /moonraker/ {
+        proxy_pass http://127.0.0.1:7125/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
+    }
+
+    # Proxy Moonraker WebSocket
+    location /moonraker/websocket {
+        proxy_pass http://127.0.0.1:7125/websocket;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
     }
 }
 EOF
@@ -295,10 +310,10 @@ fi
 MAINSAIL_NGINX_CONF="/etc/nginx/sites-available/mainsail"
 cat > "$MAINSAIL_NGINX_CONF" << EOF
 server {
-    listen 8081 default_server;
-    listen [::]:8081 default_server;
+    listen 80 default_server;
+    listen [::]:80 default_server;
 
-    root $MAINSAIL_DIR;
+    root $BUILD_DIR;
     index index.html;
 
     server_name _;
@@ -311,7 +326,7 @@ server {
 
     # Handle client routing
     location / {
-        try_files \$uri \$uri.html \$uri/ /index.html;
+        try_files $uri $uri.html $uri/ /index.html;
     }
 
     # Cache static assets
@@ -332,16 +347,29 @@ server {
         log_not_found off;
     }
 
-    # Proxy Moonraker API if needed
+    # Proxy Moonraker API
     location /moonraker/ {
         proxy_pass http://127.0.0.1:7125/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+    }
+
+    # Proxy Moonraker WebSocket
+    location /moonraker/websocket {
+        proxy_pass http://127.0.0.1:7125/websocket;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 86400;
     }
 }
