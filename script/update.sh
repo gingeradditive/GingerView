@@ -5,6 +5,12 @@
 
 set -e
 
+# Moonraker package declaration
+# This allows Moonraker to detect and manage this update
+PKGS="GingerView"
+PKG_DISTRO=""
+PKG_ARCH=""
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
