@@ -217,6 +217,7 @@ Type=oneshot
 User=root
 WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/npm run build
+ExecStartPost=/bin/systemctl restart nginx
 RemainAfterExit=yes
 
 [Install]
@@ -245,6 +246,8 @@ EOF
 # The watcher service is optional for development
 print_info "Systemd services created (GingerView.service, GingerView-watcher.service)"
 print_info "Note: For production, nginx serves static files. GingerView-watcher is for development only."
+systemctl daemon-reload
+systemctl enable GingerView.service >/dev/null 2>&1 || true
 
 # Set ownership of project directory
 print_info "Setting ownership..."
@@ -432,14 +435,21 @@ type: git_repo
 path: $PROJECT_DIR
 origin: https://github.com/gingeradditive/GingerView.git
 primary_branch: main
-# Use update.sh so Moonraker update runs pull/build/restart logic
-install_script: $PROJECT_DIR/script/update.sh
+managed_services: GingerView
 is_system_service: False
 EOF
 
     cp "$TMP_CONF" "$MOONRAKER_CONF"
     rm -f "$TMP_CONF"
     chown $SUDO_USER:$SUDO_USER "$MOONRAKER_CONF"
+
+    MOONRAKER_ASVC="/home/$SUDO_USER/printer_data/moonraker.asvc"
+    touch "$MOONRAKER_ASVC"
+    if ! grep -qx "GingerView" "$MOONRAKER_ASVC"; then
+        echo "GingerView" >> "$MOONRAKER_ASVC"
+        print_info "Added GingerView to Moonraker authorized services: $MOONRAKER_ASVC"
+    fi
+    chown $SUDO_USER:$SUDO_USER "$MOONRAKER_ASVC"
 
     print_success "Moonraker update_manager configured in $MOONRAKER_CONF"
     print_info "Restart Moonraker to apply changes: sudo systemctl restart moonraker"
