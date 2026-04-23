@@ -32,15 +32,20 @@ print_info "Project directory: $PROJECT_DIR"
 
 cd "$PROJECT_DIR"
 
-# Pull latest changes
+# Pull latest changes (non-destructive)
 print_info "Pulling latest changes from git..."
 git fetch origin
-git reset --hard origin/main
+git checkout main
+git pull --ff-only origin main
 
 # Install dependencies
 print_info "Installing npm dependencies..."
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+if ! command -v nvm >/dev/null 2>&1; then
+    print_error "nvm not found. Please install nvm and Node.js 20 first."
+    exit 1
+fi
 nvm use 20
 npm install
 
@@ -48,12 +53,21 @@ npm install
 print_info "Building GingerView..."
 npm run build
 
+if [ ! -d "$PROJECT_DIR/build" ]; then
+    print_error "Build failed: build directory not found"
+    exit 1
+fi
+
 # Set permissions
 print_info "Setting permissions..."
 chmod -R 755 build/
 
 # Restart nginx
 print_info "Restarting nginx..."
-sudo systemctl restart nginx
+if command -v sudo >/dev/null 2>&1; then
+    sudo -n systemctl restart nginx 2>/dev/null || print_info "Cannot restart nginx without passwordless sudo, skipping"
+else
+    systemctl restart nginx 2>/dev/null || print_info "Cannot restart nginx in current context, skipping"
+fi
 
 print_success "GingerView updated successfully!"

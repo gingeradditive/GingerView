@@ -203,28 +203,7 @@ ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/GingerView
 # Remove default nginx site if exists
 rm -f /etc/nginx/sites-enabled/default
 
-# Test nginx configuration
-print_info "Testing nginx configuration..."
-if ! nginx -t; then
-    print_error "Nginx configuration test failed"
-    print_info "GingerView config: $NGINX_CONF"
-    print_info "Mainsail config: $MAINSAIL_NGINX_CONF"
-    exit 1
-fi
-
-# Restart nginx
-print_info "Restarting nginx..."
-systemctl restart nginx
-systemctl enable nginx
-
-# Verify nginx is running
-if ! systemctl is-active --quiet nginx; then
-    print_error "Nginx failed to start"
-    print_info "Check logs with: journalctl -u nginx -n 50"
-    exit 1
-fi
-
-print_success "Nginx configured and running"
+# Nginx test/restart is executed after both GingerView and Mainsail sites are configured.
 
 # Create systemd service for auto-rebuild (optional)
 print_info "Creating systemd service for GingerView..."
@@ -310,10 +289,10 @@ fi
 MAINSAIL_NGINX_CONF="/etc/nginx/sites-available/mainsail"
 cat > "$MAINSAIL_NGINX_CONF" << EOF
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
+    listen 8081 default_server;
+    listen [::]:8081 default_server;
 
-    root $BUILD_DIR;
+    root $MAINSAIL_DIR;
     index index.html;
 
     server_name _;
@@ -326,7 +305,7 @@ server {
 
     # Handle client routing
     location / {
-        try_files $uri $uri.html $uri/ /index.html;
+        try_files \$uri \$uri.html \$uri/ /index.html;
     }
 
     # Cache static assets
@@ -351,12 +330,12 @@ server {
     location /moonraker/ {
         proxy_pass http://127.0.0.1:7125/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 86400;
     }
 
@@ -364,12 +343,12 @@ server {
     location /moonraker/websocket {
         proxy_pass http://127.0.0.1:7125/websocket;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 86400;
     }
 }
@@ -395,53 +374,78 @@ if [ -f "$MAINSAIL_DIR/config.json" ]; then
     "defaultLocale": "en",
     "defaultMode": "dark",
     "defaultTheme": "mainsail",
-    "hostname": "127.0.0.1",
+    "hostname": null,
     "port": 7125,
     "path": null,
     "instancesDB": "moonraker",
-    "instances": [
-        {
-            "hostname": "127.0.0.1",
-            "port": 7125
-        }
-    ]
+    "instances": []
 }
 EOF
     
-    print_success "Mainsail configured to connect to Moonraker at 127.0.0.1:7125"
+    print_success "Mainsail configured to use current host with Moonraker port 7125"
 else
     print_info "Mainsail config.json not found, skipping Moonraker configuration"
 fi
 
 print_success "Mainsail configured on port 8081"
 
-# Configure Moonraker update_manager for GingerView
+# Test and restart nginx after all site configs are created
+print_info "Testing nginx configuration..."
+if ! nginx -t; then
+    print_error "Nginx configuration test failed"
+    print_info "GingerView config: $NGINX_CONF"
+    print_info "Mainsail config: $MAINSAIL_NGINX_CONF"
+    exit 1
+fi
+
+print_info "Restarting nginx..."
+systemctl restart nginx
+systemctl enable nginx
+
+if ! systemctl is-active --quiet nginx; then
+    print_error "Nginx failed to start"
+    print_info "Check logs with: journalctl -u nginx -n 50"
+    exit 1
+fi
+
+print_success "Nginx configured and running"
+
+# Configure Moonraker update_manager for GingerView in moonraker.conf
 print_info "Configuring Moonraker update_manager for GingerView..."
 
-# Find moonraker.conf location
-MOONRAKER_CONF_DIR="/home/$SUDO_USER/printer_data/config"
-if [ -d "$MOONRAKER_CONF_DIR" ]; then
-    # Create update_manager config file
-    GINGERVIEW_UPDATE_CONF="$MOONRAKER_CONF_DIR/moonraker/gingerview.conf"
-    mkdir -p "$(dirname "$GINGERVIEW_UPDATE_CONF")"
-    
-    cat > "$GINGERVIEW_UPDATE_CONF" << EOF
+MOONRAKER_CONF="/home/$SUDO_USER/printer_data/config/moonraker.conf"
+if [ -f "$MOONRAKER_CONF" ]; then
+    TMP_CONF=$(mktemp)
+
+    # Remove existing GingerView update_manager section if present
+    awk '
+        BEGIN { skip=0 }
+        /^\[update_manager GingerView\]/ { skip=1; next }
+        skip && /^\[/ { skip=0 }
+        !skip { print }
+    ' "$MOONRAKER_CONF" > "$TMP_CONF"
+
+    cat >> "$TMP_CONF" << EOF
+
 [update_manager GingerView]
 type: git_repo
 path: $PROJECT_DIR
 origin: https://github.com/gingeradditive/GingerView.git
+primary_branch: main
 managed_services: nginx
-env: $PROJECT_DIR/.env
 install_script: $PROJECT_DIR/script/install.sh
 update_script: $PROJECT_DIR/script/update.sh
 is_system_service: False
 EOF
-    
-    chown $SUDO_USER:$SUDO_USER "$GINGERVIEW_UPDATE_CONF"
-    print_success "Moonraker update_manager configured for GingerView"
+
+    cp "$TMP_CONF" "$MOONRAKER_CONF"
+    rm -f "$TMP_CONF"
+    chown $SUDO_USER:$SUDO_USER "$MOONRAKER_CONF"
+
+    print_success "Moonraker update_manager configured in $MOONRAKER_CONF"
     print_info "Restart Moonraker to apply changes: sudo systemctl restart moonraker"
 else
-    print_info "Moonraker config directory not found, skipping update_manager configuration"
+    print_info "moonraker.conf not found at $MOONRAKER_CONF, skipping update_manager configuration"
 fi
 
 print_success "Installation completed successfully!"
