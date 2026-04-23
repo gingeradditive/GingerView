@@ -1,15 +1,9 @@
 #!/bin/bash
 
-# GingerView Update Script for Moonraker Update Manager
+# GingerView Update Script
 # This script handles the update process for GingerView
 
 set -e
-
-# Moonraker package declaration
-# This allows Moonraker to detect and manage this update
-PKGS="GingerView"
-PKG_DISTRO=""
-PKG_ARCH=""
 
 # Colors for output
 RED='\033[0;31m'

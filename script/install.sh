@@ -56,29 +56,7 @@ apt-get update -y
 
 # Install required packages
 print_info "Installing required packages..."
-apt-get install -y nginx curl build-essential python3
-
-# Install Node.js 20.x LTS
-print_info "Installing Node.js 20.x LTS..."
-if ! command -v node &> /dev/null; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
-    print_success "Node.js $(node -v) installed"
-else
-    print_info "Node.js $(node -v) already installed"
-fi
-
-# Verify npm installation
-if ! command -v npm &> /dev/null; then
-    print_error "npm not found after Node.js installation"
-    exit 1
-fi
-print_success "npm $(npm -v) installed"
-
-# Install npm dependencies
-print_info "Installing npm dependencies..."
-cd "$PROJECT_DIR"
-npm install
+apt-get install -y nginx curl python3
 
 # Create .env file from .env.example if it doesn't exist
 if [ ! -f "$PROJECT_DIR/.env" ]; then
@@ -88,29 +66,17 @@ fi
 
 print_success ".env file configured"
 
-# Build the application
-print_info "Building GingerView..."
-npm run build
-
-# Check if build was successful
-if [ ! -d "$PROJECT_DIR/build" ]; then
-    print_error "Build failed - no build directory found"
-    print_info "Looking for build directories..."
-    ls -la "$PROJECT_DIR" | grep -E "build|\.svelte-kit" || true
-    exit 1
-fi
-
-# With adapter-static, output is always in build directory
+# Prebuilt deployment: build artifacts must already exist in repository
 BUILD_DIR="$PROJECT_DIR/build"
 
 if [ ! -d "$BUILD_DIR" ]; then
     print_error "Build directory not found: $BUILD_DIR"
-    print_info "Available directories:"
-    find "$PROJECT_DIR" -maxdepth 2 -type d -name "build" -o -name "output" 2>/dev/null || true
+    print_info "This deployment expects prebuilt artifacts committed in the repository."
+    print_info "Build and commit on development machine before deploying: npm run build"
     exit 1
 fi
 
-print_success "Build completed in: $BUILD_DIR"
+print_success "Using prebuilt artifacts from: $BUILD_DIR"
 
 # Set permissions BEFORE configuring nginx
 print_info "Setting permissions on build directory..."
@@ -204,51 +170,6 @@ ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/GingerView
 rm -f /etc/nginx/sites-enabled/default
 
 # Nginx test/restart is executed after both GingerView and Mainsail sites are configured.
-
-# Create systemd service used by Moonraker updates only
-print_info "Creating GingerView build service (update-triggered only)..."
-cat > /etc/systemd/system/GingerView.service << EOF
-[Unit]
-Description=GingerView Build Service (Moonraker-triggered)
-After=network.target
-
-[Service]
-Type=oneshot
-User=root
-WorkingDirectory=$PROJECT_DIR
-ExecStart=/usr/bin/npm run build
-ExecStartPost=/bin/systemctl restart nginx
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Create a simple watcher service that rebuilds on file changes
-cat > /etc/systemd/system/GingerView-watcher.service << EOF
-[Unit]
-Description=GingerView File Watcher
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=$PROJECT_DIR
-ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0 --port 3000
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Note: For production, we use static files served by nginx
-# The watcher service is optional for development
-print_info "Systemd services created (GingerView.service, GingerView-watcher.service)"
-print_info "Note: For production, nginx serves static files. GingerView-watcher is for development only."
-systemctl daemon-reload
-systemctl disable GingerView.service >/dev/null 2>&1 || true
-print_info "GingerView.service is intentionally disabled at boot (build runs only on updates)"
 
 # Set ownership of project directory
 print_info "Setting ownership..."
@@ -421,7 +342,6 @@ MOONRAKER_CONF="/home/$SUDO_USER/printer_data/config/moonraker.conf"
 if [ -f "$MOONRAKER_CONF" ]; then
     TMP_CONF=$(mktemp)
 
-    # Remove existing GingerView update_manager section if present
     awk '
         BEGIN { skip=0 }
         /^\[update_manager GingerView\]/ { skip=1; next }
@@ -436,22 +356,12 @@ type: git_repo
 path: $PROJECT_DIR
 origin: https://github.com/gingeradditive/GingerView.git
 primary_branch: main
-# Trigger build only when an update is applied
-managed_services: GingerView
 is_system_service: False
 EOF
 
     cp "$TMP_CONF" "$MOONRAKER_CONF"
     rm -f "$TMP_CONF"
     chown $SUDO_USER:$SUDO_USER "$MOONRAKER_CONF"
-
-    MOONRAKER_ASVC="/home/$SUDO_USER/printer_data/moonraker.asvc"
-    touch "$MOONRAKER_ASVC"
-    if ! grep -qx "GingerView" "$MOONRAKER_ASVC"; then
-        echo "GingerView" >> "$MOONRAKER_ASVC"
-        print_info "Added GingerView to Moonraker authorized services: $MOONRAKER_ASVC"
-    fi
-    chown $SUDO_USER:$SUDO_USER "$MOONRAKER_ASVC"
 
     print_success "Moonraker update_manager configured in $MOONRAKER_CONF"
     print_info "Restart Moonraker to apply changes: sudo systemctl restart moonraker"

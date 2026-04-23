@@ -7,7 +7,6 @@ package-lock.json
 .netlify
 .wrangler
 /.svelte-kit
-/build
 
 # OS
 .DS_Store
