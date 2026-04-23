@@ -11,7 +11,7 @@
 
 	type PinnedAction = { id: string; title: string };
 
-	const PINNED_ACTIONS_KEY = 'gingerview:pinned-actions';
+	const PINNED_ACTIONS_KEY = 'GingerView:pinned-actions';
 	const logoImage = '/Printers/G2/Logo.svg';
 
 	let { children } = $props();

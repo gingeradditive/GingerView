@@ -9,7 +9,7 @@
 	type Group = { id: string; title: string; items: Item[] };
 	type PinnedAction = { id: string; title: string };
 
-	const PINNED_ACTIONS_KEY = 'gingerview:pinned-actions';
+	const PINNED_ACTIONS_KEY = 'GingerView:pinned-actions';
 
 	const topCards: Card[] = [
 		{ id: 'wifi', title: 'Wifi Configuration', description: 'Manage current network and Wi-Fi setup.', icon: Wifi },

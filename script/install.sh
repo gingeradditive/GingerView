@@ -127,7 +127,7 @@ find "$BUILD_DIR" -type d -exec chmod 755 {} \;
 print_info "Configuring nginx..."
 
 # Create nginx config
-NGINX_CONF="/etc/nginx/sites-available/gingerview"
+NGINX_CONF="/etc/nginx/sites-available/GingerView"
 cat > "$NGINX_CONF" << EOF
 server {
     listen 80 default_server;
@@ -170,7 +170,7 @@ server {
 EOF
 
 # Enable the site
-ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/gingerview
+ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/GingerView
 
 # Remove default nginx site if exists
 rm -f /etc/nginx/sites-enabled/default
@@ -200,7 +200,7 @@ print_success "Nginx configured and running"
 
 # Create systemd service for auto-rebuild (optional)
 print_info "Creating systemd service for GingerView..."
-cat > /etc/systemd/system/gingerview.service << EOF
+cat > /etc/systemd/system/GingerView.service << EOF
 [Unit]
 Description=GingerView Auto-Rebuild Service
 After=network.target
@@ -217,7 +217,7 @@ WantedBy=multi-user.target
 EOF
 
 # Create a simple watcher service that rebuilds on file changes
-cat > /etc/systemd/system/gingerview-watcher.service << EOF
+cat > /etc/systemd/system/GingerView-watcher.service << EOF
 [Unit]
 Description=GingerView File Watcher
 After=network.target
@@ -236,8 +236,8 @@ EOF
 
 # Note: For production, we use static files served by nginx
 # The watcher service is optional for development
-print_info "Systemd services created (gingerview.service, gingerview-watcher.service)"
-print_info "Note: For production, nginx serves static files. gingerview-watcher is for development only."
+print_info "Systemd services created (GingerView.service, GingerView-watcher.service)"
+print_info "Note: For production, nginx serves static files. GingerView-watcher is for development only."
 
 # Set ownership of project directory
 print_info "Setting ownership..."
