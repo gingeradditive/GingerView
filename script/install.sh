@@ -80,22 +80,48 @@ print_info "Installing npm dependencies..."
 cd "$PROJECT_DIR"
 npm install
 
+# Create .env file from .env.example if it doesn't exist
+if [ ! -f "$PROJECT_DIR/.env" ]; then
+    print_info "Creating .env file from .env.example..."
+    cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
+    print_success ".env file created"
+    print_info "You may need to edit .env to match your Moonraker configuration"
+else
+    print_info ".env file already exists, skipping creation"
+fi
+
 # Build the application
 print_info "Building GingerView..."
 npm run build
 
 # Check if build was successful
-if [ ! -d "$PROJECT_DIR/build" ] && [ ! -d "$PROJECT_DIR/.svelte-kit/output" ]; then
+if [ ! -d "$PROJECT_DIR/build" ] && [ ! -d "$PROJECT_DIR/.svelte-kit/output/client" ]; then
     print_error "Build failed - no output directory found"
+    print_info "Looking for build directories..."
+    ls -la "$PROJECT_DIR" | grep -E "build|\.svelte-kit" || true
     exit 1
 fi
 
-# Determine build directory
-BUILD_DIR="$PROJECT_DIR/build"
+# Determine build directory - SvelteKit adapter-auto typically outputs to .svelte-kit/output/client
+BUILD_DIR="$PROJECT_DIR/.svelte-kit/output/client"
 if [ ! -d "$BUILD_DIR" ]; then
-    BUILD_DIR="$PROJECT_DIR/.svelte-kit/output"
+    BUILD_DIR="$PROJECT_DIR/build"
 fi
+
+if [ ! -d "$BUILD_DIR" ]; then
+    print_error "Build directory not found: $BUILD_DIR"
+    print_info "Available directories:"
+    find "$PROJECT_DIR" -maxdepth 2 -type d -name "build" -o -name "output" 2>/dev/null || true
+    exit 1
+fi
+
 print_success "Build completed in: $BUILD_DIR"
+
+# Set permissions BEFORE configuring nginx
+print_info "Setting permissions on build directory..."
+chmod -R 755 "$BUILD_DIR"
+find "$BUILD_DIR" -type f -exec chmod 644 {} \;
+find "$BUILD_DIR" -type d -exec chmod 755 {} \;
 
 # Configure nginx
 print_info "Configuring nginx..."
@@ -133,6 +159,13 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+
+    # Disable access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
 }
 EOF
 
@@ -144,12 +177,24 @@ rm -f /etc/nginx/sites-enabled/default
 
 # Test nginx configuration
 print_info "Testing nginx configuration..."
-nginx -t
+if ! nginx -t; then
+    print_error "Nginx configuration test failed"
+    print_info "Configuration file: $NGINX_CONF"
+    cat "$NGINX_CONF"
+    exit 1
+fi
 
 # Restart nginx
 print_info "Restarting nginx..."
 systemctl restart nginx
 systemctl enable nginx
+
+# Verify nginx is running
+if ! systemctl is-active --quiet nginx; then
+    print_error "Nginx failed to start"
+    print_info "Check logs with: journalctl -u nginx -n 50"
+    exit 1
+fi
 
 print_success "Nginx configured and running on port 80"
 
@@ -194,10 +239,21 @@ EOF
 print_info "Systemd services created (gingerview.service, gingerview-watcher.service)"
 print_info "Note: For production, nginx serves static files. gingerview-watcher is for development only."
 
-# Set permissions
-print_info "Setting permissions..."
+# Set ownership of project directory
+print_info "Setting ownership..."
 chown -R $SUDO_USER:$SUDO_USER "$PROJECT_DIR" 2>/dev/null || true
+
+# Verify nginx can read build directory
+print_info "Verifying nginx can access build directory..."
+NGINX_USER=$(ps aux | grep 'nginx: master' | awk '{print $1}' | head -1)
+if [ -z "$NGINX_USER" ]; then
+    NGINX_USER="www-data"
+fi
+print_info "Nginx runs as user: $NGINX_USER"
+
+# Ensure nginx user can read the build directory
 chmod -R 755 "$BUILD_DIR"
+chmod 755 "$(dirname "$BUILD_DIR")"
 
 print_success "Installation completed successfully!"
 echo ""
