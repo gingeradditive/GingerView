@@ -80,6 +80,31 @@ print_info "Installing npm dependencies..."
 cd "$PROJECT_DIR"
 npm install
 
+# Switch to adapter-static for reliable static builds
+print_info "Installing adapter-static..."
+npm install -D @sveltejs/adapter-static
+
+# Update svelte.config.js to use adapter-static
+print_info "Configuring adapter-static..."
+cat > "$PROJECT_DIR/svelte.config.js" << 'EOF'
+import adapter from '@sveltejs/adapter-static';
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+	kit: {
+		adapter: adapter({
+			pages: 'build',
+			assets: 'build',
+			fallback: 'index.html',
+			precompress: false,
+			strict: true
+		})
+	}
+};
+
+export default config;
+EOF
+
 # Create .env file from .env.example if it doesn't exist
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     print_info "Creating .env file from .env.example..."
@@ -95,18 +120,15 @@ print_info "Building GingerView..."
 npm run build
 
 # Check if build was successful
-if [ ! -d "$PROJECT_DIR/build" ] && [ ! -d "$PROJECT_DIR/.svelte-kit/output/client" ]; then
-    print_error "Build failed - no output directory found"
+if [ ! -d "$PROJECT_DIR/build" ]; then
+    print_error "Build failed - no build directory found"
     print_info "Looking for build directories..."
     ls -la "$PROJECT_DIR" | grep -E "build|\.svelte-kit" || true
     exit 1
 fi
 
-# Determine build directory - SvelteKit adapter-auto typically outputs to .svelte-kit/output/client
-BUILD_DIR="$PROJECT_DIR/.svelte-kit/output/client"
-if [ ! -d "$BUILD_DIR" ]; then
-    BUILD_DIR="$PROJECT_DIR/build"
-fi
+# With adapter-static, output is always in build directory
+BUILD_DIR="$PROJECT_DIR/build"
 
 if [ ! -d "$BUILD_DIR" ]; then
     print_error "Build directory not found: $BUILD_DIR"
@@ -131,6 +153,7 @@ rm -f /etc/nginx/sites-available/gingerview
 rm -f /etc/nginx/sites-available/GingerView
 rm -f /etc/nginx/sites-enabled/gingerview
 rm -f /etc/nginx/sites-enabled/GingerView
+rm -f /etc/nginx/sites-enabled/mainsail.bak*
 
 # Create nginx config
 NGINX_CONF="/etc/nginx/sites-available/GingerView"
