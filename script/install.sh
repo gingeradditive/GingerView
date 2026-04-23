@@ -126,6 +126,12 @@ find "$BUILD_DIR" -type d -exec chmod 755 {} \;
 # Configure nginx
 print_info "Configuring nginx..."
 
+# Remove old GingerView configurations to avoid conflicts
+rm -f /etc/nginx/sites-available/gingerview
+rm -f /etc/nginx/sites-available/GingerView
+rm -f /etc/nginx/sites-enabled/gingerview
+rm -f /etc/nginx/sites-enabled/GingerView
+
 # Create nginx config
 NGINX_CONF="/etc/nginx/sites-available/GingerView"
 cat > "$NGINX_CONF" << EOF
@@ -257,6 +263,10 @@ chmod 755 "$(dirname "$BUILD_DIR")"
 
 # Install/Configure Mainsail on port 8081
 print_info "Configuring Mainsail on port 8081..."
+
+# Remove old Mainsail configurations to avoid conflicts
+rm -f /etc/nginx/sites-available/mainsail
+rm -f /etc/nginx/sites-enabled/mainsail
 
 # Check if Mainsail is already installed
 MAINSAIL_DIR="/home/$SUDO_USER/mainsail"
