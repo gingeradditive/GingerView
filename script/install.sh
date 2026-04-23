@@ -345,6 +345,22 @@ ln -sf "$MAINSAIL_NGINX_CONF" /etc/nginx/sites-enabled/mainsail
 chown -R $SUDO_USER:$SUDO_USER "$MAINSAIL_DIR" 2>/dev/null || true
 chmod -R 755 "$MAINSAIL_DIR"
 
+# Configure Mainsail to connect to local Moonraker
+print_info "Configuring Mainsail to connect to local Moonraker..."
+if [ -f "$MAINSAIL_DIR/config.json" ]; then
+    # Backup original config
+    cp "$MAINSAIL_DIR/config.json" "$MAINSAIL_DIR/config.json.bak"
+    
+    # Update Moonraker connection to localhost:7125
+    sudo -u "$SUDO_USER" sed -i 's/"192.168.1.201:8081"/"127.0.0.1:7125"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"port":\s*8081/"port": 7125/g' "$MAINSAIL_DIR/config.json"
+    
+    print_success "Mainsail configured to connect to Moonraker at 127.0.0.1:7125"
+else
+    print_info "Mainsail config.json not found, skipping Moonraker configuration"
+fi
+
 print_success "Mainsail configured on port 8081"
 
 print_success "Installation completed successfully!"
