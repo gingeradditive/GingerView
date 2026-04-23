@@ -351,17 +351,50 @@ if [ -f "$MAINSAIL_DIR/config.json" ]; then
     # Backup original config
     cp "$MAINSAIL_DIR/config.json" "$MAINSAIL_DIR/config.json.bak"
     
-    # Update Moonraker connection to localhost:7125
-    sudo -u "$SUDO_USER" sed -i 's/"192.168.1.201:8081"/"127.0.0.1:7125"/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "127.0.0.1"/g' "$MAINSAIL_DIR/config.json"
-    sudo -u "$SUDO_USER" sed -i 's/"port":\s*8081/"port": 7125/g' "$MAINSAIL_DIR/config.json"
+    # Get the Raspberry Pi IP address
+    RASPBERRY_PI_IP=$(hostname -I | awk '{print $1}')
     
-    print_success "Mainsail configured to connect to Moonraker at 127.0.0.1:7125"
+    # Update Moonraker connection to use the correct IP and port 7125
+    sudo -u "$SUDO_USER" sed -i 's/"192.168.1.201:8081"/"'$RASPBERRY_PI_IP':7125"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"192.168.1.201"/"hostname": "'$RASPBERRY_PI_IP'"/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"port":\s*8081/"port": 7125/g' "$MAINSAIL_DIR/config.json"
+    sudo -u "$SUDO_USER" sed -i 's/"hostname":\s*"127.0.0.1"/"hostname": "'$RASPBERRY_PI_IP'"/g' "$MAINSAIL_DIR/config.json"
+    
+    print_success "Mainsail configured to connect to Moonraker at $RASPBERRY_PI_IP:7125"
 else
     print_info "Mainsail config.json not found, skipping Moonraker configuration"
 fi
 
 print_success "Mainsail configured on port 8081"
+
+# Configure Moonraker update_manager for GingerView
+print_info "Configuring Moonraker update_manager for GingerView..."
+
+# Find moonraker.conf location
+MOONRAKER_CONF_DIR="/home/$SUDO_USER/printer_data/config"
+if [ -d "$MOONRAKER_CONF_DIR" ]; then
+    # Create update_manager config file
+    GINGERVIEW_UPDATE_CONF="$MOONRAKER_CONF_DIR/moonraker/gingerview.conf"
+    mkdir -p "$(dirname "$GINGERVIEW_UPDATE_CONF")"
+    
+    cat > "$GINGERVIEW_UPDATE_CONF" << EOF
+[update_manager GingerView]
+type: git_repo
+path: $PROJECT_DIR
+origin: https://github.com/gingeradditive/GingerView.git
+managed_services: nginx
+env: $PROJECT_DIR/.env
+install_script: $PROJECT_DIR/script/install.sh
+update_script: $PROJECT_DIR/script/update.sh
+is_system_service: False
+EOF
+    
+    chown $SUDO_USER:$SUDO_USER "$GINGERVIEW_UPDATE_CONF"
+    print_success "Moonraker update_manager configured for GingerView"
+    print_info "Restart Moonraker to apply changes: sudo systemctl restart moonraker"
+else
+    print_info "Moonraker config directory not found, skipping update_manager configuration"
+fi
 
 print_success "Installation completed successfully!"
 echo ""
