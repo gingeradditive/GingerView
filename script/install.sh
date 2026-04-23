@@ -179,8 +179,8 @@ rm -f /etc/nginx/sites-enabled/default
 print_info "Testing nginx configuration..."
 if ! nginx -t; then
     print_error "Nginx configuration test failed"
-    print_info "Configuration file: $NGINX_CONF"
-    cat "$NGINX_CONF"
+    print_info "GingerView config: $NGINX_CONF"
+    print_info "Mainsail config: $MAINSAIL_NGINX_CONF"
     exit 1
 fi
 
@@ -196,7 +196,7 @@ if ! systemctl is-active --quiet nginx; then
     exit 1
 fi
 
-print_success "Nginx configured and running on port 80"
+print_success "Nginx configured and running"
 
 # Create systemd service for auto-rebuild (optional)
 print_info "Creating systemd service for GingerView..."
@@ -255,12 +255,101 @@ print_info "Nginx runs as user: $NGINX_USER"
 chmod -R 755 "$BUILD_DIR"
 chmod 755 "$(dirname "$BUILD_DIR")"
 
+# Install/Configure Mainsail on port 8081
+print_info "Configuring Mainsail on port 8081..."
+
+# Check if Mainsail is already installed
+MAINSAIL_DIR="/home/$SUDO_USER/mainsail"
+MAINSAIL_CONFIG_DIR="/home/$SUDO_USER/mainsail-config"
+
+if [ ! -d "$MAINSAIL_DIR" ]; then
+    print_info "Mainsail not found, installing..."
+    
+    # Install Mainsail using git clone
+    cd "/home/$SUDO_USER"
+    sudo -u "$SUDO_USER" git clone https://github.com/mainsail-crew/mainsail.git mainsail
+    
+    print_success "Mainsail cloned to $MAINSAIL_DIR"
+else
+    print_info "Mainsail already installed at $MAINSAIL_DIR"
+fi
+
+# Create nginx config for Mainsail on port 8081
+MAINSAIL_NGINX_CONF="/etc/nginx/sites-available/mainsail"
+cat > "$MAINSAIL_NGINX_CONF" << EOF
+server {
+    listen 8081 default_server;
+    listen [::]:8081 default_server;
+
+    root $MAINSAIL_DIR;
+    index index.html;
+
+    server_name _;
+
+    # Enable gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/javascript application/json;
+
+    # Handle client routing
+    location / {
+        try_files \$uri \$uri.html \$uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Disable access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Proxy Moonraker API if needed
+    location /moonraker/ {
+        proxy_pass http://127.0.0.1:7125/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
+    }
+}
+EOF
+
+# Enable Mainsail site
+ln -sf "$MAINSAIL_NGINX_CONF" /etc/nginx/sites-enabled/mainsail
+
+# Set permissions for Mainsail
+chown -R $SUDO_USER:$SUDO_USER "$MAINSAIL_DIR" 2>/dev/null || true
+chmod -R 755 "$MAINSAIL_DIR"
+
+print_success "Mainsail configured on port 8081"
+
 print_success "Installation completed successfully!"
 echo ""
-echo "=== GingerView is now running ==="
-echo "Access it at: http://$(hostname -I | awk '{print $1}')"
+echo "=== GingerView and Mainsail are now running ==="
 echo ""
-echo "To rebuild the application after changes:"
+echo "GingerView (Port 80):"
+echo "  Access it at: http://$(hostname -I | awk '{print $1}')"
+echo ""
+echo "Mainsail (Port 8081):"
+echo "  Access it at: http://$(hostname -I | awk '{print $1}'):8081"
+echo ""
+echo "To rebuild GingerView after changes:"
 echo "  cd $PROJECT_DIR && npm run build"
 echo ""
 echo "To restart nginx:"
@@ -268,3 +357,5 @@ echo "  sudo systemctl restart nginx"
 echo ""
 echo "To view nginx logs:"
 echo "  sudo journalctl -u nginx -f"
+echo ""
+echo "Mainsail configurations are preserved from your existing setup"
