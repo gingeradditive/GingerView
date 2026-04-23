@@ -80,31 +80,6 @@ print_info "Installing npm dependencies..."
 cd "$PROJECT_DIR"
 npm install
 
-# Switch to adapter-static for reliable static builds
-print_info "Installing adapter-static..."
-npm install -D @sveltejs/adapter-static
-
-# Update svelte.config.js to use adapter-static
-print_info "Configuring adapter-static..."
-cat > "$PROJECT_DIR/svelte.config.js" << 'EOF'
-import adapter from '@sveltejs/adapter-static';
-
-/** @type {import('@sveltejs/kit').Config} */
-const config = {
-	kit: {
-		adapter: adapter({
-			pages: 'build',
-			assets: 'build',
-			fallback: 'index.html',
-			precompress: false,
-			strict: true
-		})
-	}
-};
-
-export default config;
-EOF
-
 # Create .env file from .env.example if it doesn't exist
 if [ ! -f "$PROJECT_DIR/.env" ]; then
     print_info "Creating .env file from .env.example..."
