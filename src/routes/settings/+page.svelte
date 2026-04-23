@@ -106,6 +106,7 @@
 </script>
 
 <section class="settings-page">
+	<p>test 1</p>
 	<div class="top-grid">
 		{#each topCards as card (card.id)}
 			<div class="action-wrap">
