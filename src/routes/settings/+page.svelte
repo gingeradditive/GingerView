@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { Wifi, Terminal, PanelTop, Network, Wrench, Droplets, CircleDot, Shield, ChevronDown, X, Pin } from 'lucide-svelte';
+	import { Wifi, Terminal, PanelTop, Network, Wrench, Droplets, CircleDot, Shield, ChevronDown, X, Pin, ExternalLink } from 'lucide-svelte';
 	import NetworkManager from '$lib/components/NetworkManager.svelte';
 	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
 
@@ -36,7 +36,8 @@
 			title: 'Troubleshooting',
 			items: [
 				{ id: 'console', title: 'Console', icon: Terminal, type: 'action' },
-				{ id: 'log-viewer', title: 'Log Viewer', icon: PanelTop, type: 'action' }
+				{ id: 'log-viewer', title: 'Log Viewer', icon: PanelTop, type: 'action' },
+				{ id: 'mainsail', title: 'Mainsail', icon: ExternalLink, type: 'action' }
 			]
 		}
 	];
@@ -68,7 +69,14 @@
 	function handleOpenPopup(event: MouseEvent, id: string, title: string) {
 		event.preventDefault();
 		event.stopPropagation();
-		openPopup(id, title);
+
+		if (id === 'mainsail') {
+			const url = new URL(window.location.href);
+			url.port = '8081';
+			window.open(url.toString(), '_blank');
+		} else {
+			openPopup(id, title);
+		}
 	}
 
 	function toggleItem(id: string) {
