@@ -187,13 +187,12 @@
 		</div>
 		<div class="progress-bar">
 			<div class="progress-track">
-				<div class="progress-elapsed" style="width: {progress}%">
-					<span class="elapsed-time">{elapsed}</span>
-				</div>
+				<div class="progress-elapsed" style="width: {progress}%"></div>
 				<div class="progress-remaining" style="width: {100 - progress}%">
 					<span class="eta-time">ETA: {eta} / {remaining}</span>
 				</div>
 			</div>
+			<span class="elapsed-time">{elapsed}</span>
 		</div>
 	{/if}
 </section>
@@ -310,6 +309,7 @@
 	.progress-bar {
 		display: flex;
 		flex-direction: column;
+		position: relative;
 	}
 
 	.progress-track {
@@ -322,14 +322,15 @@
 
 	.progress-elapsed {
 		background: #d72e28;
-		display: flex;
-		align-items: center;
-		justify-content: flex-start;
-		padding: 0 12px;
-		min-width: 0;
 	}
 
 	.elapsed-time {
+		position: absolute;
+		left: 16px;
+		top: 0;
+		height: 36px;
+		display: flex;
+		align-items: center;
 		color: #ffffff;
 		font-size: 0.95rem;
 		font-weight: 700;
