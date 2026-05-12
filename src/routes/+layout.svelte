@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import { Wifi, Terminal, PanelTop, Droplets, CircleDot, Wrench } from 'lucide-svelte';
-	import { mdiTabletDashboard, mdiFileMultiple, mdiCog } from '@mdi/js';
+	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
 	import '../app.css';
@@ -73,6 +73,17 @@
 	<a href="/" class:active={$page.url.pathname === '/'} aria-label="Dashboard" title="Dashboard">
 		<svg viewBox="0 0 24 24" aria-hidden="true">
 			<path d={mdiTabletDashboard} />
+		</svg>
+	</a>
+
+	<a
+		href="/movement"
+		class:active={$page.url.pathname.startsWith('/movement')}
+		aria-label="Movement"
+		title="Movement"
+	>
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<path d={mdiCursorMove} />
 		</svg>
 	</a>
 
