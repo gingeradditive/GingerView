@@ -108,7 +108,7 @@
 		display: grid;
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
-		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+		box-shadow: 0px 4px 3px 0px #00000040;
 		min-width: 0;
 	}
 
@@ -242,12 +242,7 @@
 		padding: 14px 56px;
 		border-radius: 14px;
 		cursor: pointer;
-		transition: background-color 0.15s, box-shadow 0.15s;
-		box-shadow: 0px 4px 4px 0px #00000040;
-	}
-
-	.print-button:hover {
-		background: #b82520;
+		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	@media (max-width: 980px) {

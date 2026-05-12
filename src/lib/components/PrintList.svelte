@@ -342,11 +342,6 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		transition: opacity 0.2s;
-	}
-
-	.action-button:hover {
-		opacity: 0.7;
 	}
 
 	.grid {
@@ -389,7 +384,7 @@
 		padding: 24px;
 		min-width: 300px;
 		max-width: 400px;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	.modal-content h3 {
@@ -428,11 +423,6 @@
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
-		transition: background-color 0.15s;
-	}
-
-	.modal-confirm:hover {
-		background: #B82520;
 	}
 
 	.modal-cancel {
@@ -443,10 +433,5 @@
 		cursor: pointer;
 		font-size: 0.9rem;
 		color: #666;
-		transition: background-color 0.15s;
-	}
-
-	.modal-cancel:hover {
-		background-color: #F5F5F5;
 	}
 </style>

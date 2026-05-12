@@ -261,14 +261,9 @@
 	.card-inner {
 		background: #FFFFFF;
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+		box-shadow: 0px 4px 3px 0px #00000040;
 		width: 100%;
 		box-sizing: border-box;
-		transition: box-shadow 0.2s;
-	}
-
-	.card-inner:hover {
-		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
 	}
 
 	.image-wrapper {
@@ -429,7 +424,7 @@
 		max-height: 60vh;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	.modal-content h3 {
