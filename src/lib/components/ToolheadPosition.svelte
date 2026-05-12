@@ -226,17 +226,17 @@
 
 	<div class="position-display">
 		<div class="position-column">
-			<span class="position-label">X </span>
+			<span class="position-label position-label-x">X </span>
 			<span class="position-value">{$actualX.toFixed(1)}</span>
 			<span class="position-unit"> mm</span>
 		</div>
 		<div class="position-column">
-			<span class="position-label">Y </span>
+			<span class="position-label position-label-y">Y </span>
 			<span class="position-value">{$actualY.toFixed(1)}</span>
 			<span class="position-unit"> mm</span>
 		</div>
 		<div class="position-column">
-			<span class="position-label">Z </span>
+			<span class="position-label position-label-z">Z </span>
 			<span class="position-value">{$actualZ.toFixed(1)}</span>
 			<span class="position-unit"> mm</span>
 		</div>
@@ -383,31 +383,42 @@
 
 	.position-column {
 		flex: 1;
-		background: #d72e28;
 		border-radius: 12px;
 		padding: 12px;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 		justify-content: center;
-		gap: 4px;
+		gap: 12px;
 	}
 
 	.position-label {
-		color: #e0e0e0;
-		font-size: 1rem;
-		font-weight: 600;
+		color: #000000;
+		font-size: 1.5rem;
+		font-weight: 700;
+	}
+
+	.position-label-x {
+		color: #d72e28;
+	}
+
+	.position-label-y {
+		color: #26b73f;
+	}
+
+	.position-label-z {
+		color: #3d67d8;
 	}
 
 	.position-value {
-		color: #ffffff;
-		font-size: 1rem;
+		color: #808080;
+		font-size: 1.5rem;
 		font-weight: 600;
 	}
 
 	.position-unit {
-		color: #e0e0e0;
-		font-size: 1rem;
+		color: #808080;
+		font-size: 1.5rem;
 		font-weight: 600;
 	}
 </style>
