@@ -218,12 +218,11 @@
 			<line class="axis-y" x1={p010.x} y1={p010.y} x2={p010.x - 52} y2={p010.y + 28} />
 			<text class="axis-label axis-label-y" x={p010.x - 70} y={p010.y + 36}>Y</text>
 
-			<circle class="target-marker" cx={targetMarker.x} cy={targetMarker.y} r="5" />
 			<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
 			<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
 
 		</svg>
-	</div>
+	</div>h
 
 	<div class="position-display">
 		<div class="position-column">
@@ -374,12 +373,6 @@
 
 	.toolhead-marker {
 		fill: #d72e28;
-	}
-
-	.target-marker {
-		fill: #ffffff00;
-		stroke: #d72e28;
-		stroke-width: 1.1;
 	}
 
 	.position-display {
