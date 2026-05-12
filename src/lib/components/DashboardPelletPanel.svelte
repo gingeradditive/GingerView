@@ -12,6 +12,13 @@
 	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
 	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
 
+	// Generate circles for the SVG
+	const circles = Array.from({ length: 20 }, (_, i) => ({
+		cx: (i + 0.5) * 5,
+		cy: 24,
+		r: Math.random() * 8 + 4
+	}));
+
 	let lastFilename: string | null = null;
 	let filamentWeightTotal: number | null = null;
 
@@ -85,7 +92,18 @@
 <section class="pellet-panel" aria-label="Pellet Level">
 	<div class="pellet-visual">
 		{#if !isIdle}
-			<div class="pellet-fill" style="height: {percentage}%"></div>
+			<div class="pellet-fill" style="height: {percentage}%">
+				<svg width="100%" height="48px" style="position: absolute; top: -24px; left: 0;">
+					{#each circles as circle}
+						<circle
+							cx="{circle.cx}%"
+							cy="{circle.cy}"
+							r="{circle.r}"
+							fill="#D72E28"
+						/>
+					{/each}
+				</svg>
+			</div>
 		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
