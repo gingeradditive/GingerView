@@ -7,8 +7,6 @@
 
 	let { item }: { item: PrintItem } = $props();
 
-	let nameElement: HTMLSpanElement;
-	let isOverflowing = $state(false);
 	let showContextMenu = $state(false);
 	let contextMenuX = $state(0);
 	let contextMenuY = $state(0);
@@ -22,10 +20,6 @@
 	let activeContextMenuIdValue = $state<string | null>(null);
 
 	onMount(() => {
-		if (nameElement) {
-			isOverflowing = nameElement.scrollWidth > (nameElement.parentElement?.clientWidth ?? 250);
-		}
-		
 		// Subscribe to store changes
 		const unsubscribe = activeContextMenuId.subscribe((value) => {
 			activeContextMenuIdValue = value;
@@ -179,8 +173,8 @@
 			</div>
 		</div>
 	{/if}
-	<div class="name-label" class:marquee={isOverflowing}>
-		<span class="name-text" bind:this={nameElement}>{item.name}</span>
+	<div class="name-label">
+		<span class="name-text">{item.name.length > 20 ? item.name.slice(0, 20) + '...' : item.name}</span>
 	</div>
 </div>
 
@@ -360,16 +354,6 @@
 
 	.name-text {
 		display: inline-block;
-	}
-
-	.marquee .name-text {
-		animation: marquee 20s ease-in-out infinite;
-	}
-
-	@keyframes marquee {
-		0% { transform: translateX(0); }
-		83.33% { transform: translateX(calc(-100% + var(--card-size))); }
-		100% { transform: translateX(0); }
 	}
 
 	@media (max-width: 768px) {

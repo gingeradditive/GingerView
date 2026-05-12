@@ -158,7 +158,7 @@
 	{:else}
 		<div class="job-header">
 			<div class="job-info">
-				<span class="job-name">{jobName}</span>
+				<span class="job-name">{jobName.length > 30 ? jobName.slice(0, 30) + '...' : jobName}</span>
 				<span class="job-material">{jobMaterial}</span>
 			</div>
 			<div class="job-preview">
@@ -166,33 +166,32 @@
 			</div>
 			<div class="job-controls">
 				<button class="control-btn stop" aria-label="Stop" onclick={handleCancel}>
-					<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 						<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 					</svg>
 				</button>
 				<button class="control-btn pause" aria-label={isPaused ? 'Resume' : 'Pause'} onclick={handlePauseResume}>
 					{#if isPaused}
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+						<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 							<polygon points="4,1 17,9 4,17" fill="#d72e28" />
 						</svg>
 					{:else}
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+						<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 							<rect x="3" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 							<rect x="11" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 						</svg>
 					{/if}
 				</button>
 			</div>
+			<span class="job-percentage">{progress}%</span>
 		</div>
 		<div class="progress-bar">
 			<div class="progress-track">
 				<div class="progress-elapsed" style="width: {progress}%">
 					<span class="elapsed-time">{elapsed}</span>
-					<span class="percentage">{progress}%</span>
 				</div>
 				<div class="progress-remaining" style="width: {100 - progress}%">
-					<span class="remaining-time">{remaining}</span>
-					<span class="eta-time">ETA: {eta}</span>
+					<span class="eta-time">ETA: {eta} / {remaining}</span>
 				</div>
 			</div>
 		</div>
@@ -227,7 +226,7 @@
 
 	.idle-title {
 		font-size: 2rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: #222222;
 		line-height: 1.1;
 	}
@@ -238,6 +237,17 @@
 		gap: 12px;
 		flex: 1;
 		padding: 0 16px;
+		position: relative;
+	}
+
+	.job-percentage {
+		position: absolute;
+		left: 16px;
+		bottom: -0.9rem;
+		color: #222222;
+		font-size: 2.5rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 
 	.job-info {
@@ -249,7 +259,7 @@
 
 	.job-name {
 		font-size: 1.6rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: #222222;
 		line-height: 1.1;
 	}
@@ -263,6 +273,7 @@
 	.job-preview {
 		flex-shrink: 0;
 		margin-left: auto;
+		transform: translateY(20px);
 	}
 
 	.job-preview img {
@@ -313,7 +324,7 @@
 		background: #d72e28;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-start;
 		padding: 0 12px;
 		min-width: 0;
 	}
@@ -325,27 +336,13 @@
 		white-space: nowrap;
 	}
 
-	.percentage {
-		color: #ffffff;
-		font-size: 1.15rem;
-		font-weight: 800;
-		white-space: nowrap;
-	}
-
 	.progress-remaining {
 		background: #b0b0b0;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		padding: 0 12px;
 		min-width: 0;
-	}
-
-	.remaining-time {
-		color: #ffffff;
-		font-size: 0.8rem;
-		font-weight: 600;
-		white-space: nowrap;
 	}
 
 	.eta-time {

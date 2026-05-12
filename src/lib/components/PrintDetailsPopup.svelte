@@ -48,7 +48,14 @@
 
 			<div class="info-pane">
 				<div class="desktop-header">
-					<h2>{item.name}</h2>
+					<h2 class="desktop-title-track">
+						<span class:desktop-title-marquee={item.name.length > 30}>
+							<span class="desktop-title-text">{item.name}</span>
+							{#if item.name.length > 30}
+								<span class="desktop-title-text" aria-hidden="true">{item.name}</span>
+							{/if}
+						</span>
+					</h2>
 					<p class="subtitle">{item.filamentName || item.material || '--'}</p>
 				</div>
 
@@ -102,6 +109,7 @@
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
 		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+		min-width: 0;
 	}
 
 	.preview-pane {
@@ -117,9 +125,9 @@
 		display: inline-block;
 	}
 
-	.preview-image-wrapper img {
-		width: 100%;
-		max-width: 500px;
+	.preview-image-wrapper>img {
+		width: 200px;
+		max-width: 200px;
 		height: auto;
 		aspect-ratio: 1 / 1;
 		object-fit: contain;
@@ -147,10 +155,17 @@
 		justify-content: space-between;
 		padding: 40px;
 		gap: 28px;
+		min-width: 0;
 	}
 
 	.mobile-header {
 		display: none;
+	}
+
+	.desktop-header {
+		overflow: hidden;
+		width: 100%;
+		min-width: 0;
 	}
 
 	h2 {
@@ -158,6 +173,37 @@
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		color: #111;
 		font-weight: 600;
+	}
+
+	.desktop-title-track {
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.desktop-title-track > span {
+		display: inline-flex;
+		align-items: baseline;
+		width: max-content;
+	}
+
+	.desktop-title-marquee {
+		gap: 32px;
+		animation: desktop-title-marquee 14s linear infinite;
+	}
+
+	.desktop-title-text {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	@keyframes desktop-title-marquee {
+		0%,
+		10% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(calc(-50% - 16px));
+		}
 	}
 
 	.subtitle {
@@ -223,7 +269,11 @@
 		}
 
 		.preview-pane {
-			padding: 16px 24px;
+			background: #ffffff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 24px;
 		}
 
 		.preview-image-wrapper img {
