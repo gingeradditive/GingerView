@@ -120,7 +120,7 @@
 		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
 			<span class="bed-label">BED</span>
 			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
-				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>{formatTemperature(bedTemperature)}</span>
+				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span>
 				{#if showBedSet()}
 					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
 				{/if}
@@ -209,7 +209,7 @@
 	.bed-temperature-stack {
 		position: absolute;
 		bottom: 7px;
-		right: 8px;
+		right: 18px;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
@@ -223,12 +223,14 @@
 		font-weight: 600;
 		color: #7a7a7e;
 		line-height: 1;
+		position: relative;
 	}
 
-	.bed-value::after {
-		content: '°';
+	.degree-symbol {
 		font-size: 0.8em;
-		margin-left: 0.1em;
+		position: absolute;
+		left: 100%;
+		top: 0;
 	}
 
 	.bed-value.heating {

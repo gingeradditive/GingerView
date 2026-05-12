@@ -32,7 +32,7 @@
 <div class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`} aria-label={`Temperatura estrusore ${index}`}>
 	<span class="index">{index}</span>
 	<div class={`temperature-stack ${showSet ? 'with-set' : ''}`}>
-		<span class={`temperature ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}>{formatTemperature(temperature)}</span>
+		<span class={`temperature ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}>{formatTemperature(temperature)}<span class="degree-symbol">°</span></span>
 		{#if showSet}
 			<span class="set-temperature">{formatTemperature(target)}</span>
 		{/if}
@@ -92,12 +92,14 @@
 		font-weight: 600;
 		color: #7a7a7e;
 		line-height: 1;
+		position: relative;
 	}
 
-	.temperature::after {
-		content: '°';
+	.degree-symbol {
 		font-size: 0.8em;
-		margin-left: 0.1em;
+		position: absolute;
+		left: 100%;
+		top: 0;
 	}
 
 	.temperature.heating {
