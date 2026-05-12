@@ -31,7 +31,7 @@
 		<div class="popup-modal" role="document" onclick={(e) => e.stopPropagation()}>
 			<h3>{title}</h3>
 			<div class="popup-slider-row">
-				<svg viewBox="0 0 24 24" width={leftIconSize} height={leftIconSize} class="popup-slider-icon">
+				<svg viewBox="0 0 24 24" width={leftIconSize} height={leftIconSize} class="popup-slider-icon clickable" role="button" tabindex="0" onclick={() => onChange(0)} onkeydown={(e) => e.key === 'Enter' && onChange(0)}>
 					<path d={leftIconPath} fill="#d72e28" />
 				</svg>
 				<input
@@ -42,7 +42,7 @@
 					value={Math.round(value)}
 					oninput={(e) => onChange(Number((e.currentTarget as HTMLInputElement).value))}
 				/>
-				<svg viewBox="0 0 24 24" width={rightIconSize} height={rightIconSize} class="popup-slider-icon">
+				<svg viewBox="0 0 24 24" width={rightIconSize} height={rightIconSize} class="popup-slider-icon clickable" role="button" tabindex="0" onclick={() => onChange(100)} onkeydown={(e) => e.key === 'Enter' && onChange(100)}>
 					<path d={rightIconPath} fill="#d72e28" />
 				</svg>
 			</div>
