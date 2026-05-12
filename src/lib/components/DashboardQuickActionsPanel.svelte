@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { configService } from '$lib/services/config';
+	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
 	const pollIntervalMs = 2000;
 	const circumference = 2 * Math.PI * 16;
@@ -10,6 +11,8 @@
 	let lightValue = $state(0);
 	let fanOn = $state(false);
 	let lightOn = $state(false);
+	let fanPopupOpen = $state(false);
+	let lightPopupOpen = $state(false);
 
 	let fanDash = $derived(`${fanSpeed * circumference} ${circumference}`);
 	let lightDash = $derived(`${lightValue * circumference} ${circumference}`);
@@ -55,20 +58,39 @@
 		}
 	};
 
-	const toggleFan = (): void => {
-		if (fanOn) {
-			sendGcode('M106 S0');
-		} else {
-			sendGcode('M106 S255');
-		}
+	const openFanPopup = (): void => {
+		fanPopupOpen = true;
 	};
 
-	const toggleLight = (): void => {
-		if (lightOn) {
-			sendGcode('SET_LED LED=LED_CAMERA WHITE=0');
-		} else {
-			sendGcode('SET_LED LED=LED_CAMERA WHITE=1');
-		}
+	const closeFanPopup = (): void => {
+		fanPopupOpen = false;
+	};
+
+	const setFanByPercent = (percent: number): void => {
+		const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+		const speed01 = safePercent / 100;
+		const speed255 = Math.round(speed01 * 255);
+
+		fanSpeed = speed01;
+		fanOn = speed01 > 0;
+		sendGcode(`M106 S${speed255}`);
+	};
+
+	const openLightPopup = (): void => {
+		lightPopupOpen = true;
+	};
+
+	const closeLightPopup = (): void => {
+		lightPopupOpen = false;
+	};
+
+	const setLightByPercent = (percent: number): void => {
+		const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+		const white01 = safePercent / 100;
+
+		lightValue = white01;
+		lightOn = white01 > 0;
+		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`);
 	};
 
 	onMount(() => {
@@ -80,7 +102,7 @@
 
 <section class="quick-actions-panel" aria-label="Quick Actions">
 	<div class="action-subpanel">
-		<button class="action-btn" aria-label="Fan" onclick={toggleFan}>
+		<button class="action-btn" aria-label="Fan" onclick={openFanPopup}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
@@ -93,7 +115,7 @@
 		</button>
 	</div>
 	<div class="action-subpanel">
-		<button class="action-btn" aria-label="Light" onclick={toggleLight}>
+		<button class="action-btn" aria-label="Light" onclick={openLightPopup}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />
@@ -106,6 +128,32 @@
 		</button>
 	</div>
 </section>
+
+<QuickActionSliderPopup
+	isOpen={fanPopupOpen}
+	title="Fans"
+	ariaLabel="Fan control"
+	value={fanSpeed * 100}
+	onClose={closeFanPopup}
+	onChange={setFanByPercent}
+	leftIconPath={mdiFan}
+	rightIconPath={mdiFan}
+	leftIconSize={18}
+	rightIconSize={30}
+/>
+
+<QuickActionSliderPopup
+	isOpen={lightPopupOpen}
+	title="Light"
+	ariaLabel="LED light control"
+	value={lightValue * 100}
+	onClose={closeLightPopup}
+	onChange={setLightByPercent}
+	leftIconPath={mdiLightbulbOff}
+	rightIconPath={mdiLightbulb}
+	leftIconSize={18}
+	rightIconSize={30}
+/>
 
 <style>
 	.quick-actions-panel {
@@ -146,6 +194,11 @@
 		justify-content: center;
 	}
 
+	.action-btn:focus-visible {
+		outline: 2px solid #d72e28;
+		outline-offset: 2px;
+	}
+
 	.action-btn svg {
 		stroke: #d72e28;
 	}
@@ -182,5 +235,4 @@
 			transform: rotate(360deg);
 		}
 	}
-
 </style>
