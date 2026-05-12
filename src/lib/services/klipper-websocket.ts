@@ -16,8 +16,10 @@ class KlipperWebSocketService {
 
   public klipperStatus = writable<KlipperStatus | null>(null);
 
-  constructor(url: string = 'ws://localhost:7125') {
-    this.url = url;
+  constructor(url?: string) {
+    const host = import.meta.env.VITE_MOONRAKER_HOST || 'localhost';
+    const port = import.meta.env.VITE_MOONRAKER_PORT || '7125';
+    this.url = url || `ws://${host}:${port}`;
   }
 
   connect(): Promise<void> {
