@@ -222,7 +222,7 @@
 			<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
 
 		</svg>
-	</div>h
+	</div>
 
 	<div class="position-display">
 		<div class="position-column">
