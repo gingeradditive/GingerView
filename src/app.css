@@ -12,6 +12,12 @@ html, body {
   overflow-x: hidden;
 }
 
+@media (max-width: 768px) {
+  html {
+    zoom: 0.8;
+  }
+}
+
 .card {
   background-color: #FFFFFF;
   border-radius: 0.5rem;
