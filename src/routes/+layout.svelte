@@ -166,13 +166,13 @@
 	.dock {
 		position: fixed;
 		left: 50%;
-		bottom: 16px;
+		bottom: 12.8px;
 		transform: translateX(-50%);
 		display: flex;
-		gap: 0.64rem;
-		padding: 9.6px;
+		gap: 0.512rem;
+		padding: 7.68px;
 		background: rgba(255, 255, 255, 0.85);
-		border-radius: 19.2px;
+		border-radius: 15.36px;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -184,10 +184,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 52.8px;
-		height: 52.8px;
+		width: 42.24px;
+		height: 42.24px;
 		color: #828282;
-		border-radius: 14.4px;
+		border-radius: 11.52px;
 		text-decoration: none;
 		background: #ffffff;
 		border: 3px solid transparent;
@@ -218,7 +218,7 @@
 	}
 
 	.first-pinned {
-		margin-left: 19.2px;
+		margin-left: 15.36px;
 	}
 
 	.pinned-action:hover {
@@ -226,14 +226,14 @@
 	}
 
 	.dock svg {
-		width: 32px;
-		height: 32px;
+		width: 25.6px;
+		height: 25.6px;
 		fill: currentColor;
 	}
 
 	.settings-icon {
 		background: #ffffff !important;
-		margin-left: 19.2px;
+		margin-left: 15.36px;
 		color: #828282 !important;
 		border: 3px solid transparent !important;
 	}
@@ -259,14 +259,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 68px;
-		height: 52.8px;
-		margin-right: 16px;
+		width: 54.4px;
+		height: 42.24px;
+		margin-right: 12.8px;
 	}
 
 	.logo-image {
-		width: 48px;
-		height: 48px;
+		width: 38.4px;
+		height: 38.4px;
 		object-fit: contain;
 	}
 
