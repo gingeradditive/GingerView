@@ -68,7 +68,7 @@
 	.popup-modal {
 		width: min(520px, 100%);
 		background: #ffffff;
-		border-radius: 54px;
+		border-radius: 27px;
 		box-shadow: 0px 4px 3px 0px #00000040;
 		padding: 28px 32px;
 		display: flex;

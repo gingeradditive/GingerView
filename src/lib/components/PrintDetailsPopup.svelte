@@ -104,7 +104,7 @@
 		width: min(800px, 100%);
 		min-height: 400px;
 		background: #ffffff;
-		border-radius: 54px;
+		border-radius: 27px;
 		display: grid;
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
@@ -240,7 +240,7 @@
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		font-weight: 600;
 		padding: 14px 56px;
-		border-radius: 14px;
+		border-radius: 7px;
 		cursor: pointer;
 		box-shadow: 0px 4px 3px 0px #00000040;
 	}

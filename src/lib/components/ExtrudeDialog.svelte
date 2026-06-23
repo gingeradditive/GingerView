@@ -8,7 +8,7 @@
 <style>
 	.extrude-dialog-card {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 8px;
 		padding: 16px;
 		width: 100%;
 		height: 100%;
