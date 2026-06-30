@@ -83,14 +83,14 @@
 	.embla__container {
 		display: flex;
 		height: 100%;
-		margin-left: -0.5rem;
+		margin-left: -1.5rem;
 	}
 
 	.embla__slide {
 		flex: 0 0 100%;
 		min-width: 0;
 		height: 100%;
-		padding-left: 0.5rem;
+		padding-left: 1.5rem;
 		box-sizing: border-box;
 	}
 
