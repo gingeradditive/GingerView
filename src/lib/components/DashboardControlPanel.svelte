@@ -282,7 +282,7 @@
 <style>
 	.control-panel {
 		background: #ffffff;
-		border-radius: 27px;
+		border-radius: 19.2px;
 		padding: 20px;
 		display: flex;
 		flex-direction: column;

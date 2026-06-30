@@ -129,7 +129,7 @@
 <style>
 	.pellet-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		flex-direction: column;
@@ -146,7 +146,7 @@
 		width: 100%;
 		height: 100%;
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		overflow: hidden;
 		position: relative;
 		display: flex;

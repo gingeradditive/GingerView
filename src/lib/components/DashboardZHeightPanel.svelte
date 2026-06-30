@@ -105,7 +105,7 @@
 <style>
 	.z-height-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		align-items: stretch;

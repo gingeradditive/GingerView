@@ -86,7 +86,7 @@
 <style>
 	.job-info-card {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
 		flex-direction: column;
