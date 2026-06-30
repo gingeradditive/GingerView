@@ -78,7 +78,7 @@
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
-		padding: 10px;
+		padding: 10px 0;
 		box-sizing: border-box;
 	}
 

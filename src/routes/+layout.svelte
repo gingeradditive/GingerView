@@ -160,7 +160,7 @@
 
 <style>
 	.page-content {
-		min-height: 100vh;
+		height: 100%;
 	}
 
 	.dock {
