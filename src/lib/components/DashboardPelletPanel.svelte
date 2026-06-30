@@ -14,10 +14,12 @@
 	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
 
 	// Generate circles for the SVG
-	const circles = Array.from({ length: 20 }, (_, i) => ({
-		cx: (i + 0.5) * 5,
+	const circles = Array.from({ length: 40 }, (_, i) => ({
+		cx: (i + 0.5) * 2.5,
 		cy: 24,
-		r: Math.random() * 8 + 4
+		r: Math.random() * 12 + 6,
+		duration: (Math.random() * 0.6 + 0.6).toFixed(2),
+		delay: (Math.random() * 0.6).toFixed(2)
 	}));
 
 	let lastFilename: string | null = null;
@@ -107,6 +109,7 @@
 							cy="{circle.cy}"
 							r="{circle.r}"
 							fill="#D72E28"
+							style="animation: pellet-vibrate {circle.duration}s ease-in-out {circle.delay}s infinite;"
 						/>
 					{/each}
 				</svg>
@@ -159,6 +162,22 @@
 		background: #D72E28;
 		transition: height 0.3s ease;
 		z-index: 1;
+	}
+
+	@keyframes -global-pellet-vibrate {
+		0%,
+		100% {
+			transform: translate(0, 0);
+		}
+		25% {
+			transform: translate(1px, -1.5px);
+		}
+		50% {
+			transform: translate(-1.5px, 1px);
+		}
+		75% {
+			transform: translate(1px, 1px);
+		}
 	}
 
 	.pellet-text {
