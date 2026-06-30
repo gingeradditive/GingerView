@@ -145,16 +145,15 @@
 	}
 
 	.flow-label {
-		font-size: 1rem;
+		font-size: 2rem;
     	font-weight: 700;
-    	color: #000000;
 		color: #111111;
 		line-height: 1.1;
 		letter-spacing: 0.02em;
 	}
 
 	.flow-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		font-weight: 500;
 		color: #666666;
 		line-height: 1.3;

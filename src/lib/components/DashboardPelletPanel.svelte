@@ -176,13 +176,13 @@
 	}
 
 	.pellet-label {
-		font-size: 1rem;
+		font-size: 2rem;
 		font-weight: 700;
 		color: #000000;
 	}
 
 	.pellet-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		color: #000000;
 		font-weight: 500;
 	}

@@ -117,7 +117,7 @@
 
 	.z-progress-container {
 		position: relative;
-		width: 40px;
+		width: 80px;
 		height: 100%;
 		flex-shrink: 0;
 	}
@@ -186,19 +186,19 @@
 	}
 
 	.z-label {
-		font-size: 1rem;
+		font-size: 2rem;
 		font-weight: 700;
 		color: #111111;
 	}
 
 	.z-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		color: #666666;
 		font-weight: 500;
 	}
 
 	.z-value-sub {
-		font-size: 0.75rem;
+		font-size: 1.5rem;
 		color: #999999;
 		font-weight: 400;
 	}

@@ -101,7 +101,7 @@
 	}
 
 	.job-name {
-		font-size: 1.6rem;
+		font-size: 2rem;
 		font-weight: 700;
 		color: #222222;
 	}
