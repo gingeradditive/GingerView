@@ -3,7 +3,6 @@
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { configService } from '$lib/services/config';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
-	import { DASHBOARD_MOCK_ENABLED, mockControlPanel } from '$lib/mock/dashboardMock';
 
 	const pollIntervalMs = 2000;
 	const circumference = 2 * Math.PI * 16;
@@ -67,19 +66,6 @@
 	};
 
 	const updateStatus = async (): Promise<void> => {
-		if (DASHBOARD_MOCK_ENABLED) {
-			progress = mockControlPanel.progress;
-			elapsed = mockControlPanel.elapsed;
-			remaining = mockControlPanel.remaining;
-			eta = mockControlPanel.eta;
-			isPrinting = mockControlPanel.isPrinting;
-			isPaused = mockControlPanel.isPaused;
-			fanSpeed = mockControlPanel.fanSpeed;
-			fanOn = mockControlPanel.fanOn;
-			lightValue = mockControlPanel.lightValue;
-			lightOn = mockControlPanel.lightOn;
-			return;
-		}
 		try {
 			const response = await fetch(
 				`${getApiUrl()}/printer/objects/query?print_stats&virtual_sdcard&fan&led LED_CAMERA`

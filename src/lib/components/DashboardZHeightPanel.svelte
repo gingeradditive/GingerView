@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
-	import { DASHBOARD_MOCK_ENABLED, mockZHeight } from '$lib/mock/dashboardMock';
 
 	const pollIntervalMs = 1500;
 	const totalSections = 10;
@@ -30,12 +29,6 @@
 	};
 
 	const updateZHeight = async (): Promise<void> => {
-		if (DASHBOARD_MOCK_ENABLED) {
-			isIdle = mockZHeight.isIdle;
-			currentHeight = mockZHeight.currentHeight;
-			maxHeight = mockZHeight.maxHeight;
-			return;
-		}
 		try {
 			const response = await fetch(`${getApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
 			if (!response.ok) return;

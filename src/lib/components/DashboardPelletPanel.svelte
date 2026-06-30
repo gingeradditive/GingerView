@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
-	import { DASHBOARD_MOCK_ENABLED, mockPellet } from '$lib/mock/dashboardMock';
 
 	const pollIntervalMs = 3000;
 	const maxPelletKg = 5;
@@ -51,12 +50,6 @@
 	};
 
 	const updatePellet = async (): Promise<void> => {
-		if (DASHBOARD_MOCK_ENABLED) {
-			isIdle = mockPellet.isIdle;
-			usedKg = mockPellet.usedKg;
-			totalKg = mockPellet.totalKg;
-			return;
-		}
 		try {
 			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
 			if (!response.ok) return;

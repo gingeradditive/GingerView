@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import { configService } from '$lib/services/config';
-	import { DASHBOARD_MOCK_ENABLED, mockTemperatures } from '$lib/mock/dashboardMock';
 
 	type HeaterStatus = {
 		temperature?: number;
@@ -67,13 +66,6 @@
 	};
 
 	const updateTemperatures = async (): Promise<void> => {
-		if (DASHBOARD_MOCK_ENABLED) {
-			extruderTemperatures = mockTemperatures.extruderTemperatures;
-			extruderTargets = mockTemperatures.extruderTargets;
-			bedTemperature = mockTemperatures.bedTemperature;
-			bedTarget = mockTemperatures.bedTarget;
-			return;
-		}
 		try {
 			const response = await fetch(`${getApiUrl()}${getQueryPath()}`);
 			if (!response.ok) {

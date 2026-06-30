@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
 	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
-	import { DASHBOARD_MOCK_ENABLED, mockJobInfo } from '$lib/mock/dashboardMock';
 
 	const pollIntervalMs = 2000;
 
@@ -39,12 +38,6 @@
 	};
 
 	const updateJobInfo = async (): Promise<void> => {
-		if (DASHBOARD_MOCK_ENABLED) {
-			jobName = mockJobInfo.jobName;
-			jobMaterial = mockJobInfo.jobMaterial;
-			thumbnailUrl = mockJobInfo.thumbnailUrl;
-			return;
-		}
 		try {
 			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
 			if (!response.ok) return;
