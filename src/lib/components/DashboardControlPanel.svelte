@@ -185,17 +185,17 @@
 </script>
 
 <section class="control-panel" aria-label="Print Control">
+	<div class="time-row">
+		<span class="time-elapsed">{elapsed}</span>
+		<span class="time-eta">ETA: {eta}</span>
+		<span class="time-remaining">{remaining}</span>
+	</div>
 	<div class="progress-bar">
 		<div class="progress-track">
 			<div class="progress-fill" style="width: {progress}%">
 				<span class="progress-percentage">{progress}%</span>
 			</div>
 		</div>
-	</div>
-	<div class="time-row">
-		<span class="time-elapsed">{elapsed}</span>
-		<span class="time-eta">ETA: {eta}</span>
-		<span class="time-remaining">{remaining}</span>
 	</div>
 	<div class="controls-row">
 		<button class="round-btn" aria-label="Fan" onclick={openFanPopup}>
