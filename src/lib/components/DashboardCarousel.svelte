@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import emblaCarouselSvelte from 'embla-carousel-svelte';
 	import type { EmblaCarouselType, EmblaOptionsType } from 'embla-carousel';
 	import DashboardJobInfoCard from '$lib/components/DashboardJobInfoCard.svelte';
@@ -11,10 +12,13 @@
 
 	let emblaApi: EmblaCarouselType | undefined = $state();
 	let selectedIndex = $state(0);
+	let visibleCount = $state(1);
 
 	const options: EmblaOptionsType = {
 		axis: 'x',
-		loop: true
+		loop: true,
+		align: 'start',
+		startIndex: 2
 	};
 
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
@@ -28,11 +32,34 @@
 	const scrollTo = (index: number): void => {
 		emblaApi?.scrollTo(index);
 	};
+
+	const isDotActive = (index: number): boolean => {
+		const diff = (index - selectedIndex + pageCount) % pageCount;
+		return diff < visibleCount;
+	};
+
+	const updateVisibleCount = (): void => {
+		if (window.matchMedia('(min-width: 1200px)').matches) visibleCount = 5;
+		else if (window.matchMedia('(min-width: 768px)').matches) visibleCount = 3;
+		else visibleCount = 1;
+	};
+
+	onMount(() => {
+		updateVisibleCount();
+		window.addEventListener('resize', updateVisibleCount);
+		return () => window.removeEventListener('resize', updateVisibleCount);
+	});
 </script>
 
 <div class="dashboard-carousel">
 	<div class="embla" use:emblaCarouselSvelte={{ options, plugins: [] }} onemblaInit={onInit}>
 		<div class="embla__container">
+			<div class="embla__slide">
+				<DashboardZHeightPanel />
+			</div>
+			<div class="embla__slide">
+				<DashboardPelletPanel />
+			</div>
 			<div class="embla__slide">
 				<DashboardJobInfoCard />
 			</div>
@@ -42,19 +69,13 @@
 			<div class="embla__slide">
 				<DashboardFlowPanel />
 			</div>
-			<div class="embla__slide">
-				<DashboardZHeightPanel />
-			</div>
-			<div class="embla__slide">
-				<DashboardPelletPanel />
-			</div>
 		</div>
 	</div>
 	<div class="dots">
 		{#each Array(pageCount) as _, index (index)}
 			<button
 				class="dot"
-				class:active={selectedIndex === index}
+				class:active={isDotActive(index)}
 				aria-label={`Pagina ${index + 1}`}
 				onclick={() => scrollTo(index)}
 			></button>
@@ -96,10 +117,28 @@
 		box-sizing: border-box;
 	}
 
+	@media (min-width: 768px) and (max-width: 1199px) {
+		.embla__slide {
+			flex: 0 0 calc(100% / 3);
+		}
+	}
+
+	@media (min-width: 1200px) {
+		.embla__slide {
+			flex: 0 0 20%;
+		}
+	}
+
 	.dots {
 		display: flex;
 		gap: 6px;
 		flex-shrink: 0;
+	}
+
+	@media (min-width: 1200px) {
+		.dots {
+			display: none;
+		}
 	}
 
 	.dot {
