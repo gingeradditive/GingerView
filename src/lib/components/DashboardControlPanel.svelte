@@ -201,8 +201,9 @@
 <section class="control-panel" aria-label="Print Control">
 	<div class="progress-bar">
 		<div class="progress-track">
-			<div class="progress-fill" style="width: {progress}%"></div>
-			<span class="progress-percentage">{progress}%</span>
+			<div class="progress-fill" style="width: {progress}%">
+				<span class="progress-percentage">{progress}%</span>
+			</div>
 		</div>
 	</div>
 	<div class="time-row">
@@ -223,17 +224,17 @@
 			</svg>
 		</button>
 		<button class="square-btn" aria-label="Stop" onclick={handleCancel}>
-			<svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+			<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 				<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 			</svg>
 		</button>
 		<button class="square-btn" aria-label={isPaused ? 'Resume' : 'Pause'} onclick={handlePauseResume}>
 			{#if isPaused}
-				<svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+				<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 					<polygon points="4,1 17,9 4,17" fill="#d72e28" />
 				</svg>
 			{:else}
-				<svg width="22" height="22" viewBox="0 0 18 18" fill="none">
+				<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 					<rect x="3" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 					<rect x="11" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 				</svg>
@@ -311,18 +312,17 @@
 		background: #d72e28;
 		border-radius: 18px;
 		transition: width 0.3s ease;
-	}
-
-	.progress-percentage {
-		position: absolute;
-		inset: 0;
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		padding-right: 16px;
+	}
+
+	.progress-percentage {
+		padding-right: 12px;
 		color: #ffffff;
 		font-size: 1.1rem;
 		font-weight: 700;
+		white-space: nowrap;
 	}
 
 	.time-row {
@@ -337,8 +337,9 @@
 	.controls-row {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
+		justify-content: center;
+		gap: 2rem;
+		padding: 0 16px;
 	}
 
 	.round-btn {
@@ -396,9 +397,9 @@
 	}
 
 	.square-btn {
-		width: 48px;
-		height: 48px;
-		border-radius: 14px;
+		width: 56px;
+		height: 56px;
+		border-radius: 12px;
 		border: 3px solid #d72e28;
 		background: transparent;
 		cursor: pointer;
