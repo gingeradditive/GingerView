@@ -18,7 +18,7 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100vh;
-		padding: 16px;
+		padding: 16px 16px 96px;
 		gap: 16px;
 		box-sizing: border-box;
 	}

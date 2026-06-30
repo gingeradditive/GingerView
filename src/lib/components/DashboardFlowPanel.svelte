@@ -92,15 +92,19 @@
 		border-radius: 16px;
 		padding: 16px;
 		width: 100%;
-		aspect-ratio: 1 / 1;
+		height: 100%;
 		box-sizing: border-box;
 		box-shadow: 0px 4px 3px 0px #00000040;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.flow-gauge {
 		position: relative;
-		width: 100%;
 		height: 100%;
+		aspect-ratio: 1 / 1;
+		max-width: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;

@@ -78,6 +78,8 @@
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
+		padding: 10px;
+		box-sizing: border-box;
 	}
 
 	.embla__container {
