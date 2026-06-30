@@ -183,6 +183,8 @@
 		flex: 1;
 		padding: 20px;
 		justify-content: center;
+		align-items: center;
+		text-align: center;
 	}
 
 	.z-label {
