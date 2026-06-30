@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
+	import { DASHBOARD_MOCK_ENABLED, mockFlow } from '$lib/mock/dashboardMock';
 
 	const pollIntervalMs = 1500;
 	const minValue = 0;
@@ -22,6 +23,11 @@
 	};
 
 	const updateFlow = async (): Promise<void> => {
+		if (DASHBOARD_MOCK_ENABLED) {
+			isIdle = mockFlow.isIdle;
+			flowValue = mockFlow.flowValue;
+			return;
+		}
 		try {
 			const response = await fetch(`${getApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`);
 			if (!response.ok) return;
