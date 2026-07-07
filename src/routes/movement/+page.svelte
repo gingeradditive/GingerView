@@ -1,27 +1,16 @@
 <script lang="ts">
-	import ToolheadPosition from '$lib/components/ToolheadPosition.svelte';
-	import ExtrudeDialog from '$lib/components/ExtrudeDialog.svelte';
+	import MovementCarousel from '$lib/components/MovementCarousel.svelte';
 </script>
 
 <div class="movement-page">
-	<div class="movement-grid">
-		<ToolheadPosition />
-		<ExtrudeDialog />
-	</div>
+	<MovementCarousel />
 </div>
 
 <style>
 	.movement-page {
-		padding: 34px;
-		padding-bottom: 114px;
-		height: 100vh;
-		box-sizing: border-box;
-	}
-
-	.movement-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 34px;
+		width: 100%;
 		height: 100%;
+		padding: 16px 16px 112px;
+		box-sizing: border-box;
 	}
 </style>
