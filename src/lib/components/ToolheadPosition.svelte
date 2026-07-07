@@ -2,6 +2,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
+	import { mdiCursorMove } from '@mdi/js';
 	import { configService } from '$lib/services/config';
 
 	type ToolheadTestWindow = Window & {
@@ -167,142 +168,122 @@
 </script>
 
 <div class="toolhead-position-card">
-	<div class="toolhead-controls">
+	<div class="viz-card">
+		<div class="toolhead-isometric" aria-hidden="true">
+			<svg viewBox="0 0 440 280" class="toolhead-svg" role="presentation">
+				<line class="axis-z-inner" x1={pCenterBase.x} y1={pCenterBase.y} x2={p001.x} y2={p001.y} />
+				<line class="z-guide" x1={pCenterAtZ.x} y1={pCenterAtZ.y} x2={pCenterBase.x} y2={pCenterBase.y} />
+
+				<polygon class="bed-fill" points={pointsToString(p000, p100, p110, p010)} />
+
+				<polygon class="z-plane" points={pointsToString(planeA, planeB, planeC, planeD)} />
+
+				<line class="cube-edge" x1={p000.x} y1={p000.y} x2={p100.x} y2={p100.y} />
+				<line class="cube-edge" x1={p100.x} y1={p100.y} x2={p110.x} y2={p110.y} />
+				<line class="cube-edge" x1={p110.x} y1={p110.y} x2={p010.x} y2={p010.y} />
+				<line class="cube-edge" x1={p010.x} y1={p010.y} x2={p000.x} y2={p000.y} />
+
+				<line class="cube-edge" x1={p001.x} y1={p001.y} x2={p101.x} y2={p101.y} />
+				<line class="cube-edge" x1={p101.x} y1={p101.y} x2={p111.x} y2={p111.y} />
+				<line class="cube-edge" x1={p111.x} y1={p111.y} x2={p011.x} y2={p011.y} />
+				<line class="cube-edge" x1={p011.x} y1={p011.y} x2={p001.x} y2={p001.y} />
+
+				<line class="cube-edge" x1={p000.x} y1={p000.y} x2={p001.x} y2={p001.y} />
+				<line class="cube-edge" x1={p100.x} y1={p100.y} x2={p101.x} y2={p101.y} />
+				<line class="cube-edge" x1={p110.x} y1={p110.y} x2={p111.x} y2={p111.y} />
+				<line class="cube-edge" x1={p010.x} y1={p010.y} x2={p011.x} y2={p011.y} />
+
+				<line class="axis-z-outer" x1={p001.x} y1={p001.y} x2={p001.x} y2={p001.y - 30} />
+				<text class="axis-label axis-label-z" x={p001.x} y={p001.y - 40}>Z</text>
+
+				<line class="axis-x" x1={p100.x} y1={p100.y} x2={p100.x + 52} y2={p100.y + 28} />
+				<text class="axis-label axis-label-x" x={p100.x + 60} y={p100.y + 36}>X</text>
+
+				<line class="axis-y" x1={p010.x} y1={p010.y} x2={p010.x - 52} y2={p010.y + 28} />
+				<text class="axis-label axis-label-y" x={p010.x - 70} y={p010.y + 36}>Y</text>
+
+				<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
+				<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
+
+			</svg>
+		</div>
+	</div>
+
+	<div class="position-card">
+		<div class="position-row">
+			<span class="position-label position-label-x">X</span>
+			<span class="position-value">{$actualX.toFixed(1)} mm</span>
+		</div>
+		<div class="position-row">
+			<span class="position-label position-label-y">Y</span>
+			<span class="position-value">{$actualY.toFixed(1)} mm</span>
+		</div>
+		<div class="position-row">
+			<span class="position-label position-label-z">Z</span>
+			<span class="position-value">{$actualZ.toFixed(1)} mm</span>
+		</div>
+	</div>
+
+	<div class="controls-card">
+		<button class="control-btn" aria-label="Move" onclick={handleMove}>
+			<svg width="42" height="42" viewBox="0 0 24 24">
+				<path d={mdiCursorMove} fill="currentColor" />
+			</svg>
+			<span>Move</span>
+		</button>
 		<button class="control-btn home" aria-label="Home" onclick={handleHome}>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#ffffff" />
+			<svg width="42" height="42" viewBox="0 0 24 24">
+				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor" />
 			</svg>
+			<span>Home</span>
 		</button>
-		<button class="control-btn" aria-label="Motor Off" onclick={handleMotorOff}>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-				<path d="M2.5,3.77L6.87,8.14L5,10V13H3V10H1V18H3V15H5V18H8L10,20H18V19.27L21.23,22.5L22.5,21.22L3.78,2.5L2.5,3.77M16,18H11L9,16H7V11L8,10H8.73L16,17.27V18M23,9V19H22.82L16,12.18V10H13.82L7.82,4H15V6H12V8H18V12H20V9H23Z" fill="#d72e28" />
+		<button class="control-btn" aria-label="Disable Motors" onclick={handleMotorOff}>
+			<svg width="42" height="42" viewBox="0 0 24 24">
+				<path
+					d="M2.5,3.77L6.87,8.14L5,10V13H3V10H1V18H3V15H5V18H8L10,20H18V19.27L21.23,22.5L22.5,21.22L3.78,2.5L2.5,3.77M16,18H11L9,16H7V11L8,10H8.73L16,17.27V18M23,9V19H22.82L16,12.18V10H13.82L7.82,4H15V6H12V8H18V12H20V9H23Z"
+					fill="currentColor"
+				/>
 			</svg>
+			<span>Disable Motors</span>
 		</button>
-		<button class="control-btn move" aria-label="Move" onclick={handleMove}>
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-				<path d="M13,6V11H18V7.75L22.25,12L18,16.25V13H13V18H16.25L12,22.25L7.75,18H11V13H6V16.25L1.75,12L6,7.75V11H11V6H7.75L12,1.75L16.25,6H13Z" fill="#d72e28" />
-			</svg>
-		</button>
-	</div>
-
-	<div class="toolhead-isometric" aria-hidden="true">
-		<svg viewBox="0 0 440 280" class="toolhead-svg" role="presentation">
-			<line class="axis-z-inner" x1={pCenterBase.x} y1={pCenterBase.y} x2={p001.x} y2={p001.y} />
-			<line class="z-guide" x1={pCenterAtZ.x} y1={pCenterAtZ.y} x2={pCenterBase.x} y2={pCenterBase.y} />
-
-			<polygon class="bed-fill" points={pointsToString(p000, p100, p110, p010)} />
-
-			<polygon class="z-plane" points={pointsToString(planeA, planeB, planeC, planeD)} />
-
-			<line class="cube-edge" x1={p000.x} y1={p000.y} x2={p100.x} y2={p100.y} />
-			<line class="cube-edge" x1={p100.x} y1={p100.y} x2={p110.x} y2={p110.y} />
-			<line class="cube-edge" x1={p110.x} y1={p110.y} x2={p010.x} y2={p010.y} />
-			<line class="cube-edge" x1={p010.x} y1={p010.y} x2={p000.x} y2={p000.y} />
-
-			<line class="cube-edge" x1={p001.x} y1={p001.y} x2={p101.x} y2={p101.y} />
-			<line class="cube-edge" x1={p101.x} y1={p101.y} x2={p111.x} y2={p111.y} />
-			<line class="cube-edge" x1={p111.x} y1={p111.y} x2={p011.x} y2={p011.y} />
-			<line class="cube-edge" x1={p011.x} y1={p011.y} x2={p001.x} y2={p001.y} />
-
-			<line class="cube-edge" x1={p000.x} y1={p000.y} x2={p001.x} y2={p001.y} />
-			<line class="cube-edge" x1={p100.x} y1={p100.y} x2={p101.x} y2={p101.y} />
-			<line class="cube-edge" x1={p110.x} y1={p110.y} x2={p111.x} y2={p111.y} />
-			<line class="cube-edge" x1={p010.x} y1={p010.y} x2={p011.x} y2={p011.y} />
-
-			<line class="axis-z-outer" x1={p001.x} y1={p001.y} x2={p001.x} y2={p001.y - 30} />
-			<text class="axis-label axis-label-z" x={p001.x} y={p001.y - 40}>Z</text>
-
-			<line class="axis-x" x1={p100.x} y1={p100.y} x2={p100.x + 52} y2={p100.y + 28} />
-			<text class="axis-label axis-label-x" x={p100.x + 60} y={p100.y + 36}>X</text>
-
-			<line class="axis-y" x1={p010.x} y1={p010.y} x2={p010.x - 52} y2={p010.y + 28} />
-			<text class="axis-label axis-label-y" x={p010.x - 70} y={p010.y + 36}>Y</text>
-
-			<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
-			<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
-
-		</svg>
-	</div>
-
-	<div class="position-display">
-		<div class="position-column">
-			<span class="position-label position-label-x">X </span>
-			<span class="position-value">{$actualX.toFixed(1)}</span>
-			<span class="position-unit"> mm</span>
-		</div>
-		<div class="position-column">
-			<span class="position-label position-label-y">Y </span>
-			<span class="position-value">{$actualY.toFixed(1)}</span>
-			<span class="position-unit"> mm</span>
-		</div>
-		<div class="position-column">
-			<span class="position-label position-label-z">Z </span>
-			<span class="position-value">{$actualZ.toFixed(1)}</span>
-			<span class="position-unit"> mm</span>
-		</div>
 	</div>
 </div>
 
 <style>
 	.toolhead-position-card {
-		background: #ffffff;
-		border-radius: 16px;
-		padding: 16px;
 		width: 100%;
 		height: 100%;
-		box-shadow: 0px 4px 3px 0px #00000040;
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
+		gap: 24px;
 	}
 
-	.toolhead-controls {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-	}
-
-	.control-btn {
-		width: 58px;
-		height: 58px;
-		border-radius: 14px;
-		border: 3px solid #d72e28;
-		background: transparent;
-		cursor: pointer;
+	.viz-card {
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0px 4px 3px 0px #00000040;
+		box-sizing: border-box;
+		flex: 1;
+		min-height: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 0;
-	}
-
-	.control-btn:hover {
-		background: #fde8e7;
-	}
-
-	.control-btn.move {
-		margin-left: auto;
-	}
-
-	.control-btn.home {
-		background: #d72e28;
-	}
-
-	.control-btn.home:hover {
-		background: #b82520;
+		padding: 16px;
 	}
 
 	.toolhead-isometric {
-		flex: 1;
+		width: 100%;
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 10px 0;
 		pointer-events: none;
 	}
 
 	.toolhead-svg {
-		width: 80%;
-		height: 80%;
+		width: 55%;
+		height: 55%;
 		display: block;
 		margin: 0 auto;
 	}
@@ -375,26 +356,29 @@
 		fill: #d72e28;
 	}
 
-	.position-display {
-		display: flex;
-		gap: 12px;
-		margin-top: auto;
+	.position-card {
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0px 4px 3px 0px #00000040;
+		box-sizing: border-box;
+		flex-shrink: 0;
+		padding: 0 20px;
 	}
 
-	.position-column {
-		flex: 1;
-		border-radius: 12px;
-		padding: 12px;
+	.position-row {
 		display: flex;
-		flex-direction: row;
 		align-items: center;
-		justify-content: center;
-		gap: 12px;
+		justify-content: space-between;
+		padding: 14px 0;
+		border-bottom: 1px solid #ececec;
+	}
+
+	.position-row:last-child {
+		border-bottom: none;
 	}
 
 	.position-label {
-		color: #000000;
-		font-size: 1.5rem;
+		font-size: 1.4rem;
 		font-weight: 700;
 	}
 
@@ -411,14 +395,56 @@
 	}
 
 	.position-value {
-		color: #808080;
-		font-size: 1.5rem;
+		color: #9a9a9a;
+		font-size: 1.4rem;
 		font-weight: 600;
 	}
 
-	.position-unit {
-		color: #808080;
-		font-size: 1.5rem;
+	.controls-card {
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0px 4px 3px 0px #00000040;
+		box-sizing: border-box;
+		flex-shrink: 0;
+		display: flex;
+		gap: 12px;
+		padding: 12px;
+	}
+
+	.control-btn {
+		flex: 1;
+		aspect-ratio: 1 / 1;
+		background: #ffffff;
+		border: 1px solid #e0e0e0;
+		border-radius: 12px;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		color: #4a4a4a;
+		cursor: pointer;
+	}
+
+	.control-btn:hover {
+		background: #f5f5f5;
+	}
+
+	.control-btn span {
+		font-size: 1rem;
 		font-weight: 600;
+		line-height: 1.1;
+		text-align: center;
+	}
+
+	.control-btn.home {
+		background: #d72e28;
+		border-color: #d72e28;
+		color: #ffffff;
+	}
+
+	.control-btn.home:hover {
+		background: #b82520;
 	}
 </style>
