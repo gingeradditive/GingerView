@@ -226,19 +226,19 @@
 
 	<div class="controls-card">
 		<button class="control-btn" aria-label="Move" onclick={handleMove}>
-			<svg width="42" height="42" viewBox="0 0 24 24">
+			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d={mdiCursorMove} fill="currentColor" />
 			</svg>
 			<span>Move</span>
 		</button>
 		<button class="control-btn home" aria-label="Home" onclick={handleHome}>
-			<svg width="42" height="42" viewBox="0 0 24 24">
+			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor" />
 			</svg>
 			<span>Home</span>
 		</button>
 		<button class="control-btn" aria-label="Disable Motors" onclick={handleMotorOff}>
-			<svg width="42" height="42" viewBox="0 0 24 24">
+			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path
 					d="M2.5,3.77L6.87,8.14L5,10V13H3V10H1V18H3V15H5V18H8L10,20H18V19.27L21.23,22.5L22.5,21.22L3.78,2.5L2.5,3.77M16,18H11L9,16H7V11L8,10H8.73L16,17.27V18M23,9V19H22.82L16,12.18V10H13.82L7.82,4H15V6H12V8H18V12H20V9H23Z"
 					fill="currentColor"
@@ -407,12 +407,15 @@
 		box-sizing: border-box;
 		flex-shrink: 0;
 		display: flex;
+		justify-content: center;
 		gap: 12px;
 		padding: 12px;
 	}
 
 	.control-btn {
-		flex: 1;
+		flex: 0 0 92px;
+		width: 92px;
+		height: 92px;
 		aspect-ratio: 1 / 1;
 		background: #ffffff;
 		border: 1px solid #e0e0e0;
@@ -432,7 +435,7 @@
 	}
 
 	.control-btn span {
-		font-size: 1rem;
+		font-size: 0.9rem;
 		font-weight: 600;
 		line-height: 1.1;
 		text-align: center;
