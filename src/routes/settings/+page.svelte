@@ -11,21 +11,19 @@
 		ExternalLink,
 		ChevronRight
 	} from 'lucide-svelte';
-	import NetworkManager from '$lib/components/NetworkManager.svelte';
-	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
 
 	type Item = {
 		id: string;
 		title: string;
 		description: string;
 		icon: typeof Wifi;
-		kind: 'modal' | 'route' | 'external';
+		kind: 'route' | 'external';
 		href?: string;
 	};
 
 	const items: Item[] = [
-		{ id: 'wifi', title: 'Wifi Configuration', description: 'Connect and manage your Wi-Fi network', icon: Wifi, kind: 'modal' },
-		{ id: 'console', title: 'Console', description: 'Access the system console', icon: Terminal, kind: 'modal' },
+		{ id: 'network', title: 'Network', description: 'Manage your network connection', icon: Wifi, kind: 'route', href: '/settings/network' },
+		{ id: 'console', title: 'Console', description: 'Access the system console', icon: Terminal, kind: 'route', href: '/settings/console' },
 		{ id: 'update', title: 'Update', description: 'Check for updates and install', icon: CloudDownload, kind: 'route', href: '/settings/update' },
 		{ id: 'log', title: 'Log', description: 'View system logs and events', icon: FileText, kind: 'route', href: '/settings/log' },
 		{ id: 'wiki', title: 'Open Wiki', description: 'Visit the project wiki', icon: BookOpen, kind: 'external', href: 'https://github.com/gingeradditive/GingerView/wiki' },
@@ -35,31 +33,16 @@
 		{ id: 'mainsail', title: 'Mainsail', description: 'Open the Mainsail web interface', icon: ExternalLink, kind: 'external' }
 	];
 
-	let popupOpen = $state(false);
-	let popupId = $state('');
-
-	function openModal(id: string) {
-		popupId = id;
-		popupOpen = true;
-	}
-
-	function closeModal() {
-		popupOpen = false;
-		popupId = '';
-	}
-
 	function openMainsail() {
 		const url = new URL(window.location.href);
 		url.port = '8081';
 		window.open(url.toString(), '_blank');
 	}
 
-	function handleClick(item: Item) {
-		if (item.kind === 'modal') {
-			openModal(item.id);
-		} else if (item.id === 'mainsail') {
+	function handleExternalClick(item: Item) {
+		if (item.id === 'mainsail') {
 			openMainsail();
-		} else if (item.kind === 'external' && item.href) {
+		} else if (item.href) {
 			window.open(item.href, '_blank');
 		}
 	}
@@ -82,19 +65,13 @@
 					<span class="chevron"><ChevronRight /></span>
 				</a>
 			{:else}
-				<button type="button" class="settings-row" onclick={() => handleClick(item)}>
+				<button type="button" class="settings-row" onclick={() => handleExternalClick(item)}>
 					<span class="icon"><item.icon /></span>
 					<div class="row-text">
 						<h2>{item.title}</h2>
 						<p>{item.description}</p>
 					</div>
-					<span class="chevron">
-						{#if item.kind === 'external'}
-							<ExternalLink />
-						{:else}
-							<ChevronRight />
-						{/if}
-					</span>
+					<span class="chevron"><ExternalLink /></span>
 				</button>
 			{/if}
 			{#if index < items.length - 1}
@@ -103,27 +80,6 @@
 		{/each}
 	</div>
 </section>
-
-{#if popupOpen}
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closeModal()}
-		onclick={(e) => e.target === e.currentTarget && closeModal()}
-	>
-		<div class="modal-content" role="document">
-			<div class="modal-body">
-				{#if popupId === 'wifi'}
-					<NetworkManager embedded={true} />
-				{:else if popupId === 'console'}
-					<KlipperConsole onClose={closeModal} />
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
 
 <style>
 	.settings-page {
@@ -200,31 +156,6 @@
 	.divider {
 		height: 1px;
 		background: #ececec;
-	}
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 2200;
-	}
-	.modal-content {
-		width: min(900px, calc(100vw - 32px));
-		background: #ffffff;
-		border-radius: 20px;
-		padding: 32px;
-		max-height: calc(100vh - 64px);
-		overflow-y: auto;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-	}
-	.modal-body {
-		min-height: 120px;
-		color: #666;
-		font-size: 0.95rem;
 	}
 	@media (max-width: 560px) {
 		.settings-page {

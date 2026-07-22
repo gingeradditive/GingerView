@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { RotateCcw, Terminal, Trash2, X } from 'lucide-svelte';
+	import { Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
 	import { toastActions } from '$lib/stores/toastStore';
-
-	let { onClose } = $props<{ onClose?: () => void }>();
 
 	type OutputEntry = {
 		type: 'command' | 'response' | 'error';
@@ -128,8 +126,10 @@
 	}
 
 	function manualReconnect() {
+		if (isConnected) return;
 		disconnectWebSocket();
 		connectionError = '';
+		connectionAttempts = 0;
 		connectWebSocket();
 	}
 
@@ -199,166 +199,188 @@
 	}
 </script>
 
-<div class="console-panel">
-	<div class="panel-header">
-		<div class="head-left">
-			<span class="title-icon" aria-hidden="true"><Terminal size={18} /></span>
-			<h3>Console</h3>
-			<span class="state {isConnected ? 'connected' : 'disconnected'}">{isConnected ? 'Connected' : 'Disconnected'}</span>
+<section class="console-page">
+	<div class="console-card">
+		<header class="console-header">
+			<h1>Console</h1>
+			<button
+				type="button"
+				class="status-pill {isConnected ? 'connected' : 'disconnected'}"
+				onclick={manualReconnect}
+				disabled={isConnected}
+				title={isConnected ? 'Connected' : 'Click to reconnect'}
+			>
+				<span class="dot"></span>
+				{isConnected ? 'Connected' : 'Disconnected'}
+			</button>
+		</header>
+
+		<div bind:this={terminalRef} class="terminal-output">
+			{#each outputHistory as entry}
+				<div class="line">
+					<span class="time">{entry.timestamp.toLocaleTimeString()}</span>
+					{#if entry.type === 'command'}
+						<span class="cmd">&gt; {entry.content}</span>
+					{:else if entry.type === 'error'}
+						<span class="err">{entry.content}</span>
+					{:else}
+						<span class="res">{entry.content}</span>
+					{/if}
+				</div>
+			{/each}
+		</div>
+
+		<div class="command-row">
+			<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
+		</div>
+
+		<div class="actions-row">
+			<button type="button" class="clear-btn" onclick={clearTerminal} aria-label="Clear console" title="Clear console">
+				<Trash2 />
+			</button>
+			<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
 		</div>
 	</div>
-
-	<div bind:this={terminalRef} class="terminal-output">
-		{#each outputHistory as entry}
-			<div class="line">
-				<span class="time">{entry.timestamp.toLocaleTimeString()}</span>
-				{#if entry.type === 'command'}
-					<span class="cmd">&gt; {entry.content}</span>
-				{:else if entry.type === 'error'}
-					<span class="err">{entry.content}</span>
-				{:else}
-					<span class="res">{entry.content}</span>
-				{/if}
-			</div>
-		{/each}
-	</div>
-
-	<div class="footer">
-		{#if config}
-			<span>Moonraker {config.moonrakerHost}:{config.moonrakerPort}</span>
-		{:else}
-			<span>Moonraker configuration not available</span>
-		{/if}
-		{#if connectionError}
-			<span>• {connectionError}</span>
-		{/if}
-	</div>
-
-	<div class="terminal-input">
-		<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
-		<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
-		{#if !isConnected}
-			<button type="button" class="icon-btn" onclick={manualReconnect} aria-label="Reconnect">
-				<RotateCcw size={16} />
-			</button>
-		{/if}
-		<button type="button" class="icon-btn" onclick={clearTerminal} aria-label="Clear terminal">
-			<Trash2 size={16} />
-		</button>
-	</div>	
-</div>
+</section>
 
 <style>
-	.console-panel {
-		width: 100%;
+	.console-page {
+		height: 100%;
+		padding: 24px 24px 112px;
+		box-sizing: border-box;
 	}
-	.panel-header {
+	.console-card {
+		height: 100%;
+		background: #ffffff;
+		border-radius: 20px;
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		padding: 24px;
 		display: flex;
-		justify-content: flex-start;
-		align-items: center;
-		gap: 10px;
-		padding: 0 0 12px 0;
-		border-bottom: 1px solid #ececec;
+		flex-direction: column;
+		gap: 16px;
+		box-sizing: border-box;
 	}
-	.head-left {
+	.console-header {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		min-width: 0;
+		gap: 14px;
+		flex-shrink: 0;
 	}
-	.title-icon {
+	.console-header h1 {
+		margin: 0;
+		font-size: 2rem;
+		font-weight: 700;
+		color: #222222;
+	}
+	.status-pill {
+		margin-left: auto;
 		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		border: none;
+		border-radius: 999px;
+		padding: 8px 16px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.status-pill:disabled {
+		cursor: default;
+	}
+	.status-pill .dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: currentColor;
+	}
+	.status-pill.connected {
+		background: #ddf3df;
+		color: #1a7f37;
+	}
+	.status-pill.disconnected {
+		background: #f7d9d8;
 		color: #d72e28;
 	}
-	.head-left h3 {
-		margin: 0;
-		font-size: 1rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.state {
-		font-size: 0.75rem;
-		border-radius: 999px;
-		padding: 2px 8px;
-		border: 1px solid;
-	}
-	.state.connected {
-		color: #1a7f37;
-		background: #e8f5e9;
-		border-color: #c8e6c9;
-	}
-	.state.disconnected {
-		color: #c62828;
-		background: #ffebee;
-		border-color: #ffcdd2;
-	}
-	.icon-btn {
-		
-		border-radius: 8px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: #fff;
-		color: #555;
-		padding: 12px;
-	}
 	.terminal-output {
-		height: 280px;
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
-		padding: 12px 0;
-		border-bottom: 1px solid #ececec;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-		font-size: 0.84rem;
+		border: 1px solid #e2e2e2;
+		border-radius: 16px;
+		padding: 16px 20px;
+		box-sizing: border-box;
 	}
 	.line {
-		margin-bottom: 4px;
-		padding: 0 10px;
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 12px;
+		font-size: 0.95rem;
+		min-width: 0;
 	}
 	.time {
-		color: #888;
-		margin-right: 8px;
-		font-size: 0.72rem;
+		color: #b5b5b5;
+		font-size: 0.85rem;
+	}
+	.cmd,
+	.res,
+	.err {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 	}
 	.cmd {
 		color: #d72e28;
-		font-weight: 600;
+		font-weight: 700;
 	}
 	.res {
 		color: #2e2e2e;
 	}
 	.err {
-		color: #b71c1c;
+		color: #d72e28;
+		font-weight: 700;
 	}
-	.terminal-input {
+	.command-row {
+		flex-shrink: 0;
+	}
+	.command-row input {
+		width: 100%;
+		box-sizing: border-box;
+		border: 1px solid #e2e2e2;
+		background: #ffffff;
+		border-radius: 16px;
+		padding: 14px 18px;
+		font-size: 0.95rem;
+		outline: none;
+		font-family: inherit;
+	}
+	.actions-row {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: space-between;
+		flex-shrink: 0;
 	}
-	.terminal-input input {
-		flex: 1;
-		border: 1px solid #d0d0d0;
-		border-radius: 9px;
-		padding: 8px 10px;
-		font-size: 0.9rem;
-		outline: none;
+	.clear-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 14px;
+		background: transparent;
+		color: #6e6e6e;
+	}
+	.clear-btn:hover {
+		color: #d72e28;
 	}
 	.send-btn {
-		border: 1px solid #d72e28;
+		border: none;
 		background: #d72e28;
-		color: #fff;
-		border-radius: 9px;
-		padding: 8px 12px;
+		color: #ffffff;
+		border-radius: 16px;
+		padding: 12px 32px;
+		font-size: 1rem;
+		font-weight: 700;
 	}
 	.send-btn:disabled {
 		opacity: 0.55;
-	}
-	.footer {
-		color: #666;
-		font-size: 0.74rem;
-		display: flex;
-		gap: 8px;
-		flex-wrap: wrap;
-		padding: 12px 0;
 	}
 </style>
