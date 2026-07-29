@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 2000;
@@ -10,12 +10,6 @@
 	let thumbnailUrl = $state<string>('/error-thumbnail.png');
 
 	let lastFilename: string | null = null;
-
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
 
 	const stripExtension = (filename: string): string => {
 		const base = filename.split('/').pop() ?? filename;
@@ -39,7 +33,7 @@
 
 	const updateJobInfo = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
 			if (!response.ok) return;
 
 			const payload = await response.json();

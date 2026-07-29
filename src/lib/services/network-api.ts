@@ -11,8 +11,7 @@ import { toastActions } from '$lib/stores/toastStore';
 import { configService } from '$lib/services/config';
 
 function getApiBaseUrl(): string {
-	const config = configService.getNetworkConfig();
-	return config.apiBaseUrl ?? `http://${config.apiHost}:${config.apiPort}`;
+	return configService.getNetworkConfig().apiBaseUrl;
 }
 
 class NetworkAPIError extends Error {

@@ -3,7 +3,7 @@
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { mdiCursorMove } from '@mdi/js';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
@@ -86,16 +86,10 @@
 	const pointsToString = (...points: { x: number; y: number }[]): string =>
 		points.map((point) => `${point.x},${point.y}`).join(' ');
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const updateToolheadPosition = async (): Promise<void> => {
 		try {
 			const response = await fetch(
-				`${getApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position`
+				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position`
 			);
 			if (!response.ok) return;
 

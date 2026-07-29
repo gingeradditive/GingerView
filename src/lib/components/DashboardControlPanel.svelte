@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
 	const pollIntervalMs = 2000;
@@ -27,12 +27,6 @@
 	let estimatedTotalSeconds: number | null = null;
 	let lastFilename: string | null = null;
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const formatDuration = (seconds: number): string => {
 		if (!seconds || seconds < 0) return '--:--:--';
 		const h = Math.floor(seconds / 3600);
@@ -47,7 +41,7 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
 		} catch {
 			// ignore
 		}
@@ -68,7 +62,7 @@
 	const updateStatus = async (): Promise<void> => {
 		try {
 			const response = await fetch(
-				`${getApiUrl()}/printer/objects/query?print_stats&virtual_sdcard&fan&led LED_CAMERA`
+				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard&fan&led LED_CAMERA`
 			);
 			if (!response.ok) return;
 

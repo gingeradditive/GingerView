@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 3000;
@@ -24,12 +24,6 @@
 	let lastFilename: string | null = null;
 	let filamentWeightTotal: number | null = null;
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const loadFileWeight = async (filename: string): Promise<void> => {
 		if (!filename || filename === lastFilename) return;
 		lastFilename = filename;
@@ -51,7 +45,7 @@
 
 	const updatePellet = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
 			if (!response.ok) return;
 
 			const payload = await response.json();

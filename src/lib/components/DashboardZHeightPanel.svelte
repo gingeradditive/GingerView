@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	const pollIntervalMs = 1500;
 	const totalSections = 10;
@@ -22,15 +22,9 @@
 		})
 	);
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const updateZHeight = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
 			if (!response.ok) return;
 
 			const payload = await response.json();

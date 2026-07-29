@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	const pollIntervalMs = 1500;
 	const minValue = 0;
@@ -15,15 +15,9 @@
 	let progress = $derived((clampedValue - minValue) / (maxValue - minValue));
 	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const updateFlow = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`);
 			if (!response.ok) return;
 
 			const payload = await response.json();

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	type HeaterStatus = {
 		temperature?: number;
@@ -54,12 +54,6 @@
 		);
 	};
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const getQueryPath = (): string => {
 		const objects = [...extruderKeys, 'heater_bed'];
 		return `/printer/objects/query?${objects.join('&')}`;
@@ -67,7 +61,7 @@
 
 	const updateTemperatures = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}${getQueryPath()}`);
+			const response = await fetch(`${getMoonrakerApiUrl()}${getQueryPath()}`);
 			if (!response.ok) {
 				return;
 			}

@@ -15,13 +15,11 @@ export interface MoonrakerServerInfo {
 }
 
 function getApiUrl(): string {
-	const config = configService.getKlipperConfig();
-	return config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+	return configService.getKlipperConfig().moonrakerApiUrl;
 }
 
 function getWsUrl(): string {
-	const config = configService.getKlipperConfig();
-	return config.moonrakerWsUrl ?? `ws://${config.moonrakerHost}:${config.moonrakerPort}/websocket`;
+	return configService.getKlipperConfig().moonrakerWsUrl;
 }
 
 export interface PrinterInfo {

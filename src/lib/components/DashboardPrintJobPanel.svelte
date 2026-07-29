@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 2000;
@@ -19,12 +19,6 @@
 
 	let estimatedTotalSeconds: number | null = null;
 	let lastFilename: string | null = null;
-
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
 
 	const formatDuration = (seconds: number): string => {
 		if (!seconds || seconds < 0) return '--:--:--';
@@ -63,7 +57,7 @@
 
 	const updatePrintJob = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -117,7 +111,7 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
 		} catch {
 			// ignore
 		}

@@ -47,8 +47,7 @@ export interface MoonrakerDirectoryResponse {
 }
 
 function getApiUrl(): string {
-	const config = configService.getKlipperConfig();
-	return config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+	return configService.getKlipperConfig().moonrakerApiUrl;
 }
 
 export async function fetchDirectory(path: string = 'gcodes'): Promise<MoonrakerDirectoryResponse> {
