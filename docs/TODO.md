@@ -32,8 +32,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 | Codice | Task | Stato |
 |---|---|---|
-| `MOV-1` | Collegare il pulsante **Home** di `ToolheadPosition.svelte` a `G28` | pronto |
-| `MOV-2` | Collegare il pulsante **Disable Motors** di `ToolheadPosition.svelte` a `M84` | pronto |
 | `MOV-3` | Definire e implementare cosa fa il pulsante **Move** | → Q6 |
 | `MOV-4` | Implementare `handleExtrude()` con quantità e velocità reali | → Q7 |
 
@@ -91,7 +89,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 | Codice | Task | Stato |
 |---|---|---|
-| `UI-1` | Rimuovere la voce di menu "Mainsail" da `src/routes/settings/+page.svelte` | pronto |
 | `UI-2` | Portare tutta l'interfaccia in inglese, `aria-label` e dialoghi compresi | pronto |
 | `UI-3` | Verificare se l'accesso da telefono richiede pagine dedicate (onboarding, QR) | → Q31 |
 | `UI-4` | Rivedere `zoom: 0.8` sotto 768px in `app.css`, residuo dell'impostazione pre-telefono | pronto |

@@ -58,7 +58,7 @@ ugello, non come utensili distinti.
 | **Dashboard** | `/` | Carosello con altezza Z, pellet, info job, temperature, flusso. Barra di controllo con avanzamento/tempo residuo/ETA, pausa, resume, cancel, ventola e luce |
 | **Movimento** | `/movement` | Visualizzazione isometrica della posizione della testa nel volume di stampa + pannello di estrusione |
 | **File** | `/filelist` | Navigazione delle cartelle `gcodes`, anteprime, metadati, upload, creazione cartella, rinomina, sposta, elimina |
-| **Impostazioni** | `/settings` | Elenco di sottopagine: rete, console, update, log, history, statistiche, fuso orario, wiki (+ una voce Mainsail da rimuovere) |
+| **Impostazioni** | `/settings` | Elenco di sottopagine: rete, console, update, log, history, statistiche, fuso orario, wiki |
 | **Rete** | `/settings/network` | Stato adattatore, IP, scansione Wi-Fi, connessione a rete (anche nascosta), disconnessione |
 | **Console** | `/settings/console` | Terminale G-code su WebSocket Moonraker, con cronologia comandi |
 

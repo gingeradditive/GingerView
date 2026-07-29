@@ -26,23 +26,14 @@
 		{ id: 'console', title: 'Console', description: 'Access the system console', icon: Terminal, kind: 'route', href: '/settings/console' },
 		{ id: 'update', title: 'Update', description: 'Check for updates and install', icon: CloudDownload, kind: 'route', href: '/settings/update' },
 		{ id: 'log', title: 'Log', description: 'View system logs and events', icon: FileText, kind: 'route', href: '/settings/log' },
-		{ id: 'wiki', title: 'Open Wiki', description: 'Visit the project wiki', icon: BookOpen, kind: 'external', href: 'https://github.com/gingeradditive/GingerView/wiki' },
+		{ id: 'wiki', title: 'Open Wiki', description: 'Visit the project wiki', icon: BookOpen, kind: 'external', href: 'https://wiki.gingeradditive.com/' },
 		{ id: 'history', title: 'History', description: 'View system history', icon: History, kind: 'route', href: '/settings/history' },
 		{ id: 'statistics', title: 'Statistics', description: 'View usage statistics and metrics', icon: ChartColumn, kind: 'route', href: '/settings/statistics' },
-		{ id: 'timezone', title: 'Timezone', description: 'Set your timezone', icon: Globe, kind: 'route', href: '/settings/timezone' },
-		{ id: 'mainsail', title: 'Mainsail', description: 'Open the Mainsail web interface', icon: ExternalLink, kind: 'external' }
+		{ id: 'timezone', title: 'Timezone', description: 'Set your timezone', icon: Globe, kind: 'route', href: '/settings/timezone' }
 	];
 
-	function openMainsail() {
-		const url = new URL(window.location.href);
-		url.port = '8081';
-		window.open(url.toString(), '_blank');
-	}
-
 	function handleExternalClick(item: Item) {
-		if (item.id === 'mainsail') {
-			openMainsail();
-		} else if (item.href) {
+		if (item.href) {
 			window.open(item.href, '_blank');
 		}
 	}

@@ -38,17 +38,20 @@ Le macchine hanno una camera e G2-OS include già **Crowsnest**, quindi lo strea
 macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura il proxy
 `/webcam/`. Dove inserirla nell'interfaccia è ancora da decidere (Q11).
 
-### La pagina Movement non muove nulla
+### La pagina Movement non muove ancora del tutto
 
 - [ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte) **legge** la
-  posizione da `/printer/objects/query` e la disegna in proiezione isometrica, ma non invia
-  comandi di movimento.
+  posizione da `/printer/objects/query` e la disegna in proiezione isometrica. Il pulsante
+  **Disable Motors** invia `M84` (`POST /printer/gcode/script?script=M84`) ed è disabilitato,
+  con etichetta "Motors Disabled", quando `stepper_enable.steppers` riporta tutti gli stepper
+  spenti. Il pulsante **Home** invia `G28` (homing di tutti gli assi) ed è disabilitato mentre
+  il comando è in corso.
 - [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha i selettori di quantità
   (Low/Mid/High) e velocità (Slow/Standard/Boost), ma `handleExtrude()` fa solo
   `console.log('Extrude', { amount, speed })`. Non c'è mappatura tra le etichette e valori
   reali in mm o mm/s, e nessun G-code viene inviato.
 
-L'intera pagina `/movement` è oggi **sola visualizzazione**.
+Il pulsante **Move** non ha ancora un bersaglio (Q6).
 
 ### Il calcolo del pellet non ha fondamento fisico
 
@@ -98,14 +101,6 @@ da `moonraker-notifier.ts` e dalla pagina console. **Entrambi vanno eliminati.**
 `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` e `@mdi/react`
 sono librerie React, presenti in `package.json` ma non importate da alcun file Svelte.
 **Da disinstallare**; se in futuro servissero, si reinstallano.
-
-### Voce di menu "Mainsail" da rimuovere
-
-La pagina Impostazioni contiene una voce "Mainsail" che apre l'origine corrente sulla porta
-**8081**, dove il vecchio installer metteva Mainsail. Il nuovo
-[install.sh](../script/install.sh) non installa Mainsail e ne rimuove il site nginx, quindi
-quella voce porta a una porta chiusa. **Da togliere** da
-[src/routes/settings/+page.svelte](../src/routes/settings/+page.svelte).
 
 ### Interfaccia da riportare tutta in inglese
 

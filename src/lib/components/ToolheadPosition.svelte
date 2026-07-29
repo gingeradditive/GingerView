@@ -39,6 +39,12 @@
 	let maxY = 1000;
 	let maxZ = 1000;
 
+	// Optimistic default: when Kalico does not report `stepper_enable` the motor
+	// state is unknown, and an enabled button is the useful fallback.
+	let motorsEnabled = true;
+	let motorsBusy = false;
+	let homingBusy = false;
+
 	const pollIntervalMs = 1000;
 
 	const clamp = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
@@ -89,7 +95,7 @@
 	const updateToolheadPosition = async (): Promise<void> => {
 		try {
 			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position`
+				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers`
 			);
 			if (!response.ok) return;
 
@@ -120,6 +126,14 @@
 				actualY.set($targetY);
 				actualZ.set($targetZ);
 			}
+
+			const stepperEnable = status.stepper_enable;
+			const steppers = stepperEnable?.steppers;
+			if (steppers && typeof steppers === 'object') {
+				// M84 disables every stepper at once, so any stepper still enabled
+				// means the motors have not been disabled.
+				motorsEnabled = Object.values(steppers).some((value) => Boolean(value));
+			}
 		} catch {
 			return;
 		}
@@ -148,12 +162,33 @@
 		delete (window as ToolheadTestWindow).setToolheadTestPosition;
 	});
 
-	const handleHome = (): void => {
-		console.log('Home');
+	const handleHome = async (): Promise<void> => {
+		if (homingBusy) return;
+		homingBusy = true;
+		try {
+			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=G28`, { method: 'POST' });
+		} catch {
+			// ignore; the position poll will reflect whatever the printer actually did
+		} finally {
+			homingBusy = false;
+		}
 	};
 
-	const handleMotorOff = (): void => {
-		console.log('Motor Off');
+	const handleMotorOff = async (): Promise<void> => {
+		if (!motorsEnabled || motorsBusy) return;
+		motorsBusy = true;
+		try {
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=M84`, {
+				method: 'POST'
+			});
+			if (response.ok) {
+				motorsEnabled = false;
+			}
+		} catch {
+			// ignore; next poll will reflect the actual motor state
+		} finally {
+			motorsBusy = false;
+		}
 	};
 
 	const handleMove = (): void => {
@@ -225,20 +260,25 @@
 			</svg>
 			<span>Move</span>
 		</button>
-		<button class="control-btn home" aria-label="Home" onclick={handleHome}>
+		<button class="control-btn home" aria-label="Home" disabled={homingBusy} onclick={handleHome}>
 			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor" />
 			</svg>
 			<span>Home</span>
 		</button>
-		<button class="control-btn" aria-label="Disable Motors" onclick={handleMotorOff}>
+		<button
+			class="control-btn"
+			aria-label={motorsEnabled ? 'Disable Motors' : 'Motors Disabled'}
+			disabled={!motorsEnabled || motorsBusy}
+			onclick={handleMotorOff}
+		>
 			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path
 					d="M2.5,3.77L6.87,8.14L5,10V13H3V10H1V18H3V15H5V18H8L10,20H18V19.27L21.23,22.5L22.5,21.22L3.78,2.5L2.5,3.77M16,18H11L9,16H7V11L8,10H8.73L16,17.27V18M23,9V19H22.82L16,12.18V10H13.82L7.82,4H15V6H12V8H18V12H20V9H23Z"
 					fill="currentColor"
 				/>
 			</svg>
-			<span>Disable Motors</span>
+			<span>{motorsEnabled ? 'Disable Motors' : 'Motors Disabled'}</span>
 		</button>
 	</div>
 </div>
@@ -443,5 +483,11 @@
 
 	.control-btn.home:hover {
 		background: #b82520;
+	}
+
+	.control-btn:disabled {
+		cursor: default;
+		opacity: 0.55;
+		pointer-events: none;
 	}
 </style>
