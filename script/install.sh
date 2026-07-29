@@ -242,16 +242,48 @@ fi
 command -v nginx >/dev/null 2>&1 || fail "nginx is not installed (drop --skip-packages to install it)"
 
 # --------------------------------------------------------------------------
-# Remove Mainsail
+# Make room on our port
 # --------------------------------------------------------------------------
-# G2OS ships GingerView *instead of* Mainsail. Leaving a Mainsail site enabled
-# would collide with our default_server and make nginx refuse to start.
+# G2-OS ships GingerView instead of Mainsail, but that is the image's job, not
+# this script's. The only thing an installer legitimately has to do is free the
+# port it is about to take. A Mainsail kept on another port — 8081 is the usual
+# choice on a development machine — is none of our business, so leave it running.
 
-for f in /etc/nginx/sites-enabled/mainsail /etc/nginx/sites-available/mainsail \
-         /etc/nginx/conf.d/mainsail.conf; do
-	if [ -e "$f" ] || [ -L "$f" ]; then
-		rm -f "$f"
-		ok "removed Mainsail nginx config: $f"
+# True when the site has a wildcard `listen` on the given port, i.e. one that
+# would fight ours. A listener bound to a specific address can coexist.
+site_claims_port() { # site_claims_port <file> <port>
+	awk -v port="$2" '
+		/^[[:space:]]*listen[[:space:]]/ {
+			spec = $0
+			sub(/;.*/, "", spec)
+			sub(/^[[:space:]]*listen[[:space:]]+/, "", spec)
+			split(spec, parts, /[[:space:]]+/)
+			spec = parts[1]
+			if (spec ~ /^\[.*\]:/)      sub(/^\[.*\]:/, "", spec)
+			else if (spec ~ /^[0-9.]+:/) next
+			if (spec == port) found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$1" 2>/dev/null
+}
+
+for f in /etc/nginx/sites-enabled/mainsail /etc/nginx/conf.d/mainsail.conf; do
+	[ -e "$f" ] || [ -L "$f" ] || continue
+
+	target="$f"
+	[ -L "$f" ] && target="$(readlink -f "$f")"
+
+	if site_claims_port "$target" "$NGINX_PORT"; then
+		# Disable, don't delete: the config in sites-available is left intact so
+		# the site can be restored, and --purge-mainsail is the explicit removal.
+		if [ -L "$f" ]; then
+			rm -f "$f"
+		else
+			mv -f "$f" "$f.disabled-by-gingerview"
+		fi
+		ok "disabled Mainsail on port $NGINX_PORT: $f"
+	else
+		info "left Mainsail alone, it does not use port $NGINX_PORT: $f"
 	fi
 done
 
@@ -260,15 +292,15 @@ rm -f /etc/nginx/sites-enabled/GingerView /etc/nginx/sites-available/GingerView 
       /etc/nginx/sites-enabled/default
 
 if [ "$PURGE_MAINSAIL" -eq 1 ]; then
+	rm -f /etc/nginx/sites-enabled/mainsail /etc/nginx/sites-available/mainsail \
+	      /etc/nginx/conf.d/mainsail.conf /etc/nginx/conf.d/mainsail.conf.disabled-by-gingerview
 	for d in "$USER_HOME/mainsail" "$USER_HOME/mainsail-config"; do
 		if [ -d "$d" ]; then
 			rm -rf "$d"
 			ok "removed $d"
 		fi
 	done
-elif [ -d "$USER_HOME/mainsail" ]; then
-	warn "Mainsail files are still present at $USER_HOME/mainsail (no longer served)."
-	warn "Re-run with --purge-mainsail to delete them."
+	ok "purged Mainsail"
 fi
 
 # --------------------------------------------------------------------------

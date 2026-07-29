@@ -48,8 +48,8 @@ script/install.sh --print-config --moonraker-port 7125
 
 1. Verifica che esista `build/index.html`, altrimenti si ferma con un messaggio esplicito.
 2. Installa nginx se manca (`apt-get`, non interattivo).
-3. **Rimuove le configurazioni nginx di Mainsail** e il site `default`, che altrimenti
-   competerebbero per `default_server` sulla porta 80.
+3. **Libera la porta**: disabilita il site `default` e i site Mainsail che rivendicano la
+   porta scelta. Un Mainsail su un'altra porta viene lasciato in funzione (vedi sotto).
 4. Scrive `/etc/nginx/conf.d/gingerview-common.conf` (la `map` per l'upgrade WebSocket) e il
    site GingerView.
 5. Corregge i permessi di traversata verso la web root.
@@ -102,8 +102,20 @@ chroot di build.
 (vedi [03 — Configurazione](03-configurazione.md)), quindi un `.env` scritto in fase di
 installazione non avrebbe alcun effetto.
 
-**Non installa Mainsail.** Si limita a rimuoverne le configurazioni nginx. I file restano sul
-disco e lo script lo segnala; `--purge-mainsail` li elimina insieme alla voce
+**Non installa Mainsail, e non lo rimuove senza motivo.** Che su G2-OS non ci sia Mainsail è
+compito dell'immagine, non dell'installer: l'unica cosa che questo script deve fare è liberare
+la porta che sta per occupare.
+
+Quindi un site Mainsail viene toccato **solo se rivendica la stessa porta**, e in quel caso
+viene *disabilitato* (rimosso il symlink da `sites-enabled`), non cancellato: la configurazione
+in `sites-available` resta al suo posto. Un Mainsail su un'altra porta — **8081 è il caso
+tipico di una macchina di sviluppo** — viene lasciato in funzione, e lo script lo dice.
+
+Il riconoscimento guarda le direttive `listen`: conta solo un ascolto *wildcard* sulla porta in
+questione. Un site legato a un indirizzo specifico, tipo `listen 192.168.4.1:80` di un portale
+access point, può convivere con `listen 80 default_server` e non viene toccato.
+
+`--purge-mainsail` è la rimozione esplicita: cancella i site, i file e la voce
 `[update_manager mainsail]`.
 
 ## Build

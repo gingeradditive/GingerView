@@ -2,9 +2,10 @@
 #
 # Integration test for install.sh, run inside a throwaway Debian container.
 #
-# Exercises what actually matters for G2OS: that nginx serves the SPA, that
-# Moonraker and the Wi-Fi service are proxied on the same origin, that a
-# pre-existing Mainsail site is removed, and that re-running changes nothing.
+# Exercises what actually matters: that nginx serves the SPA, that Moonraker and
+# the Wi-Fi service are proxied on the same origin, that a Mainsail site squatting
+# on our port is disabled while one on another port survives, and that re-running
+# changes nothing.
 #
 # Requires Docker. Usage: script/test-install.sh
 
@@ -48,12 +49,16 @@ chown -R pi:pi /home/pi
 # Recent Raspberry Pi OS images ship 750 homes; that is the classic silent 403.
 chmod 750 /home/pi
 
-# Mainsail installed alongside, which the installer must dislodge.
+# Two Mainsail sites: one squatting on port 80, which must be disabled, and one
+# on 8081, which must survive — a development machine legitimately keeps that.
 mkdir -p /home/pi/mainsail && echo MAINSAIL > /home/pi/mainsail/index.html
 mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 printf 'server {\n listen 80 default_server;\n server_name _;\n root /home/pi/mainsail;\n}\n' \
 	> /etc/nginx/sites-available/mainsail
 ln -sf /etc/nginx/sites-available/mainsail /etc/nginx/sites-enabled/mainsail
+printf 'server {\n listen 8081 default_server;\n server_name _;\n root /home/pi/mainsail;\n}\n' \
+	> /etc/nginx/sites-available/mainsail-8081
+ln -sf /etc/nginx/sites-available/mainsail-8081 /etc/nginx/sites-enabled/mainsail-8081
 
 # Fake Moonraker (7125) and Wi-Fi service (8000), each echoing the path it got.
 python3 - <<'PY' &
@@ -97,7 +102,10 @@ check "assets immutable"      "immutable"               "$(curl -sSI http://127.
 
 echo
 echo "### filesystem"
-check "mainsail site gone"    "absent"  "$([ -e /etc/nginx/sites-enabled/mainsail ] && echo present || echo absent)"
+check "mainsail :80 disabled" "absent"  "$([ -e /etc/nginx/sites-enabled/mainsail ] && echo present || echo absent)"
+check "mainsail :8081 kept"   "present" "$([ -e /etc/nginx/sites-enabled/mainsail-8081 ] && echo present || echo absent)"
+check "mainsail :8081 serves" "MAINSAIL" "$(curl -sS http://127.0.0.1:8081/)"
+check "available/ untouched"  "present" "$([ -e /etc/nginx/sites-available/mainsail ] && echo present || echo absent)"
 check "gingerview enabled"    "present" "$([ -e /etc/nginx/sites-enabled/gingerview ] && echo present || echo absent)"
 check "update_manager added"  "[update_manager GingerView]" "$(cat /home/pi/printer_data/config/moonraker.conf)"
 check "correct repo path"     "path: /home/pi/GingerView"   "$(cat /home/pi/printer_data/config/moonraker.conf)"
