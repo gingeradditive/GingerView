@@ -19,8 +19,8 @@ controllo delle proprie stampanti 3D basate su Klipper/Kalico + Moonraker.
 
 | File | Contenuto |
 |---|---|
-| [TODO.md](TODO.md) | Elenco piatto dei task, con rimandi alle domande aperte |
-| [Q&A.md](Q&A.md) | Domande aperte sullo sviluppo, con le risposte man mano che arrivano |
+| [TODO.md](TODO.md) | Cose da fare, con codice univoco `AREA-n` per riferirvisi. I task completati vengono rimossi |
+| [Q&A.md](Q&A.md) | Solo le domande ancora aperte. Quando una riceve risposta, esce da qui ed entra nella documentazione |
 
 ## In breve
 

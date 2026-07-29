@@ -120,7 +120,7 @@ risultato è una SPA: qualunque percorso deve essere servito da `index.html`.
 
 La pipeline [.github/workflows](../.github/workflows) si attiva a ogni push su `main`:
 
-1. checkout, Node 20, `npm ci`;
+1. checkout, Node dalla versione in `.nvmrc`, `npm ci`;
 2. `npm run build`;
 3. commit e push della cartella `build/` con messaggio `chore: update build artifacts [skip ci]`.
 
@@ -140,21 +140,95 @@ tutte le macchine.
 > Attenzione: se compili in locale **con** un `.env` e committi `build/`, ci finisce dentro
 > l'IP della tua stampante. Lascia che sia la CI a produrre gli artefatti.
 
-Il rovescio della medaglia della scelta è che il repository accumula diff binari a ogni push
-su `main`.
-
 ## Altri script
 
-| Script | Stato | Cosa fa |
-|---|---|---|
-| [script/build.sh](../script/build.sh) | funzionante, da rivedere | `nvm use 20`, `npm install`, `npm run build`, verifica che `build/` esista |
-| [script/update.sh](../script/update.sh) | funzionante, da rivedere | `git pull --ff-only origin main`, `npm install`, build, `chmod -R 755 build/`, riavvio nginx |
-| [script/rundev.sh](../script/rundev.sh) | ridondante | `nvm use 20` + `npm run dev`; duplica [rundev.sh](../rundev.sh) nella root |
+Tutti condividono `script/_common.sh` (messaggi, prompt, bootstrap di Node da `.nvmrc`).
+`install.sh` è l'eccezione: resta autonomo perché deve girare nella pipeline G2-OS, anche
+lontano dai suoi fratelli.
 
-`update.sh` esegue `git checkout main`: su una macchina con modifiche locali o su un branch
-diverso l'aggiornamento fallisce o le sovrascrive. Inoltre riavvia nginx solo se dispone di
-sudo senza password, altrimenti salta il passo silenziosamente. Entrambi ricompilano in locale
-pur essendo `build/` già presente nel repo, quindi in pratica servono solo in sviluppo.
+| Script | A cosa serve |
+|---|---|
+| [script/build.sh](../script/build.sh) | Build di produzione locale. Normalmente non serve: ci pensa la CI |
+| [script/update.sh](../script/update.sh) | Aggiorna un'installazione esistente. Niente Node, niente root |
+| [script/rundev.sh](../script/rundev.sh) | Server di sviluppo. `./rundev.sh` nella root è un forwarder a questo |
+| [script/test-install.sh](../script/test-install.sh) | Test di integrazione dell'installer in container |
+
+### build.sh
+
+```bash
+script/build.sh [--ci] [--no-env]
+```
+
+Usa la versione di Node dichiarata in `.nvmrc`, installa le dipendenze, compila e verifica
+l'output. Alla fine **ispeziona il bundle** e dice se contiene indirizzi compilati dentro:
+
+```
+✓ Same-origin bundle: no addresses compiled in, works on any printer
+```
+
+Questo è il punto importante. Se hai un `.env` locale, i suoi valori finiscono nel bundle e
+quella build funziona solo contro la tua stampante: lo script avvisa prima e dopo. Con
+`--no-env` mette temporaneamente da parte il `.env` e produce lo stesso bundle della CI; il
+file viene ripristinato anche se interrompi con Ctrl-C.
+
+`--ci` usa `npm ci` invece di `npm install`, per una installazione esatta da lockfile.
+
+### update.sh
+
+```bash
+script/update.sh [--build] [--reload-nginx]
+```
+
+Aggiornare è **solo un fast-forward**: la CI compila e committa `build/`, e nginx serve
+direttamente quella cartella. Quindi lo script non richiede Node, non ricompila, non riavvia
+nginx e **non ha bisogno di root** — esattamente come l'`update_manager` di Moonraker, che è
+registrato con `is_system_service: False`.
+
+Differenze rispetto alla versione precedente, che erano veri e propri difetti:
+
+- **aggiorna il branch su cui sei**, invece di forzare `git checkout main` buttando via quello
+  che avevi in mano;
+- **si ferma se il working tree è sporco**, invece di rischiare di sovrascrivere modifiche non
+  committate;
+- **rifiuta un merge non fast-forward** con un messaggio esplicito, invece di creare un merge
+  commit a sorpresa;
+- non ricompila e non tocca nginx, perché per un aggiornamento di file statici non serve
+  (`index.html` è servito con `no-store`).
+
+Dopo il pull mostra i commit applicati e riallinea i permessi dentro `build/`, che i file
+appena scaricati ereditano dalla umask.
+
+`--build` ricompila in locale, per una macchina di sviluppo o un branch senza artefatti.
+`--reload-nginx` ricarica nginx, utile solo se hai toccato anche la sua configurazione.
+
+### rundev.sh
+
+```bash
+script/rundev.sh [--install|--no-install] [argomenti per Vite]
+```
+
+Chiede se reinstallare le dipendenze prima di partire:
+
+```
+Reinstall dependencies? (s/N)
+```
+
+Accetta sia `s`/`si` sia `y`/`yes`. Il default cambia da solo in base alla situazione:
+
+- `node_modules` assente → installa senza chiedere, non è una scelta;
+- `package-lock.json` più recente dell'ultima installazione (tipicamente dopo un `git pull`)
+  → avvisa e propone **S** come default;
+- altrimenti → default **N**.
+
+Il confronto usa `node_modules/.package-lock.json`, che npm 7+ tiene allineato a ogni
+installazione: è un marcatore più affidabile della data di modifica della cartella, che si
+muove anche per scritture non correlate.
+
+Gli argomenti in più passano a Vite, quindi `./rundev.sh --host` espone il dev server sulla
+rete locale — comodo per aprirlo dal telefono, che è il dispositivo di destinazione reale.
+
+Senza terminale interattivo (pipeline, `< /dev/null`) non si blocca mai ad aspettare: usa il
+default.
 
 ## Aggiornamento di una macchina installata
 
@@ -173,10 +247,25 @@ L'aggiornamento diventa così disponibile dall'interfaccia di Moonraker: `git pu
 poiché `build/` è committato **e nginx serve direttamente quella cartella**, il nuovo bundle è
 attivo subito, senza ricompilare né riavviare nginx.
 
+## Come si raggiunge la macchina
+
+L'indirizzo è **mDNS**: `g2.local`. Il QR/NFC applicato alla stampante porta lì, e non a un IP,
+che con DHCP cambierebbe rendendo il codice inutile.
+
+Perché funzioni, l'hostname di sistema dev'essere `g2` e `avahi-daemon` dev'essere attivo:
+sono entrambi compiti dell'immagine G2-OS, non di `install.sh`. Vale la pena verificarlo
+esplicitamente quando si scrive il modulo, perché è l'unico modo previsto per arrivare
+all'interfaccia.
+
+> Un limite da conoscere: il supporto mDNS su Android è storicamente incostante fra versioni e
+> produttori. iOS lo risolve nativamente. Se in campo emergessero telefoni che non risolvono
+> `g2.local`, l'alternativa è un access point della macchina con un captive portal, oppure un
+> IP fisso stampato accanto al QR.
+
 ## GingerSlicer
 
 Con il proxy attivo, in GingerSlicer si aggiunge la stampante come **Klipper/Moonraker**
-indicando solo `http://<ip-stampante>`, lasciando vuoto il campo della porta. Lo slicer
+indicando solo `http://g2.local`, lasciando vuoto il campo della porta. Lo slicer
 raggiunge `/server/files/upload` per l'invio dei file e `/printer/...` per lo stato, tutto
 sulla porta 80.
 

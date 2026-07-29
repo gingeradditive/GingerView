@@ -44,8 +44,11 @@ dentro i file JavaScript, quindi:
 | `VITE_MOONRAKER_PORT` | `7125` | Usata solo se è impostato l'host |
 | `VITE_MOONRAKER_WS_URL` | derivato | URL WebSocket completo, ha la precedenza |
 | `VITE_MOONRAKER_API_URL` | derivato | URL HTTP completo, ha la precedenza |
-| `VITE_PRINTER_NAME` | `Ginger Printer` | Nome da mostrare |
-| `VITE_CONNECTION_TIMEOUT` | `5000` | Timeout di connessione in ms |
+
+`configService` legge anche `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT`, ma **nessuna delle
+due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout è usato solo da
+`validateConfig()`, che non viene mai invocato (la console ha il proprio timeout scritto nel
+codice). Per questo non compaiono in [.env.example](../.env.example).
 
 ### Servizio di rete (Wi-Fi)
 
@@ -123,6 +126,5 @@ riproduce il comportamento di nginx, ma la via più semplice resta l'override es
 
 ## Versione di Node
 
-La versione di riferimento è **Node 22**, già dichiarata in [.nvmrc](../.nvmrc). Gli script in
-[script/](../script/) e la CI forzano ancora `20` e vanno allineati, vedi
-[07 — Stato attuale](07-stato-attuale.md#versione-di-node-da-allineare).
+La versione di riferimento è **Node 22**, dichiarata in [.nvmrc](../.nvmrc). È l'unica fonte:
+gli script la applicano tramite `nvm` e la CI la legge con `node-version-file`.

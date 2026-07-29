@@ -14,7 +14,8 @@ offrono; GingerView espone solo ciò che serve a usare una stampante Ginger.
 ## Il dispositivo di accesso è il telefono dell'utente
 
 **Le macchine Ginger non hanno uno schermo.** L'utente si collega dal proprio cellulare,
-raggiungendo la stampante tramite un **NFC/QR** applicato alla macchina.
+raggiungendo la stampante tramite un **NFC/QR** applicato alla macchina, che punta
+all'indirizzo mDNS **`g2.local`** (vedi [06 — Build e deploy](06-deploy.md#come-si-raggiunge-la-macchina)).
 
 È il vincolo di progetto più importante e va tenuto presente in ogni scelta di layout:
 il bersaglio primario è uno schermo di telefono tenuto in mano accanto a una stampante, non
@@ -63,6 +64,20 @@ ugello, non come utensili distinti.
 
 Le notifiche di errore/avviso provenienti da Klipper e Moonraker sono globali: arrivano come
 toast in sovrimpressione su qualunque pagina (`MoonrakerNotifier` + `ToastContainer`).
+
+## Fuori ambito per scelta
+
+Cose che Mainsail fa e GingerView deliberatamente **non** farà. Sono decisioni prese, non
+funzionalità mancanti:
+
+- **Nessun pulsante di emergency stop.** La macchina ne ha uno fisico, che resta l'unico
+  modo previsto per fermarla in emergenza. L'interfaccia non espone
+  `POST /printer/emergency_stop`.
+- **Temperature in sola lettura.** I setpoint non si impostano dall'interfaccia.
+- **Nessuna autenticazione.** Moonraker su G2-OS è configurato senza, e GingerView non invia
+  credenziali.
+- **Nessun Mainsail affiancato.** Non viene installato accanto a GingerView; la voce di menu
+  che oggi lo richiama va rimossa.
 
 ## Dove gira
 

@@ -2,11 +2,10 @@
 
 ## Requisiti
 
-- **Node.js 22** — è la versione di riferimento, già dichiarata in [.nvmrc](../.nvmrc).
+- **Node.js 22** — dichiarata in [.nvmrc](../.nvmrc), che è l'unica fonte: gli script la
+  applicano via `nvm` e la CI la legge con `node-version-file`, quindi non possono divergere.
   Node 20 è **End-of-Life da aprile 2026** e Node 22 è l'ultima LTS con build ARM a 32 bit
-  ufficiali, quindi copre il Raspberry Pi 4 sia a 64 sia a 32 bit. Gli script in
-  [script/](../script/) e la CI forzano ancora la 20 e vanno allineati
-  ([07](07-stato-attuale.md#versione-di-node-da-allineare)).
+  ufficiali, quindi copre il Raspberry Pi 4 sia a 64 sia a 32 bit.
 - **npm** — il progetto usa `package-lock.json`, non pnpm/yarn.
 - Una stampante con Moonraker raggiungibile, oppure un'istanza Moonraker di prova.
 
@@ -18,9 +17,11 @@ cp .env.example .env      # e imposta l'IP della tua stampante
 npm run dev
 ```
 
-In alternativa, [rundev.sh](../rundev.sh) nella root carica nvm, applica la versione da
-`.nvmrc` e lancia `npm run dev`. Esiste anche [script/rundev.sh](../script/rundev.sh), che
-però forza `nvm use 20`: sono due script sovrapposti che fanno quasi la stessa cosa.
+In alternativa [script/rundev.sh](../script/rundev.sh), che applica la versione di Node da
+`.nvmrc`, chiede se reinstallare le dipendenze e avvia Vite. `./rundev.sh` nella root è un
+forwarder allo stesso script. Gli argomenti in più passano a Vite, quindi `./rundev.sh --host`
+espone il dev server sulla rete locale, comodo per aprirlo dal telefono. Vedi
+[06 — rundev.sh](06-deploy.md#rundevsh).
 
 Il server di sviluppo Vite parte su `http://localhost:5173`. Perché le chiamate a Moonraker
 funzionino, quell'origine deve essere tra le `cors_domains` di `moonraker.conf`

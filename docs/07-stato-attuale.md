@@ -86,13 +86,6 @@ da definire (Q29) — vale la pena non progettare l'avvio in modo da precludersi
 Queste non sono più questioni aperte: la scelta è fatta, manca l'esecuzione. I task
 corrispondenti sono in [TODO.md](TODO.md).
 
-### Versione di Node da allineare
-
-Il riferimento è **Node 22**, già dichiarato in `.nvmrc`. Da allineare `script/build.sh`,
-`script/update.sh`, `script/rundev.sh` (forzano `nvm use 20`) e la pipeline GitHub Actions.
-Node 20 è End-of-Life da aprile 2026; Node 22 è l'ultima LTS con build ARM a 32 bit ufficiali,
-quindi copre il Raspberry Pi 4 in entrambe le architetture.
-
 ### Codice morto da rimuovere
 
 [DemoComponent.svelte](../src/lib/components/DemoComponent.svelte) non è referenziato da
@@ -140,12 +133,6 @@ Due problemi indipendenti, entrambi preesistenti:
 
 Poiché lo script è `prettier --check . && eslint .`, oggi eslint non viene nemmeno raggiunto.
 
-### Doppio `rundev`
-
-[rundev.sh](../rundev.sh) nella root usa la versione da `.nvmrc`;
-[script/rundev.sh](../script/rundev.sh) forza la 20. Due script quasi identici che divergono
-proprio sul punto che conta.
-
 ### Il servizio di rete è un'architettura da decidere
 
 La gestione Wi-Fi passa da un servizio separato sulla porta 8000, installato da G2-OS. È in
@@ -163,11 +150,12 @@ meccanismo per sapere su quale macchina si sta girando. Vedi Q26.
 
 Trattato per esteso in [06 — Build e deploy](06-deploy.md):
 
-- `build.sh` e `update.sh` funzionano ma sono fragili e andrebbero rifatti: ricompilano in
-  locale pur essendo `build/` già presente nel repo, e `update.sh` forza `git checkout main`;
-- `build/` committato nel repository produce diff binari a ogni push su `main`;
+- `build/` committato nel repository produce diff binari a ogni push su `main`. È mitigato dal
+  fatto che la CI ricompila solo su `main`, quindi i diff si concentrano sulle release;
 - se qualcuno compila in locale con un `.env` e committa `build/`, l'IP della sua stampante
-  finisce nel bundle distribuito. Gli artefatti devono venire dalla CI.
+  finisce nel bundle distribuito. `build.sh` ora avvisa prima e dopo la build, ed elenca cosa è
+  stato compilato dentro, ma **nulla impedisce materialmente quel commit**: manca un controllo
+  in CI o un hook.
 
 Il repository [gingeradditive/g2-os](https://github.com/gingeradditive/g2-os) esiste ma è
 ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modulo GingerView**.
