@@ -119,6 +119,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | `QA-4` | Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` | pronto |
 | `QA-5` | Valutare test unitari o end-to-end sul frontend | pronto |
 | `QA-6` | Risolvere i 16 warning di `svelte-check` in `PrintList.svelte` (a11y, `non_reactive_update`) | pronto |
+| `QA-7` | Valutare `npm audit fix`: 15 vulnerabilità, di cui 4 raggiungono il bundle. Comporta rigenerare `build/` | pronto |
 
 ## ROB — Robustezza
 
