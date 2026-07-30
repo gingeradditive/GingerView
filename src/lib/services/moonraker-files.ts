@@ -93,9 +93,9 @@ export async function getFileMetadata(filename: string, dirPath: string = 'gcode
 	const fullPath = dirPath === 'gcodes' ? filename : `${dirPath}/${filename}`;
 	const res = await fetch(`${apiUrl}/server/files/metadata?filename=${encodeURIComponent(fullPath)}`);
 	if (!res.ok) {
-		const msg = `Failed to fetch file metadata: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Metadata error', msg);
-		throw new Error(msg);
+		// Every caller already falls back gracefully when metadata isn't available yet
+		// (e.g. a file Moonraker hasn't scanned), so this is not toast-worthy.
+		throw new Error(`Failed to fetch file metadata: ${res.status} ${res.statusText}`);
 	}
 	const json = await res.json();
 	return json.result;

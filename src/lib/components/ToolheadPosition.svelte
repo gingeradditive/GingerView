@@ -4,6 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { mdiCursorMove } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
@@ -159,11 +160,24 @@
 	});
 
 	onDestroy(() => {
-		delete (window as ToolheadTestWindow).setToolheadTestPosition;
+		if (typeof window !== 'undefined') {
+			delete (window as ToolheadTestWindow).setToolheadTestPosition;
+		}
 	});
 
-	const handleHome = async (): Promise<void> => {
+	let showHomingWarning = false;
+
+	const handleHome = (): void => {
 		if (homingBusy) return;
+		showHomingWarning = true;
+	};
+
+	const cancelHoming = (): void => {
+		showHomingWarning = false;
+	};
+
+	const confirmHoming = async (): Promise<void> => {
+		showHomingWarning = false;
 		homingBusy = true;
 		try {
 			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=G28`, { method: 'POST' });
@@ -282,6 +296,8 @@
 		</button>
 	</div>
 </div>
+
+<HomingWarningModal isOpen={showHomingWarning} onConfirm={confirmHoming} onCancel={cancelHoming} />
 
 <style>
 	.toolhead-position-card {
