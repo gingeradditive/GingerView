@@ -2,8 +2,8 @@
 
 Fotografia del progetto al **30 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
 dell'installer, il passaggio a same-origin, l'implementazione di homing/estrusione/avvio
-stampa guidati e delle pagine Log, Update e Timezone. Serve a evitare che si perda tempo su
-cose già note o si scambi un segnaposto per un bug.
+stampa guidati e delle pagine Log, Update, Timezone e Config editor. Serve a evitare che si
+perda tempo su cose già note o si scambi un segnaposto per un bug.
 
 ## Funzionalità complete
 
@@ -28,6 +28,12 @@ cose già note o si scambi un segnaposto per un bug.
   evidenziata e un segnaposto sulla città, orologio e data della zona aggiornati al secondo, e
   tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). L'interfaccia è
   completa; **il salvataggio no**, vedi il segnaposto più sotto.
+- Pagina Config editor (`/settings/config-editor`): equivalente dell'editor dei config di
+  Mainsail — albero della root `config` con cartelle e sottocartelle espandibili a richiesta,
+  apertura in modifica, salvataggio, crea file, crea cartella, upload, rinomina, elimina,
+  download — più i tre riavvii (firmware, host, Moonraker), suggeriti dopo il salvataggio e
+  lanciabili a mano. Vedi [04 — Config editor](04-moonraker.md#config-editor) e
+  [04 — Riavvii](04-moonraker.md#riavvii). **È una pagina di sviluppo**, vedi più sotto.
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
@@ -41,8 +47,9 @@ cose già note o si scambi un segnaposto per un bug.
 
 `/settings/history` e `/settings/statistics` sono due righe che istanziano `SettingsSubpage`
 senza contenuto. La voce è nel menu, la rotta esiste, la funzionalità no. Sono considerate
-"roba vecchia da rifare", non solo da riempire (Q28). `/settings/log`, `/settings/update` e
-`/settings/timezone` sono usciti da questo elenco: vedi "Funzionalità complete" sopra.
+"roba vecchia da rifare", non solo da riempire (Q28). `/settings/log`, `/settings/update`,
+`/settings/timezone` e `/settings/config-editor` sono usciti da questo elenco: vedi
+"Funzionalità complete" sopra.
 
 Indicazioni già raccolte:
 
@@ -140,6 +147,22 @@ da `moonraker-notifier.ts` e dalla pagina console. **Entrambi vanno eliminati.**
 `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` e `@mdi/react`
 sono librerie React, presenti in `package.json` ma non importate da alcun file Svelte.
 **Da disinstallare**; se in futuro servissero, si reinstallano.
+
+### Il config editor va disattivato in produzione
+
+`/settings/config-editor` è nato come pagina **di sviluppo**: serve a mettere a punto la
+configurazione della macchina dal browser, non è qualcosa che un operatore debba raggiungere.
+Modificare `printer.cfg` dal touchscreen di una macchina consegnata è un modo per romperla.
+
+Per questo non è cablata: la costante `CONFIG_EDITOR_ENABLED` in
+[moonraker-config.ts](../src/lib/services/moonraker-config.ts) è l'unico interruttore. A `false`
+la voce scompare dall'elenco Impostazioni e la pagina si riduce a un avviso — la rotta resta
+raggiungibile scrivendo l'URL a mano, quindi **non è una misura di sicurezza**, solo il modo di
+togliere la funzione di mezzo quando non serve più (`SET-10`).
+
+Coerentemente, la pagina è deliberatamente meno curata del resto: nessuna evidenziazione della
+sintassi, nessuna ricerca nel file, nessuna gestione del conflitto se due client salvano lo
+stesso file (vince l'ultimo che scrive).
 
 ### Interfaccia da riportare tutta in inglese
 

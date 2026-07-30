@@ -56,7 +56,7 @@ src/
     ├── movement/
     ├── filelist/
     └── settings/           + sottopagine network, console, update, log, history,
-                              statistics, timezone
+                              statistics, timezone, config-editor
 
 script/                     script bash di build, dev, installazione, aggiornamento
 static/                     asset serviti così come sono (icone SVG, logo, thumbnail di errore)
@@ -89,6 +89,7 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/log` | pagina completa | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log)) |
 | `/settings/update` | pagina completa | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager)) |
 | `/settings/timezone` | pagina completa | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
+| `/settings/config-editor` | pagina completa | Editor dei config: albero della root `config` + `<textarea>` + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor)) |
 | `/settings/{history,statistics}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
 
 I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e

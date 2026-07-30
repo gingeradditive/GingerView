@@ -220,6 +220,76 @@ testuale, dovuto al fatto che il repo è Kalico (`KalicoCrew/kalico` su `main`) 
 ufficiale, come dicono le `anomalies`. Le decisioni si prendono **sui flag** e mai sulle
 stringhe: fidarsi di quel `warnings` significherebbe proporre una recovery su un repo sano.
 
+### Config editor
+
+Tutto in [moonraker-config.ts](../src/lib/services/moonraker-config.ts), usato da
+[`/settings/config-editor`](../src/routes/settings/config-editor/+page.svelte):
+
+| Operazione | Chiamata |
+|---|---|
+| Elenco di una cartella | `GET /server/files/directory?path=config[/sottocartella]` |
+| Lettura di un file | `GET /server/files/config/<percorso>?t=<timestamp>` |
+| Scrittura di un file | `POST /server/files/upload` (multipart: `file`, `root=config`, `path=<sottocartella>`) |
+| Download | `GET /server/files/config/<percorso>` |
+| Crea cartella / rinomina / elimina | le funzioni generiche di [moonraker-files.ts](../src/lib/services/moonraker-files.ts) |
+
+**Non esiste un endpoint "config".** La cartella di configurazione della stampante è
+semplicemente la **root `config`** del file manager, quindi sfogliarla e modificarla usa le
+stesse chiamate dei G-code: leggere un file è un download, salvarlo è un upload che sovrascrive.
+`config` e `gcodes` sono le uniche due root scrivibili, e `config` può essere configurata in
+sola lettura: la pagina legge `root_info.permissions` e se non contiene `w` si blocca da sola
+invece di far fallire il salvataggio.
+
+Nell'upload `root` e `path` sono **due campi separati**, e `path` è la sottocartella *relativa
+alla root*: `config/macros/park.cfg` si scrive come `root=config`, `path=macros`, nome file
+`park.cfg`. Moonraker crea le sottocartelle mancanti.
+
+La lettura porta un `?t=<timestamp>`: per il browser è il download di un file statico, quindi
+senza cache-buster una riapertura subito dopo il salvataggio può legittimamente essere servita
+dalla cache restituendo la versione appena sostituita.
+
+**L'albero è pigro.** `fetchConfigDirectory()` elenca **una cartella per volta**: una cartella
+mai aperta non costa niente. È il contrario di `fetchDirectoriesRecursive()` per i G-code
+(vedi `ROB-3` in [TODO.md](TODO.md)). Le voci che iniziano con `.` (i backup `.moonraker_backup`,
+`.git`) vengono nascoste: sono bookkeeping di Moonraker, non file da modificare a mano.
+
+L'editor è una `<textarea>` monospace, non un editor con syntax highlighting come CodeMirror in
+Mainsail: è una pagina di sviluppo e non vale una dipendenza in più. Il tasto Tab inserisce
+4 spazi invece di spostare il fuoco, e `Ctrl`/`Cmd`+`S` salva.
+
+### Riavvii
+
+| Operazione | Chiamata | Effetto |
+|---|---|---|
+| Firmware restart | `POST /printer/firmware_restart` | Riavvia Klipper **e gli MCU**, ricaricando la configurazione della stampante |
+| Host restart | `POST /printer/restart` | Ricarica solo Klippy sull'host, senza resettare gli MCU |
+| Moonraker restart | `POST /server/restart` | Riavvia il servizio Moonraker, necessario dopo aver modificato `moonraker.conf` |
+
+Sono le stesse tre opzioni di Mainsail, con lo stesso default: **`firmware_restart`**, l'unico
+che ricarica anche la configurazione degli MCU e quindi applica davvero la maggior parte delle
+modifiche a `printer.cfg`.
+
+Il riavvio è **suggerito al salvataggio e attivabile a mano**. Dopo un salvataggio la pagina
+mostra un banner con il riavvio adatto al file salvato — `moonraker.conf` chiede il riavvio di
+Moonraker, un `.cfg` il firmware restart — ma non lo esegue: decidere *quando* riavviare spetta
+all'operatore. In cima alla pagina ci sono comunque una tendina e un pulsante **Restart** per
+lanciare uno qualsiasi dei tre in qualunque momento, dietro conferma.
+
+**I riavvii sono bloccati durante una stampa.** Klipper accetta `FIRMWARE_RESTART` anche a
+stampa in corso e perde il lavoro, e Moonraker non lo impedisce: il divieto sta
+nell'interfaccia. La pagina interroga `print_stats.state` insieme a `/printer/info` e, se è
+`printing` o `paused`, disabilita la tendina, il pulsante **Restart** e **Save & restart**
+mostrando il motivo — è la stessa guardia della pagina Update. Il **salvataggio** resta
+permesso: scrivere un file non tocca la stampa in corso, è il riavvio che la interrompe.
+
+**La richiesta di riavvio non ha una risposta affidabile.** Tutti e tre gli endpoint uccidono la
+connessione che sta servendo la richiesta: la `fetch` può fallire, o restare appesa e poi
+fallire, anche se il riavvio è stato accettato. `requestRestart()` quindi **ignora l'esito**
+della richiesta, e l'esito vero si legge dopo, con `waitForKlipperReady()` che interroga
+`GET /printer/info` ogni 2 secondi (fino a 90) finché Klippy esce da `startup`. È lì che emerge
+una configurazione rotta: Klippy torna in stato `error` con l'errore di parsing in
+`state_message`, che la pagina mostra in un toast.
+
 ### Thumbnail: due strategie
 
 1. **Percorso dai metadati** — se il file dichiara `thumbnails`, `getThumbnailUrl()` sceglie
@@ -315,6 +385,7 @@ non viene mai aperta**. Vedi
 | `DashboardPelletPanel` | 3000 ms |
 | `/settings/network` (stato rete) | 5000 ms |
 | `/settings/update` (stato stampa, per bloccare gli update) | 5000 ms |
+| `/settings/config-editor` (`/printer/info` + `print_stats`, due richieste) | 5000 ms |
 
 Ogni intervallo è una costante `pollIntervalMs` locale al componente. Nella dashboard sono
 attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al secondo verso

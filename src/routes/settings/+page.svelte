@@ -4,6 +4,7 @@
 		Terminal,
 		CloudDownload,
 		FileText,
+		FileCode,
 		BookOpen,
 		History,
 		ChartColumn,
@@ -11,6 +12,7 @@
 		ExternalLink,
 		ChevronRight
 	} from 'lucide-svelte';
+	import { CONFIG_EDITOR_ENABLED } from '$lib/services/moonraker-config';
 
 	type Item = {
 		id: string;
@@ -19,9 +21,11 @@
 		icon: typeof Wifi;
 		kind: 'route' | 'external';
 		href?: string;
+		/** Rows that only exist while the machine is in development. */
+		enabled?: boolean;
 	};
 
-	const items: Item[] = [
+	const allItems: Item[] = [
 		{ id: 'network', title: 'Network', description: 'Manage your network connection', icon: Wifi, kind: 'route', href: '/settings/network' },
 		{ id: 'console', title: 'Console', description: 'Access the system console', icon: Terminal, kind: 'route', href: '/settings/console' },
 		{ id: 'update', title: 'Update', description: 'Check for updates and install', icon: CloudDownload, kind: 'route', href: '/settings/update' },
@@ -29,8 +33,11 @@
 		{ id: 'wiki', title: 'Open Wiki', description: 'Visit the project wiki', icon: BookOpen, kind: 'external', href: 'https://wiki.gingeradditive.com/' },
 		{ id: 'history', title: 'History', description: 'View system history', icon: History, kind: 'route', href: '/settings/history' },
 		{ id: 'statistics', title: 'Statistics', description: 'View usage statistics and metrics', icon: ChartColumn, kind: 'route', href: '/settings/statistics' },
-		{ id: 'timezone', title: 'Timezone', description: 'Set your timezone', icon: Globe, kind: 'route', href: '/settings/timezone' }
+		{ id: 'timezone', title: 'Timezone', description: 'Set your timezone', icon: Globe, kind: 'route', href: '/settings/timezone' },
+		{ id: 'config-editor', title: 'Config editor', description: 'Edit the printer config files and restart the firmware', icon: FileCode, kind: 'route', href: '/settings/config-editor', enabled: CONFIG_EDITOR_ENABLED }
 	];
+
+	const items = allItems.filter((item) => item.enabled !== false);
 
 	function handleExternalClick(item: Item) {
 		if (item.href) {
