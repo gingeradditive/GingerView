@@ -69,14 +69,23 @@ ugello, non come utensili distinti.
 Le notifiche di errore/avviso provenienti da Klipper e Moonraker sono globali: arrivano come
 toast in sovrimpressione su qualunque pagina (`MoonrakerNotifier` + `ToastContainer`).
 
+Globale è anche il **pulsante di emergency stop** in fondo alla dock: `POST /printer/emergency_stop`
+da qualunque pagina, senza conferma. Lo stesso tasto è la via di ritorno — a macchina ferma diventa
+il firmware restart che la rimette operativa, dietro conferma. Il pulsante fisico sulla macchina
+resta il dispositivo di sicurezza; questo serve a chi ha in mano il telefono. Vedi
+[04 — Emergency stop](04-moonraker.md#emergency-stop).
+
+E quando Kalico è fermo — per un emergency stop, un errore o perché il processo host non c'è —
+dashboard, file e movimento vengono coperti da un **avviso non chiudibile** con il motivo dello
+stop: a firmware fermo quelle pagine mostrano solo valori congelati e comandi che non fanno
+niente. Restano raggiungibili la dock e tutte le Impostazioni, cioè il pulsante che fa ripartire
+la macchina e le pagine in cui si capisce cos'è successo.
+
 ## Fuori ambito per scelta
 
 Cose che Mainsail fa e GingerView deliberatamente **non** farà. Sono decisioni prese, non
 funzionalità mancanti:
 
-- **Nessun pulsante di emergency stop.** La macchina ne ha uno fisico, che resta l'unico
-  modo previsto per fermarla in emergenza. L'interfaccia non espone
-  `POST /printer/emergency_stop`.
 - **Nessun controllo libero della temperatura.** Non c'è un termostato manuale in dashboard.
   Il flusso di estrusione (`ExtrudeDialog`, vedi [07 — Stato attuale](07-stato-attuale.md)) fa
   eccezione: imposta e attende le temperature, ma solo come passo automatico della sua
@@ -85,6 +94,11 @@ funzionalità mancanti:
   credenziali.
 - **Nessun Mainsail affiancato.** Non viene installato accanto a GingerView; la voce di menu
   che oggi lo richiama va rimossa.
+
+> L'**emergency stop** stava in questo elenco: la decisione è stata ribaltata e il pulsante ora è
+> nella dock (vedi sopra). Non è cambiata la premessa — il pulsante fisico resta il dispositivo di
+> sicurezza della macchina — è cambiato il fatto che, con l'utente collegato dal telefono, avere il
+> comando anche a schermo non toglie niente al pulsante fisico.
 
 ## Dove gira
 

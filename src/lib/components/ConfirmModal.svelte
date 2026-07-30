@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { mdiAlertCircleOutline } from '@mdi/js';
+	import { portal } from '$lib/actions/portal';
 
 	// Generic confirmation dialog, styled after HomingWarningModal. Used by the
 	// update page for the destructive operations (recovery, rollback), which must
@@ -25,12 +26,20 @@
 
 {#if isOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
+	<!--
+		Portalled unconditionally: the dock (`+layout.svelte`) is centred with
+		`transform: translateX(-50%)`, which makes it a containing block for its
+		`position: fixed` descendants, so the emergency stop's dialog would be laid
+		out against the dock instead of the viewport. Same reason the carousel
+		modals do it — see `portal.ts`.
+	-->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		aria-modal="true"
 		aria-label={title}
 		tabindex="-1"
+		use:portal
 		onclick={onCancel}
 		onkeydown={(e) => e.key === 'Escape' && onCancel()}
 	>

@@ -11,6 +11,7 @@
 | Stili | CSS scoped nei componenti + Tailwind CSS 4 per le utility |
 | Icone | `@mdi/js` (path SVG inline) e `lucide-svelte` |
 | Caroselli | `embla-carousel-svelte` |
+| Editor di codice | CodeMirror 6 — **solo** nel chunk di `/settings/config-editor`, pagina di sviluppo |
 | Font | Montserrat (importato da Google Fonts in `src/app.css`) |
 
 Sono presenti anche `@mui/material` ed `@emotion/*` tra le dipendenze, ma **non sono usati**
@@ -47,6 +48,7 @@ src/
 │   ├── assets/             favicon
 │   ├── components/         componenti UI (dashboard, file list, dialoghi, toast)
 │   ├── data/               dati generati da script (zone IANA, sagoma della mappa)
+│   ├── editor/             modo CodeMirror per i `.cfg` Klipper (solo config editor)
 │   ├── services/           accesso a Moonraker e al servizio di rete
 │   ├── stores/             stato condiviso (toast, directory corrente, context menu)
 │   └── types/              tipi TypeScript (config, klipper, print, wifi, update, timezone)
@@ -73,6 +75,14 @@ build/                      output della build — committato nel repo (vedi doc
 - **Dock di navigazione** — barra fissa in basso, centrata, con effetto vetro
   (`backdrop-filter: blur`). Contiene logo, Dashboard, Movement, FileList e, staccato a
   destra, Settings. La voce attiva è evidenziata dal bordo rosso Ginger `#D72E28`.
+- **`<EmergencyStopButton />`** — ultimo elemento della dock, staccato anche da Settings: non è
+  una destinazione ma un comando. Rosso pieno mentre la macchina è in marcia, si inverte in un
+  pulsante di firmware restart quando Kalico è fermo (vedi
+  [04 — Emergency stop](04-moonraker.md#emergency-stop)).
+- **`<KlipperDownOverlay />`** — avviso non chiudibile che copre le pagine operative quando Kalico
+  è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
+  `/settings`, così il pulsante che fa ripartire la macchina e le pagine diagnostiche restano
+  raggiungibili (vedi [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo)).
 
 Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la dock.
 
@@ -89,7 +99,7 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/log` | pagina completa | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log)) |
 | `/settings/update` | pagina completa | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager)) |
 | `/settings/timezone` | pagina completa | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
-| `/settings/config-editor` | pagina completa | Editor dei config: albero della root `config` + `<textarea>` + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor)) |
+| `/settings/config-editor` | pagina completa | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor)) |
 | `/settings/{history,statistics}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
 
 I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
@@ -107,8 +117,10 @@ un residuo dell'impostazione precedente da rivedere.
 |---|---|
 | [config.ts](../src/lib/services/config.ts) | Singleton `configService` e helper `getMoonrakerApiUrl()`: risolve gli endpoint, con same-origin come default e le variabili `VITE_*` come override di sviluppo |
 | [klipper-websocket.ts](../src/lib/services/klipper-websocket.ts) | Classe `KlipperWebSocketService` con store `connectionStatus` e `klipperStatus`, riconnessione con backoff lineare (max 5 tentativi). Codice morto, da rimuovere: vedi [07](07-stato-attuale.md#codice-morto-da-rimuovere) |
-| [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) | Avvisi all'avvio da `/server/info` + WebSocket persistente per `notify_klippy_*` e warning runtime |
+| [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) | Avvisi all'avvio da `/server/info` + WebSocket persistente per `notify_klippy_*` e warning runtime; espone gli store `klippyState` e `klippyMessage` |
+| [moonraker-printer.ts](../src/lib/services/moonraker-printer.ts) | Comandi della stampante non legati a una pagina: emergency stop e i tre riavvii (firmware/host/Moonraker), più `fetchPrinterInfo`, `fetchPrintState`, `waitForKlipperReady` |
 | [moonraker-files.ts](../src/lib/services/moonraker-files.ts) | Tutte le operazioni sui file: elenco, metadati, thumbnail, upload, sposta, elimina, crea cartella |
+| [moonraker-config.ts](../src/lib/services/moonraker-config.ts) | Config editor: albero della root `config`, lettura/scrittura/download dei file, `CONFIG_EDITOR_ENABLED` |
 | [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts) | Download dei log e rollover |
 | [moonraker-update.ts](../src/lib/services/moonraker-update.ts) | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente |
 | [network-api.ts](../src/lib/services/network-api.ts) | Client per il servizio Wi-Fi esterno (`/api/wifi/*`), con classe d'errore dedicata `NetworkAPIError` |
@@ -177,3 +189,10 @@ problema spostando il nodo overlay dentro `<body>` al mount e rimuovendolo al de
 applicato con `use:portal` a qualunque overlay `position: fixed` renderizzato dentro il
 carosello (già usato da `HomingWarningModal`, `PrintStartWizard` e dal popup di temperatura
 custom in `ExtrudeDialog`).
+
+Il carosello non è l'unico posto: **anche la dock** crea un containing block, perché è centrata
+con `transform: translateX(-50%)`. Per questo `ConfirmModal` porta il `use:portal` al proprio
+interno — la conferma del firmware restart nasce dentro `<nav class="dock">` e senza portale
+verrebbe posizionata rispetto alla dock invece che al viewport. La regola generale è: se un
+overlay `position: fixed` può finire dentro un antenato con `transform`, `filter` o
+`backdrop-filter`, va portalizzato.

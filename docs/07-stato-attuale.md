@@ -32,9 +32,24 @@ perda tempo su cose già note o si scambi un segnaposto per un bug.
   Mainsail — albero della root `config` con cartelle e sottocartelle espandibili a richiesta,
   apertura in modifica, salvataggio, crea file, crea cartella, upload, rinomina, elimina,
   download — più i tre riavvii (firmware, host, Moonraker), suggeriti dopo il salvataggio e
-  lanciabili a mano. Vedi [04 — Config editor](04-moonraker.md#config-editor) e
+  lanciabili a mano. L'editor è **CodeMirror 6** con evidenziazione della sintassi Klipper
+  (sezioni, chiavi, commenti, blocchi `gcode:` con G-code e Jinja), numeri di riga, undo e
+  ricerca. Vedi [04 — Config editor](04-moonraker.md#config-editor) e
   [04 — Riavvii](04-moonraker.md#riavvii). **È una pagina di sviluppo**, vedi più sotto.
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
+- Emergency stop nella dock ([EmergencyStopButton.svelte](../src/lib/components/EmergencyStopButton.svelte)):
+  `POST /printer/emergency_stop` senza conferma da qualunque pagina, e a Kalico fermo
+  (`shutdown`/`error`) lo stesso tasto si inverte e propone il firmware restart, dietro conferma,
+  attendendo il ritorno di Klippy con `waitForKlipperReady()`. Vedi
+  [04 — Emergency stop](04-moonraker.md#emergency-stop). **Non ancora provato su hardware reale**
+  (`UI-8`).
+- Avviso a schermo quando Kalico è fermo
+  ([KlipperDownOverlay.svelte](../src/lib/components/KlipperDownOverlay.svelte)): su dashboard,
+  file e movimento compare un riquadro **non chiudibile** con lo stato (`shutdown`/`error`/
+  `disconnected`) e il `state_message` di Klippy. Si ferma sopra la dock e non compare sotto
+  `/settings`, quindi né la navigazione né le pagine diagnostiche vengono bloccate. Vedi
+  [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo). **Non ancora
+  provato su hardware reale** (`UI-8`).
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
   (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
@@ -160,9 +175,13 @@ la voce scompare dall'elenco Impostazioni e la pagina si riduce a un avviso — 
 raggiungibile scrivendo l'URL a mano, quindi **non è una misura di sicurezza**, solo il modo di
 togliere la funzione di mezzo quando non serve più (`SET-10`).
 
-Coerentemente, la pagina è deliberatamente meno curata del resto: nessuna evidenziazione della
-sintassi, nessuna ricerca nel file, nessuna gestione del conflitto se due client salvano lo
-stesso file (vince l'ultimo che scrive).
+Essendo una pagina da sviluppatore e da PC, l'editor è CodeMirror 6 con evidenziazione della
+sintassi Klipper, numeri di riga e ricerca (vedi
+[04 — Config editor](04-moonraker.md#config-editor)): è l'unico punto dell'applicazione con
+questa dipendenza, e sta tutto nel chunk della rotta. Resta comunque la pagina meno curata del
+resto: **nessuna gestione del conflitto** se due client salvano lo stesso file (vince l'ultimo
+che scrive), e nessuna validazione del config prima del salvataggio — l'errore si scopre al
+riavvio, quando Klippy torna in stato `error`.
 
 ### Interfaccia da riportare tutta in inglese
 

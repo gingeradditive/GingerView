@@ -88,6 +88,62 @@ la richiesta resta in attesa finché la temperatura non è raggiunta).
 
 La console (`/settings/console`) invia G-code arbitrario, ma via WebSocket (vedi sotto).
 
+### Emergency stop
+
+```
+POST /printer/emergency_stop
+```
+
+È l'unica chiamata del **pulsante rosso nella dock**
+([EmergencyStopButton.svelte](../src/lib/components/EmergencyStopButton.svelte)), la stessa che fa
+il pulsante di Mainsail. Klipper spegne riscaldatori e motori e passa in stato `shutdown`: **non
+torna operativo da solo**, l'unico modo è un firmware restart (vedi [Riavvii](#riavvii)). Per
+questo il tasto è uno solo con due comportamenti — a macchina in marcia la ferma, a macchina ferma
+la fa ripartire.
+
+Il pulsante di emergenza **fisico** sulla macchina resta il dispositivo di sicurezza: questo è una
+comodità per chi ha in mano il telefono, non un suo sostituto.
+
+A differenza dei riavvii, `emergency_stop` **non uccide Moonraker**: la risposta è affidabile e un
+fallimento è un fallimento vero, quindi `emergencyStop()` in
+[moonraker-printer.ts](../src/lib/services/moonraker-printer.ts) controlla `res.ok` e in caso di
+errore mostra un toast persistente che rimanda al pulsante fisico.
+
+Lo stop **non chiede conferma** — come in Mainsail: un dialogo davanti a un arresto di emergenza
+annulla il senso del pulsante. Il riavvio invece la chiede, perché rimette riscaldatori e motori
+sotto il controllo di Kalico su una macchina che qualcuno ha fermato apposta. Non serve invece la
+guardia "stampa in corso" del config editor: il riavvio compare solo quando Kalico è già fermo,
+quindi non c'è più un lavoro da perdere.
+
+Quale dei due comportamenti mostrare lo decide lo stato di Klippy letto dallo store `klippyState`
+di [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) — nessun polling aggiuntivo,
+vedi [WebSocket](#1-moonraker-notifierts--notifiche-globali). Il tasto diventa "riavvia" solo su
+`shutdown` e `error`, cioè quando Klippy è vivo ma fermo; su `disconnected` il processo host non
+c'è e `/printer/firmware_restart` verrebbe rifiutato, quindi resta un pulsante di stop.
+
+### Avviso a schermo quando Kalico è fermo
+
+Lo stesso stato che comanda il pulsante alimenta
+[KlipperDownOverlay.svelte](../src/lib/components/KlipperDownOverlay.svelte): quando `klippyState`
+è `shutdown`, `error` o `disconnected` (`isKlippyDown()`), le pagine operative vengono coperte da
+un avviso **non chiudibile** al centro dello schermo, con il motivo riportato da Klippy
+(`state_message`, nello store `klippyMessage`).
+
+Non è un dialogo di conferma ma una constatazione: a firmware fermo i valori in dashboard sono
+congelati e i comandi non fanno niente, quindi non c'è nulla da confermare e nulla da chiudere.
+
+Due cose però non devono finirci sotto, ed è la parte che conta:
+
+- **la dock**, per geometria — l'overlay si ferma a `bottom: 96px`, sopra la barra (alta 88px dal
+  bordo inferiore). Non dipende dallo `z-index`: navigazione ed emergency stop restano cliccabili
+  comunque, ed è così che si lancia il firmware restart che toglie l'avviso;
+- **Settings e le sue sottopagine**, per rotta — l'overlay non compare se il percorso inizia con
+  `/settings`. Log, Update e Console sono esattamente i posti in cui si va a capire *perché*
+  Kalico si è fermato.
+
+Lo `z-index` è `2900`: sopra il contenuto delle pagine, sotto le modali (`3000`) — compresa la
+conferma del riavvio, che nasce dalla dock — e sotto i toast (`9999`).
+
 ### Avvio stampa
 
 ```
@@ -253,9 +309,39 @@ mai aperta non costa niente. È il contrario di `fetchDirectoriesRecursive()` pe
 (vedi `ROB-3` in [TODO.md](TODO.md)). Le voci che iniziano con `.` (i backup `.moonraker_backup`,
 `.git`) vengono nascoste: sono bookkeeping di Moonraker, non file da modificare a mano.
 
-L'editor è una `<textarea>` monospace, non un editor con syntax highlighting come CodeMirror in
-Mainsail: è una pagina di sviluppo e non vale una dipendenza in più. Il tasto Tab inserisce
-4 spazi invece di spostare il fuoco, e `Ctrl`/`Cmd`+`S` salva.
+**L'editor è CodeMirror 6**, come in Mainsail e Fluidd, incapsulato in
+[CodeEditor.svelte](../src/lib/components/CodeEditor.svelte): numeri di riga, undo/redo,
+ricerca (`Ctrl`/`Cmd`+`F`), piegatura del codice e parentesi abbinate. Il tasto Tab indenta di
+4 spazi invece di spostare il fuoco, e `Ctrl`/`Cmd`+`S` salva — quest'ultimo resta gestito
+dalla pagina, CodeMirror non intercetta la combinazione.
+
+La dipendenza è ammessa proprio perché la pagina è **di sviluppo e da PC**: i ~145 kB gzip di
+CodeMirror stanno tutti nel chunk della rotta, che il resto dell'applicazione non carica mai
+(vedi [Il config editor va disattivato in produzione](07-stato-attuale.md#il-config-editor-va-disattivato-in-produzione)).
+Quando la pagina verrà rimossa se ne va anche la dipendenza.
+
+#### Evidenziazione della sintassi
+
+Il modo per i `.cfg` è scritto a mano in
+[klipper-config-language.ts](../src/lib/editor/klipper-config-language.ts) perché **il formato
+Klipper non è un INI** e nessun modo pronto lo copre:
+
+- oltre a `[sezione]`, `chiave: valore` e commenti `#` / `;`, ogni opzione lasciata **senza
+  valore apre un blocco indentato** (`gcode:`, `points:`), che finisce alla prima riga con del
+  contenuto indentata quanto o meno dell'opzione che l'ha aperto — le righe vuote restano dentro;
+- i blocchi delle opzioni che contengono G-code (`gcode`, `*_script`, i template) prendono
+  l'evidenziazione dei comandi: nome del comando, parametri `HEATER=` e la forma `X10` / `F3000`;
+- dentro c'è **Jinja2 con le delimitazioni di Klipper**, che usa la graffa singola
+  (`{ params.X }`) invece della doppia: il tokenizer riconosce `{% %}`, `{{ }}` e `{ }`, le
+  parole di controllo (`if`, `for`, `set`, …) e i nomi che Klipper inietta (`printer`, `params`).
+
+Nell'intestazione `[gcode_macro START_PRINT]` il **tipo** e il **nome dell'istanza** sono
+colorati diversamente. I valori vengono presi come token interi e non carattere per carattere:
+altrimenti le cifre dentro un nome di pin (`PF13`) o dentro un percorso (`/dev/serial/...`)
+verrebbero lette come numeri.
+
+`.conf` (il config di Moonraker) condivide lo stesso modo, `.json` usa `@codemirror/lang-json`,
+tutto il resto (`.md`, `.txt`) resta testo semplice.
 
 ### Riavvii
 
@@ -268,6 +354,12 @@ Mainsail: è una pagina di sviluppo e non vale una dipendenza in più. Il tasto 
 Sono le stesse tre opzioni di Mainsail, con lo stesso default: **`firmware_restart`**, l'unico
 che ricarica anche la configurazione degli MCU e quindi applica davvero la maggior parte delle
 modifiche a `printer.cfg`.
+
+I tre riavvii **non stanno in `moonraker-config.ts`** ma in
+[moonraker-printer.ts](../src/lib/services/moonraker-printer.ts), insieme all'emergency stop:
+sono comandi della stampante, non del config editor, e il firmware restart è anche il modo in cui
+il pulsante nella dock recupera una macchina fermata (vedi
+[Emergency stop](#emergency-stop)).
 
 Il riavvio è **suggerito al salvataggio e attivabile a mano**. Dopo un salvataggio la pagina
 mostra un banner con il riavvio adatto al file salvato — `moonraker.conf` chiede il riavvio di
@@ -324,15 +416,27 @@ Notifiche gestite:
 
 | Metodo | Azione |
 |---|---|
-| `notify_klippy_ready` | toast di successo |
-| `notify_klippy_shutdown` | recupera `state_message` da `/printer/info` e mostra un toast di errore persistente |
-| `notify_klippy_disconnected` | toast di errore persistente |
+| `notify_klippy_ready` | toast di successo, `klippyState = 'ready'` |
+| `notify_klippy_shutdown` | recupera `state_message` da `/printer/info` e mostra un toast di errore persistente, `klippyState = 'shutdown'` |
+| `notify_klippy_disconnected` | toast di errore persistente, `klippyState = 'disconnected'` |
 | `notify_proc_stat_update` | estrae `moonraker_stats.warnings`, deduplicati tramite un `Set` |
 
 Riconnessione: timer fisso a **10 secondi**, senza limite di tentativi.
 
 All'avvio, `fetchAndDisplayWarnings()` legge `/server/info` e mostra come toast persistenti
 i `warnings`, i `failed_components` e l'eventuale stato `error`/`shutdown` di Klippy.
+
+**Gli store `klippyState` e `klippyMessage`.** Oltre ai toast, il notifier tiene lo stato di Klippy
+in uno store esportato (`'' | 'ready' | 'startup' | 'shutdown' | 'error' | 'disconnected'`) e, se
+Klippy è fermo, il suo `state_message` in un secondo store. Servono al pulsante di
+[emergency stop](#emergency-stop) — fermare o far ripartire — e all'
+[avviso a schermo](#avviso-a-schermo-quando-kalico-è-fermo), e stanno qui perché il notifier è
+montato nel layout e riceve già le notifiche: nessuna seconda connessione, nessun polling in più.
+Vengono riallineati con `refreshKlippyState()` all'avvio e a **ogni (ri)connessione** del
+WebSocket — quello che è successo mentre la socket era giù non è stato annunciato a nessuno.
+
+Il motivo (`state_message`) si legge da `/printer/info`, quindi solo negli stati `shutdown` ed
+`error`: se il processo host è `disconnected` non c'è nessuno a cui chiederlo.
 
 ### 2. `/settings/console` — terminale G-code
 

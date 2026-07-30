@@ -56,7 +56,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `SET-7` Verificare su hardware reale le operazioni **mutanti** della pagina Update (`upgrade`, `recover`): finora è stato provato solo `status` in lettura — pronto
 - `SET-8` Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione — pronto
 - `SET-9` Scrivere `GET`/`POST /api/timezone` nel servizio di rete (`timedatectl`) e sostituire il mock in `timezone.ts`. **Urgente**: la pagina non avverte più che il salvataggio è finto, quindi oggi dice "Timezone saved" senza aver cambiato niente — pronto
-- `SET-10` Decidere quando disattivare il config editor (`CONFIG_EDITOR_ENABLED = false`) e se la rotta va rimossa del tutto: oggi resta raggiungibile scrivendo l'URL a mano — pronto
+- `SET-10` Decidere quando disattivare il config editor (`CONFIG_EDITOR_ENABLED = false`) e se la rotta va rimossa del tutto: oggi resta raggiungibile scrivendo l'URL a mano. Se la rotta sparisce vanno disinstallate anche le dipendenze CodeMirror (`codemirror`, `@codemirror/*`, `@lezer/highlight`) e cancellato `src/lib/editor/`, usati solo lì — pronto
 - `SET-11` Verificare su hardware reale le operazioni del config editor: salvataggio (upload sulla root `config`), i tre riavvii, e il comportamento quando Klippy torna in stato `error` per un config rotto — pronto
 
 ## NET — Rete e servizio Wi-Fi
@@ -75,6 +75,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `UI-5` Ritarare i breakpoint sul caso d'uso reale, cioè lo schermo di un cellulare — pronto
 - `UI-6` Sostituire i colori hardcoded nei CSS dei componenti con i token della palette — pronto
 - `UI-7` Decidere se gli orari mostrati (ETA in primis) devono seguire il fuso della **stampante** invece di quello del telefono: oggi sono calcolati e formattati nel browser, quindi `/settings/timezone` non li influenza — pronto
+- `UI-8` Verificare su hardware reale il pulsante di emergency stop: lo stop, il passaggio del tasto a "firmware restart" quando Kalico va in `shutdown`, e il recupero — compreso il caso `disconnected`, in cui il tasto resta uno stop perché `/printer/firmware_restart` verrebbe rifiutato. Con essi l'avviso a schermo `KlipperDownOverlay`: che compaia e sparisca ai momenti giusti, che mostri il `state_message` vero, e che dock e Impostazioni restino usabili mentre è visibile — pronto
 
 ## CLN — Pulizia del codice
 
@@ -102,7 +103,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `ROB-2` Sospendere il polling dei pannelli fuori dalla viewport del carosello — pronto
 - `ROB-3` Ottimizzare `fetchDirectoriesRecursive()`, che scarica tutto l'albero `gcodes` in sequenza — pronto
 - `ROB-4` Valutare `printer.objects.subscribe` via WebSocket al posto del polling HTTP — pronto
-- `ROB-5` Verificare il comportamento dell'interfaccia con Kalico in stato `shutdown` o disconnesso — pronto
+- `ROB-5` Verificare il comportamento dell'interfaccia con Kalico in stato `shutdown` o disconnesso: le pagine operative ora sono coperte dall'avviso (`UI-8`), ma restano da controllare i pannelli sotto, che continuano a interrogare e a mostrare valori congelati — pronto
 - `ROB-6` `uploadFile()` in `moonraker-files.ts` passa il percorso completo nel campo `root` (`root=gcodes/sottocartella`), ma per Moonraker `root` può essere solo `gcodes` o `config` e la sottocartella va nel campo `path`: l'upload in una sottocartella dei G-code dovrebbe quindi fallire. Da verificare su una macchina reale e, se confermato, allineare a `writeConfigFile()` in `moonraker-config.ts`, che separa i due campi — pronto
 
 ## DEP — Build, deploy e G2-OS

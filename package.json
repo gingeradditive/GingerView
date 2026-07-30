@@ -38,14 +38,21 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"@codemirror/commands": "^6.10.4",
+		"@codemirror/lang-json": "^6.0.2",
+		"@codemirror/language": "^6.12.4",
+		"@codemirror/state": "^6.7.1",
+		"@codemirror/view": "^6.43.7",
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.1",
+		"@lezer/highlight": "^1.2.3",
 		"@mdi/js": "^7.4.47",
 		"@mdi/react": "^1.6.1",
 		"@mui/icons-material": "^7.3.8",
 		"@mui/material": "^7.3.8",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/postcss": "^4.1.18",
+		"codemirror": "^6.0.2",
 		"embla-carousel-svelte": "^8.6.0",
 		"lucide-svelte": "^0.563.0"
 	}

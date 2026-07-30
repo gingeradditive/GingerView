@@ -11,29 +11,32 @@
 		TriangleAlert,
 		Upload
 	} from 'lucide-svelte';
+	import CodeEditor from '$lib/components/CodeEditor.svelte';
 	import ConfigFileTree from '$lib/components/ConfigFileTree.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import PromptModal from '$lib/components/PromptModal.svelte';
 	import {
 		CONFIG_EDITOR_ENABLED,
 		CONFIG_ROOT,
-		RESTART_TARGETS,
 		downloadConfigFile,
 		fetchConfigDirectory,
-		fetchPrinterInfo,
-		fetchPrintState,
 		findTreeNode,
 		isEditableConfigFile,
 		readConfigFile,
-		requestRestart,
 		suggestedRestartFor,
 		toTreeNodes,
 		validateEntryName,
-		waitForKlipperReady,
 		writeConfigFile,
-		type ConfigTreeNode,
-		type RestartTarget
+		type ConfigTreeNode
 	} from '$lib/services/moonraker-config';
+	import {
+		RESTART_TARGETS,
+		fetchPrinterInfo,
+		fetchPrintState,
+		requestRestart,
+		waitForKlipperReady,
+		type RestartTarget
+	} from '$lib/services/moonraker-printer';
 	import {
 		createDirectory,
 		deleteDirectory,
@@ -43,9 +46,7 @@
 	import { toastActions } from '$lib/stores/toastStore';
 
 	const printerInfoPollMs = 5000;
-	/** Spaces inserted by the Tab key, matching Mainsail's default. */
-	const tabSize = 4;
-	/** Anything bigger belongs in a real editor, not a textarea on a touchscreen. */
+	/** Past this the editor stops being pleasant; download the file instead. */
 	const maxEditableBytes = 1024 * 1024;
 
 	let tree = $state<ConfigTreeNode[]>([]);
@@ -70,7 +71,6 @@
 	let pendingRestart = $state<RestartTarget | null>(null);
 
 	let fileInput = $state<HTMLInputElement | null>(null);
-	let textarea = $state<HTMLTextAreaElement | null>(null);
 
 	let promptState = $state<{
 		title: string;
@@ -444,20 +444,6 @@
 		}
 	}
 
-	/** Tab indents instead of leaving the field — the textarea *is* the editor. */
-	function handleEditorKeydown(event: KeyboardEvent) {
-		if (event.key !== 'Tab' || !textarea) return;
-		event.preventDefault();
-
-		const { selectionStart, selectionEnd } = textarea;
-		const spaces = ' '.repeat(tabSize);
-		content = content.slice(0, selectionStart) + spaces + content.slice(selectionEnd);
-		// Restore the caret after Svelte has written the new value back.
-		requestAnimationFrame(() => {
-			textarea?.setSelectionRange(selectionStart + tabSize, selectionStart + tabSize);
-		});
-	}
-
 	function runPrompt(value: string) {
 		const pending = promptState;
 		promptState = null;
@@ -629,17 +615,7 @@
 							</button>
 						</div>
 
-						<textarea
-							bind:this={textarea}
-							bind:value={content}
-							onkeydown={handleEditorKeydown}
-							readonly={!writable}
-							spellcheck="false"
-							autocapitalize="off"
-							autocomplete="off"
-							wrap="off"
-							aria-label="File contents"
-						></textarea>
+						<CodeEditor bind:value={content} path={selectedPath} readOnly={!writable} />
 
 						<div class="editor-actions">
 							<button
@@ -893,30 +869,6 @@
 		font-size: 0.75rem;
 		color: #b5b5b5;
 		flex-shrink: 0;
-	}
-	textarea {
-		flex: 1;
-		min-height: 0;
-		width: 100%;
-		border: none;
-		resize: none;
-		padding: 12px;
-		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-		font-size: 0.82rem;
-		line-height: 1.55;
-		color: #222222;
-		background: #fbfbfb;
-		box-sizing: border-box;
-		tab-size: 4;
-		white-space: pre;
-		overflow: auto;
-	}
-	textarea:focus {
-		outline: none;
-		background: #ffffff;
-	}
-	textarea[readonly] {
-		color: #6e6e6e;
 	}
 	.editor-actions {
 		display: flex;

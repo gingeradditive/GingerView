@@ -4,6 +4,8 @@
 	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
+	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
+	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import '../app.css';
 
 	const logoImage = '/Printers/G2/Logo.svg';
@@ -18,8 +20,9 @@
 <ToastContainer />
 <MoonrakerNotifier />
 <main class="page-content">{@render children()}</main>
+<KlipperDownOverlay />
 
-<nav class="dock" aria-label="Navigazione principale">
+<nav class="dock" aria-label="Main navigation">
 	<div class="logo-container">
 		<img src={logoImage} alt="Logo" class="logo-image" />
 	</div>
@@ -62,6 +65,8 @@
 			<path d={mdiCog} />
 		</svg>
 	</a>
+
+	<EmergencyStopButton />
 </nav>
 
 <style>

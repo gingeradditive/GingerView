@@ -1,6 +1,7 @@
 import { configService } from './config';
 import { toastActions } from '$lib/stores/toastStore';
 import { fetchDirectory } from './moonraker-files';
+import type { RestartTarget } from './moonraker-printer';
 
 /**
  * Client for the config editor (`/settings/config-editor`).
@@ -17,6 +18,9 @@ import { fetchDirectory } from './moonraker-files';
  *
  * This is a development page, meant to be switched off once machines ship with a
  * finished configuration — see `CONFIG_EDITOR_ENABLED`.
+ *
+ * The restarts the page offers are not here: they are printer-level commands
+ * shared with the dock's emergency stop, in `moonraker-printer.ts`.
  */
 
 export const CONFIG_ROOT = 'config';
@@ -184,119 +188,6 @@ export async function downloadConfigFile(path: string): Promise<void> {
 	link.click();
 	link.remove();
 	URL.revokeObjectURL(url);
-}
-
-// --- restarts ----------------------------------------------------------------
-
-export type RestartTarget = 'firmware' | 'host' | 'moonraker';
-
-interface RestartInfo {
-	label: string;
-	endpoint: string;
-	description: string;
-}
-
-/**
- * The three restarts Mainsail offers, with the same default: `FIRMWARE_RESTART`
- * is the one that also reloads the MCU configuration, so it is what actually
- * applies most edits to `printer.cfg`. A host restart only reloads Klippy.
- * Moonraker's own restart is a different service entirely, needed for
- * `moonraker.conf`.
- */
-export const RESTART_TARGETS: Record<RestartTarget, RestartInfo> = {
-	firmware: {
-		label: 'Firmware restart',
-		endpoint: '/printer/firmware_restart',
-		description: 'Restarts Klipper and the MCUs, reloading the printer configuration'
-	},
-	host: {
-		label: 'Host restart',
-		endpoint: '/printer/restart',
-		description: 'Reloads Klipper on the host only, without resetting the MCUs'
-	},
-	moonraker: {
-		label: 'Moonraker restart',
-		endpoint: '/server/restart',
-		description: 'Restarts the Moonraker service, needed after editing moonraker.conf'
-	}
-};
-
-/**
- * Asks for a restart and does not insist on a clean answer.
- *
- * All three endpoints kill the very connection that is serving the request: the
- * fetch can fail, or hang and then fail, even though the restart was accepted.
- * Treating that as an error would report a failure that did not happen, so the
- * caller instead confirms the outcome by watching `/printer/info` come back —
- * see `waitForKlipperReady()`.
- */
-export async function requestRestart(target: RestartTarget): Promise<void> {
-	const { endpoint } = RESTART_TARGETS[target];
-	try {
-		await fetch(`${getApiUrl()}${endpoint}`, { method: 'POST' });
-	} catch {
-		// Connection dropped as the service went down — expected.
-	}
-}
-
-export interface PrinterInfo {
-	state: string;
-	stateMessage: string;
-}
-
-/**
- * `print_stats.state`, or `''` when it cannot be read. Used to refuse a restart
- * while a job is running: Klipper happily accepts `FIRMWARE_RESTART` mid-print
- * and loses the job, so the guard has to live in the interface.
- */
-export async function fetchPrintState(): Promise<string> {
-	try {
-		const res = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
-		if (!res.ok) return '';
-		const json = await res.json();
-		return json.result?.status?.print_stats?.state ?? '';
-	} catch {
-		return '';
-	}
-}
-
-/** `GET /printer/info`, or `null` when Moonraker/Klippy cannot be reached. */
-export async function fetchPrinterInfo(): Promise<PrinterInfo | null> {
-	try {
-		const res = await fetch(`${getApiUrl()}/printer/info`);
-		if (!res.ok) return null;
-		const json = await res.json();
-		return {
-			state: json.result?.state ?? '',
-			stateMessage: json.result?.state_message ?? ''
-		};
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Polls `/printer/info` until Klippy reports something final.
- *
- * `startup` is transient, and while the service is down the request fails
- * outright, so both are treated as "keep waiting". Returns the last known info,
- * or `null` if nothing answered before the timeout — an `error` state with its
- * `state_message` is the useful case, since that is where a bad config surfaces.
- */
-export async function waitForKlipperReady(timeoutMs = 90000): Promise<PrinterInfo | null> {
-	const pollMs = 2000;
-	const deadline = Date.now() + timeoutMs;
-	let last: PrinterInfo | null = null;
-
-	while (Date.now() < deadline) {
-		await new Promise((resolve) => setTimeout(resolve, pollMs));
-		const info = await fetchPrinterInfo();
-		if (info) {
-			last = info;
-			if (info.state !== 'startup') return info;
-		}
-	}
-	return last;
 }
 
 // --- naming ------------------------------------------------------------------
