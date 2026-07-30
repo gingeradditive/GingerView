@@ -57,8 +57,11 @@ chiamare `timedatectl`, ma i due endpoint non sono ancora scritti (`SET-9`).
 
 Nel frattempo [timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la
 zona dal browser, la scrittura la ricorda in `localStorage`. Il resto del file — offset via
-`Intl`, formattazione, ricerca — è calcolo locale e resterà valido. La pagina **dichiara la
-cosa all'utente** con un riquadro fisso, che va tolto insieme al mock.
+`Intl`, formattazione, ricerca — è calcolo locale e resterà valido.
+
+**Nell'interfaccia non se ne accorge nessuno.** Il riquadro che lo dichiarava è stato rimosso
+per scelta esplicita: chi salva vede solo il toast "Timezone saved". Finché `SET-9` non è
+fatto, quel messaggio non è vero.
 
 Da tenere presente quando si valuterà l'utilità della funzione: **gli orari mostrati in
 GingerView non dipendono dal fuso della stampante.** L'ETA in dashboard è calcolato nel

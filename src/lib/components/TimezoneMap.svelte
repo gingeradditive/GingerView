@@ -7,10 +7,9 @@
 	 * sulla città della zona.
 	 *
 	 * È un elemento **decorativo**: serve a dare un riscontro immediato di "sto
-	 * scegliendo questa parte del mondo", non a essere una carta dei fusi orari.
-	 * La fascia è larga 15° e centrata sull'offset corrente, mentre i confini veri
-	 * seguono quelli politici — chi vuole il dato esatto legge l'identificatore e
-	 * l'offset scritti sotto.
+	 * scegliendo questa parte del mondo", non a essere una carta dei fusi orari —
+	 * i confini veri seguono quelli politici. Chi vuole il dato esatto legge
+	 * l'identificatore e l'offset scritti sotto.
 	 */
 	let {
 		zone,
@@ -26,8 +25,22 @@
 	/** Confini fra fasce: ogni 15° a partire da 7.5°, cioè mezzo fuso da Greenwich. */
 	const separators = Array.from({ length: 24 }, (_, index) => 7.5 + index * 15);
 
-	/** Centro della fascia in unità di mappa (1 unità = 1 grado di longitudine). */
-	let bandCenter = $derived(MAP_WIDTH / 2 + (offsetMinutes / 60) * 15);
+	/**
+	 * Centro della fascia evidenziata, in unità di mappa (1 unità = 1 grado).
+	 *
+	 * Si ricava dalla **longitudine della città**, non dall'offset: così la fascia
+	 * contiene sempre il segnaposto. Centrandola sull'offset succederebbe il
+	 * contrario ogni volta che l'ora locale non corrisponde al meridiano —
+	 * d'estate con l'ora legale (Roma è a 12°E ma segna UTC+2, cioè il meridiano
+	 * 30°E) e tutto l'anno dove il fuso è una scelta politica (Spagna, Argentina,
+	 * Cina). Un riquadro rosso lontano dal punto rosso si legge come un errore.
+	 *
+	 * Resta l'offset per le zone che non sono nel nostro elenco e di cui quindi
+	 * non conosciamo le coordinate.
+	 */
+	let bandCenter = $derived(
+		MAP_WIDTH / 2 + (zone ? Math.round(zone.lon / 15) * 15 : Math.round(offsetMinutes / 60) * 15)
+	);
 
 	let pinX = $derived(zone ? ((zone.lon + 180) / MAP_WIDTH) * 100 : 50);
 	// Le zone antartiche stanno sotto il ritaglio della mappa: il segnaposto si
@@ -55,7 +68,8 @@
 		<!--
 			Tre copie della stessa fascia, sfalsate di un giro: quella che serve è
 			sempre dentro il viewBox e le altre due restano fuori. Evita di dover
-			trattare a parte gli offset che scavalcano l'antimeridiano (UTC+12..+14).
+			spezzare a mano la fascia a cavallo dell'antimeridiano, quella delle zone
+			del Pacifico attorno ai 180° (Auckland, Fiji, Kamchatka).
 		-->
 		{#each [-MAP_WIDTH, 0, MAP_WIDTH] as wrap (wrap)}
 			<rect

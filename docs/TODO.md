@@ -64,7 +64,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | `SET-5` | Rifare `/settings/statistics` su `GET /server/history/totals` | dipende da `SET-1` |
 | `SET-7` | Verificare su hardware reale le operazioni **mutanti** della pagina Update (`upgrade`, `recover`): finora è stato provato solo `status` in lettura | pronto |
 | `SET-8` | Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione | pronto |
-| `SET-9` | Scrivere `GET`/`POST /api/timezone` nel servizio di rete (`timedatectl`), poi sostituire il mock in `timezone.ts` e togliere il riquadro "Backend not available yet" dalla pagina | pronto |
+| `SET-9` | Scrivere `GET`/`POST /api/timezone` nel servizio di rete (`timedatectl`) e sostituire il mock in `timezone.ts`. **Urgente**: la pagina non avverte più che il salvataggio è finto, quindi oggi dice "Timezone saved" senza aver cambiato niente | pronto |
 
 ## NET — Rete e servizio Wi-Fi
 

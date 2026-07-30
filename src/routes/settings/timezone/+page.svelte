@@ -77,9 +77,6 @@
 	<div class="timezone-card">
 		<header class="timezone-header">
 			<h1>Timezone</h1>
-			{#if !isLoading && !loadError}
-				<span class="offset-pill">{formatOffset(offsetMinutes)}</span>
-			{/if}
 		</header>
 
 		{#if isLoading}
@@ -90,14 +87,23 @@
 				{loadError}
 			</div>
 		{:else}
+			<!--
+				La tendina sta sopra la mappa: il pannello dei risultati si apre verso il
+				basso e ha davanti a sé tutta la parte bassa della scheda, invece di
+				finire sotto il bordo dello schermo.
+			-->
+			<TimezoneSelect
+				value={selectedTimezone}
+				onSelect={(id) => (selectedTimezone = id)}
+				disabled={isSaving}
+			/>
+
 			<TimezoneMap zone={selectedZone} {offsetMinutes} label={mapLabel} />
 
 			<div class="clock">
 				<span class="time">{formatZoneTime(selectedTimezone, now)}</span>
-				<span class="clock-meta">
-					<span class="date">{formatZoneDate(selectedTimezone, now)}</span>
-					<span class="zone-id">{selectedTimezone}</span>
-				</span>
+				<span class="date">{formatZoneDate(selectedTimezone, now)}</span>
+				<span class="zone-id">{selectedTimezone}</span>
 			</div>
 
 			{#if !ntpSynchronized}
@@ -106,27 +112,6 @@
 					The clock is not synchronised over the network: times may be wrong regardless of the timezone.
 				</p>
 			{/if}
-
-			<TimezoneSelect
-				value={selectedTimezone}
-				onSelect={(id) => (selectedTimezone = id)}
-				disabled={isSaving}
-			/>
-
-			<p class="note">
-				Only the printer timezone is changed: system language and formats are left untouched, and
-				the clock itself keeps running on network time. Times shown in GingerView follow the device
-				you are browsing from.
-			</p>
-
-			<!--
-				Da togliere insieme al mock in `timezone.ts`: finché il salvataggio non
-				raggiunge davvero l'host, dire "salvato" senza altro sarebbe una bugia.
-			-->
-			<p class="mock">
-				Backend not available yet — the choice is kept in this browser and does not change the
-				printer clock.
-			</p>
 
 			<div class="actions-row">
 				<button
@@ -182,15 +167,6 @@
 		font-weight: 700;
 		color: #222222;
 	}
-	.offset-pill {
-		margin-left: auto;
-		border-radius: 999px;
-		padding: 8px 16px;
-		font-size: 0.95rem;
-		font-weight: 600;
-		background: #f5f5f5;
-		color: #444444;
-	}
 	.state {
 		display: flex;
 		align-items: center;
@@ -205,9 +181,10 @@
 	}
 	.clock {
 		display: flex;
-		align-items: baseline;
-		gap: 16px;
-		flex-wrap: wrap;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 4px;
 	}
 	.time {
 		font-size: 2.6rem;
@@ -215,11 +192,6 @@
 		line-height: 1;
 		color: #222222;
 		font-variant-numeric: tabular-nums;
-	}
-	.clock-meta {
-		display: flex;
-		flex-direction: column;
-		min-width: 0;
 	}
 	.date {
 		font-size: 0.95rem;
@@ -230,27 +202,14 @@
 		color: #8a8a8a;
 		overflow-wrap: anywhere;
 	}
-	.warning,
-	.note,
-	.mock {
-		margin: 0;
-		font-size: 0.85rem;
-	}
 	.warning {
 		display: flex;
 		align-items: center;
 		gap: 10px;
+		margin: 0;
+		font-size: 0.85rem;
 		color: #d72e28;
 		font-weight: 600;
-	}
-	.note {
-		color: #8a8a8a;
-	}
-	.mock {
-		color: #6e6e6e;
-		background: #f5f5f5;
-		border-radius: 12px;
-		padding: 10px 14px;
 	}
 	.actions-row {
 		display: flex;

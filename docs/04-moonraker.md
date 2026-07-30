@@ -363,9 +363,12 @@ necessari per chiamare `timedatectl`:
 
 Nessuno dei due esiste ancora (`SET-9` in [TODO.md](TODO.md)). Finché non ci sono,
 [timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la zona dal browser,
-la scrittura la ricorda in `localStorage`, e la pagina lo dichiara esplicitamente all'utente.
-Quando arriveranno, va sostituito **solo il corpo** di `fetchTimezoneStatus()` e
-`setSystemTimezone()`, e va tolto l'avviso dalla pagina.
+la scrittura la ricorda in `localStorage`. Quando arriveranno, va sostituito **solo il corpo** di
+`fetchTimezoneStatus()` e `setSystemTimezone()`: il resto della pagina non cambia.
+
+**L'interfaccia non segnala che il salvataggio è finto** — l'avviso c'era ed è stato tolto per
+scelta. Chi salva vede il toast "Timezone saved" e nient'altro, quindi finché `SET-9` non è
+fatto la pagina promette più di quanto mantenga.
 
 L'elenco delle zone accettate non viene chiesto all'host: è compilato dentro l'applicazione a
 partire da `zone.tab` di tzdata, che è lo stesso file da cui `timedatectl list-timezones` legge
