@@ -118,6 +118,43 @@ rinominare è spostare verso un nome diverso nella stessa cartella.
 I percorsi vengono codificati **segmento per segmento** (`split('/')` + `encodeURIComponent`
 su ogni parte), per non trasformare gli slash in `%2F` e conservare la struttura del path.
 
+### Log
+
+Tutto in [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts), usato da
+[`/settings/log`](../src/routes/settings/log/+page.svelte):
+
+| Operazione | Chiamata |
+|---|---|
+| Download log Klipper | `GET /server/files/klippy.log` |
+| Download log Moonraker | `GET /server/files/moonraker.log` |
+| Download log Crowsnest | `GET /server/files/logs/crowsnest.log` |
+| Pulisci log | `POST /server/logs/rollover` (JSON: `{}`) |
+
+Klipper e Moonraker usano il percorso "legacy" **senza** prefisso `logs/`: è un alias che
+Moonraker risolve verso il file di log realmente configurato, qualunque sia il suo nome su
+disco. Necessario perché su questo parco macchine Kalico scrive `kalico.log`, non `klippy.log`
+— la rotta "moderna" `GET /server/files/logs/klippy.log` risponde **404** perché nella
+directory non esiste alcun file con quel nome esatto (verificato con `GET
+/server/files/list?root=logs` su una macchina reale). Crowsnest non ha un alias legacy
+(Moonraker non lo gestisce), quindi va letto dalla root `logs` con il suo nome letterale.
+
+Il download passa da `fetch` + `Blob` + link temporaneo (non un semplice `<a href>`), per poter
+mostrare un toast d'errore se il file non esiste invece di far navigare il browser su una
+pagina d'errore.
+
+Il pulsante "Clear logs" non chiede quale log pulire: chiama sempre `rollover` **senza** il
+campo `application`, che di default ruota **Klipper e Moonraker**. Passare
+`{"application": "all"}` sembrerebbe l'opzione esplicita corretta stando alla documentazione
+Moonraker, ma su Moonraker v0.10.x viene rifiutato con `400 Unknown application all`: omettere
+il campo è l'unico modo verificato per ottenere il rollover di entrambi. Crowsnest resta fuori
+in entrambi i casi — Moonraker non ha un meccanismo di rollover per log di terze parti, quindi
+il file `crowsnest.log` resta intatto dopo la pulizia.
+
+Effetto collaterale osservato su hardware reale: il rollover di Klipper fa ripartire il
+servizio systemd di Kalico per rilasciare l'handle sul file di log, quindi durante la pulizia
+compare per un istante un toast "Kalico disconnected" — non è un errore. Moonraker rifiuta
+comunque il rollover se una stampa è in corso.
+
 ### Thumbnail: due strategie
 
 1. **Percorso dai metadati** — se il file dichiara `thumbnails`, `getThumbnailUrl()` sceglie

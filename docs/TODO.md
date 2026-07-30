@@ -61,7 +61,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 |---|---|---|
 | `SET-1` | Decidere se le sottopagine vanno riprogettate o solo implementate | → Q28 |
 | `SET-2` | Rifare `/settings/update` per aggiornare **tutto il sistema** (`GET /machine/update/status`, `POST /machine/update/upgrade`) | dipende da `SET-1` |
-| `SET-3` | Rifare `/settings/log` come pagina di download di `klippy.log` e `moonraker.log` | dipende da `SET-1` |
 | `SET-4` | Rifare `/settings/history` su `GET /server/history/list` | dipende da `SET-1` |
 | `SET-5` | Rifare `/settings/statistics` su `GET /server/history/totals` | dipende da `SET-1` |
 | `SET-6` | Rifare `/settings/timezone`, che non ha un endpoint Moonraker | → Q16 |

@@ -14,6 +14,10 @@ per un bug.
   sposta, elimina.
 - Impostazioni rete: stato, scansione Wi-Fi, connessione (anche a rete nascosta), disconnessione.
 - Console G-code con cronologia comandi.
+- Pagina Log (`/settings/log`): download di `klippy.log`, `moonraker.log`, `crowsnest.log` e
+  pulsante per pulire (rollover) i log di Klipper e Moonraker in un colpo solo, senza chiedere
+  quale — vedi [04 — Moonraker](04-moonraker.md#log). Crowsnest non ha un meccanismo di
+  rollover lato Moonraker, quindi il suo log non viene mai pulito da qui.
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
@@ -25,15 +29,14 @@ per un bug.
 
 ### Sottopagine "Coming soon"
 
-`/settings/update`, `/settings/log`, `/settings/history`, `/settings/statistics`,
-`/settings/timezone` sono tutte tre righe che istanziano `SettingsSubpage` senza contenuto.
-La voce è nel menu, la rotta esiste, la funzionalità no. Sono considerate "roba vecchia da
-rifare", non solo da riempire (Q28).
+`/settings/update`, `/settings/history`, `/settings/statistics`, `/settings/timezone` sono
+tutte tre righe che istanziano `SettingsSubpage` senza contenuto. La voce è nel menu, la rotta
+esiste, la funzionalità no. Sono considerate "roba vecchia da rifare", non solo da riempire
+(Q28). `/settings/log` è uscito da questo elenco: vedi "Funzionalità complete" sopra.
 
 Indicazioni già raccolte:
 
 - **Update** deve aggiornare **tutto il sistema**, non solo GingerView.
-- **Log** è una semplice pagina di download dei file di log.
 - **History**, **Statistics** e **Timezone** restano da progettare. Per il fuso orario va
   tenuto presente che **Moonraker non espone alcun endpoint**: serve passare dal servizio di
   rete o aggiungerne uno, il che dipende da come si risolve Q16.

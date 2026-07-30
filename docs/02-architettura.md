@@ -85,7 +85,8 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings` | elenco di voci | Alcune voci sono link esterni |
 | `/settings/network` | pagina completa | Unica sottopagina con logica propria oltre a console |
 | `/settings/console` | terminale G-code | WebSocket diretto verso Moonraker |
-| `/settings/{update,log,history,statistics,timezone}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
+| `/settings/log` | pagina completa | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log)) |
+| `/settings/{update,history,statistics,timezone}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
 
 I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
 tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo caso.
