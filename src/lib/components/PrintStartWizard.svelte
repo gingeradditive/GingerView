@@ -91,7 +91,7 @@
 		class="modal-overlay"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Print start checklist"
+		aria-label={`Print start checklist — step ${stepIndex + 1} of ${steps.length}`}
 		tabindex="-1"
 		use:portal
 		onclick={cancel}
@@ -99,16 +99,22 @@
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
-			<svg class="warning-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
-				<path d={mdiAlertCircleOutline} fill="#D72E28" />
-			</svg>
-			<span class="step-counter">Step {stepIndex + 1} of {steps.length}</span>
-			<h3>{steps[stepIndex].title}</h3>
-			<ul class="checklist">
-				{#each steps[stepIndex].checklist as item (item)}
-					<li>{item}</li>
+			<div class="progress-bar" aria-hidden="true">
+				{#each steps as _, index (index)}
+					<div class="progress-segment" class:filled={index <= stepIndex}></div>
 				{/each}
-			</ul>
+			</div>
+			<div class="step-body">
+				<svg class="warning-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+					<path d={mdiAlertCircleOutline} fill="#D72E28" />
+				</svg>
+				<h3>{steps[stepIndex].title}</h3>
+				<ul class="checklist">
+					{#each steps[stepIndex].checklist as item (item)}
+						<li>{item}</li>
+					{/each}
+				</ul>
+			</div>
 			<div class="modal-actions">
 				<button class="modal-cancel" disabled={starting} onclick={cancel}>Cancel</button>
 				<button class="modal-confirm" disabled={starting} onclick={proceed}>
@@ -136,25 +142,50 @@
 		background: #fff;
 		border-radius: 16px;
 		padding: 24px;
-		min-width: 300px;
-		max-width: 420px;
+		/* Fixed per-viewport size across every step, so Cancel/Proceed never move —
+		   lets an experienced user click through the wizard without re-aiming. */
+		width: min(380px, calc(100vw - 48px));
+		height: min(460px, calc(100vh - 48px));
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
-	.warning-icon {
-		margin-bottom: 8px;
+	.progress-bar {
+		display: flex;
+		gap: 6px;
+		width: 100%;
+		flex-shrink: 0;
+		margin-bottom: 20px;
 	}
 
-	.step-counter {
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.05em;
-		color: #9a9a9a;
-		text-transform: uppercase;
-		margin-bottom: 4px;
+	.progress-segment {
+		flex: 1;
+		height: 6px;
+		border-radius: 3px;
+		background: #ececec;
+		transition: background-color 0.2s ease;
+	}
+
+	.progress-segment.filled {
+		background: #d72e28;
+	}
+
+	.step-body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	.warning-icon {
+		flex-shrink: 0;
+		margin-bottom: 8px;
 	}
 
 	.modal-content h3 {
@@ -200,6 +231,7 @@
 		gap: 8px;
 		justify-content: flex-end;
 		width: 100%;
+		flex-shrink: 0;
 	}
 
 	.modal-cancel {
