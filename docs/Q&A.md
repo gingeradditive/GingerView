@@ -36,13 +36,6 @@ di step. Deve aprire un pannello di jog (che quindi va disegnato), oppure muover
 posizione fissa tipo parcheggio/manutenzione?
 A:
 
-**Q7: A cosa corrispondono Low/Mid/High e Slow/Standard/Boost nell'estrusione?**
-Contesto: [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha i selettori ma
-`handleExtrude()` fa solo `console.log`. Servono i valori reali in **mm** (quantità) e
-**mm/min** (velocità), più l'eventuale controllo di temperatura minima prima di estrudere.
-Avevi detto che li devi ancora definire.
-A: 
-
 **Q11: Dove va inserita la webcam nell'interfaccia?**
 Contesto: hai confermato che serve. G2-OS include già **crowsnest**, quindi lo stream esiste
 lato macchina e va solo proxato (`/webcam/`) e mostrato. Da definire: se diventa una slide del
@@ -103,3 +96,22 @@ serve una pagina di benvenuto, un onboarding al primo accesso, o un modo per gen
 il QR dall'interfaccia stessa, va messo in conto. Inoltre: chi genera il QR/NFC, e cosa
 contiene esattamente (IP? hostname `.local`? un dominio)?
 A: l'nfc contiene "g2.local" che porterà su gingerview, rimani nel contesto non sono problemi tuoi cosa contiene il qr, non serve nessuna pagina di benvenuto o altro se servirà te la chiederò io
+
+**Q32: La sequenza reale di `handleExtrude()` è corretta, in particolare l'ipotesi sul "rotation volume"?**
+Contesto: `handleExtrude()` ora esegue davvero, in sequenza: popup di avvertimento homing (`HomingWarningModal`, riusato) → `G28` → `G1 X<centro> Y0 Z250` → per le 4 zone `SET_HEATER_TEMPERATURE` + `TEMPERATURE_WAIT` (comandi Klipper standard, confidenza alta) → infine
+```
+SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>
+M83
+G1 E<volumeMm3> F<speedMm3PerS*60>
+M82
+```
+Il pulsante Extrude mostra la fase corrente (Homing.../Moving.../Heating.../Extruding...) ed è
+disabled durante l'esecuzione. Il punto debole è l'ultimo blocco: presuppongo che il
+`rotation_distance` dell'estrusore reale (quello con lo stepper, cioè `extruder`) sia calibrato
+in **mm³ per rotazione** per il materiale attivo — così un `G1 E<volumeMm3>` relativo dispensa
+esattamente quel volume — e che `rotation_distance`/`SET_EXTRUDER_ROTATION_DISTANCE` sia il
+meccanismo giusto per applicare il "rotation volume" che mi hai dato per materiale. Non l'ho
+verificato su hardware reale: puoi confermare che questa è la calibrazione giusta prima che
+qualcuno lo provi sulla macchina? Se sbagliata, un valore enorme di `E` potrebbe far girare lo
+stepper molto più a lungo del previsto.
+A:

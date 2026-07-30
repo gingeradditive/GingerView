@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { mdiAlertCircleOutline } from '@mdi/js';
+	import { portal } from '$lib/actions/portal';
 
 	let {
 		isOpen,
@@ -10,19 +11,6 @@
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
-
-	// Embla applies a `transform` to the carousel track for its slide animation,
-	// which creates a new containing block for any `position: fixed` descendant.
-	// Moving the overlay to <body> keeps it anchored to the real viewport instead
-	// of being clipped/mispositioned relative to the carousel.
-	function portal(node: HTMLElement) {
-		document.body.appendChild(node);
-		return {
-			destroy() {
-				node.remove();
-			}
-		};
-	}
 </script>
 
 {#if isOpen}

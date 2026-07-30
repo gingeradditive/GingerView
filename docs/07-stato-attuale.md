@@ -44,12 +44,20 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   posizione da `/printer/objects/query` e la disegna in proiezione isometrica. Il pulsante
   **Disable Motors** invia `M84` (`POST /printer/gcode/script?script=M84`) ed è disabilitato,
   con etichetta "Motors Disabled", quando `stepper_enable.steppers` riporta tutti gli stepper
-  spenti. Il pulsante **Home** invia `G28` (homing di tutti gli assi) ed è disabilitato mentre
+  spenti. Il pulsante **Home** apre prima [HomingWarningModal.svelte](../src/lib/components/HomingWarningModal.svelte)
+  (verifica ugello pulito / bed libero) e solo alla conferma invia `G28`; è disabilitato mentre
   il comando è in corso.
-- [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha i selettori di quantità
-  (Low/Mid/High) e velocità (Slow/Standard/Boost), ma `handleExtrude()` fa solo
-  `console.log('Extrude', { amount, speed })`. Non c'è mappatura tra le etichette e valori
-  reali in mm o mm/s, e nessun G-code viene inviato.
+- [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha tre selettori: quantità
+  (Low/Mid/High → 1000/10000/20000 mm³), velocità (Slow/Standard/Boost → 50/150/250 mm³/s) e
+  temperatura (PETG/PLA/Custom). I preset temperatura coprono le 4 zone dell'ugello
+  (`extruder`..`extruder3`, vedi nota sotto) e portano anche un `rotation_distance` non
+  mostrato in interfaccia (PETG 450, PLA e Custom 330); "Custom" apre un popup con un campo
+  °C per ciascuna delle quattro zone. Il pulsante **Extrude** ora esegue davvero una sequenza,
+  mostrando la fase in corso come testo del pulsante (disabled nel frattempo): stesso popup di
+  avvertimento homing → `G28` → spostamento al centro X, Y0, Z250 → `SET_HEATER_TEMPERATURE` +
+  `TEMPERATURE_WAIT` sulle 4 zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
+  L'ultimo passaggio è **non verificato su hardware reale** (Q32 in [Q&A.md](Q&A.md)): presuppone
+  che il `rotation_distance` dell'estrusore reale sia calibrato in mm³/rotazione per materiale.
 
 Il pulsante **Move** non ha ancora un bersaglio (Q6).
 

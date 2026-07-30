@@ -33,7 +33,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | Codice | Task | Stato |
 |---|---|---|
 | `MOV-3` | Definire e implementare cosa fa il pulsante **Move** | → Q6 |
-| `MOV-4` | Implementare `handleExtrude()` con quantità e velocità reali | → Q7 |
+| `MOV-4` | Verificare su hardware reale la sequenza G-code di `handleExtrude()` (homing → move → heat → estrudi), in particolare l'ipotesi sul `rotation_distance` volumetrico | → Q32 |
 
 ## MAT — Materiale e pellet
 
