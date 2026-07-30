@@ -62,9 +62,9 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | `SET-1` | Decidere se le sottopagine vanno riprogettate o solo implementate | → Q28 |
 | `SET-4` | Rifare `/settings/history` su `GET /server/history/list` | dipende da `SET-1` |
 | `SET-5` | Rifare `/settings/statistics` su `GET /server/history/totals` | dipende da `SET-1` |
-| `SET-6` | Rifare `/settings/timezone`, che non ha un endpoint Moonraker | → Q16 |
 | `SET-7` | Verificare su hardware reale le operazioni **mutanti** della pagina Update (`upgrade`, `recover`): finora è stato provato solo `status` in lettura | pronto |
 | `SET-8` | Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione | pronto |
+| `SET-9` | Scrivere `GET`/`POST /api/timezone` nel servizio di rete (`timedatectl`), poi sostituire il mock in `timezone.ts` e togliere il riquadro "Backend not available yet" dalla pagina | pronto |
 
 ## NET — Rete e servizio Wi-Fi
 
@@ -87,6 +87,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | `UI-4` | Rivedere `zoom: 0.8` sotto 768px in `app.css`, residuo dell'impostazione pre-telefono | pronto |
 | `UI-5` | Ritarare i breakpoint sul caso d'uso reale, cioè lo schermo di un cellulare | pronto |
 | `UI-6` | Sostituire i colori hardcoded nei CSS dei componenti con i token della palette | pronto |
+| `UI-7` | Decidere se gli orari mostrati (ETA in primis) devono seguire il fuso della **stampante** invece di quello del telefono: oggi sono calcolati e formattati nel browser, quindi `/settings/timezone` non li influenza | pronto |
 
 ## CLN — Pulizia del codice
 

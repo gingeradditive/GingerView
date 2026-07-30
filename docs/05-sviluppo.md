@@ -144,6 +144,29 @@ di contenuto, il testo "Coming soon". Per una pagina reale, passa il contenuto c
    [src/routes/settings/+page.svelte](../src/routes/settings/+page.svelte), scegliendo
    un'icona da `lucide-svelte`.
 
+## Dati generati (fusi orari e mappa)
+
+`src/lib/data/` contiene due file **generati**, non da modificare a mano:
+
+| File | Contenuto | Sorgente |
+|---|---|---|
+| `timezones.ts` | Le 418 zone IANA con paese e coordinate della città di riferimento | `/usr/share/zoneinfo/zone.tab` e `iso3166.tab` (tzdata, pubblico dominio) |
+| `world-map.ts` | Le terre emerse in proiezione equirettangolare, come unico path SVG | Natural Earth `ne_110m_land`, scaricato al momento della generazione |
+
+Si rigenerano entrambi con:
+
+```bash
+node script/generate-timezone-data.mjs
+```
+
+Lo script legge `zone.tab` dalla macchina su cui gira: è la stessa fonte da cui `timedatectl`
+ricava l'elenco delle zone valide, quindi l'elenco compilato è per costruzione accettato dal
+Raspberry Pi. Va rieseguito quando tzdata cambia (zone aggiunte, rinominate o ritirate), non a
+ogni build. La mappa richiede rete solo in quel momento; a runtime non scarica nulla.
+
+I due file sono in [.prettierignore](../.prettierignore): una riga per zona resta leggibile in
+diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
+
 ## Aggiungere un pannello alla dashboard
 
 1. Crea `src/lib/components/Dashboard<Nome>Panel.svelte` seguendo il pattern di polling

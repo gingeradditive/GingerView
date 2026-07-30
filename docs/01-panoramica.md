@@ -63,6 +63,7 @@ ugello, non come utensili distinti.
 | **Console** | `/settings/console` | Terminale G-code su WebSocket Moonraker, con cronologia comandi |
 | **Log** | `/settings/log` | Download di `klippy.log`, `moonraker.log`, `crowsnest.log`; un pulsante pulisce (rollover) i log di Klipper e Moonraker |
 | **Update** | `/settings/update` | Update manager di Moonraker: elenco dei componenti con versione e stato, check update, **Update all** (sistema operativo compreso), soft/hard recovery sui repo rotti, log live dell'operazione |
+| **Fuso orario** | `/settings/timezone` | Mappa del mondo con la fascia oraria evidenziata, orologio della zona e tendina con ricerca sulle 419 zone IANA. Il salvataggio è ancora **finto**: manca l'endpoint lato host |
 
 Le notifiche di errore/avviso provenienti da Klipper e Moonraker sono globali: arrivano come
 toast in sovrimpressione su qualunque pagina (`MoonrakerNotifier` + `ToastContainer`).

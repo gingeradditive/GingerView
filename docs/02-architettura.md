@@ -46,9 +46,10 @@ src/
 │   ├── actions/            azioni Svelte riusabili (`portal`)
 │   ├── assets/             favicon
 │   ├── components/         componenti UI (dashboard, file list, dialoghi, toast)
+│   ├── data/               dati generati da script (zone IANA, sagoma della mappa)
 │   ├── services/           accesso a Moonraker e al servizio di rete
 │   ├── stores/             stato condiviso (toast, directory corrente, context menu)
-│   └── types/              tipi TypeScript (config, klipper, print, wifi)
+│   └── types/              tipi TypeScript (config, klipper, print, wifi, update, timezone)
 └── routes/                 rotte SvelteKit
     ├── +layout.svelte      shell applicativa: dock di navigazione, toast, notifier
     ├── +page.svelte        dashboard
@@ -87,7 +88,8 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/console` | terminale G-code | WebSocket diretto verso Moonraker |
 | `/settings/log` | pagina completa | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log)) |
 | `/settings/update` | pagina completa | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager)) |
-| `/settings/{history,statistics,timezone}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
+| `/settings/timezone` | pagina completa | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
+| `/settings/{history,statistics}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
 
 I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
 tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo caso.
@@ -109,6 +111,15 @@ un residuo dell'impostazione precedente da rivedere.
 | [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts) | Download dei log e rollover |
 | [moonraker-update.ts](../src/lib/services/moonraker-update.ts) | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente |
 | [network-api.ts](../src/lib/services/network-api.ts) | Client per il servizio Wi-Fi esterno (`/api/wifi/*`), con classe d'errore dedicata `NetworkAPIError` |
+| [timezone.ts](../src/lib/services/timezone.ts) | Fuso orario di sistema: lettura e scrittura (per ora **mock**), più tutto il calcolo locale — offset via `Intl`, formattazione, ricerca sull'elenco IANA |
+
+### Dati generati (`src/lib/data/`)
+
+Due file **generati da [script/generate-timezone-data.mjs](../script/generate-timezone-data.mjs)**,
+non scritti a mano: `timezones.ts` (le zone di `zone.tab`, con le coordinate della città di
+riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path SVG). Sono in
+`.prettierignore` e vanno rigenerati con lo script, mai modificati direttamente — vedi
+[05 — Sviluppo](05-sviluppo.md#dati-generati-fusi-orari-e-mappa).
 
 ## Store (`src/lib/stores/`)
 

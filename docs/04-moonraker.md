@@ -350,6 +350,27 @@ usa `/api/wifi/networks` e ne incapsula il risultato. Gli errori seguono il form
 validazione FastAPI (`{ detail: [{ loc, msg, type }] }`), tipizzato in
 [src/lib/types/wifi.ts](../src/lib/types/wifi.ts).
 
+### Fuso orario: endpoint ancora da scrivere
+
+Il fuso orario non è una funzione della stampante ma dell'host, e **Moonraker non espone niente**
+per impostarlo. Il posto giusto è lo stesso servizio di rete, che gira già con i privilegi
+necessari per chiamare `timedatectl`:
+
+| Endpoint | Metodo | Uso |
+|---|---|---|
+| `/api/timezone` | GET | `{ timezone, ntpSynchronized }` — l'equivalente di `timedatectl show` |
+| `/api/timezone` | POST | `{ timezone }` — `timedatectl set-timezone <id>` |
+
+Nessuno dei due esiste ancora (`SET-9` in [TODO.md](TODO.md)). Finché non ci sono,
+[timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la zona dal browser,
+la scrittura la ricorda in `localStorage`, e la pagina lo dichiara esplicitamente all'utente.
+Quando arriveranno, va sostituito **solo il corpo** di `fetchTimezoneStatus()` e
+`setSystemTimezone()`, e va tolto l'avviso dalla pagina.
+
+L'elenco delle zone accettate non viene chiesto all'host: è compilato dentro l'applicazione a
+partire da `zone.tab` di tzdata, che è lo stesso file da cui `timedatectl list-timezones` legge
+il proprio (vedi [05 — Dati generati](05-sviluppo.md#dati-generati-fusi-orari-e-mappa)).
+
 ## Autenticazione
 
 **Non c'è.** Moonraker su G2-OS è configurato senza autenticazione, e GingerView non invia mai

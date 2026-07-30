@@ -2,8 +2,8 @@
 
 Fotografia del progetto al **30 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
 dell'installer, il passaggio a same-origin, l'implementazione di homing/estrusione/avvio
-stampa guidati e delle pagine Log e Update. Serve a evitare che si perda tempo su cose già
-note o si scambi un segnaposto per un bug.
+stampa guidati e delle pagine Log, Update e Timezone. Serve a evitare che si perda tempo su
+cose già note o si scambi un segnaposto per un bug.
 
 ## Funzionalità complete
 
@@ -24,6 +24,10 @@ note o si scambi un segnaposto per un bug.
   log live dell'operazione in una modale a terminale. Volutamente **non** ci sono aggiornamenti
   per singolo componente, rollback, né un pannello espandibile coi dettagli: vedi
   [04 — Update manager](04-moonraker.md#update-manager).
+- Pagina Timezone (`/settings/timezone`): mappa del mondo con la fascia oraria selezionata
+  evidenziata e un segnaposto sulla città, orologio e data della zona aggiornati al secondo, e
+  tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). L'interfaccia è
+  completa; **il salvataggio no**, vedi il segnaposto più sotto.
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
@@ -35,17 +39,35 @@ note o si scambi un segnaposto per un bug.
 
 ### Sottopagine "Coming soon"
 
-`/settings/history`, `/settings/statistics` e `/settings/timezone` sono tutte tre righe che
-istanziano `SettingsSubpage` senza contenuto. La voce è nel menu, la rotta esiste, la
-funzionalità no. Sono considerate "roba vecchia da rifare", non solo da riempire (Q28).
-`/settings/log` e `/settings/update` sono usciti da questo elenco: vedi "Funzionalità
-complete" sopra.
+`/settings/history` e `/settings/statistics` sono due righe che istanziano `SettingsSubpage`
+senza contenuto. La voce è nel menu, la rotta esiste, la funzionalità no. Sono considerate
+"roba vecchia da rifare", non solo da riempire (Q28). `/settings/log`, `/settings/update` e
+`/settings/timezone` sono usciti da questo elenco: vedi "Funzionalità complete" sopra.
 
 Indicazioni già raccolte:
 
-- **History**, **Statistics** e **Timezone** restano da progettare. Per il fuso orario va
-  tenuto presente che **Moonraker non espone alcun endpoint**: serve passare dal servizio di
-  rete o aggiungerne uno, il che dipende da come si risolve Q16.
+- **History** e **Statistics** restano da progettare.
+
+### Il salvataggio del fuso orario è finto
+
+La pagina Timezone è l'unica che non ha un vero interlocutore: **Moonraker non espone alcun
+endpoint** per il fuso orario, perché è una funzione dell'host e non della stampante. Il posto
+giusto è il servizio di rete già installato da G2-OS (Q16), che gira con i privilegi per
+chiamare `timedatectl`, ma i due endpoint non sono ancora scritti (`SET-9`).
+
+Nel frattempo [timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la
+zona dal browser, la scrittura la ricorda in `localStorage`. Il resto del file — offset via
+`Intl`, formattazione, ricerca — è calcolo locale e resterà valido. La pagina **dichiara la
+cosa all'utente** con un riquadro fisso, che va tolto insieme al mock.
+
+Da tenere presente quando si valuterà l'utilità della funzione: **gli orari mostrati in
+GingerView non dipendono dal fuso della stampante.** L'ETA in dashboard è calcolato nel
+browser (`new Date(Date.now() + rimanente)` in
+[DashboardControlPanel.svelte](../src/lib/components/DashboardControlPanel.svelte)) e reso con
+`getHours()`, quindi segue il fuso del telefono che sta guardando. Il fuso dell'host conta per
+i timestamp scritti nei log e per tutto ciò che la macchina calcola in ora locale — non per
+quello che si legge nell'interfaccia. Se si vuole che l'interfaccia segua l'ora della
+stampante, è un lavoro a parte (`UI-7`).
 
 ### Webcam assente
 
