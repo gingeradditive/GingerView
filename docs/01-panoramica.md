@@ -73,7 +73,10 @@ funzionalità mancanti:
 - **Nessun pulsante di emergency stop.** La macchina ne ha uno fisico, che resta l'unico
   modo previsto per fermarla in emergenza. L'interfaccia non espone
   `POST /printer/emergency_stop`.
-- **Temperature in sola lettura.** I setpoint non si impostano dall'interfaccia.
+- **Nessun controllo libero della temperatura.** Non c'è un termostato manuale in dashboard.
+  Il flusso di estrusione (`ExtrudeDialog`, vedi [07 — Stato attuale](07-stato-attuale.md)) fa
+  eccezione: imposta e attende le temperature, ma solo come passo automatico della sua
+  sequenza guidata (homing → muovi → scalda → estrudi), non come controllo libero.
 - **Nessuna autenticazione.** Moonraker su G2-OS è configurato senza, e GingerView non invia
   credenziali.
 - **Nessun Mainsail affiancato.** Non viene installato accanto a GingerView; la voce di menu

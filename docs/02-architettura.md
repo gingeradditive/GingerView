@@ -26,6 +26,16 @@ Conseguenza pratica: **non esiste codice server-side**. Ogni chiamata a Moonrake
 browser dell'utente, quindi la raggiungibilità degli endpoint va valutata dal punto di vista
 del browser, non della stampante (vedi [03 — Configurazione](03-configurazione.md)).
 
+**Attenzione in sviluppo:** questo vale per la build di produzione. `vite dev` invece esegue
+comunque **SSR per-richiesta** (comportamento di SvelteKit, indipendente dall'adapter — riguarda
+solo l'output finale). Un refresh diretto su una rotta (F5) passa quindi dal "server" Node anche
+in locale, mentre la navigazione client-side no. Codice che tocca `window`/`document` fuori da
+`onMount` va in errore **solo al refresh diretto**, il che lo rende facile da non notare. Occhio
+in particolare a `onDestroy`: a differenza di `onMount` (no-op lato server), **viene eseguito
+anche in SSR** — vedi la guardia `typeof window !== 'undefined'` aggiunta in
+[ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte) dopo un 500 riprodotto
+così.
+
 ## Struttura del repository
 
 ```
@@ -33,6 +43,7 @@ src/
 ├── app.css                 stili globali, palette, font
 ├── app.html                shell HTML
 ├── lib/
+│   ├── actions/            azioni Svelte riusabili (`portal`)
 │   ├── assets/             favicon
 │   ├── components/         componenti UI (dashboard, file list, dialoghi, toast)
 │   ├── services/           accesso a Moonraker e al servizio di rete
@@ -140,3 +151,13 @@ non passa dagli store.
 `toastActions.error(...)` e poi rilanciano (o restituiscono `null`). I componenti della
 dashboard, al contrario, ignorano silenziosamente i fallimenti di polling con `catch {}`, per
 non riempire lo schermo di toast quando la stampante è offline.
+
+**Modali dentro `MovementCarousel`: `use:portal`.** Embla applica un `transform` inline al
+proprio track per l'animazione dello slide, il che crea un nuovo containing block per qualsiasi
+discendente `position: fixed`. Una modale dentro `ToolheadPosition` o `ExtrudeDialog` che usasse
+`position: fixed; inset: 0` senza precauzioni verrebbe quindi ritagliata/posizionata rispetto al
+carosello invece che al viewport reale. [portal.ts](../src/lib/actions/portal.ts) risolve il
+problema spostando il nodo overlay dentro `<body>` al mount e rimuovendolo al destroy; va
+applicato con `use:portal` a qualunque overlay `position: fixed` renderizzato dentro il
+carosello (già usato da `HomingWarningModal`, `PrintStartWizard` e dal popup di temperatura
+custom in `ExtrudeDialog`).

@@ -30,7 +30,8 @@ Query per componente:
 | `DashboardFlowPanel` | `gcode_move`, `motion_report`, `print_stats` |
 | `DashboardZHeightPanel` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
 | `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA` |
-| `ToolheadPosition` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position` |
+| `ToolheadPosition` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
+| `ExtrudeDialog` | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -73,8 +74,28 @@ Comandi effettivamente inviati dall'interfaccia:
 | `CANCEL_PRINT` | `DashboardPrintJobPanel` |
 | `M106 S<0-255>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola |
 | `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce |
+| `G28` | `ToolheadPosition` (pulsante Home, dietro conferma `HomingWarningModal`) / primo passo di `ExtrudeDialog` |
+| `M84` | `ToolheadPosition` — pulsante Disable Motors |
+| `G90` + `G1 X<centro> Y0 Z250 F3000` | `ExtrudeDialog` — spostamento in posizione di purge dopo l'homing |
+| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `ExtrudeDialog` — una coppia per zona, preset PETG/PLA/Custom |
+| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `ExtrudeDialog` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md) |
+
+Ognuno di questi script multi-linea viene inviato in **una sola chiamata**: `printer/gcode/script`
+accetta più comandi separati da `\n` nello stesso `script` urlencoded, eseguiti in sequenza da
+Klipper prima che la risposta HTTP torni al browser (per `TEMPERATURE_WAIT` questo significa che
+la richiesta resta in attesa finché la temperatura non è raggiunta).
 
 La console (`/settings/console`) invia G-code arbitrario, ma via WebSocket (vedi sotto).
+
+### Avvio stampa
+
+```
+POST /printer/print/start?filename=<percorso urlencoded relativo a gcodes/>
+```
+
+Inviato da [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte) solo
+all'ultimo step del wizard aperto dal pulsante **Print** nel popup dettagli file. `filename` è
+`item.filepath`, già relativo alla root `gcodes` (vedi sezione File più sotto).
 
 ### File
 

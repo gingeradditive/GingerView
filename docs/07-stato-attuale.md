@@ -1,8 +1,9 @@
 # 07 — Stato attuale e limiti noti
 
-Fotografia del progetto al **29 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
-dell'installer e il passaggio a same-origin. Serve a evitare che si perda tempo su cose già
-note o si scambi un segnaposto per un bug.
+Fotografia del progetto al **30 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
+dell'installer, il passaggio a same-origin e l'implementazione di homing/estrusione/avvio
+stampa guidati. Serve a evitare che si perda tempo su cose già note o si scambi un segnaposto
+per un bug.
 
 ## Funzionalità complete
 
@@ -84,8 +85,9 @@ il che presuppone che l'applicazione sappia su quale macchina gira (Q26).
 sulla G1). L'etichettatura andrebbe rivista di conseguenza, e l'elenco ricavato da
 `/printer/objects/list` invece che fissato nel codice (Q27).
 
-Le temperature sono in **sola lettura per scelta**: non si impostano dall'interfaccia, e non
-è previsto che lo si faccia.
+In dashboard restano **in sola lettura**: non c'è un termostato manuale. Il flusso di
+estrusione fa eccezione (vedi sopra): imposta e attende le temperature, ma solo come passo
+automatico della sua sequenza, non come controllo libero.
 
 ## Decisioni prese, ancora da applicare
 
