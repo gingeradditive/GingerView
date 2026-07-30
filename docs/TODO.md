@@ -49,13 +49,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | `TMP-1` | Ripensare la presentazione delle zone dell'ugello nel pannello temperature | → Q27 |
 | `TMP-2` | Ricavare le zone da `/printer/objects/list` invece dell'elenco fisso a quattro | pronto |
 
-## PRN — Avvio e gestione stampa
-
-| Codice | Task | Stato |
-|---|---|---|
-| `PRN-1` | Implementare l'avvio stampa dal popup dettagli file (`POST /printer/print/start?filename=...`) | pronto |
-| `PRN-2` | Definire e implementare il wizard pre-stampa | → Q29 |
-
 ## CAM — Webcam
 
 | Codice | Task | Stato |

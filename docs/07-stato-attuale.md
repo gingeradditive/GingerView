@@ -14,6 +14,11 @@ note o si scambi un segnaposto per un bug.
 - Impostazioni rete: stato, scansione Wi-Fi, connessione (anche a rete nascosta), disconnessione.
 - Console G-code con cronologia comandi.
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
+- Avvio stampa dal popup dettagli file: il pulsante **Print** apre
+  [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
+  (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
+  dryer — e solo all'ultimo step invia `POST /printer/print/start?filename=...`, poi torna
+  sulla dashboard (`goto('/')`).
 
 ## Segnaposto
 
@@ -81,16 +86,6 @@ sulla G1). L'etichettatura andrebbe rivista di conseguenza, e l'elenco ricavato 
 
 Le temperature sono in **sola lettura per scelta**: non si impostano dall'interfaccia, e non
 è previsto che lo si faccia.
-
-### Non si può avviare una stampa
-
-Il browser file consente di gestire i file, ma non esiste alcuna chiamata a
-`printer.print.start`: dall'interfaccia non è possibile far partire un lavoro. Si possono
-controllare solo stampe già avviate da altrove.
-
-È deciso che si debba poter partire **dal popup dettagli del file**. Per ora l'avvio è
-diretto; in prospettiva sarà preceduto da un wizard di preparazione, il cui contenuto è ancora
-da definire (Q29) — vale la pena non progettare l'avvio in modo da precludersi quel passaggio.
 
 ## Decisioni prese, ancora da applicare
 

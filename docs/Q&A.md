@@ -75,13 +75,6 @@ concordato, o se anche la struttura della sezione Impostazioni va ripensata. Esi
 mockup/Figma di riferimento a cui allinearmi?
 A: va implementata da 0, i link sono ok ma il contenuto (se presente) è da rifare da capo... ce ne occuperemo in futuro per ora non preoccupartene 
 
-**Q29: Il wizard pre-stampa cosa dovrà chiedere?**
-Contesto: hai detto che per ora la stampa parte diretta dal popup dettagli, ma che "in teoria"
-ci sarà prima un wizard di setup. Sapere già cosa dovrà coprire (controllo materiale in
-tramoggia? preriscaldo? verifica piano? conferma profilo?) evita di progettare l'avvio stampa
-in un modo che poi va buttato.
-A:
-
 **Q30: Chi si occupa di sostituire il modulo Mainsail in G2-OS?**
 Contesto: ho guardato https://github.com/gingeradditive/g2-os — è ancora il fork MainsailOS non
 adattato: il README parla di "Kalico Firmware e **Mainsail**" e la distribuzione preinstalla

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
+	import PrintStartWizard from '$lib/components/PrintStartWizard.svelte';
 
 	let {
 		item,
@@ -11,6 +12,21 @@
 		isOpen: boolean;
 		onClose: () => void;
 	} = $props();
+
+	let showPrintWizard = $state(false);
+
+	function handlePrintClick(): void {
+		showPrintWizard = true;
+	}
+
+	function cancelPrintWizard(): void {
+		showPrintWizard = false;
+	}
+
+	function handlePrintStarted(): void {
+		showPrintWizard = false;
+		onClose();
+	}
 
 	function formatNozzleDiameter(value?: number): string {
 		if (value == null || value <= 0) return '--';
@@ -79,11 +95,18 @@
 				</div>
 
 				<div class="actions-row">
-					<button class="print-button" type="button">Print</button>
+					<button class="print-button" type="button" onclick={handlePrintClick}>Print</button>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<PrintStartWizard
+		isOpen={showPrintWizard}
+		filepath={item.filepath}
+		onCancel={cancelPrintWizard}
+		onStarted={handlePrintStarted}
+	/>
 {/if}
 
 <style>
