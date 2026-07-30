@@ -62,6 +62,7 @@ ugello, non come utensili distinti.
 | **Rete** | `/settings/network` | Stato adattatore, IP, scansione Wi-Fi, connessione a rete (anche nascosta), disconnessione |
 | **Console** | `/settings/console` | Terminale G-code su WebSocket Moonraker, con cronologia comandi |
 | **Log** | `/settings/log` | Download di `klippy.log`, `moonraker.log`, `crowsnest.log`; un pulsante pulisce (rollover) i log di Klipper e Moonraker |
+| **Update** | `/settings/update` | Update manager di Moonraker: elenco dei componenti con versione e stato, check update, **Update all** (sistema operativo compreso), soft/hard recovery sui repo rotti, log live dell'operazione |
 
 Le notifiche di errore/avviso provenienti da Klipper e Moonraker sono globali: arrivano come
 toast in sovrimpressione su qualunque pagina (`MoonrakerNotifier` + `ToastContainer`).

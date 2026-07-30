@@ -159,12 +159,19 @@ ${listen}
 
     # --- Moonraker HTTP API -----------------------------------------------
     # /api/ is Moonraker's OctoPrint-compatible layer, which slicers probe.
+    #
+    # Several Moonraker calls only answer once the work is done and blow past the
+    # 60s nginx default: /machine/update/* (an OS upgrade takes minutes) and any
+    # gcode script containing TEMPERATURE_WAIT. Without a longer read timeout the
+    # browser gets a 504 while the operation keeps running on the printer.
     location ~ ^/(printer|api|access|machine|server)/ {
         proxy_pass http://${MOONRAKER_HOST}:${MOONRAKER_PORT}\$request_uri;
         proxy_set_header Host \$http_host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Scheme \$scheme;
+        proxy_read_timeout 3600;
+        proxy_send_timeout 3600;
     }
 
     # --- Static SPA --------------------------------------------------------

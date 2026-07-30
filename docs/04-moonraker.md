@@ -32,6 +32,7 @@ Query per componente:
 | `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA` |
 | `ToolheadPosition` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
 | `ExtrudeDialog` | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
+| `/settings/update` | `print_stats` (polling, solo per sapere se c'è una stampa in corso) |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -155,6 +156,70 @@ servizio systemd di Kalico per rilasciare l'handle sul file di log, quindi duran
 compare per un istante un toast "Kalico disconnected" — non è un errore. Moonraker rifiuta
 comunque il rollover se una stampa è in corso.
 
+### Update manager
+
+Tutto in [moonraker-update.ts](../src/lib/services/moonraker-update.ts), usato da
+[`/settings/update`](../src/routes/settings/update/+page.svelte):
+
+| Operazione | Chiamata |
+|---|---|
+| Stato di tutti i componenti | `GET /machine/update/status` |
+| Check update (interroga i remoti) | `POST /machine/update/refresh` (JSON: `{name?}`) |
+| **Update all** | `POST /machine/update/upgrade` (JSON: `{}`, cioè `name` omesso = tutto) |
+| Soft / hard recovery | `POST /machine/update/recover` (JSON: `{name, hard}`) |
+
+**L'aggiornamento è solo totale, per scelta.** `upgrade` accetta un `name` per aggiornare un
+singolo componente, ma l'interfaccia non lo usa: c'è un unico pulsante **Update all** e
+`startUpgrade()` viene sempre chiamata senza argomenti. Il parametro resta supportato dal
+servizio per non chiudere la porta, ma nessuna riga dell'elenco ha un proprio pulsante Update.
+
+**Il rollback non è esposto.** `POST /machine/update/rollback` esiste in Moonraker ma non viene
+chiamato da nessuna parte, e nell'interfaccia non c'è alcun modo di tornare alla versione
+precedente. Il campo `rollback_version` viene ricevuto e ignorato.
+
+**L'aggiornamento di sistema non è un endpoint a parte.** I pacchetti del sistema operativo
+sono l'elemento `system` dentro `version_info`, un updater che incapsula apt: "aggiorna il
+sistema" e "aggiorna un programma" sono la stessa `upgrade` con un `name` diverso. Gli endpoint
+storici dedicati (`/machine/update/full`, `/system`, `/klipper`, `/moonraker`, `/client`) sono
+deprecati dall'API 1.5.0 e non vengono usati.
+
+`status` legge lo stato in cache e non contatta GitHub; `refresh` invece sì, e consuma il rate
+limit anonimo (60 richieste/ora), motivo per cui è legato solo al pulsante **Check for updates**
+e non a un polling. Restituisce **503** se un update o una stampa sono in corso, o se
+l'update manager non ha finito di inizializzarsi.
+
+`version_info` contiene una voce per componente, di tipo diverso a seconda di come è configurato
+in `moonraker.conf` (`system`, `git_repo`, `web`, `zip`, `python`). I campi non sono gli stessi
+per tutti, quindi [types/update.ts](../src/lib/types/update.ts) li modella come un'unica
+interfaccia con tutto opzionale tranne `name` — funziona anche con versioni di Moonraker più
+vecchie, che semplicemente omettono le chiavi recenti.
+
+Su una macchina reale (Moonraker v0.10.0) le voci presenti sono `system`, `klipper`,
+`moonraker`, `mainsail`, `mainsail-config`, `crowsnest` e `GingerView`.
+
+**Le operazioni sono richieste lunghe.** `upgrade` e `recover` rispondono solo a
+lavoro concluso — minuti, per un aggiornamento di sistema. Per questo il proxy nginx alza
+`proxy_read_timeout` (vedi [06 — Il proxy](06-deploy.md#il-proxy)) e la pagina non tratta mai
+una richiesta fallita come un aggiornamento fallito: se `status.busy` è ancora `true`, continua
+a seguire l'operazione in polling finché non si esaurisce.
+
+**La recovery è derivata, non sempre offerta.** È l'unica azione presente sulla singola riga, e
+compare solo quando Moonraker segnala `is_valid: false`, `corrupt`, `detached` o `is_dirty` —
+cioè quando `Update all` da solo non può risolvere. Passa da una modale di conferma che dice
+cosa si perde.
+
+L'elenco mostra **solo nome, versione e stato**: non c'è un pannello espandibile con i dettagli.
+`commits_behind` (il changelog), `package_list` (i pacchetti apt in attesa), `warnings` e
+`anomalies` vengono ricevuti ma non visualizzati. I tipi in
+[types/update.ts](../src/lib/types/update.ts) restano completi perché descrivono il payload, non
+l'interfaccia.
+
+Attenzione a non confondere i flag con i messaggi: sulla macchina di prova `klipper` riporta
+`warnings: ["Repo is corrupt"]` pur avendo `corrupt: false` e `is_valid: true` — è un residuo
+testuale, dovuto al fatto che il repo è Kalico (`KalicoCrew/kalico` su `main`) e non il Klipper
+ufficiale, come dicono le `anomalies`. Le decisioni si prendono **sui flag** e mai sulle
+stringhe: fidarsi di quel `warnings` significherebbe proporre una recovery su un repo sano.
+
 ### Thumbnail: due strategie
 
 1. **Percorso dai metadati** — se il file dichiara `thumbnails`, `getThumbnailUrl()` sceglie
@@ -168,7 +233,7 @@ Se entrambe falliscono si usa il placeholder [static/error-thumbnail.png](../sta
 
 ## WebSocket
 
-Ci sono **tre** utilizzi distinti del WebSocket, che non condividono una connessione comune.
+Ci sono **quattro** utilizzi distinti del WebSocket, che non condividono una connessione comune.
 
 ### 1. `moonraker-notifier.ts` — notifiche globali
 
@@ -211,7 +276,23 @@ Le risposte arrivano come `notify_gcode_response`; le righe vengono ripulite dai
 `//` e `;` e gli `ok` vengono scartati. Massimo **3 tentativi** di connessione, timeout di
 5 secondi, riconnessione manuale tramite pulsante. Cronologia comandi navigabile con le frecce.
 
-### 3. `klipper-websocket.ts` — servizio con store
+### 3. `/settings/update` — output degli aggiornamenti
+
+Aperta da `connectUpdateSocket()` in
+[moonraker-update.ts](../src/lib/services/moonraker-update.ts) e viva solo finché la pagina
+Update è montata. Si identifica come il notifier e ascolta due notifiche:
+
+| Metodo | Payload | Azione |
+|---|---|---|
+| `notify_update_response` | `application`, `proc_id`, `message`, `complete` | Aggiunge la riga al log della modale; `complete: true` segna la fine per quel componente |
+| `notify_update_refreshed` | lo stesso oggetto di `/machine/update/status` | Aggiorna l'elenco in pagina, ma **solo se non c'è un'operazione in corso** |
+
+Non riusa la connessione del notifier perché quella non espone un meccanismo di
+sottoscrizione, e l'output degli aggiornamenti interessa solo a questa pagina. Riconnessione a
+5 secondi, senza limite di tentativi — serve perché aggiornare Moonraker lo fa riavviare, e la
+connessione cade a metà operazione.
+
+### 4. `klipper-websocket.ts` — servizio con store
 
 Espone `connectionStatus` e `klipperStatus` come store Svelte e riconnette con ritardo
 crescente (`1000ms × tentativo`, max 5 tentativi). Il suo unico consumatore è
@@ -233,6 +314,7 @@ non viene mai aperta**. Vedi
 | `DashboardQuickActionsPanel` | 2000 ms |
 | `DashboardPelletPanel` | 3000 ms |
 | `/settings/network` (stato rete) | 5000 ms |
+| `/settings/update` (stato stampa, per bloccare gli update) | 5000 ms |
 
 Ogni intervallo è una costante `pollIntervalMs` locale al componente. Nella dashboard sono
 attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al secondo verso

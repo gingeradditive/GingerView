@@ -73,13 +73,20 @@ location ~ ^/(printer|api|access|machine|server)/ → 127.0.0.1:7125$request_uri
 location /                                     → try_files … /index.html
 ```
 
-Due dettagli non ovvi:
+Tre dettagli non ovvi:
 
 - **`/api/wifi/` usa `^~`.** Senza quel modificatore la regex di Moonraker, che include `api`,
   avrebbe la precedenza sul prefisso e le chiamate Wi-Fi finirebbero a Moonraker con un 404.
   Con `^~` il prefisso vince sulla regex.
 - **`/api/` va a Moonraker** perché è il suo livello di compatibilità OctoPrint, che gli
   slicer interrogano (`/api/version`).
+- **La location di Moonraker imposta `proxy_read_timeout`/`proxy_send_timeout` a 3600s.**
+  Il default di nginx è **60 secondi**, ma alcune chiamate rispondono solo a lavoro finito e
+  lo superano regolarmente: `/machine/update/*` (un `apt upgrade` dura minuti, vedi
+  [04 — Update manager](04-moonraker.md#update-manager)) e ogni script G-code che contenga
+  `TEMPERATURE_WAIT`, come la sequenza di `ExtrudeDialog`. Senza il timeout allungato il
+  browser riceve un 504 mentre l'operazione prosegue indisturbata sulla stampante, cioè il
+  caso peggiore: l'interfaccia dice che è fallito, la macchina sta ancora lavorando.
 
 Sono impostati anche `client_max_body_size 0` e `proxy_request_buffering off`, perché gli
 upload di G-code sono grandi e non vanno né limitati né bufferizzati su disco.

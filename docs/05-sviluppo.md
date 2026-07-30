@@ -92,6 +92,16 @@ componente puoi allinearlo, ma non è richiesto un refactor generale.
 Definita in [tailwind.config.cjs](../tailwind.config.cjs) e in
 [src/app.css](../src/app.css). Font: **Montserrat**.
 
+Fuori palette ci sono tre coppie sfondo/testo usate per gli **stati**, nate nella pagina
+console e riprese da quella update. Non sono in `tailwind.config.cjs`: se ne servono altre,
+riusa queste invece di inventarne di nuove.
+
+| Stato | Sfondo | Testo | Uso |
+|---|---|---|---|
+| Positivo | `#DDF3DF` | `#1A7F37` | "Connected", "Up to date", operazione riuscita |
+| In attesa | `#FDF0D5` | `#9A6700` | "Update available", avvisi, operazione in corso |
+| Negativo | `#F7D9D8` | `#D72E28` | "Disconnected", repo corrotto, operazione fallita |
+
 ### Nomenclatura
 
 - Componenti: `PascalCase.svelte`.

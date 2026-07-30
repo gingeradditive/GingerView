@@ -1,9 +1,9 @@
 # 07 — Stato attuale e limiti noti
 
 Fotografia del progetto al **30 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
-dell'installer, il passaggio a same-origin e l'implementazione di homing/estrusione/avvio
-stampa guidati. Serve a evitare che si perda tempo su cose già note o si scambi un segnaposto
-per un bug.
+dell'installer, il passaggio a same-origin, l'implementazione di homing/estrusione/avvio
+stampa guidati e delle pagine Log e Update. Serve a evitare che si perda tempo su cose già
+note o si scambi un segnaposto per un bug.
 
 ## Funzionalità complete
 
@@ -18,6 +18,12 @@ per un bug.
   pulsante per pulire (rollover) i log di Klipper e Moonraker in un colpo solo, senza chiedere
   quale — vedi [04 — Moonraker](04-moonraker.md#log). Crowsnest non ha un meccanismo di
   rollover lato Moonraker, quindi il suo log non viene mai pulito da qui.
+- Pagina Update (`/settings/update`): elenco dei componenti registrati nell'update manager di
+  Moonraker (compreso `system`, cioè i pacchetti del sistema operativo) con versione e stato,
+  check update, **Update all**, soft/hard recovery sui repo che Moonraker segnala come rotti, e
+  log live dell'operazione in una modale a terminale. Volutamente **non** ci sono aggiornamenti
+  per singolo componente, rollback, né un pannello espandibile coi dettagli: vedi
+  [04 — Update manager](04-moonraker.md#update-manager).
 - Sistema di notifiche toast collegato agli eventi Klipper/Moonraker.
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
@@ -29,14 +35,14 @@ per un bug.
 
 ### Sottopagine "Coming soon"
 
-`/settings/update`, `/settings/history`, `/settings/statistics`, `/settings/timezone` sono
-tutte tre righe che istanziano `SettingsSubpage` senza contenuto. La voce è nel menu, la rotta
-esiste, la funzionalità no. Sono considerate "roba vecchia da rifare", non solo da riempire
-(Q28). `/settings/log` è uscito da questo elenco: vedi "Funzionalità complete" sopra.
+`/settings/history`, `/settings/statistics` e `/settings/timezone` sono tutte tre righe che
+istanziano `SettingsSubpage` senza contenuto. La voce è nel menu, la rotta esiste, la
+funzionalità no. Sono considerate "roba vecchia da rifare", non solo da riempire (Q28).
+`/settings/log` e `/settings/update` sono usciti da questo elenco: vedi "Funzionalità
+complete" sopra.
 
 Indicazioni già raccolte:
 
-- **Update** deve aggiornare **tutto il sistema**, non solo GingerView.
 - **History**, **Statistics** e **Timezone** restano da progettare. Per il fuso orario va
   tenuto presente che **Moonraker non espone alcun endpoint**: serve passare dal servizio di
   rete o aggiungerne uno, il che dipende da come si risolve Q16.

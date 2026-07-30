@@ -60,10 +60,11 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 | Codice | Task | Stato |
 |---|---|---|
 | `SET-1` | Decidere se le sottopagine vanno riprogettate o solo implementate | → Q28 |
-| `SET-2` | Rifare `/settings/update` per aggiornare **tutto il sistema** (`GET /machine/update/status`, `POST /machine/update/upgrade`) | dipende da `SET-1` |
 | `SET-4` | Rifare `/settings/history` su `GET /server/history/list` | dipende da `SET-1` |
 | `SET-5` | Rifare `/settings/statistics` su `GET /server/history/totals` | dipende da `SET-1` |
 | `SET-6` | Rifare `/settings/timezone`, che non ha un endpoint Moonraker | → Q16 |
+| `SET-7` | Verificare su hardware reale le operazioni **mutanti** della pagina Update (`upgrade`, `recover`): finora è stato provato solo `status` in lettura | pronto |
+| `SET-8` | Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione | pronto |
 
 ## NET — Rete e servizio Wi-Fi
 

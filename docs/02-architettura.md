@@ -86,7 +86,8 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/network` | pagina completa | Unica sottopagina con logica propria oltre a console |
 | `/settings/console` | terminale G-code | WebSocket diretto verso Moonraker |
 | `/settings/log` | pagina completa | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log)) |
-| `/settings/{update,history,statistics,timezone}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
+| `/settings/update` | pagina completa | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager)) |
+| `/settings/{history,statistics,timezone}` | `SettingsSubpage` | Solo intestazione + "Coming soon" |
 
 I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
 tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo caso.
@@ -105,6 +106,8 @@ un residuo dell'impostazione precedente da rivedere.
 | [klipper-websocket.ts](../src/lib/services/klipper-websocket.ts) | Classe `KlipperWebSocketService` con store `connectionStatus` e `klipperStatus`, riconnessione con backoff lineare (max 5 tentativi). Codice morto, da rimuovere: vedi [07](07-stato-attuale.md#codice-morto-da-rimuovere) |
 | [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) | Avvisi all'avvio da `/server/info` + WebSocket persistente per `notify_klippy_*` e warning runtime |
 | [moonraker-files.ts](../src/lib/services/moonraker-files.ts) | Tutte le operazioni sui file: elenco, metadati, thumbnail, upload, sposta, elimina, crea cartella |
+| [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts) | Download dei log e rollover |
+| [moonraker-update.ts](../src/lib/services/moonraker-update.ts) | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente |
 | [network-api.ts](../src/lib/services/network-api.ts) | Client per il servizio Wi-Fi esterno (`/api/wifi/*`), con classe d'errore dedicata `NetworkAPIError` |
 
 ## Store (`src/lib/stores/`)
