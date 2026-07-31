@@ -55,13 +55,17 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `SET-5` Rifare `/settings/statistics` su `GET /server/history/totals` — dipende da `SET-1`
 - `SET-7` Verificare su hardware reale le operazioni **mutanti** della pagina Update (`upgrade`, `recover`): finora è stato provato solo `status` in lettura — pronto
 - `SET-8` Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione — pronto
-- `SET-9` Scrivere `GET`/`POST /api/timezone` nel servizio di rete (`timedatectl`) e sostituire il mock in `timezone.ts`. **Urgente**: la pagina non avverte più che il salvataggio è finto, quindi oggi dice "Timezone saved" senza aver cambiato niente — pronto
+- `SET-9` Sostituire il mock in `timezone.ts` con le chiamate a **`GET`/`POST /service/timezone`** di G2-Service (l'endpoint è deciso ma non ancora implementato lì). `ntpSynchronized` resta in sola lettura. **Urgente**: la pagina non avverte più che il salvataggio è finto, quindi oggi dice "Timezone saved" senza aver cambiato niente — dipende da `NET-2`
 - `SET-10` Decidere quando disattivare il config editor (`CONFIG_EDITOR_ENABLED = false`) e se la rotta va rimossa del tutto: oggi resta raggiungibile scrivendo l'URL a mano. Se la rotta sparisce vanno disinstallate anche le dipendenze CodeMirror (`codemirror`, `@codemirror/*`, `@lezer/highlight`) e cancellato `src/lib/editor/`, usati solo lì — pronto
 - `SET-11` Verificare su hardware reale le operazioni del config editor: salvataggio (upload sulla root `config`), i tre riavvii, e il comportamento quando Klippy torna in stato `error` per un config rotto — pronto
 
 ## NET — Rete e servizio Wi-Fi
 
 - `NET-1` Decidere se il servizio di rete resta separato o entra in GingerView, e implementare di conseguenza → Q16
+- `NET-2` Riscrivere `network-api.ts` sul contratto deciso di G2-Service: prefisso **`/service/`** al posto di `/api/wifi/`, corpi in `camelCase`, e stato unificato su `GET /service/network/status` (copre WiFi *ed* Ethernet, con `adapter.type` a distinguerle e `state: "disconnected"` esplicito quando non c'è connessione). Il contratto completo è in [G2-Service `docs/03`](https://github.com/gingeradditive/G2-Service/blob/main/docs/03-proposta-api-rete-timezone.md) — pronto
+- `NET-3` Gestire le **operazioni asincrone**: `connect` e `disconnect` non rispondono più in modo sincrono ma restituiscono `202` + `jobId`, e l'esito si legge con `GET /service/jobs/{jobId}` (`running` → `succeeded`/`failed`). Serve perché connettersi a una rete cambia l'IP della macchina e fa cadere la richiesta in corso: la pagina deve riconnettersi al nuovo indirizzo e recuperare l'esito, non aspettare una risposta che non arriverà. Gli errori previsti arrivano come `error.code` del job (`WIFI_AUTH_FAILED`, `WIFI_NETWORK_NOT_FOUND`, `WIFI_TIMEOUT`) — dipende da `NET-2`
+- `NET-4` Adeguare la gestione degli errori al modello deciso: `{ "detail": { "code", "message" } }` per gli errori applicativi, oltre alla forma a lista già gestita per i `422` di validazione. Gli esiti negativi di un'operazione non sono più errori HTTP (vedi `NET-3`) — dipende da `NET-2`
+- `NET-5` In `script/install.sh`, sostituire la `location ^~ /api/wifi/` con un `include /etc/nginx/g2-locations.d/*.conf;` **dentro il blocco `server`**: da qui in avanti ogni servizio installa la propria `location` (G2-Service ci deposita la sua) invece di averla cablata qui. Una `include` con wildcard senza file corrispondenti non è un errore, quindi il site continua a funzionare su una macchina senza G2-Service — pronto
 
 ## CFG — Conoscenza della macchina a runtime
 
