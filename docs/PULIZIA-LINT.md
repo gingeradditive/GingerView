@@ -152,10 +152,10 @@ allora `SvelteSet` diventerebbe la risposta vera — vale la pena scriverlo nel 
 
 ---
 
-## Due cose emerse durante la pulizia, non ancora sistemate
+## Due cose emerse durante la pulizia
 
 Non sono errori di lint (`eslint` non le vede), ma sono venute fuori rimuovendo il codice morto
-e vanno decise da una persona.
+e vanno decise da una persona. La prima è ancora aperta (`CLN-8`), la seconda è decisa.
 
 ### Subscribe mai disiscritta in `CurrentDirectory.svelte`
 
@@ -169,15 +169,16 @@ La correzione è `onDestroy(unsubscribe)`, oppure `$derived`/`$state` se il comp
 convertito alle rune. Il componente è montato dentro `PrintList`, quindi il leak si accumula a
 ogni entrata/uscita dalla lista di stampa.
 
-### Il marker di target in `ToolheadPosition.svelte` non è mai stato disegnato
+### Il marker di target in `ToolheadPosition.svelte` — deciso: rimozione definitiva
 
 Il componente calcolava `targetMarker` (e le tre normalizzazioni `targetXNorm/YNorm/ZNorm` che
 lo alimentavano) senza mai renderizzarlo: veniva proiettata la posizione di target del toolhead
 e poi buttata via. Nella pulizia è stato rimosso come codice morto.
 
-Se era una feature lasciata a metà — mostrare dove _sta andando_ la testa, oltre a dov'è — il
-codice si recupera da git prima di quel commit, ma va comunque scritta la parte SVG che lo
-disegna, che non è mai esistita. Da decidere: feature da completare o rimozione definitiva.
+La decisione presa (`UI-9`) è **non disegnarlo**: la rimozione è definitiva e la parte SVG, che
+non è mai esistita, non va scritta. Mostrare dove _sta andando_ la testa oltre a dov'è non è una
+feature che serve. Se un giorno la si volesse, si riparte da zero sulla parte SVG; il calcolo
+vecchio si recupera da git, ma è la porzione banale del lavoro.
 
 Nota: gli store `targetX/targetY/targetZ` **sono ancora usati** (alimentano `actualX/Y/Z` alle
 righe 118–130), non sono stati toccati.

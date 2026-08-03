@@ -74,7 +74,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 ## UI — Interfaccia, layout, lingua
 
 - `UI-2` Portare tutta l'interfaccia in inglese, `aria-label` e dialoghi compresi — pronto
-- `UI-9` Decidere se il marker della posizione di **target** del toolhead va disegnato: `ToolheadPosition.svelte` lo calcolava senza mai renderizzarlo, ed è stato rimosso come codice morto. Se è una feature da completare va scritta la parte SVG, che non è mai esistita — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## CLN — Pulizia del codice
 
