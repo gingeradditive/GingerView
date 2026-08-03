@@ -10,6 +10,7 @@
 		describeItem,
 		fetchUpdateStatus,
 		fetchUpdateStatusQuietly,
+		isSelfUpdate,
 		refreshUpdateStatus,
 		sortItems,
 		startRecover,
@@ -22,6 +23,8 @@
 	/** How often the page re-checks `busy` after losing the request, and for how long. */
 	const busyPollMs = 3000;
 	const busyPollTimeoutMs = 30 * 60 * 1000;
+	/** Seconds left on screen before the page reloads itself after a self-update. */
+	const reloadCountdownSeconds = 5;
 
 	let status = $state<UpdateStatus | null>(null);
 	let loadError = $state('');
@@ -38,6 +41,12 @@
 	let logError = $state('');
 	let lastLoggedApp = '';
 	let completedApps = new Set<string>();
+
+	// Set when the operation updated GingerView itself: the files nginx serves have
+	// changed, but this tab is still running the bundle loaded before the update.
+	let selfUpdated = $state(false);
+	let reloadIn = $state(0);
+	let reloadTimer: ReturnType<typeof setInterval> | null = null;
 
 	let confirmState = $state<{
 		title: string;
@@ -88,6 +97,7 @@
 
 		return () => {
 			window.clearInterval(printTimer);
+			if (reloadTimer) clearInterval(reloadTimer);
 			disconnect();
 		};
 	});
@@ -154,6 +164,7 @@
 		logError = '';
 		lastLoggedApp = '';
 		completedApps = new Set();
+		selfUpdated = false;
 		logOpen = true;
 		isOperationRunning = true;
 
@@ -180,8 +191,47 @@
 			}
 		} finally {
 			isOperationRunning = false;
-			await reloadStatusAfterOperation();
+			if (logState === 'success' && [...completedApps].some(isSelfUpdate)) {
+				// GingerView updated itself: re-reading the status would only refresh
+				// numbers inside a bundle that is already obsolete. Reload instead.
+				selfUpdated = true;
+				startReloadCountdown();
+			} else {
+				await reloadStatusAfterOperation();
+			}
 		}
+	}
+
+	/**
+	 * After GingerView updates itself the tab keeps running the old bundle, so the
+	 * page reloads on its own. `index.html` is served with `no-store` (see the nginx
+	 * site written by `script/install.sh`), so a plain reload really does fetch the
+	 * new entry point and, through it, the new hashed assets.
+	 *
+	 * The countdown is there so the reload does not wipe the log out from under
+	 * someone still reading it; closing the modal reloads immediately.
+	 */
+	function startReloadCountdown() {
+		if (reloadTimer) clearInterval(reloadTimer);
+		reloadIn = reloadCountdownSeconds;
+		reloadTimer = setInterval(() => {
+			reloadIn -= 1;
+			if (reloadIn <= 0) reloadNow();
+		}, 1000);
+	}
+
+	function reloadNow() {
+		if (reloadTimer) clearInterval(reloadTimer);
+		reloadTimer = null;
+		window.location.reload();
+	}
+
+	function handleLogClose() {
+		if (selfUpdated) {
+			reloadNow();
+			return;
+		}
+		logOpen = false;
 	}
 
 	/**
@@ -338,7 +388,11 @@
 	lines={logLines}
 	{logState}
 	errorMessage={logError}
-	onClose={() => (logOpen = false)}
+	successNote={selfUpdated
+		? `GingerView was updated: reloading the interface in ${reloadIn}s…`
+		: ''}
+	closeLabel={selfUpdated ? 'Reload now' : 'Close'}
+	onClose={handleLogClose}
 />
 
 <ConfirmModal

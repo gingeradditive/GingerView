@@ -2,17 +2,22 @@
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 
 	type HeaterStatus = {
 		temperature?: number;
 		target?: number;
 	};
 
-	const extruderKeys = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
 	const pollIntervalMs = 1500;
 
-	let extruderTemperatures = $state<(number | null)[]>([null, null, null, null]);
-	let extruderTargets = $state<(number | null)[]>([null, null, null, null]);
+	// The heated zones of the one nozzle, as the machine declares them: four on
+	// the G2, three on the G1 — see moonraker-zones.ts. Empty until it answers,
+	// which is the only honest thing to draw when the count is unknown; the bed
+	// is read either way, so the panel is never blank.
+	let zoneKeys = $state<string[]>([]);
+	let extruderTemperatures = $state<(number | null)[]>([]);
+	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
 
@@ -50,11 +55,17 @@
 	};
 
 	const getQueryPath = (): string => {
-		const objects = [...extruderKeys, 'heater_bed'];
+		const objects = [...zoneKeys, 'heater_bed'];
 		return `/printer/objects/query?${objects.join('&')}`;
 	};
 
 	const updateTemperatures = async (): Promise<void> => {
+		// Cached after the first answer, so this costs one request until the
+		// machine replies and nothing afterwards (see moonraker-zones.ts).
+		if (zoneKeys.length === 0) {
+			zoneKeys = await loadNozzleZones();
+		}
+
 		try {
 			const response = await fetch(`${getMoonrakerApiUrl()}${getQueryPath()}`);
 			if (!response.ok) {
@@ -67,12 +78,12 @@
 				return;
 			}
 
-			extruderTemperatures = extruderKeys.map((key) => {
+			extruderTemperatures = zoneKeys.map((key) => {
 				const temperature = status[key]?.temperature;
 				return typeof temperature === 'number' ? temperature : null;
 			});
 
-			extruderTargets = extruderKeys.map((key) => {
+			extruderTargets = zoneKeys.map((key) => {
 				const target = status[key]?.target;
 				if (typeof target !== 'number' || Number.isNaN(target)) return null;
 				return target > 0 ? target : null;
@@ -98,10 +109,10 @@
 
 <section class="temperature-panel" aria-label="Pannello temperature Klipper">
 	<div class="extruders">
-		{#each extruderTemperatures as temperature, index}
+		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
 				index={index + 1}
-				{temperature}
+				temperature={extruderTemperatures[index] ?? null}
 				target={extruderTargets[index] ?? null}
 			/>
 		{/each}

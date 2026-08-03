@@ -24,7 +24,9 @@ scambi un segnaposto per un bug.
 - Pagina Update (`/settings/update`): elenco dei componenti registrati nell'update manager di
   Moonraker (compreso `system`, cioè i pacchetti del sistema operativo) con versione e stato,
   check update, **Update all**, soft/hard recovery sui repo che Moonraker segnala come rotti, e
-  log live dell'operazione in una modale a terminale. Volutamente **non** ci sono aggiornamenti
+  log live dell'operazione in una modale a terminale. Se l'aggiornamento tocca GingerView stesso
+  la pagina si ricarica da sola a fine operazione, dopo un countdown di 5 secondi, altrimenti la
+  scheda continuerebbe a eseguire il bundle vecchio. Volutamente **non** ci sono aggiornamenti
   per singolo componente, rollback, né un pannello espandibile coi dettagli: vedi
   [04 — Update manager](04-moonraker.md#update-manager).
 - Pagina Timezone (`/settings/timezone`): mappa del mondo con la fascia oraria selezionata
@@ -104,13 +106,14 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   condiviso in [movementStore.ts](../src/lib/stores/movementStore.ts).
 - [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha tre selettori: quantità
   (Low/Mid/High → 1000/10000/20000 mm³), velocità (Slow/Standard/Boost → 50/150/250 mm³/s) e
-  temperatura (PETG/PLA/Custom). I preset temperatura coprono le 4 zone dell'ugello
-  (`extruder`..`extruder3`, vedi nota sotto) e portano anche un `rotation_distance` non
-  mostrato in interfaccia (PETG 450, PLA e Custom 330); "Custom" apre un popup con un campo
-  °C per ciascuna delle quattro zone. Il pulsante **Extrude** ora esegue davvero una sequenza,
+  temperatura (PETG/PLA/Custom). I preset temperatura coprono tutte le zone dell'ugello
+  (vedi nota sotto) e portano anche un `rotation_distance` non mostrato in interfaccia
+  (PETG 450, PLA e Custom 330); PETG tiene la prima zona più fredda delle altre (200 contro
+  220), PLA è piatto. "Custom" apre un popup con un campo °C **per ciascuna zona che la
+  macchina dichiara**. Il pulsante **Extrude** ora esegue davvero una sequenza,
   mostrando la fase in corso come testo del pulsante (disabled nel frattempo): stesso popup di
   avvertimento homing → `G28` → spostamento al centro X, Y0, Z250 → `SET_HEATER_TEMPERATURE` +
-  `TEMPERATURE_WAIT` sulle 4 zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
+  `TEMPERATURE_WAIT` su tutte le zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
   L'ultimo passaggio è **non verificato su hardware reale** (Q32 in [Q&A.md](Q&A.md)): presuppone
   che il `rotation_distance` dell'estrusore reale sia calibrato in mm³/rotazione per materiale.
   Parametri selezionati e fase in corso stanno in [movementStore.ts](../src/lib/stores/movementStore.ts),
@@ -133,12 +136,21 @@ le grandezze in filamento virtuale e serve una formula di riconversione, ancora 
 Anche `maxPelletKg = 5` è hardcoded: è la capienza della G2, ma va parametrizzata per modello,
 il che presuppone che l'applicazione sappia su quale macchina gira (Q26).
 
-### Le 4 zone dell'ugello sono presentate come 4 estrusori
+### Le zone dell'ugello sono presentate come estrusori
 
-`DashboardTemperaturePanel` interroga un elenco fisso `extruder`, `extruder1`, `extruder2`,
-`extruder3`. Non sono quattro utensili: sono le **zone riscaldate dell'unico ugello** (tre
-sulla G1). L'etichettatura andrebbe rivista di conseguenza, e l'elenco ricavato da
-`/printer/objects/list` invece che fissato nel codice (Q27).
+`extruder`, `extruder1`, … non sono utensili distinti: sono le **zone riscaldate dell'unico
+ugello** (quattro sulla G2, tre sulla G1). Quante siano non è più scritto nel codice —
+`DashboardTemperaturePanel`, il popup "Custom temperature" e la sequenza di estrusione partono
+tutti dall'elenco che [moonraker-zones.ts](../src/lib/services/moonraker-zones.ts) ricava da
+`/printer/objects/list`, quindi una G1 mostra tre zone senza toccare niente (vedi
+[04 — Gli "estrusori" sono zone di un solo ugello](04-moonraker.md#gli-estrusori-sono-zone-di-un-solo-ugello)).
+
+Resta la presentazione: le card sono numerate 1..n e non hanno etichette. Su Q27 la risposta è
+di **lasciarla così**, perché senza etichette è già leggibile visivamente.
+
+Finché la macchina non risponde le card non vengono disegnate: il numero di zone non si
+indovina. Il bed viene letto comunque, quindi il pannello non resta vuoto, e il polling
+riprova a ogni giro.
 
 In dashboard restano **in sola lettura**: non c'è un termostato manuale. Il flusso di
 estrusione fa eccezione (vedi sopra): imposta e attende le temperature, ma solo come passo

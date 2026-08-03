@@ -12,27 +12,28 @@ Le tabelle riportano quindi il percorso, non un URL assoluto.
 
 ### Stato della stampante
 
-| Endpoint                         | Usato da                | Scopo                                            |
-| -------------------------------- | ----------------------- | ------------------------------------------------ |
-| `GET /printer/objects/query?...` | quasi tutti i pannelli  | Lettura dello stato degli oggetti Klipper        |
-| `GET /printer/info`              | `moonraker-notifier.ts` | Dettaglio dello stato in caso di errore/shutdown |
-| `GET /server/info`               | `moonraker-notifier.ts` | Warning, componenti falliti, stato di Klippy     |
+| Endpoint                         | Usato da                | Scopo                                                    |
+| -------------------------------- | ----------------------- | -------------------------------------------------------- |
+| `GET /printer/objects/query?...` | quasi tutti i pannelli  | Lettura dello stato degli oggetti Klipper                |
+| `GET /printer/objects/list`      | `moonraker-zones.ts`    | Quali oggetti esistono, per ricavare le zone dell'ugello |
+| `GET /printer/info`              | `moonraker-notifier.ts` | Dettaglio dello stato in caso di errore/shutdown         |
+| `GET /server/info`               | `moonraker-notifier.ts` | Warning, componenti falliti, stato di Klippy             |
 
 Query per componente:
 
-| Componente                                    | Oggetti interrogati                                                                                   |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `DashboardControlPanel`                       | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                              |
-| `DashboardPrintJobPanel`                      | `print_stats`, `virtual_sdcard`                                                                       |
-| `DashboardJobInfoCard`                        | `print_stats`                                                                                         |
-| `DashboardPelletPanel`                        | `print_stats`                                                                                         |
-| `DashboardTemperaturePanel`                   | `extruder`, `extruder1`, `extruder2`, `extruder3`, `heater_bed` (elenco fisso) — vedi nota sulle zone |
-| `DashboardFlowPanel`                          | `gcode_move`, `motion_report`, `print_stats`                                                          |
-| `DashboardZHeightPanel`                       | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                    |
-| `DashboardQuickActionsPanel`                  | `fan`, `led LED_CAMERA`                                                                               |
-| `ToolheadPosition`                            | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling)    |
-| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento)               |
-| `/settings/update`                            | `print_stats` (polling, solo per sapere se c'è una stampa in corso)                                   |
+| Componente                                    | Oggetti interrogati                                                                                |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`                       | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                           |
+| `DashboardPrintJobPanel`                      | `print_stats`, `virtual_sdcard`                                                                    |
+| `DashboardJobInfoCard`                        | `print_stats`                                                                                      |
+| `DashboardPelletPanel`                        | `print_stats`                                                                                      |
+| `DashboardTemperaturePanel`                   | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone      |
+| `DashboardFlowPanel`                          | `gcode_move`, `motion_report`, `print_stats`                                                       |
+| `DashboardZHeightPanel`                       | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                 |
+| `DashboardQuickActionsPanel`                  | `fan`, `led LED_CAMERA`                                                                            |
+| `ToolheadPosition`                            | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
+| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento)            |
+| `/settings/update`                            | `print_stats` (polling, solo per sapere se c'è una stampa in corso)                                |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -48,8 +49,25 @@ Due conseguenze pratiche:
 
 - l'interfaccia non deve presentarli come strumenti selezionabili né permettere di attivarne
   uno alla volta;
-- l'elenco fisso a quattro voci non si adatta a una macchina con un numero diverso di zone,
-  e andrebbe ricavato da `/printer/objects/list`.
+- quante sono dipende dalla macchina, quindi **l'elenco non è scritto nel codice**: lo ricava
+  [moonraker-zones.ts](../src/lib/services/moonraker-zones.ts) da `/printer/objects/list`,
+  tenendo gli oggetti che si chiamano `extruder` o `extruderN` (non `extruder_stepper …` né gli
+  `heater_generic`) e ordinandoli con `extruder` per primo, che è la zona 1 dell'interfaccia.
+
+L'elenco viene chiesto una volta e tenuto in cache, perché cambia solo con `printer.cfg`; un
+errore invece **non** viene messo in cache, così un Klippy irraggiungibile o in avvio viene
+ritentato al giro di polling successivo. `requestRestart()` in
+[moonraker-printer.ts](../src/lib/services/moonraker-printer.ts) svuota la cache: dopo un
+riavvio Klipper riparte con la configurazione che c'è adesso, che il config editor può avere
+appena cambiato.
+
+Chi consuma l'elenco:
+
+| Consumatore                                  | Cosa succede se l'elenco non si riesce a leggere                                              |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `DashboardTemperaturePanel`                  | nessuna card estrusore (il bed viene letto lo stesso), riprovato a ogni polling               |
+| `ExtrudeDialog` (popup "Custom temperature") | il popup non si apre e lo dice con un toast: non saprebbe quanti campi mostrare               |
+| `movementStore` (sequenza di estrusione)     | la sequenza si ferma in fase `heating` con un toast, invece di indovinare quali zone scaldare |
 
 ### `print_stats.filename` sopravvive alla fine della stampa
 
@@ -78,18 +96,18 @@ POST /printer/gcode/script?script=<comando urlencoded>
 
 Comandi effettivamente inviati dall'interfaccia:
 
-| Comando                                                                                                                                   | Origine                                                                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PAUSE`                                                                                                                                   | `DashboardPrintJobPanel`                                                                                                                                |
-| `RESUME`                                                                                                                                  | `DashboardPrintJobPanel`                                                                                                                                |
-| `CANCEL_PRINT`                                                                                                                            | `DashboardPrintJobPanel`                                                                                                                                |
-| `M106 S<0-255>`                                                                                                                           | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola                                                                               |
-| `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                                | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                           |
-| `G28`                                                                                                                                     | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()` |
-| `M84`                                                                                                                                     | `ToolheadPosition` — pulsante Disable Motors                                                                                                            |
-| `G90` + `G1 X<centro> Y0 Z250 F3000`                                                                                                      | `movementStore` — spostamento in posizione di purge dopo l'homing                                                                                       |
-| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `movementStore` — una coppia per zona, preset PETG/PLA/Custom                                                                                           |
-| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82`       | `movementStore` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md)                           |
+| Comando                                                                                                                                 | Origine                                                                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PAUSE`                                                                                                                                 | `DashboardPrintJobPanel`                                                                                                                                                            |
+| `RESUME`                                                                                                                                | `DashboardPrintJobPanel`                                                                                                                                                            |
+| `CANCEL_PRINT`                                                                                                                          | `DashboardPrintJobPanel`                                                                                                                                                            |
+| `M106 S<0-255>`                                                                                                                         | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola                                                                                                           |
+| `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                              | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                                                       |
+| `G28`                                                                                                                                   | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()`                             |
+| `M84`                                                                                                                                   | `ToolheadPosition` — pulsante Disable Motors                                                                                                                                        |
+| `G90` + `G1 X<centro> Y0 Z250 F3000`                                                                                                    | `movementStore` — spostamento in posizione di purge dopo l'homing                                                                                                                   |
+| `SET_HEATER_TEMPERATURE HEATER=<zona> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stessa> MINIMUM=<°C>`                                    | `movementStore` — una coppia per zona dell'ugello, sulle zone lette da `/printer/objects/list`, preset PETG/PLA/Custom                                                              |
+| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=<prima zona> DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `movementStore` — ultimo passo, estrusione vera e propria: la prima zona (`extruder`) è l'unica con uno stepper. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md) |
 
 Ognuno di questi script multi-linea viene inviato in **una sola chiamata**: `printer/gcode/script`
 accetta più comandi separati da `\n` nello stesso `script` urlencoded, eseguiti in sequenza da
@@ -275,6 +293,19 @@ lavoro concluso — minuti, per un aggiornamento di sistema. Per questo il proxy
 `proxy_read_timeout` (vedi [06 — Il proxy](06-deploy.md#il-proxy)) e la pagina non tratta mai
 una richiesta fallita come un aggiornamento fallito: se `status.busy` è ancora `true`, continua
 a seguire l'operazione in polling finché non si esaurisce.
+
+**Se ad aggiornarsi è GingerView, la pagina si ricarica da sola.** L'update sostituisce i file
+che nginx serve, ma la scheda aperta continua a eseguire il bundle caricato prima: senza reload
+si resterebbe sulla versione vecchia fino al successivo refresh manuale. A fine operazione la
+pagina guarda quali componenti hanno mandato `complete: true` e, se fra questi c'è la voce
+`GingerView` (il nome della sezione `[update_manager GingerView]` scritta da `install.sh`,
+confrontato senza distinzione di maiuscole), fa partire un conto alla rovescia di 5 secondi
+nella modale del log e poi chiama `location.reload()`; il pulsante della modale diventa
+**Reload now** e ricarica subito. Il countdown serve solo a non far sparire il log da sotto gli
+occhi di chi lo sta leggendo. Basta un reload normale perché il site nginx serve `index.html`
+con `no-store` (vedi [06 — Il proxy](06-deploy.md#il-proxy)), quindi l'entry point viene
+riscaricato e con lui gli asset con hash nuovo. In questo caso il ricaricamento dello stato a
+fine operazione viene saltato: aggiornerebbe dei numeri dentro un bundle già obsoleto.
 
 **La recovery è derivata, non sempre offerta.** È l'unica azione presente sulla singola riga, e
 compare solo quando Moonraker segnala `is_valid: false`, `corrupt`, `detached` o `is_dirty` —

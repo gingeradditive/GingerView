@@ -13,6 +13,8 @@
 		lines,
 		logState,
 		errorMessage = '',
+		successNote = '',
+		closeLabel = 'Close',
 		onClose
 	}: {
 		isOpen: boolean;
@@ -20,6 +22,9 @@
 		lines: string[];
 		logState: UpdateLogState;
 		errorMessage?: string;
+		/** Shown under the output once the operation succeeded (e.g. reload notice). */
+		successNote?: string;
+		closeLabel?: string;
 		onClose: () => void;
 	} = $props();
 
@@ -67,11 +72,13 @@
 				<p class="note">Do not power off the printer until the operation has finished.</p>
 			{:else if logState === 'error' && errorMessage}
 				<p class="note error">{errorMessage}</p>
+			{:else if logState === 'success' && successNote}
+				<p class="note">{successNote}</p>
 			{/if}
 
 			<div class="log-actions">
 				<button type="button" class="close-btn" onclick={onClose} disabled={logState === 'running'}>
-					Close
+					{closeLabel}
 				</button>
 			</div>
 		</div>

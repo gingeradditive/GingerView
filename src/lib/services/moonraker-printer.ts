@@ -1,4 +1,5 @@
 import { configService } from './config';
+import { forgetNozzleZones } from './moonraker-zones';
 import { toastActions } from '$lib/stores/toastStore';
 
 /**
@@ -91,6 +92,10 @@ export const RESTART_TARGETS: Record<RestartTarget, RestartInfo> = {
  */
 export async function requestRestart(target: RestartTarget): Promise<void> {
 	const { endpoint } = RESTART_TARGETS[target];
+	// Klipper comes back with whatever `printer.cfg` says now, and the config
+	// editor is one of the places that can have just changed it: the nozzle zones
+	// have to be read again rather than kept from the previous configuration.
+	forgetNozzleZones();
 	try {
 		await fetch(`${getApiUrl()}${endpoint}`, { method: 'POST' });
 	} catch {

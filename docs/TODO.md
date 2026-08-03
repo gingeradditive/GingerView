@@ -41,7 +41,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 ## TMP — Temperature e zone dell'ugello
 
 - `TMP-1` Ripensare la presentazione delle zone dell'ugello nel pannello temperature → Q27
-- `TMP-2` Ricavare le zone da `/printer/objects/list` invece dell'elenco fisso a quattro — pronto
 
 ## CAM — Webcam
 
@@ -52,7 +51,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `SET-1` Decidere se le sottopagine vanno riprogettate o solo implementate → Q28
 - `SET-4` Rifare `/settings/history` su `GET /server/history/list` — dipende da `SET-1`
 - `SET-5` Rifare `/settings/statistics` su `GET /server/history/totals` — dipende da `SET-1`
-- `SET-8` Dopo un aggiornamento di **GingerView stesso** il browser continua a servire il bundle vecchio: valutare un reload automatico a fine operazione — pronto
 - `SET-10` Decidere quando disattivare il config editor (`CONFIG_EDITOR_ENABLED = false`) e se la rotta va rimossa del tutto: oggi resta raggiungibile scrivendo l'URL a mano. Se la rotta sparisce vanno disinstallate anche le dipendenze CodeMirror (`codemirror`, `@codemirror/*`, `@lezer/highlight`) e cancellato `src/lib/editor/`, usati solo lì — pronto
 
 ## NET — Rete e G2-Service
@@ -99,7 +97,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `QA-6` Risolvere i 16 warning di `svelte-check` in `PrintList.svelte` e `PrintCard.svelte` (a11y, `non_reactive_update`) — pronto
 - `QA-7` Valutare `npm audit fix`: 15 vulnerabilità, di cui 4 raggiungono il bundle. Comporta rigenerare `build/` — pronto
 - `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
-- `QA-9` Aggiungere le key ai 6 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
+- `QA-9` Aggiungere le key ai 5 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `QA-10` Togliere i 4 `any` residui passando a `unknown` + narrowing: uno sparisce con `CLN-1`, gli altri tre sono sul confine JSON-RPC di Moonraker e toccano il tipo condiviso `KlipperMessage` — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-1`
 - `QA-11` Silenziare con commento motivato `svelte/prefer-svelte-reactivity` su `completedApps` in `settings/update`: lì la regola sbaglia, il valore non è mai osservato da un template e `SvelteSet` sarebbe la correzione sbagliata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 

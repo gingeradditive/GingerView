@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { portal } from '$lib/actions/portal';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
+	import { loadNozzleZones } from '$lib/services/moonraker-zones';
+	import { toastActions } from '$lib/stores/toastStore';
 	import {
 		amountOptions,
 		customTemperaturePreset,
@@ -8,10 +10,10 @@
 		extrudePhase,
 		extrudeSpeed,
 		extrudeTemperature,
+		fillZoneTemperatures,
 		speedOptions,
 		startExtrudeSequence,
 		temperatureOptions,
-		zoneKeys,
 		type Amount,
 		type ExtrudePhase,
 		type Speed,
@@ -31,13 +33,12 @@
 		extruding: 'Extruding...'
 	};
 
+	// One field per heated zone of the nozzle, so both are filled when the popup
+	// opens: how many zones there are is known only once the machine has been
+	// asked (see moonraker-zones.ts).
 	let showCustomTemperatureModal = $state(false);
-	let customTemperatureInputs = $state<TemperatureZones>({
-		extruder: 200,
-		extruder1: 200,
-		extruder2: 200,
-		extruder3: 200
-	});
+	let customTemperatureZones = $state<string[]>([]);
+	let customTemperatureInputs = $state<TemperatureZones>({});
 
 	const selectAmount = (value: Amount): void => {
 		extrudeAmount.set(value);
@@ -47,13 +48,28 @@
 		extrudeSpeed.set(value);
 	};
 
-	const selectTemperature = (value: Temperature): void => {
-		if (value === 'custom') {
-			customTemperatureInputs = { ...$customTemperaturePreset.zones };
-			showCustomTemperatureModal = true;
+	const selectTemperature = async (value: Temperature): Promise<void> => {
+		if (value !== 'custom') {
+			extrudeTemperature.set(value);
 			return;
 		}
-		extrudeTemperature.set(value);
+
+		const zones = await loadNozzleZones();
+		if (zones.length === 0) {
+			// Without the zone list there is no way to know how many fields to show,
+			// and the sequence would refuse to heat anyway. Say so instead of opening
+			// an empty popup.
+			toastActions.error(
+				'klipper',
+				'Custom temperature unavailable',
+				'Could not read the nozzle zones from the printer'
+			);
+			return;
+		}
+
+		customTemperatureZones = zones;
+		customTemperatureInputs = fillZoneTemperatures(zones, $customTemperaturePreset.zones);
+		showCustomTemperatureModal = true;
 	};
 
 	const cancelCustomTemperature = (): void => {
@@ -61,8 +77,8 @@
 	};
 
 	const confirmCustomTemperature = (): void => {
-		const isValid = zoneKeys.every(
-			(key) => Number.isFinite(customTemperatureInputs[key]) && customTemperatureInputs[key] > 0
+		const isValid = customTemperatureZones.every(
+			(zone) => Number.isFinite(customTemperatureInputs[zone]) && customTemperatureInputs[zone] > 0
 		);
 		if (isValid) {
 			customTemperaturePreset.set({
@@ -224,46 +240,18 @@
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
 			<h3>Custom temperature</h3>
 			<div class="modal-field-grid">
-				<label class="modal-field">
-					<span>Zone 1 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 2 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder1}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 3 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder2}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 4 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder3}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
+				{#each customTemperatureZones as zone, index (zone)}
+					<label class="modal-field">
+						<span>Zone {index + 1} (°C)</span>
+						<input
+							type="number"
+							min="0"
+							max="300"
+							bind:value={customTemperatureInputs[zone]}
+							onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
+						/>
+					</label>
+				{/each}
 			</div>
 			<div class="modal-actions">
 				<button class="modal-cancel" onclick={cancelCustomTemperature}>Cancel</button>

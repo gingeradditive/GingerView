@@ -1,9 +1,9 @@
 # Pulizia lint
 
-Piano di lavoro per i **27 errori `eslint` residui**, più le trappole da conoscere prima di
+Piano di lavoro per i **26 errori `eslint` residui**, più le trappole da conoscere prima di
 metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11` e `CLN-4`.
 
-Fotografia al 2026-08-03: `prettier --check .` passa, `eslint .` riporta 27 errori,
+Fotografia al 2026-08-03: `prettier --check .` passa, `eslint .` riporta 26 errori,
 `svelte-check` 0 errori e 16 warning (quelli sono `QA-6`, non riguardano questo file).
 
 ---
@@ -65,7 +65,7 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 27 errori residui
+## I 26 errori residui
 
 ### `CLN-4` — `svelte/no-immutable-reactive-statements` (9)
 
@@ -98,15 +98,14 @@ errori permanenti che rendono `npm run lint` rumoroso.
 
 **Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
 
-### `QA-9` — `svelte/require-each-key` (6)
+### `QA-9` — `svelte/require-each-key` (5)
 
-| File                                                                                         | Riga   |
-| -------------------------------------------------------------------------------------------- | ------ |
-| [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte)           | 93     |
-| [`DashboardTemperaturePanel.svelte`](../src/lib/components/DashboardTemperaturePanel.svelte) | 101    |
-| [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte)         | 76, 81 |
-| [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte)                                 | 254    |
-| [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte)               | 237    |
+| File                                                                                 | Riga   |
+| ------------------------------------------------------------------------------------ | ------ |
+| [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte)   | 93     |
+| [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte) | 76, 81 |
+| [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte)                         | 254    |
+| [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte)       | 237    |
 
 Aggiungere una key a un `{#each}` **cambia come Svelte riconcilia il DOM**: non è una modifica
 cosmetica. Vale la pena distinguere due casi:

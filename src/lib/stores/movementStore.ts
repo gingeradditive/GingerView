@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { getMoonrakerApiUrl } from '$lib/services/config';
+import { loadNozzleZones } from '$lib/services/moonraker-zones';
 import { toastActions } from '$lib/stores/toastStore';
 
 /**
@@ -22,13 +23,12 @@ export type Speed = 'slow' | 'standard' | 'boost';
 export type Temperature = 'petg' | 'pla' | 'custom';
 export type ExtrudePhase = 'idle' | 'homing' | 'moving' | 'heating' | 'extruding';
 
-// One nozzle, four heated zones (see extruderKeys in DashboardTemperaturePanel).
-export type TemperatureZones = {
-	extruder: number;
-	extruder1: number;
-	extruder2: number;
-	extruder3: number;
-};
+/**
+ * One target per heated zone of the single nozzle, keyed by the Klipper object
+ * name (`extruder`, `extruder1`, ...). Which keys exist depends on the machine
+ * and is read at runtime — see `loadNozzleZones()`.
+ */
+export type TemperatureZones = Record<string, number>;
 
 export type TemperaturePreset = {
 	zones: TemperatureZones;
@@ -36,12 +36,7 @@ export type TemperaturePreset = {
 	rotationVolume: number;
 };
 
-export const zoneKeys: (keyof TemperatureZones)[] = [
-	'extruder',
-	'extruder1',
-	'extruder2',
-	'extruder3'
-];
+export const DEFAULT_ZONE_TEMPERATURE_C = 200;
 
 export const amountOptions: { value: Amount; label: string; volumeMm3: number }[] = [
 	{ value: 'low', label: 'Low', volumeMm3: 1000 },
@@ -61,24 +56,45 @@ export const temperatureOptions: { value: Temperature; label: string }[] = [
 	{ value: 'custom', label: 'Custom' }
 ];
 
-export const temperaturePresets: Record<'petg' | 'pla', TemperaturePreset> = {
-	petg: {
-		zones: { extruder: 200, extruder1: 220, extruder2: 220, extruder3: 220 },
-		rotationVolume: 450
-	},
-	pla: {
-		zones: { extruder: 200, extruder1: 200, extruder2: 200, extruder3: 200 },
-		rotationVolume: 330
-	}
+/**
+ * Per-material settings.
+ *
+ * The temperatures are given as "the first zone" plus "all the others" rather
+ * than one value per zone: the number of zones is only known once the machine
+ * has been asked, and the presets never distinguished more than those two groups
+ * anyway — PETG runs the zone Klipper calls `extruder` cooler than the rest,
+ * PLA is flat.
+ */
+export type MaterialPreset = {
+	firstZoneC: number;
+	otherZonesC: number;
+	// Klipper rotation_distance for this material; not shown in the UI.
+	rotationVolume: number;
 };
+
+export const materialPresets: Record<'petg' | 'pla', MaterialPreset> = {
+	petg: { firstZoneC: 200, otherZonesC: 220, rotationVolume: 450 },
+	pla: { firstZoneC: 200, otherZonesC: 200, rotationVolume: 330 }
+};
+
+/**
+ * Targets for `zones`, keeping whatever the stored preset already says and
+ * filling in every zone it does not mention. A custom preset saved before the
+ * zone list was known — or on a machine with a different one — stays usable.
+ */
+export const fillZoneTemperatures = (zones: string[], stored: TemperatureZones): TemperatureZones =>
+	Object.fromEntries(zones.map((zone) => [zone, stored[zone] ?? DEFAULT_ZONE_TEMPERATURE_C]));
 
 // --- selected parameters -----------------------------------------------------
 
 export const extrudeAmount = writable<Amount>('mid');
 export const extrudeSpeed = writable<Speed>('standard');
 export const extrudeTemperature = writable<Temperature>('pla');
+// Empty until the popup is opened: only then is the zone list known, and the
+// fields are filled with `DEFAULT_ZONE_TEMPERATURE_C` for the zones this machine
+// turns out to have.
 export const customTemperaturePreset = writable<TemperaturePreset>({
-	zones: { extruder: 200, extruder1: 200, extruder2: 200, extruder3: 200 },
+	zones: {},
 	rotationVolume: 330
 });
 
@@ -151,9 +167,23 @@ const getPurgePositionX = async (): Promise<number> => {
 	return axisMaximum[0] / 2;
 };
 
-const resolveTemperaturePreset = (): TemperaturePreset => {
+const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 	const selected = get(extrudeTemperature);
-	return selected === 'custom' ? get(customTemperaturePreset) : temperaturePresets[selected];
+	if (selected === 'custom') {
+		const custom = get(customTemperaturePreset);
+		return {
+			zones: fillZoneTemperatures(zones, custom.zones),
+			rotationVolume: custom.rotationVolume
+		};
+	}
+
+	const preset = materialPresets[selected];
+	return {
+		zones: Object.fromEntries(
+			zones.map((zone, index) => [zone, index === 0 ? preset.firstZoneC : preset.otherZonesC])
+		),
+		rotationVolume: preset.rotationVolume
+	};
 };
 
 const describeError = (error: unknown): string =>
@@ -200,24 +230,33 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
 
 		extrudePhase.set('heating');
-		const preset = resolveTemperaturePreset();
-		const setTemperatures = zoneKeys.map(
-			(key) => `SET_HEATER_TEMPERATURE HEATER=${key} TARGET=${preset.zones[key]}`
+		// Heating the wrong set of zones is worse than not heating at all: a zone
+		// left cold blocks the nozzle. If the machine cannot say which zones it
+		// has, the sequence stops here instead of guessing.
+		const zones = await loadNozzleZones();
+		if (zones.length === 0) {
+			throw new Error('Could not read the nozzle zones from the printer');
+		}
+		const preset = resolveTemperaturePreset(zones);
+		const setTemperatures = zones.map(
+			(zone) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${preset.zones[zone]}`
 		);
-		const waitTemperatures = zoneKeys.map(
-			(key) => `TEMPERATURE_WAIT SENSOR=${key} MINIMUM=${preset.zones[key]}`
+		const waitTemperatures = zones.map(
+			(zone) => `TEMPERATURE_WAIT SENSOR=${zone} MINIMUM=${preset.zones[zone]}`
 		);
 		await runGcode([...setTemperatures, ...waitTemperatures].join('\n'));
 
 		extrudePhase.set('extruding');
 		const amountValue = amountOptions.find((option) => option.value === get(extrudeAmount))!;
 		const speedValue = speedOptions.find((option) => option.value === get(extrudeSpeed))!;
-		// Assumes `extruder`'s rotation_distance is calibrated in mm3-per-rotation for the
-		// active material ("rotation volume"), so a relative E move of <volumeMm3> mm
-		// dispenses that many mm3. Unconfirmed on real hardware — see Q32 in docs/Q&A.md.
+		// `zones[0]` is `extruder`, the only zone with a stepper behind it — the
+		// others are heaters. Assumes its rotation_distance is calibrated in
+		// mm3-per-rotation for the active material ("rotation volume"), so a relative
+		// E move of <volumeMm3> mm dispenses that many mm3. Unconfirmed on real
+		// hardware — see Q32 in docs/Q&A.md.
 		await runGcode(
 			[
-				`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=${preset.rotationVolume}`,
+				`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=${zones[0]} DISTANCE=${preset.rotationVolume}`,
 				'M83',
 				`G1 E${amountValue.volumeMm3} F${speedValue.speedMm3PerS * 60}`,
 				'M82'
