@@ -55,7 +55,12 @@
 
 			<div class="preview-pane">
 				<div class="preview-image-wrapper">
-					<img src={item.imageUrl ?? '/error-thumbnail.png'} alt={item.name} width="500" height="500" />
+					<img
+						src={item.imageUrl ?? '/error-thumbnail.png'}
+						alt={item.name}
+						width="500"
+						height="500"
+					/>
 					<div class="rotate-overlay">
 						<img src="/3DView.svg" alt="3D View" width="40" height="40" />
 					</div>
@@ -148,7 +153,7 @@
 		display: inline-block;
 	}
 
-	.preview-image-wrapper>img {
+	.preview-image-wrapper > img {
 		width: 200px;
 		max-width: 200px;
 		height: auto;

@@ -10,7 +10,9 @@
 	let maxHeight = $state(950);
 	let isIdle = $state(true);
 
-	let fillPercentage = $derived(maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0);
+	let fillPercentage = $derived(
+		maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0
+	);
 
 	let sections = $derived(
 		Array.from({ length: totalSections }, (_, i) => {
@@ -24,7 +26,9 @@
 
 	const updateZHeight = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -42,7 +46,11 @@
 			}
 
 			const gcodeMove = status.gcode_move;
-			if (gcodeMove && Array.isArray(gcodeMove.gcode_position) && gcodeMove.gcode_position.length > 2) {
+			if (
+				gcodeMove &&
+				Array.isArray(gcodeMove.gcode_position) &&
+				gcodeMove.gcode_position.length > 2
+			) {
 				currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
 			} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
 				currentHeight = Math.max(0, toolhead.position[2]);
@@ -65,7 +73,7 @@
 			<div class="z-progress-fill" style="height: {fillPercentage}%"></div>
 			<!-- Section marks and labels -->
 			<div class="z-marks">
-				{#each sections as section, i}
+				{#each sections as _section, i}
 					<div class="z-mark" style="bottom: {(i + 1) * 10}%"></div>
 				{/each}
 			</div>
@@ -124,7 +132,7 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: #D72E28;
+		background: #d72e28;
 		border-radius: 0;
 		transition: height 0.3s ease;
 	}

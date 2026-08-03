@@ -54,10 +54,6 @@
 	$: actualYNorm = clamp($actualY / maxY);
 	$: actualZNorm = clamp($actualZ / maxZ);
 
-	$: targetXNorm = clamp($targetX / maxX);
-	$: targetYNorm = clamp($targetY / maxY);
-	$: targetZNorm = clamp($targetZ / maxZ);
-
 	const isoCenterX = 220;
 	const isoBaseY = 160;
 	const isoScaleX = 104;
@@ -79,7 +75,6 @@
 	$: p011 = project(0, 1, 1);
 
 	$: pCenterBase = project(0.5, 0.5, 0);
-	$: pCenterTop = project(0.5, 0.5, 1);
 	$: pCenterAtZ = project(0.5, 0.5, actualZNorm);
 
 	$: planeA = project(0, 0, actualZNorm);
@@ -88,7 +83,6 @@
 	$: planeD = project(0, 1, actualZNorm);
 
 	$: actualMarker = project(actualXNorm, actualYNorm, actualZNorm);
-	$: targetMarker = project(targetXNorm, targetYNorm, targetZNorm);
 
 	const pointsToString = (...points: { x: number; y: number }[]): string =>
 		points.map((point) => `${point.x},${point.y}`).join(' ');
@@ -112,7 +106,11 @@
 			}
 
 			const gcodeMove = status.gcode_move;
-			if (gcodeMove && Array.isArray(gcodeMove.gcode_position) && gcodeMove.gcode_position.length > 2) {
+			if (
+				gcodeMove &&
+				Array.isArray(gcodeMove.gcode_position) &&
+				gcodeMove.gcode_position.length > 2
+			) {
 				targetX.set(Number(gcodeMove.gcode_position[0]) || 0);
 				targetY.set(Number(gcodeMove.gcode_position[1]) || 0);
 				targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
@@ -210,7 +208,13 @@
 		<div class="toolhead-isometric" aria-hidden="true">
 			<svg viewBox="0 0 440 280" class="toolhead-svg" role="presentation">
 				<line class="axis-z-inner" x1={pCenterBase.x} y1={pCenterBase.y} x2={p001.x} y2={p001.y} />
-				<line class="z-guide" x1={pCenterAtZ.x} y1={pCenterAtZ.y} x2={pCenterBase.x} y2={pCenterBase.y} />
+				<line
+					class="z-guide"
+					x1={pCenterAtZ.x}
+					y1={pCenterAtZ.y}
+					x2={pCenterBase.x}
+					y2={pCenterBase.y}
+				/>
 
 				<polygon class="bed-fill" points={pointsToString(p000, p100, p110, p010)} />
 
@@ -242,7 +246,6 @@
 
 				<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
 				<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
-
 			</svg>
 		</div>
 	</div>

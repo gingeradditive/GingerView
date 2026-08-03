@@ -93,8 +93,8 @@
 					{#each circles as circle}
 						<circle
 							cx="{circle.cx}%"
-							cy="{circle.cy}"
-							r="{circle.r}"
+							cy={circle.cy}
+							r={circle.r}
 							fill="#D72E28"
 							style="animation: pellet-vibrate {circle.duration}s ease-in-out {circle.delay}s infinite;"
 						/>
@@ -105,7 +105,7 @@
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br/>your material!</span>
+				<span class="pellet-value">Waiting for<br />your material!</span>
 			{:else}
 				<span class="pellet-value">{remainingKg.toFixed(1)}/{totalKg.toFixed(1)} KG</span>
 			{/if}
@@ -146,7 +146,7 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background: #D72E28;
+		background: #d72e28;
 		transition: height 0.3s ease;
 		z-index: 1;
 	}

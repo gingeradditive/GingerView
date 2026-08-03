@@ -48,7 +48,7 @@ di zone dell'ugello. Già oggi c'è un asset per modello, `static/Printers/G2/Lo
 referenziato con un percorso fisso nel layout. Le opzioni: leggerlo da un oggetto Klipper o da
 una variabile in `printer.cfg`, da un file scritto da G2-OS, o da una `VITE_*` compilata per
 modello (che però romperebbe il "una build per tutte le macchine").
-A: vorrei ci fosse un file (per ora fisso) gingerview.conf che contiene tutti i parametri della stampante, in futuro per deployare diverse macchine basterà cambiare quello, per ora lo versioniamo visto che inizialmente supporteremo solo la G2 in futuro diventerà un template e G2-OS si occuperà di popolarlo correttamente, ma per ora non preoccupiamocene implementa gingerview.conf e tienilo versionato e usalo. 
+A: vorrei ci fosse un file (per ora fisso) gingerview.conf che contiene tutti i parametri della stampante, in futuro per deployare diverse macchine basterà cambiare quello, per ora lo versioniamo visto che inizialmente supporteremo solo la G2 in futuro diventerà un template e G2-OS si occuperà di popolarlo correttamente, ma per ora non preoccupiamocene implementa gingerview.conf e tienilo versionato e usalo.
 
 **Q27: Le 4 zone dell'ugello vanno presentate come "zone" invece che come 4 estrusori?**
 Contesto: hai spiegato che è **un solo ugello a 4 zone** e che gli estrusori multipli di
@@ -64,7 +64,7 @@ Contesto: per Update, Log, History, Statistics e Timezone hai detto "è roba vec
 rifare". Non è chiaro se intendi che manca solo l'implementazione dietro un layout già
 concordato, o se anche la struttura della sezione Impostazioni va ripensata. Esiste un
 mockup/Figma di riferimento a cui allinearmi?
-A: va implementata da 0, i link sono ok ma il contenuto (se presente) è da rifare da capo... ce ne occuperemo in futuro per ora non preoccupartene 
+A: va implementata da 0, i link sono ok ma il contenuto (se presente) è da rifare da capo... ce ne occuperemo in futuro per ora non preoccupartene
 
 **Q30: Chi si occupa di sostituire il modulo Mainsail in G2-OS?**
 Contesto: ho guardato https://github.com/gingeradditive/g2-os — è ancora il fork MainsailOS non
@@ -83,12 +83,14 @@ A: l'nfc contiene "g2.local" che porterà su gingerview, rimani nel contesto non
 
 **Q32: La sequenza reale di `handleExtrude()` è corretta, in particolare l'ipotesi sul "rotation volume"?**
 Contesto: `handleExtrude()` ora esegue davvero, in sequenza: popup di avvertimento homing (`HomingWarningModal`, riusato) → `G28` → `G1 X<centro> Y0 Z250` → per le 4 zone `SET_HEATER_TEMPERATURE` + `TEMPERATURE_WAIT` (comandi Klipper standard, confidenza alta) → infine
+
 ```
 SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>
 M83
 G1 E<volumeMm3> F<speedMm3PerS*60>
 M82
 ```
+
 Il pulsante Extrude mostra la fase corrente (Homing.../Moving.../Heating.../Extruding...) ed è
 disabled durante l'esecuzione. Il punto debole è l'ultimo blocco: presuppongo che il
 `rotation_distance` dell'estrusore reale (quello con lo stepper, cioè `extruder`) sia calibrato

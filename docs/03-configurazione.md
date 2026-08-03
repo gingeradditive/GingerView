@@ -38,12 +38,12 @@ dentro i file JavaScript, quindi:
 
 ### Moonraker
 
-| Variabile | Default | Descrizione |
-|---|---|---|
-| `VITE_MOONRAKER_HOST` | *(vuoto → same-origin)* | Impostandolo si passa a URL assoluti |
-| `VITE_MOONRAKER_PORT` | `7125` | Usata solo se è impostato l'host |
-| `VITE_MOONRAKER_WS_URL` | derivato | URL WebSocket completo, ha la precedenza |
-| `VITE_MOONRAKER_API_URL` | derivato | URL HTTP completo, ha la precedenza |
+| Variabile                | Default                 | Descrizione                              |
+| ------------------------ | ----------------------- | ---------------------------------------- |
+| `VITE_MOONRAKER_HOST`    | _(vuoto → same-origin)_ | Impostandolo si passa a URL assoluti     |
+| `VITE_MOONRAKER_PORT`    | `7125`                  | Usata solo se è impostato l'host         |
+| `VITE_MOONRAKER_WS_URL`  | derivato                | URL WebSocket completo, ha la precedenza |
+| `VITE_MOONRAKER_API_URL` | derivato                | URL HTTP completo, ha la precedenza      |
 
 `configService` legge anche `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT`, ma **nessuna delle
 due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout è usato solo da
@@ -57,11 +57,11 @@ Rete e fuso orario **non** passano da Moonraker: sono funzioni dell'host, e stan
 `8000` che espone tutto sotto `/service/`. Anche questo viene proxato da nginx sulla porta 80,
 quindi in produzione non va configurato nulla.
 
-| Variabile | Default | Descrizione |
-|---|---|---|
-| `VITE_G2_SERVICE_HOST` | valore di `VITE_MOONRAKER_HOST` | Impostandolo si passa a URL assoluti |
-| `VITE_G2_SERVICE_PORT` | `8000` | Usata solo se è impostato l'host |
-| `VITE_G2_SERVICE_BASE_URL` | derivato | URL base completo, ha la precedenza |
+| Variabile                  | Default                         | Descrizione                          |
+| -------------------------- | ------------------------------- | ------------------------------------ |
+| `VITE_G2_SERVICE_HOST`     | valore di `VITE_MOONRAKER_HOST` | Impostandolo si passa a URL assoluti |
+| `VITE_G2_SERVICE_PORT`     | `8000`                          | Usata solo se è impostato l'host     |
+| `VITE_G2_SERVICE_BASE_URL` | derivato                        | URL base completo, ha la precedenza  |
 
 Il prefisso `/service` **non** è configurabile e non va incluso in queste variabili: lo
 aggiunge `g2-service.ts`, ed è appaiato alla regola nginx `location ^~ /service/`.
@@ -74,7 +74,7 @@ aggiunge `g2-service.ts`, ed è appaiato alla regola nginx `location ^~ /service
 ```ts
 import { configService, getMoonrakerApiUrl } from '$lib/services/config';
 
-const base = getMoonrakerApiUrl();                    // '' in same-origin
+const base = getMoonrakerApiUrl(); // '' in same-origin
 const { moonrakerWsUrl } = configService.getKlipperConfig();
 ```
 

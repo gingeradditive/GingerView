@@ -97,7 +97,11 @@ export async function fetchServerInfo(): Promise<MoonrakerServerInfo | null> {
 		const apiUrl = getApiUrl();
 		const res = await fetch(`${apiUrl}/server/info`);
 		if (!res.ok) {
-			toastActions.error('moonraker', 'Server info error', `Failed to fetch server info: ${res.status} ${res.statusText}`);
+			toastActions.error(
+				'moonraker',
+				'Server info error',
+				`Failed to fetch server info: ${res.status} ${res.statusText}`
+			);
 			return null;
 		}
 		const json = await res.json();
@@ -131,7 +135,12 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 
 	// Show failed components as errors
 	for (const component of info.failed_components) {
-		toastActions.error('moonraker', 'Failed component', `Moonraker component failed to load: ${component}`, 0);
+		toastActions.error(
+			'moonraker',
+			'Failed component',
+			`Moonraker component failed to load: ${component}`,
+			0
+		);
 	}
 
 	// Show Klipper state issues — fetch full details from /printer/info
@@ -150,7 +159,12 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 		}
 	} else if (!info.klippy_connected) {
 		setKlippyState('disconnected');
-		toastActions.warning('klipper', 'Kalico disconnected', 'Kalico host process is not connected to Moonraker.', 0);
+		toastActions.warning(
+			'klipper',
+			'Kalico disconnected',
+			'Kalico host process is not connected to Moonraker.',
+			0
+		);
 	} else {
 		setKlippyState(info.klippy_state as KlippyState);
 	}
@@ -209,17 +223,19 @@ export function startNotifierWebSocket(): () => void {
 				// announced to nobody.
 				refreshKlippyState();
 				// Subscribe to notifications
-				notifierWs?.send(JSON.stringify({
-					jsonrpc: '2.0',
-					method: 'server.connection.identify',
-					params: {
-						client_name: 'GingerView',
-						version: '0.0.1',
-						type: 'web',
-						url: window.location.href
-					},
-					id: Date.now()
-				}));
+				notifierWs?.send(
+					JSON.stringify({
+						jsonrpc: '2.0',
+						method: 'server.connection.identify',
+						params: {
+							client_name: 'GingerView',
+							version: '0.0.1',
+							type: 'web',
+							url: window.location.href
+						},
+						id: Date.now()
+					})
+				);
 			};
 
 			notifierWs.onmessage = (event) => {

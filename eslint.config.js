@@ -43,6 +43,10 @@ const svelteParserWithPatchedDefs = {
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	// `build/` è tracciato in git (viene deployato), quindi non arriva qui via
+	// .gitignore, ma contiene solo bundle minificati generati da `vite build`:
+	// lintarli produce centinaia di errori su codice che non scriviamo noi.
+	{ ignores: ['build/'] },
 	js.configs.recommended,
 	...ts.configs.recommended,
 	...svelte.configs.recommended,
@@ -53,7 +57,20 @@ export default defineConfig(
 		rules: {
 			// typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
 			// see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
-			'no-undef': 'off'
+			'no-undef': 'off',
+			// Un `_` iniziale segnala "non serve, ma non posso toglierlo": il caso
+			// tipico è `{#each items as _, index}`, dove il binding dell'elemento è
+			// posizionale e va tenuto per arrivare all'indice.
+			// NB: non impostare destructuredArrayIgnorePattern, che attiva un ramo di
+			// no-unused-vars che legge `def.name.parent` e ricasca nel crash sopra.
+			'@typescript-eslint/no-unused-vars': [
+				'error',
+				{
+					argsIgnorePattern: '^_',
+					caughtErrorsIgnorePattern: '^_',
+					varsIgnorePattern: '^_'
+				}
+			]
 		}
 	},
 	{

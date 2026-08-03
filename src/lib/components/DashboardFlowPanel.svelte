@@ -17,7 +17,9 @@
 
 	const updateFlow = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -40,7 +42,8 @@
 			if (gcodeMove) {
 				// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
 				const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
-				const extrudeFactor = typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
+				const extrudeFactor =
+					typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
 				flowValue = speed * extrudeFactor;
 			}
 		} catch {
@@ -57,7 +60,12 @@
 
 <section class="flow-panel" aria-label="Flow Rate">
 	<div class="flow-gauge">
-		<svg viewBox="0 0 220 220" class="circular-progress" role="img" aria-label={isIdle ? 'Flow idle' : `Flow ${Math.round(clampedValue)} mm³/s`}>
+		<svg
+			viewBox="0 0 220 220"
+			class="circular-progress"
+			role="img"
+			aria-label={isIdle ? 'Flow idle' : `Flow ${Math.round(clampedValue)} mm³/s`}
+		>
 			<circle class="circle-bg" cx="110" cy="110" r={radius} />
 			{#if !isIdle}
 				<circle class="circle" cx="110" cy="110" r={radius} stroke-dasharray={strokeDasharray} />
@@ -134,7 +142,7 @@
 
 	.flow-label {
 		font-size: 2rem;
-    	font-weight: 700;
+		font-weight: 700;
 		color: #111111;
 		line-height: 1.1;
 		letter-spacing: 0.02em;

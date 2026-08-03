@@ -9,15 +9,17 @@
 
 	onMount(() => {
 		// Try to connect to Klipper WebSocket
-		const connectPromise = klipperWebSocket.connect().catch((error) => {
+		klipperWebSocket.connect().catch(() => {
 			console.log('Klipper not available, running in demo mode');
 		});
 
 		// Subscribe to connection status changes
 		const unsubscribeStatus = klipperWebSocket.connectionStatus.subscribe((status) => {
-			connectionStatus = status.connected ? 'Connected' : 
-							status.connecting ? 'Connecting...' : 
-							status.error || 'Disconnected';
+			connectionStatus = status.connected
+				? 'Connected'
+				: status.connecting
+					? 'Connecting...'
+					: status.error || 'Disconnected';
 		});
 
 		// Subscribe to Klipper status updates
@@ -65,7 +67,7 @@
 			<p class="text-sm text-gray-600">WebSocket Klipper Interface</p>
 		</div>
 	</div>
-	
+
 	<div class="space-y-4">
 		<div class="p-4 bg-gray-50 rounded-lg border">
 			<p class="text-lg font-medium text-gray-900">{message}</p>
@@ -89,11 +91,16 @@
 					<Info class="w-4 h-4 text-green-600" />
 					<h3 class="text-sm font-medium text-green-800">Klipper Information</h3>
 				</div>
-				<pre class="text-xs text-green-700 bg-green-100 p-3 rounded overflow-auto max-h-40">{JSON.stringify(klipperInfo, null, 2)}</pre>
+				<pre
+					class="text-xs text-green-700 bg-green-100 p-3 rounded overflow-auto max-h-40">{JSON.stringify(
+						klipperInfo,
+						null,
+						2
+					)}</pre>
 			</div>
 		{/if}
 
-		<button 
+		<button
 			on:click={sendMessage}
 			class="btn btn-primary w-full h-10"
 			disabled={connectionStatus !== 'Connected'}

@@ -41,7 +41,10 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(
+				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`,
+				{ method: 'POST' }
+			);
 		} catch {
 			// ignore
 		}
@@ -198,7 +201,9 @@
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div class="icon-center">
-						<svg viewBox="0 0 24 24" width="18" height="18" class={fanOn ? 'fan-spinning' : ''}><path d={mdiFan} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="18" height="18" class={fanOn ? 'fan-spinning' : ''}
+							><path d={mdiFan} fill="#d72e28" /></svg
+						>
 					</div>
 				</foreignObject>
 			</svg>
@@ -208,7 +213,11 @@
 				<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 			</svg>
 		</button>
-		<button class="square-btn" aria-label={isPaused ? 'Resume' : 'Pause'} onclick={handlePauseResume}>
+		<button
+			class="square-btn"
+			aria-label={isPaused ? 'Resume' : 'Pause'}
+			onclick={handlePauseResume}
+		>
 			{#if isPaused}
 				<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 					<polygon points="4,1 17,9 4,17" fill="#d72e28" />
@@ -226,7 +235,9 @@
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
 					<div class="icon-center">
-						<svg viewBox="0 0 24 24" width="18" height="18" style="transform: rotate(90deg);"><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg>
+						<svg viewBox="0 0 24 24" width="18" height="18" style="transform: rotate(90deg);"
+							><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg
+						>
 					</div>
 				</foreignObject>
 			</svg>

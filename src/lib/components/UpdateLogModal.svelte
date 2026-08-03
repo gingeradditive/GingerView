@@ -25,8 +25,11 @@
 
 	let logRef = $state<HTMLDivElement | null>(null);
 
-	// Follow the tail of the output as it grows.
+	// Follow the tail of the output as it grows. La lettura di `lines.length` è
+	// quella che registra la dipendenza reattiva dell'effect: senza, lo scroll non
+	// si aggiorna quando arrivano nuove righe. Non è un'espressione morta.
 	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		lines.length;
 		if (logRef) logRef.scrollTop = logRef.scrollHeight;
 	});

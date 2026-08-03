@@ -70,9 +70,12 @@
 
 		starting = true;
 		try {
-			await fetch(`${getMoonrakerApiUrl()}/printer/print/start?filename=${encodeURIComponent(filepath)}`, {
-				method: 'POST'
-			});
+			await fetch(
+				`${getMoonrakerApiUrl()}/printer/print/start?filename=${encodeURIComponent(filepath)}`,
+				{
+					method: 'POST'
+				}
+			);
 			// Close the wizard/details popup before navigating away, so we're not
 			// invoking callbacks on components SvelteKit is already tearing down.
 			onStarted();

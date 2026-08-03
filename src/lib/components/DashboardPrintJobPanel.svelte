@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
-	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
+	import {
+		extractThumbnailFromGcode,
+		getFileMetadata,
+		getFilamentType
+	} from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 2000;
 
@@ -57,7 +61,9 @@
 
 	const updatePrintJob = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -111,7 +117,10 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(
+				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`,
+				{ method: 'POST' }
+			);
 		} catch {
 			// ignore
 		}
@@ -164,7 +173,11 @@
 						<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 					</svg>
 				</button>
-				<button class="control-btn pause" aria-label={isPaused ? 'Resume' : 'Pause'} onclick={handlePauseResume}>
+				<button
+					class="control-btn pause"
+					aria-label={isPaused ? 'Resume' : 'Pause'}
+					onclick={handlePauseResume}
+				>
 					{#if isPaused}
 						<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 							<polygon points="4,1 17,9 4,17" fill="#d72e28" />

@@ -70,18 +70,62 @@ export const toastActions = {
 	clearAll,
 
 	error(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
-		return addToast({ type: 'error', source, title, message, details, duration: duration ?? 8000, dismissible: true });
+		return addToast({
+			type: 'error',
+			source,
+			title,
+			message,
+			details,
+			duration: duration ?? 8000,
+			dismissible: true
+		});
 	},
 
-	warning(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
-		return addToast({ type: 'warning', source, title, message, details, duration: duration ?? 6000, dismissible: true });
+	warning(
+		source: ToastSource,
+		title: string,
+		message: string,
+		duration?: number,
+		details?: string
+	) {
+		return addToast({
+			type: 'warning',
+			source,
+			title,
+			message,
+			details,
+			duration: duration ?? 6000,
+			dismissible: true
+		});
 	},
 
 	info(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
-		return addToast({ type: 'info', source, title, message, details, duration: duration ?? 4000, dismissible: true });
+		return addToast({
+			type: 'info',
+			source,
+			title,
+			message,
+			details,
+			duration: duration ?? 4000,
+			dismissible: true
+		});
 	},
 
-	success(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
-		return addToast({ type: 'success', source, title, message, details, duration: duration ?? 3000, dismissible: true });
+	success(
+		source: ToastSource,
+		title: string,
+		message: string,
+		duration?: number,
+		details?: string
+	) {
+		return addToast({
+			type: 'success',
+			source,
+			title,
+			message,
+			details,
+			duration: duration ?? 3000,
+			dismissible: true
+		});
 	}
 };

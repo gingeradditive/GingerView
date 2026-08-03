@@ -139,9 +139,9 @@
 		gap: 10px;
 		padding: 12px 14px;
 		border-radius: 20px;
-		
-		background: #FFFFFF;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+
+		background: #ffffff;
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 		pointer-events: auto;
 		animation: toast-slide-in 0.28s ease-out;
 		font-family: 'Montserrat', sans-serif;
@@ -249,7 +249,9 @@
 		color: #999;
 		cursor: pointer;
 		padding: 0;
-		transition: background-color 0.15s, color 0.15s;
+		transition:
+			background-color 0.15s,
+			color 0.15s;
 	}
 
 	.toast-close:hover {
@@ -299,13 +301,13 @@
 	.detail-modal {
 		width: min(540px, calc(100vw - 32px));
 		max-height: calc(100vh - 64px);
-		background: #FFFFFF;
-		
+		background: #ffffff;
+
 		border-radius: 20px;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 		transition: box-shadow 0.2s;
 	}
 
@@ -336,10 +338,18 @@
 		display: flex;
 	}
 
-	.detail-icon-error { color: #d72e28; }
-	.detail-icon-warning { color: #e6a817; }
-	.detail-icon-info { color: #2563eb; }
-	.detail-icon-success { color: #1a7f37; }
+	.detail-icon-error {
+		color: #d72e28;
+	}
+	.detail-icon-warning {
+		color: #e6a817;
+	}
+	.detail-icon-info {
+		color: #2563eb;
+	}
+	.detail-icon-success {
+		color: #1a7f37;
+	}
 
 	.detail-body {
 		padding: 16px;

@@ -89,25 +89,28 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `UI-6` Sostituire i colori hardcoded nei CSS dei componenti con i token della palette — pronto
 - `UI-7` Decidere se gli orari mostrati (ETA in primis) devono seguire il fuso della **stampante** invece di quello del telefono: oggi sono calcolati e formattati nel browser, quindi `/settings/timezone` non li influenza — pronto
 - `UI-8` Verificare su hardware reale il pulsante di emergency stop: lo stop, il passaggio del tasto a "firmware restart" quando Kalico va in `shutdown`, e il recupero — compreso il caso `disconnected`, in cui il tasto resta uno stop perché `/printer/firmware_restart` verrebbe rifiutato. Con essi l'avviso a schermo `KlipperDownOverlay`: che compaia e sparisca ai momenti giusti, che mostri il `state_message` vero, e che dock e Impostazioni restino usabili mentre è visibile — pronto
+- `UI-9` Decidere se il marker della posizione di **target** del toolhead va disegnato: `ToolheadPosition.svelte` lo calcolava senza mai renderizzarlo, ed è stato rimosso come codice morto. Se è una feature da completare va scritta la parte SVG, che non è mai esistita — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## CLN — Pulizia del codice
 
 - `CLN-1` Rimuovere `DemoComponent.svelte` e `klipper-websocket.ts` (codice morto) — pronto
 - `CLN-2` Disinstallare `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `@mdi/react` — pronto
-- `CLN-4` Convertire `ToolheadPosition.svelte` dalla sintassi legacy `$:` alle rune Svelte 5 — pronto
+- `CLN-4` Convertire `ToolheadPosition.svelte` dalla sintassi legacy `$:` alle rune Svelte 5. Risolve da solo tutti e 9 gli errori `svelte/no-immutable-reactive-statements` del repo, che sono lì (righe 68–77): correggerli a mano prima è lavoro buttato — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-5` Decidere se cablare `configService.validateConfig()`, oggi implementato ma mai chiamato — pronto
 - `CLN-6` Rimuovere `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT` da `config.ts`, oppure usarle davvero: oggi non hanno effetto — pronto
 - `CLN-7` Spostare `:global(.spin)` + `@keyframes spin` in `app.css`: oggi è ridefinita in sei componenti/pagine, e chi usa `class="spin"` senza dichiararla localmente ha uno spinner immobile — la pagina Update funziona solo perché `UpdateLogModal` la porta dietro — pronto
+- `CLN-8` Annullare la subscribe a `currentDirPath` in `CurrentDirectory.svelte:11`, oggi mai disiscritta: il componente è montato dentro `PrintList`, quindi il leak si accumula a ogni entrata/uscita dalla lista di stampa — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## QA — Qualità e strumenti
 
-- `QA-1` Riparare `npm run lint`: `prettier --check` fallisce su 93 file — pronto
-- `QA-2` Riparare il crash di `eslint` su `ToolheadPosition.svelte` (`@typescript-eslint/no-unused-vars`) — pronto
-- `QA-3` Eseguire `npm run format` una volta su tutto il repo, in un commit isolato — pronto
 - `QA-4` Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` — pronto
 - `QA-5` Valutare test unitari o end-to-end sul frontend — pronto
-- `QA-6` Risolvere i 16 warning di `svelte-check` in `PrintList.svelte` (a11y, `non_reactive_update`) — pronto
+- `QA-6` Risolvere i 16 warning di `svelte-check` in `PrintList.svelte` e `PrintCard.svelte` (a11y, `non_reactive_update`) — pronto
 - `QA-7` Valutare `npm audit fix`: 15 vulnerabilità, di cui 4 raggiungono il bundle. Comporta rigenerare `build/` — pronto
+- `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
+- `QA-9` Aggiungere le key ai 6 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
+- `QA-10` Togliere i 4 `any` residui passando a `unknown` + narrowing: uno sparisce con `CLN-1`, gli altri tre sono sul confine JSON-RPC di Moonraker e toccano il tipo condiviso `KlipperMessage` — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-1`
+- `QA-11` Silenziare con commento motivato `svelte/prefer-svelte-reactivity` su `completedApps` in `settings/update`: lì la regola sbaglia, il valore non è mai osservato da un template e `SvelteSet` sarebbe la correzione sbagliata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## ROB — Robustezza
 

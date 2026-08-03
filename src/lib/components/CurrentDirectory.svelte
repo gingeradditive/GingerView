@@ -1,19 +1,15 @@
 <script lang="ts">
 	import { mdiChevronLeft } from '@mdi/js';
-	import { currentDirPath, navigateToRoot, navigateToSegment, navigateUp } from '$lib/stores/directoryStore';
+	import { currentDirPath, navigateUp } from '$lib/stores/directoryStore';
 
 	let dirPath = '';
-	const unsubscribe = currentDirPath.subscribe((value) => {
+	currentDirPath.subscribe((value) => {
 		dirPath = value;
 	});
 
 	$: segments = dirPath ? dirPath.split('/') : [];
 	$: currentFolder = segments.length > 0 ? segments[segments.length - 1] : 'Home';
 	$: hasParent = segments.length > 0;
-
-	function handleSegmentClick(index: number) {
-		navigateToSegment(index, segments);
-	}
 </script>
 
 <div class="current-directory">
@@ -46,7 +42,7 @@
 	}
 
 	.back-button {
-		color: #D72E28;
+		color: #d72e28;
 		padding: 4px;
 		background: transparent;
 		border: none;

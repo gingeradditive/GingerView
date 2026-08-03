@@ -111,7 +111,7 @@
 
 	.dock a.active {
 		background: #ffffff;
-		border: 3px solid #D72E28;
+		border: 3px solid #d72e28;
 	}
 
 	.dock a:focus-visible {
@@ -141,12 +141,12 @@
 	}
 
 	.settings-icon.active svg {
-		fill: #D72E28;
+		fill: #d72e28;
 	}
 
 	.settings-icon.active {
 		background: #ffffff !important;
-		border: 3px solid #D72E28 !important;
+		border: 3px solid #d72e28 !important;
 	}
 
 	.logo-container {

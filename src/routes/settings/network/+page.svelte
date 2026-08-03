@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight, Component, EthernetPort, Wifi, WifiHigh, WifiLow, WifiZero } from 'lucide-svelte';
+	import {
+		ChevronRight,
+		Component,
+		EthernetPort,
+		Wifi,
+		WifiHigh,
+		WifiLow,
+		WifiZero
+	} from 'lucide-svelte';
 	import { ServiceError } from '$lib/services/g2-service';
 	import {
 		connectToWifi,

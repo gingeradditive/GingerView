@@ -46,12 +46,7 @@
 	};
 
 	const showBedSet = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			!isBedReady()
-		);
+		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
 	};
 
 	const getQueryPath = (): string => {
@@ -87,7 +82,8 @@
 			bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
 
 			const heaterBedTarget = status.heater_bed?.target;
-			bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
+			bedTarget =
+				typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 		} catch {
 			return;
 		}
@@ -103,7 +99,11 @@
 <section class="temperature-panel" aria-label="Pannello temperature Klipper">
 	<div class="extruders">
 		{#each extruderTemperatures as temperature, index}
-			<ExtruderTemperatureCard index={index + 1} {temperature} target={extruderTargets[index] ?? null} />
+			<ExtruderTemperatureCard
+				index={index + 1}
+				{temperature}
+				target={extruderTargets[index] ?? null}
+			/>
 		{/each}
 	</div>
 
@@ -114,7 +114,9 @@
 		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
 			<span class="bed-label">BED</span>
 			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
-				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span>
+				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}
+					>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span
+				>
 				{#if showBedSet()}
 					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
 				{/if}
@@ -168,7 +170,6 @@
 		object-fit: contain;
 	}
 
-	
 	.bed-card {
 		display: flex;
 		align-items: baseline;
@@ -181,7 +182,9 @@
 		border: 1px solid #8f8f93;
 		background: #b9b9bc;
 		box-sizing: border-box;
-		transition: background-color 220ms ease, border-color 220ms ease;
+		transition:
+			background-color 220ms ease,
+			border-color 220ms ease;
 	}
 
 	.bed-card.heating {
@@ -210,7 +213,6 @@
 		justify-content: center;
 		gap: 1px;
 	}
-
 
 	.bed-value {
 		font-size: 1.5rem;

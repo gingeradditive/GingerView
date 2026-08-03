@@ -29,15 +29,15 @@ funzionino, quell'origine deve essere tra le `cors_domains` di `moonraker.conf`
 
 ## Comandi
 
-| Comando | Cosa fa |
-|---|---|
-| `npm run dev` | Server di sviluppo con HMR |
-| `npm run build` | Build di produzione in `build/` |
-| `npm run preview` | Anteprima locale della build |
-| `npm run check` | Type-check con `svelte-check` |
-| `npm run check:watch` | Type-check in watch |
-| `npm run lint` | `prettier --check` + `eslint` |
-| `npm run format` | `prettier --write` su tutto il progetto |
+| Comando               | Cosa fa                                 |
+| --------------------- | --------------------------------------- |
+| `npm run dev`         | Server di sviluppo con HMR              |
+| `npm run build`       | Build di produzione in `build/`         |
+| `npm run preview`     | Anteprima locale della build            |
+| `npm run check`       | Type-check con `svelte-check`           |
+| `npm run check:watch` | Type-check in watch                     |
+| `npm run lint`        | `prettier --check` + `eslint`           |
+| `npm run format`      | `prettier --write` su tutto il progetto |
 
 Prima di aprire una PR conviene eseguire `npm run check`: non ci sono hook git configurati,
 quindi nulla lo impone automaticamente.
@@ -59,9 +59,9 @@ seguire lo stesso stile.
 
 ```svelte
 <script lang="ts">
-    let { title, children }: { title: string; children?: import('svelte').Snippet } = $props();
-    let count = $state(0);
-    let doubled = $derived(count * 2);
+	let { title, children }: { title: string; children?: import('svelte').Snippet } = $props();
+	let count = $state(0);
+	let doubled = $derived(count * 2);
 </script>
 ```
 
@@ -81,13 +81,13 @@ componente puoi allinearlo, ma non è richiesto un refactor generale.
 
 ### Palette
 
-| Nome | Hex | Uso |
-|---|---|---|
-| Bianco | `#FFFFFF` | Sfondi card, testo su fondo scuro |
-| Sfondo | `#F5F5F5` | Sfondi secondari |
-| Grigio | `#C8C8C8` | Bordi, separatori, sfondo applicativo |
+| Nome        | Hex       | Uso                                       |
+| ----------- | --------- | ----------------------------------------- |
+| Bianco      | `#FFFFFF` | Sfondi card, testo su fondo scuro         |
+| Sfondo      | `#F5F5F5` | Sfondi secondari                          |
+| Grigio      | `#C8C8C8` | Bordi, separatori, sfondo applicativo     |
 | RossoGinger | `#D72E28` | Azioni primarie, accenti, stati di errore |
-| Nero | `#111111` | Testo principale |
+| Nero        | `#111111` | Testo principale                          |
 
 Definita in [tailwind.config.cjs](../tailwind.config.cjs) e in
 [src/app.css](../src/app.css). Font: **Montserrat**.
@@ -96,11 +96,11 @@ Fuori palette ci sono tre coppie sfondo/testo usate per gli **stati**, nate nell
 console e riprese da quella update. Non sono in `tailwind.config.cjs`: se ne servono altre,
 riusa queste invece di inventarne di nuove.
 
-| Stato | Sfondo | Testo | Uso |
-|---|---|---|---|
-| Positivo | `#DDF3DF` | `#1A7F37` | "Connected", "Up to date", operazione riuscita |
-| In attesa | `#FDF0D5` | `#9A6700` | "Update available", avvisi, operazione in corso |
-| Negativo | `#F7D9D8` | `#D72E28` | "Disconnected", repo corrotto, operazione fallita |
+| Stato     | Sfondo    | Testo     | Uso                                               |
+| --------- | --------- | --------- | ------------------------------------------------- |
+| Positivo  | `#DDF3DF` | `#1A7F37` | "Connected", "Up to date", operazione riuscita    |
+| In attesa | `#FDF0D5` | `#9A6700` | "Update available", avvisi, operazione in corso   |
+| Negativo  | `#F7D9D8` | `#D72E28` | "Disconnected", repo corrotto, operazione fallita |
 
 ### Nomenclatura
 
@@ -131,7 +131,7 @@ invece di tab — `npm run format` li normalizza.
 
 ```svelte
 <script lang="ts">
-    import SettingsSubpage from '$lib/components/SettingsSubpage.svelte';
+	import SettingsSubpage from '$lib/components/SettingsSubpage.svelte';
 </script>
 
 <SettingsSubpage title="Nome" />
@@ -148,10 +148,10 @@ di contenuto, il testo "Coming soon". Per una pagina reale, passa il contenuto c
 
 `src/lib/data/` contiene due file **generati**, non da modificare a mano:
 
-| File | Contenuto | Sorgente |
-|---|---|---|
-| `timezones.ts` | Le 418 zone IANA con paese e coordinate della città di riferimento | `/usr/share/zoneinfo/zone.tab` e `iso3166.tab` (tzdata, pubblico dominio) |
-| `world-map.ts` | Le terre emerse in proiezione equirettangolare, come unico path SVG | Natural Earth `ne_110m_land`, scaricato al momento della generazione |
+| File           | Contenuto                                                           | Sorgente                                                                  |
+| -------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `timezones.ts` | Le 418 zone IANA con paese e coordinate della città di riferimento  | `/usr/share/zoneinfo/zone.tab` e `iso3166.tab` (tzdata, pubblico dominio) |
+| `world-map.ts` | Le terre emerse in proiezione equirettangolare, come unico path SVG | Natural Earth `ne_110m_land`, scaricato al momento della generazione      |
 
 Si rigenerano entrambi con:
 

@@ -19,7 +19,10 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(
+				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`,
+				{ method: 'POST' }
+			);
 		} catch {
 			// ignore
 		}
@@ -27,7 +30,9 @@
 
 	const updateStatus = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?fan&led LED_CAMERA`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?fan&led LED_CAMERA`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -101,8 +106,12 @@
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
-					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20" class={fanOn ? 'fan-spinning' : ''}><path d={mdiFan} fill="#d72e28" /></svg>
+					<div
+						style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"
+					>
+						<svg viewBox="0 0 24 24" width="20" height="20" class={fanOn ? 'fan-spinning' : ''}
+							><path d={mdiFan} fill="#d72e28" /></svg
+						>
 					</div>
 				</foreignObject>
 			</svg>
@@ -114,8 +123,12 @@
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />
 				<foreignObject x="6" y="6" width="24" height="24">
-					<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
-						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg>
+					<div
+						style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;"
+					>
+						<svg viewBox="0 0 24 24" width="20" height="20" style="transform: rotate(90deg);"
+							><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg
+						>
 					</div>
 				</foreignObject>
 			</svg>

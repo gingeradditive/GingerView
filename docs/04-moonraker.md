@@ -12,27 +12,27 @@ Le tabelle riportano quindi il percorso, non un URL assoluto.
 
 ### Stato della stampante
 
-| Endpoint | Usato da | Scopo |
-|---|---|---|
-| `GET /printer/objects/query?...` | quasi tutti i pannelli | Lettura dello stato degli oggetti Klipper |
-| `GET /printer/info` | `moonraker-notifier.ts` | Dettaglio dello stato in caso di errore/shutdown |
-| `GET /server/info` | `moonraker-notifier.ts` | Warning, componenti falliti, stato di Klippy |
+| Endpoint                         | Usato da                | Scopo                                            |
+| -------------------------------- | ----------------------- | ------------------------------------------------ |
+| `GET /printer/objects/query?...` | quasi tutti i pannelli  | Lettura dello stato degli oggetti Klipper        |
+| `GET /printer/info`              | `moonraker-notifier.ts` | Dettaglio dello stato in caso di errore/shutdown |
+| `GET /server/info`               | `moonraker-notifier.ts` | Warning, componenti falliti, stato di Klippy     |
 
 Query per componente:
 
-| Componente | Oggetti interrogati |
-|---|---|
-| `DashboardControlPanel` | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA` |
-| `DashboardPrintJobPanel` | `print_stats`, `virtual_sdcard` |
-| `DashboardJobInfoCard` | `print_stats` |
-| `DashboardPelletPanel` | `print_stats` |
-| `DashboardTemperaturePanel` | `extruder`, `extruder1`, `extruder2`, `extruder3`, `heater_bed` (elenco fisso) — vedi nota sulle zone |
-| `DashboardFlowPanel` | `gcode_move`, `motion_report`, `print_stats` |
-| `DashboardZHeightPanel` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
-| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA` |
-| `ToolheadPosition` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
-| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
-| `/settings/update` | `print_stats` (polling, solo per sapere se c'è una stampa in corso) |
+| Componente                                    | Oggetti interrogati                                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`                       | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                              |
+| `DashboardPrintJobPanel`                      | `print_stats`, `virtual_sdcard`                                                                       |
+| `DashboardJobInfoCard`                        | `print_stats`                                                                                         |
+| `DashboardPelletPanel`                        | `print_stats`                                                                                         |
+| `DashboardTemperaturePanel`                   | `extruder`, `extruder1`, `extruder2`, `extruder3`, `heater_bed` (elenco fisso) — vedi nota sulle zone |
+| `DashboardFlowPanel`                          | `gcode_move`, `motion_report`, `print_stats`                                                          |
+| `DashboardZHeightPanel`                       | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                    |
+| `DashboardQuickActionsPanel`                  | `fan`, `led LED_CAMERA`                                                                               |
+| `ToolheadPosition`                            | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling)    |
+| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento)               |
+| `/settings/update`                            | `print_stats` (polling, solo per sapere se c'è una stampa in corso)                                   |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -78,18 +78,18 @@ POST /printer/gcode/script?script=<comando urlencoded>
 
 Comandi effettivamente inviati dall'interfaccia:
 
-| Comando | Origine |
-|---|---|
-| `PAUSE` | `DashboardPrintJobPanel` |
-| `RESUME` | `DashboardPrintJobPanel` |
-| `CANCEL_PRINT` | `DashboardPrintJobPanel` |
-| `M106 S<0-255>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola |
-| `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce |
-| `G28` | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()` |
-| `M84` | `ToolheadPosition` — pulsante Disable Motors |
-| `G90` + `G1 X<centro> Y0 Z250 F3000` | `movementStore` — spostamento in posizione di purge dopo l'homing |
-| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `movementStore` — una coppia per zona, preset PETG/PLA/Custom |
-| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `movementStore` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md) |
+| Comando                                                                                                                                   | Origine                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PAUSE`                                                                                                                                   | `DashboardPrintJobPanel`                                                                                                                                |
+| `RESUME`                                                                                                                                  | `DashboardPrintJobPanel`                                                                                                                                |
+| `CANCEL_PRINT`                                                                                                                            | `DashboardPrintJobPanel`                                                                                                                                |
+| `M106 S<0-255>`                                                                                                                           | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola                                                                               |
+| `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                                | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                           |
+| `G28`                                                                                                                                     | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()` |
+| `M84`                                                                                                                                     | `ToolheadPosition` — pulsante Disable Motors                                                                                                            |
+| `G90` + `G1 X<centro> Y0 Z250 F3000`                                                                                                      | `movementStore` — spostamento in posizione di purge dopo l'homing                                                                                       |
+| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `movementStore` — una coppia per zona, preset PETG/PLA/Custom                                                                                           |
+| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82`       | `movementStore` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md)                           |
 
 Ognuno di questi script multi-linea viene inviato in **una sola chiamata**: `printer/gcode/script`
 accetta più comandi separati da `\n` nello stesso `script` urlencoded, eseguiti in sequenza da
@@ -155,7 +155,7 @@ Due cose però non devono finirci sotto, ed è la parte che conta:
   bordo inferiore). Non dipende dallo `z-index`: navigazione ed emergency stop restano cliccabili
   comunque, ed è così che si lancia il firmware restart che toglie l'avviso;
 - **Settings e le sue sottopagine**, per rotta — l'overlay non compare se il percorso inizia con
-  `/settings`. Log, Update e Console sono esattamente i posti in cui si va a capire *perché*
+  `/settings`. Log, Update e Console sono esattamente i posti in cui si va a capire _perché_
   Kalico si è fermato.
 
 Lo `z-index` è `2900`: sopra il contenuto delle pagine, sotto le modali (`3000`) — compresa la
@@ -175,16 +175,16 @@ all'ultimo step del wizard aperto dal pulsante **Print** nel popup dettagli file
 
 Tutto in [moonraker-files.ts](../src/lib/services/moonraker-files.ts):
 
-| Operazione | Chiamata |
-|---|---|
-| Elenco directory | `GET /server/files/directory?path=<path>` |
-| Metadati file | `GET /server/files/metadata?filename=<path>` |
-| Download / thumbnail | `GET /server/files/<path>` |
-| Upload | `POST /server/files/upload` (multipart: `file`, `root`) |
-| Sposta / rinomina | `POST /server/files/move` (JSON: `source`, `dest`) |
-| Elimina file | `DELETE /server/files/<path>` |
-| Elimina cartella | `DELETE /server/files/directory?path=<path>&force=true` |
-| Crea cartella | `POST /server/files/directory?path=<path>` |
+| Operazione           | Chiamata                                                |
+| -------------------- | ------------------------------------------------------- |
+| Elenco directory     | `GET /server/files/directory?path=<path>`               |
+| Metadati file        | `GET /server/files/metadata?filename=<path>`            |
+| Download / thumbnail | `GET /server/files/<path>`                              |
+| Upload               | `POST /server/files/upload` (multipart: `file`, `root`) |
+| Sposta / rinomina    | `POST /server/files/move` (JSON: `source`, `dest`)      |
+| Elimina file         | `DELETE /server/files/<path>`                           |
+| Elimina cartella     | `DELETE /server/files/directory?path=<path>&force=true` |
+| Crea cartella        | `POST /server/files/directory?path=<path>`              |
 
 Nota su rinomina e spostamento: usano entrambi `/server/files/move`, perché per Moonraker
 rinominare è spostare verso un nome diverso nella stessa cartella.
@@ -197,12 +197,12 @@ su ogni parte), per non trasformare gli slash in `%2F` e conservare la struttura
 Tutto in [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts), usato da
 [`/settings/log`](../src/routes/settings/log/+page.svelte):
 
-| Operazione | Chiamata |
-|---|---|
-| Download log Klipper | `GET /server/files/klippy.log` |
-| Download log Moonraker | `GET /server/files/moonraker.log` |
-| Download log Crowsnest | `GET /server/files/logs/crowsnest.log` |
-| Pulisci log | `POST /server/logs/rollover` (JSON: `{}`) |
+| Operazione             | Chiamata                                  |
+| ---------------------- | ----------------------------------------- |
+| Download log Klipper   | `GET /server/files/klippy.log`            |
+| Download log Moonraker | `GET /server/files/moonraker.log`         |
+| Download log Crowsnest | `GET /server/files/logs/crowsnest.log`    |
+| Pulisci log            | `POST /server/logs/rollover` (JSON: `{}`) |
 
 Klipper e Moonraker usano il percorso "legacy" **senza** prefisso `logs/`: è un alias che
 Moonraker risolve verso il file di log realmente configurato, qualunque sia il suo nome su
@@ -234,12 +234,12 @@ comunque il rollover se una stampa è in corso.
 Tutto in [moonraker-update.ts](../src/lib/services/moonraker-update.ts), usato da
 [`/settings/update`](../src/routes/settings/update/+page.svelte):
 
-| Operazione | Chiamata |
-|---|---|
-| Stato di tutti i componenti | `GET /machine/update/status` |
-| Check update (interroga i remoti) | `POST /machine/update/refresh` (JSON: `{name?}`) |
-| **Update all** | `POST /machine/update/upgrade` (JSON: `{}`, cioè `name` omesso = tutto) |
-| Soft / hard recovery | `POST /machine/update/recover` (JSON: `{name, hard}`) |
+| Operazione                        | Chiamata                                                                |
+| --------------------------------- | ----------------------------------------------------------------------- |
+| Stato di tutti i componenti       | `GET /machine/update/status`                                            |
+| Check update (interroga i remoti) | `POST /machine/update/refresh` (JSON: `{name?}`)                        |
+| **Update all**                    | `POST /machine/update/upgrade` (JSON: `{}`, cioè `name` omesso = tutto) |
+| Soft / hard recovery              | `POST /machine/update/recover` (JSON: `{name, hard}`)                   |
 
 **L'aggiornamento è solo totale, per scelta.** `upgrade` accetta un `name` per aggiornare un
 singolo componente, ma l'interfaccia non lo usa: c'è un unico pulsante **Update all** e
@@ -298,13 +298,13 @@ stringhe: fidarsi di quel `warnings` significherebbe proporre una recovery su un
 Tutto in [moonraker-config.ts](../src/lib/services/moonraker-config.ts), usato da
 [`/settings/config-editor`](../src/routes/settings/config-editor/+page.svelte):
 
-| Operazione | Chiamata |
-|---|---|
-| Elenco di una cartella | `GET /server/files/directory?path=config[/sottocartella]` |
-| Lettura di un file | `GET /server/files/config/<percorso>?t=<timestamp>` |
-| Scrittura di un file | `POST /server/files/upload` (multipart: `file`, `root=config`, `path=<sottocartella>`) |
-| Download | `GET /server/files/config/<percorso>` |
-| Crea cartella / rinomina / elimina | le funzioni generiche di [moonraker-files.ts](../src/lib/services/moonraker-files.ts) |
+| Operazione                         | Chiamata                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------- |
+| Elenco di una cartella             | `GET /server/files/directory?path=config[/sottocartella]`                              |
+| Lettura di un file                 | `GET /server/files/config/<percorso>?t=<timestamp>`                                    |
+| Scrittura di un file               | `POST /server/files/upload` (multipart: `file`, `root=config`, `path=<sottocartella>`) |
+| Download                           | `GET /server/files/config/<percorso>`                                                  |
+| Crea cartella / rinomina / elimina | le funzioni generiche di [moonraker-files.ts](../src/lib/services/moonraker-files.ts)  |
 
 **Non esiste un endpoint "config".** La cartella di configurazione della stampante è
 semplicemente la **root `config`** del file manager, quindi sfogliarla e modificarla usa le
@@ -313,8 +313,8 @@ stesse chiamate dei G-code: leggere un file è un download, salvarlo è un uploa
 sola lettura: la pagina legge `root_info.permissions` e se non contiene `w` si blocca da sola
 invece di far fallire il salvataggio.
 
-Nell'upload `root` e `path` sono **due campi separati**, e `path` è la sottocartella *relativa
-alla root*: `config/macros/park.cfg` si scrive come `root=config`, `path=macros`, nome file
+Nell'upload `root` e `path` sono **due campi separati**, e `path` è la sottocartella _relativa
+alla root_: `config/macros/park.cfg` si scrive come `root=config`, `path=macros`, nome file
 `park.cfg`. Moonraker crea le sottocartelle mancanti.
 
 La lettura porta un `?t=<timestamp>`: per il browser è il download di un file statico, quindi
@@ -362,11 +362,11 @@ tutto il resto (`.md`, `.txt`) resta testo semplice.
 
 ### Riavvii
 
-| Operazione | Chiamata | Effetto |
-|---|---|---|
-| Firmware restart | `POST /printer/firmware_restart` | Riavvia Klipper **e gli MCU**, ricaricando la configurazione della stampante |
-| Host restart | `POST /printer/restart` | Ricarica solo Klippy sull'host, senza resettare gli MCU |
-| Moonraker restart | `POST /server/restart` | Riavvia il servizio Moonraker, necessario dopo aver modificato `moonraker.conf` |
+| Operazione        | Chiamata                         | Effetto                                                                         |
+| ----------------- | -------------------------------- | ------------------------------------------------------------------------------- |
+| Firmware restart  | `POST /printer/firmware_restart` | Riavvia Klipper **e gli MCU**, ricaricando la configurazione della stampante    |
+| Host restart      | `POST /printer/restart`          | Ricarica solo Klippy sull'host, senza resettare gli MCU                         |
+| Moonraker restart | `POST /server/restart`           | Riavvia il servizio Moonraker, necessario dopo aver modificato `moonraker.conf` |
 
 Sono le stesse tre opzioni di Mainsail, con lo stesso default: **`firmware_restart`**, l'unico
 che ricarica anche la configurazione degli MCU e quindi applica davvero la maggior parte delle
@@ -380,7 +380,7 @@ il pulsante nella dock recupera una macchina fermata (vedi
 
 Il riavvio è **suggerito al salvataggio e attivabile a mano**. Dopo un salvataggio la pagina
 mostra un banner con il riavvio adatto al file salvato — `moonraker.conf` chiede il riavvio di
-Moonraker, un `.cfg` il firmware restart — ma non lo esegue: decidere *quando* riavviare spetta
+Moonraker, un `.cfg` il firmware restart — ma non lo esegue: decidere _quando_ riavviare spetta
 all'operatore. In cima alla pagina ci sono comunque una tendina e un pulsante **Restart** per
 lanciare uno qualsiasi dei tre in qualunque momento, dietro conferma.
 
@@ -422,21 +422,21 @@ All'apertura si identifica con:
 
 ```json
 {
-  "jsonrpc": "2.0",
-  "method": "server.connection.identify",
-  "params": { "client_name": "GingerView", "version": "0.0.1", "type": "web", "url": "..." },
-  "id": 1234567890
+	"jsonrpc": "2.0",
+	"method": "server.connection.identify",
+	"params": { "client_name": "GingerView", "version": "0.0.1", "type": "web", "url": "..." },
+	"id": 1234567890
 }
 ```
 
 Notifiche gestite:
 
-| Metodo | Azione |
-|---|---|
-| `notify_klippy_ready` | toast di successo, `klippyState = 'ready'` |
-| `notify_klippy_shutdown` | recupera `state_message` da `/printer/info` e mostra un toast di errore persistente, `klippyState = 'shutdown'` |
-| `notify_klippy_disconnected` | toast di errore persistente, `klippyState = 'disconnected'` |
-| `notify_proc_stat_update` | estrae `moonraker_stats.warnings`, deduplicati tramite un `Set` |
+| Metodo                       | Azione                                                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `notify_klippy_ready`        | toast di successo, `klippyState = 'ready'`                                                                      |
+| `notify_klippy_shutdown`     | recupera `state_message` da `/printer/info` e mostra un toast di errore persistente, `klippyState = 'shutdown'` |
+| `notify_klippy_disconnected` | toast di errore persistente, `klippyState = 'disconnected'`                                                     |
+| `notify_proc_stat_update`    | estrae `moonraker_stats.warnings`, deduplicati tramite un `Set`                                                 |
 
 Riconnessione: timer fisso a **10 secondi**, senza limite di tentativi.
 
@@ -473,10 +473,10 @@ Aperta da `connectUpdateSocket()` in
 [moonraker-update.ts](../src/lib/services/moonraker-update.ts) e viva solo finché la pagina
 Update è montata. Si identifica come il notifier e ascolta due notifiche:
 
-| Metodo | Payload | Azione |
-|---|---|---|
-| `notify_update_response` | `application`, `proc_id`, `message`, `complete` | Aggiunge la riga al log della modale; `complete: true` segna la fine per quel componente |
-| `notify_update_refreshed` | lo stesso oggetto di `/machine/update/status` | Aggiorna l'elenco in pagina, ma **solo se non c'è un'operazione in corso** |
+| Metodo                    | Payload                                         | Azione                                                                                   |
+| ------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `notify_update_response`  | `application`, `proc_id`, `message`, `complete` | Aggiunge la riga al log della modale; `complete: true` segna la fine per quel componente |
+| `notify_update_refreshed` | lo stesso oggetto di `/machine/update/status`   | Aggiorna l'elenco in pagina, ma **solo se non c'è un'operazione in corso**               |
 
 Non riusa la connessione del notifier perché quella non espone un meccanismo di
 sottoscrizione, e l'output degli aggiornamenti interessa solo a questa pagina. Riconnessione a
@@ -493,20 +493,20 @@ non viene mai aperta**. Vedi
 
 ## Frequenze di polling
 
-| Componente | Intervallo |
-|---|---|
-| `ToolheadPosition` | 1000 ms |
-| `DashboardFlowPanel` | 1500 ms |
-| `DashboardTemperaturePanel` | 1500 ms |
-| `DashboardZHeightPanel` | 1500 ms |
-| `DashboardControlPanel` | 2000 ms |
-| `DashboardPrintJobPanel` | 2000 ms |
-| `DashboardJobInfoCard` | 2000 ms |
-| `DashboardQuickActionsPanel` | 2000 ms |
-| `DashboardPelletPanel` | 3000 ms |
-| `/settings/network` (stato rete) | 5000 ms |
-| `/settings/update` (stato stampa, per bloccare gli update) | 5000 ms |
-| `/settings/config-editor` (`/printer/info` + `print_stats`, due richieste) | 5000 ms |
+| Componente                                                                 | Intervallo |
+| -------------------------------------------------------------------------- | ---------- |
+| `ToolheadPosition`                                                         | 1000 ms    |
+| `DashboardFlowPanel`                                                       | 1500 ms    |
+| `DashboardTemperaturePanel`                                                | 1500 ms    |
+| `DashboardZHeightPanel`                                                    | 1500 ms    |
+| `DashboardControlPanel`                                                    | 2000 ms    |
+| `DashboardPrintJobPanel`                                                   | 2000 ms    |
+| `DashboardJobInfoCard`                                                     | 2000 ms    |
+| `DashboardQuickActionsPanel`                                               | 2000 ms    |
+| `DashboardPelletPanel`                                                     | 3000 ms    |
+| `/settings/network` (stato rete)                                           | 5000 ms    |
+| `/settings/update` (stato stampa, per bloccare gli update)                 | 5000 ms    |
+| `/settings/config-editor` (`/printer/info` + `print_stats`, due richieste) | 5000 ms    |
 
 Ogni intervallo è una costante `pollIntervalMs` locale al componente. Nella dashboard sono
 attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al secondo verso
@@ -537,14 +537,14 @@ Il contratto completo è in
 [G2-Service `docs/03`](https://github.com/gingeradditive/G2-Service/blob/main/docs/03-proposta-api-rete-timezone.md).
 Qui interessa quello che GingerView usa davvero:
 
-| Endpoint | Metodo | Uso | Client |
-|---|---|---|---|
-| `/service/network/status` | GET | Stato unificato: `adapter`, `ip`, `signalInfo`, `interfaces` | `network-api.ts` |
-| `/service/network/wifi/networks` | GET | Ultima scansione nota, risponde subito | `network-api.ts` |
-| `/service/network/wifi/rescan` | POST | Forza una scansione e aspetta i risultati | `network-api.ts` |
-| `/service/network/wifi/connect` | POST | `{ ssid, password? }` → `202` + job | `network-api.ts` |
-| `/service/jobs/{jobId}` | GET | Avanzamento ed esito di un'operazione asincrona | `g2-service.ts` |
-| `/service/timezone` | GET/POST | `{ timezone, ntpSynchronized }` | `timezone.ts` |
+| Endpoint                         | Metodo   | Uso                                                          | Client           |
+| -------------------------------- | -------- | ------------------------------------------------------------ | ---------------- |
+| `/service/network/status`        | GET      | Stato unificato: `adapter`, `ip`, `signalInfo`, `interfaces` | `network-api.ts` |
+| `/service/network/wifi/networks` | GET      | Ultima scansione nota, risponde subito                       | `network-api.ts` |
+| `/service/network/wifi/rescan`   | POST     | Forza una scansione e aspetta i risultati                    | `network-api.ts` |
+| `/service/network/wifi/connect`  | POST     | `{ ssid, password? }` → `202` + job                          | `network-api.ts` |
+| `/service/jobs/{jobId}`          | GET      | Avanzamento ed esito di un'operazione asincrona              | `g2-service.ts`  |
+| `/service/timezone`              | GET/POST | `{ timezone, ntpSynchronized }`                              | `timezone.ts`    |
 
 Tre cose valgono per tutti e stanno in
 [g2-service.ts](../src/lib/services/g2-service.ts), non nei singoli client:
@@ -559,7 +559,7 @@ Tre cose valgono per tutti e stanno in
   `/service/jobs/{jobId}`. Non è una questione di durata — connettersi **cambia l'indirizzo IP
   della macchina**, quindi la risposta a una chiamata sincrona non avrebbe dove tornare.
   `waitForJob()` continua a interrogare il job anche mentre il servizio non risponde, perché
-  perdere la connessione a metà è il decorso *normale* dell'operazione che sta seguendo.
+  perdere la connessione a metà è il decorso _normale_ dell'operazione che sta seguendo.
 
 Gli esiti negativi previsti **non sono errori HTTP**: una password sbagliata arriva come
 `status: "failed"` del job con `WIFI_AUTH_FAILED` (o `WIFI_NETWORK_NOT_FOUND`, `WIFI_TIMEOUT`).

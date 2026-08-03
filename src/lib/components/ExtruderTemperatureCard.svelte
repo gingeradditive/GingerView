@@ -15,11 +15,15 @@
 	const isReady = $derived(
 		hasSet &&
 			temperature != null &&
-		!Number.isNaN(temperature) &&
-		Math.abs(temperature - (target as number)) <= setTolerance
+			!Number.isNaN(temperature) &&
+			Math.abs(temperature - (target as number)) <= setTolerance
 	);
 	const isHeating = $derived(
-		hasSet && !isReady && temperature != null && !Number.isNaN(temperature) && temperature < (target as number)
+		hasSet &&
+			!isReady &&
+			temperature != null &&
+			!Number.isNaN(temperature) &&
+			temperature < (target as number)
 	);
 	const showSet = $derived(hasSet && !isReady);
 
@@ -29,10 +33,15 @@
 	};
 </script>
 
-<div class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`} aria-label={`Temperatura estrusore ${index}`}>
+<div
+	class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
+	aria-label={`Temperatura estrusore ${index}`}
+>
 	<span class="index">{index}</span>
 	<div class={`temperature-stack ${showSet ? 'with-set' : ''}`}>
-		<span class={`temperature ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}>{formatTemperature(temperature)}<span class="degree-symbol">°</span></span>
+		<span class={`temperature ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
+			>{formatTemperature(temperature)}<span class="degree-symbol">°</span></span
+		>
 		{#if showSet}
 			<span class="set-temperature">{formatTemperature(target)}</span>
 		{/if}
@@ -52,7 +61,9 @@
 		height: 53px;
 		padding: 0 7px;
 		box-sizing: border-box;
-		transition: background-color 220ms ease, border-color 220ms ease;
+		transition:
+			background-color 220ms ease,
+			border-color 220ms ease;
 	}
 
 	.extruder-card.heating {

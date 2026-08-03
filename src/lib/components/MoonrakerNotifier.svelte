@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAndDisplayWarnings, startNotifierWebSocket } from '$lib/services/moonraker-notifier';
+	import {
+		fetchAndDisplayWarnings,
+		startNotifierWebSocket
+	} from '$lib/services/moonraker-notifier';
 
 	onMount(() => {
 		// Fetch warnings from /server/info on startup

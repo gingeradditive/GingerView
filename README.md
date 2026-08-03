@@ -6,13 +6,13 @@ GingerView - A modern web application powered by [`SvelteKit`](https://svelte.de
 
 GingerView uses a consistent color palette throughout the application:
 
-| Color | Hex Code | Usage |
-|-------|----------|-------|
-| **Bianco** | `#FFFFFF` | Backgrounds, cards, text highlights |
-| **Sfondo** | `#F5F5F5` | Main application background, secondary backgrounds |
-| **Grigio** | `#C8C8C8` | Borders, separators, muted text |
-| **RossoGinger** | `#D72E28` | Primary actions, accents, error states |
-| **Nero** | `#111111` | Primary text, headings, important content |
+| Color           | Hex Code  | Usage                                              |
+| --------------- | --------- | -------------------------------------------------- |
+| **Bianco**      | `#FFFFFF` | Backgrounds, cards, text highlights                |
+| **Sfondo**      | `#F5F5F5` | Main application background, secondary backgrounds |
+| **Grigio**      | `#C8C8C8` | Borders, separators, muted text                    |
+| **RossoGinger** | `#D72E28` | Primary actions, accents, error states             |
+| **Nero**        | `#111111` | Primary text, headings, important content          |
 
 ### Implementation
 
@@ -26,14 +26,10 @@ The color palette is centrally configured in `tailwind.config.cjs` and applied t
 
 ```html
 <!-- Primary button with RossoGinger -->
-<button class="bg-redGinger text-white hover:bg-red-700">
-  Primary Action
-</button>
+<button class="bg-redGinger text-white hover:bg-red-700">Primary Action</button>
 
 <!-- Card with Bianco background -->
-<div class="bg-white border-gray">
-  Card content
-</div>
+<div class="bg-white border-gray">Card content</div>
 
 <!-- Text with Nero color -->
 <p class="text-black">Main text content</p>

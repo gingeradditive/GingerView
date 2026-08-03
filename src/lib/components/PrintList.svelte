@@ -4,7 +4,7 @@
 	import PrintDetailsPopup from './PrintDetailsPopup.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import type { PrintItem } from '$lib/types/print';
-	import { mdiFolderPlus, mdiUpload, mdiFolder } from '@mdi/js';
+	import { mdiFolderPlus, mdiUpload } from '@mdi/js';
 	import {
 		fetchDirectory,
 		getThumbnailUrl,
@@ -47,7 +47,7 @@
 			const result = await fetchDirectory(moonrakerPath);
 
 			const dirItems: PrintItem[] = result.dirs
-				.filter(d => !d.dirname.startsWith('.'))
+				.filter((d) => !d.dirname.startsWith('.'))
 				.map((d) => ({
 					id: `dir-${d.dirname}`,
 					name: d.dirname,
@@ -69,24 +69,30 @@
 			// Fetch metadata for all files to get filament information and thumbnails
 			const fileMetadataPromises = result.files.map(async (f) => {
 				try {
-					const metadata = await getFileMetadata(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
-					
+					const metadata = await getFileMetadata(
+						f.filename,
+						dirPath ? `gcodes/${dirPath}` : 'gcodes'
+					);
+
 					// Try to get thumbnail from multiple sources
 					let thumbnailUrl = getThumbnailUrl(f, dirPath ? `gcodes/${dirPath}` : 'gcodes');
-					
+
 					// If no thumbnail from Moonraker, try to extract from G-code
 					if (!thumbnailUrl) {
-						const extractedThumbnail = await extractThumbnailFromGcode(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+						const extractedThumbnail = await extractThumbnailFromGcode(
+							f.filename,
+							dirPath ? `gcodes/${dirPath}` : 'gcodes'
+						);
 						if (extractedThumbnail) {
 							thumbnailUrl = extractedThumbnail;
 						}
 					}
-					
+
 					// If still no thumbnail, use error thumbnail
 					if (!thumbnailUrl) {
 						thumbnailUrl = getErrorThumbnailUrl();
 					}
-					
+
 					return {
 						id: `file-${f.filename}`,
 						name: f.filename.replace(/\.gcode$/i, ''),
@@ -108,11 +114,14 @@
 				} catch (e) {
 					// Fallback to basic file info if metadata fetch fails
 					console.warn(`Failed to fetch metadata for ${f.filename}:`, e);
-					
+
 					// Still try to get thumbnail from G-code even if metadata fails
 					let thumbnailUrl = getThumbnailUrl(f, dirPath ? `gcodes/${dirPath}` : 'gcodes');
 					if (!thumbnailUrl) {
-						const extractedThumbnail = await extractThumbnailFromGcode(f.filename, dirPath ? `gcodes/${dirPath}` : 'gcodes');
+						const extractedThumbnail = await extractThumbnailFromGcode(
+							f.filename,
+							dirPath ? `gcodes/${dirPath}` : 'gcodes'
+						);
 						if (extractedThumbnail) {
 							thumbnailUrl = extractedThumbnail;
 						}
@@ -120,7 +129,7 @@
 					if (!thumbnailUrl) {
 						thumbnailUrl = getErrorThumbnailUrl();
 					}
-					
+
 					return {
 						id: `file-${f.filename}`,
 						name: f.filename.replace(/\.gcode$/i, ''),
@@ -153,14 +162,10 @@
 		}
 	}
 
-	function handleFileUpload() {
-		fileInput?.click();
-	}
-
 	async function handleFileSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const file = target.files?.[0];
-		
+
 		if (file && file.name.toLowerCase().endsWith('.gcode')) {
 			try {
 				await uploadFile(file, dirPath ? `gcodes/${dirPath}` : 'gcodes');
@@ -192,7 +197,7 @@
 
 	async function handleCreateFolder() {
 		if (!folderName.trim()) return;
-		
+
 		try {
 			const fullPath = dirPath ? `gcodes/${dirPath}/${folderName}` : `gcodes/${folderName}`;
 			await createDirectory(fullPath);
@@ -229,7 +234,7 @@
 			{ rootMargin: '200px' }
 		);
 		if (sentinel) observer.observe(sentinel);
-		
+
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
@@ -239,7 +244,7 @@
 	onDestroy(() => {
 		observer?.disconnect();
 		unsubscribe();
-		
+
 		// Only remove window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('moonraker-file-deleted', handleFileDeleted);
@@ -251,39 +256,53 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="actions">
-			<button class="action-button" onclick={() => (showCreateFolderModal = true)} aria-label="Crea cartella">
-				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiFolderPlus} fill="#D72E28" /></svg>
+			<button
+				class="action-button"
+				onclick={() => (showCreateFolderModal = true)}
+				aria-label="Crea cartella"
+			>
+				<svg viewBox="0 0 24 24" width="40" height="40"
+					><path d={mdiFolderPlus} fill="#D72E28" /></svg
+				>
 			</button>
 			<button class="action-button" onclick={() => fileInput.click()} aria-label="Upload file">
 				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiUpload} fill="#D72E28" /></svg>
 			</button>
 		</div>
-		<input 
-			type="file" 
-			bind:this={fileInput} 
-			accept=".gcode" 
-			onchange={handleFileSelect} 
-			style="display: none" 
+		<input
+			type="file"
+			bind:this={fileInput}
+			accept=".gcode"
+			onchange={handleFileSelect}
+			style="display: none"
 		/>
 	</div>
 
 	{#if showCreateFolderModal}
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div class="modal-overlay" role="dialog" tabindex="0" onclick={() => (showCreateFolderModal = false)} onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}>
+		<div
+			class="modal-overlay"
+			role="dialog"
+			tabindex="0"
+			onclick={() => (showCreateFolderModal = false)}
+			onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}
+		>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
 				<h3>Crea nuova cartella</h3>
-				<input 
-					type="text" 
-					bind:value={folderName} 
-					placeholder="Nome cartella" 
+				<input
+					type="text"
+					bind:value={folderName}
+					placeholder="Nome cartella"
 					class="folder-input"
 					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
 					autofocus
 				/>
 				<div class="modal-actions">
 					<button class="modal-confirm" onclick={handleCreateFolder}>Crea</button>
-					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}>Annulla</button>
+					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}
+						>Annulla</button
+					>
 				</div>
 			</div>
 		</div>
@@ -310,7 +329,11 @@
 		{/if}
 	{/if}
 
-	<PrintDetailsPopup item={selectedPrint} isOpen={showPrintDetailsModal} onClose={closePrintDetailsModal} />
+	<PrintDetailsPopup
+		item={selectedPrint}
+		isOpen={showPrintDetailsModal}
+		onClose={closePrintDetailsModal}
+	/>
 </div>
 
 <style>
@@ -360,7 +383,7 @@
 	}
 
 	.status-message.error {
-		color: #D72E28;
+		color: #d72e28;
 	}
 
 	.modal-overlay {
@@ -397,7 +420,7 @@
 	.folder-input {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid #C8C8C8;
+		border: 1px solid #c8c8c8;
 		border-radius: 8px;
 		font-size: 0.9rem;
 		margin-bottom: 16px;
@@ -406,7 +429,7 @@
 
 	.folder-input:focus {
 		outline: none;
-		border-color: #D72E28;
+		border-color: #d72e28;
 	}
 
 	.modal-actions {
@@ -419,7 +442,7 @@
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #D72E28;
+		background: #d72e28;
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -427,7 +450,7 @@
 
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #C8C8C8;
+		border: 1px solid #c8c8c8;
 		border-radius: 8px;
 		background: #fff;
 		cursor: pointer;

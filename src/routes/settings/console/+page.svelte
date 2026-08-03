@@ -14,7 +14,6 @@
 	let currentCommand = $state('');
 	let isConnected = $state(false);
 	let isConnecting = $state(false);
-	let connectionError = $state('');
 	let connectionAttempts = $state(0);
 	let historyIndex = $state(-1);
 	let tempCommand = $state('');
@@ -38,7 +37,12 @@
 	}
 
 	function connectWebSocket() {
-		if (!config?.moonrakerWsUrl || (websocket && websocket.readyState === WebSocket.OPEN) || isConnecting) return;
+		if (
+			!config?.moonrakerWsUrl ||
+			(websocket && websocket.readyState === WebSocket.OPEN) ||
+			isConnecting
+		)
+			return;
 
 		if (connectionAttempts >= maxConnectionAttempts) {
 			addOutput('Max connection attempts reached. Check Moonraker configuration.', 'error');
@@ -59,10 +63,13 @@
 				clearTimeout(timeout);
 				isConnecting = false;
 				isConnected = true;
-				connectionError = '';
 				connectionAttempts = 0;
 				addOutput('Connected to Moonraker', 'response');
-				toastActions.success('moonraker', 'Console connected', 'Successfully connected to Moonraker');
+				toastActions.success(
+					'moonraker',
+					'Console connected',
+					'Successfully connected to Moonraker'
+				);
 			};
 
 			websocket.onmessage = (event) => {
@@ -70,9 +77,14 @@
 					const data = JSON.parse(event.data);
 					if (data.method === 'notify_gcode_response') {
 						const response = data.params?.[0] || '';
-						const lines = response.split('\n').filter((line: string) => line.trim() && line.trim() !== 'ok');
+						const lines = response
+							.split('\n')
+							.filter((line: string) => line.trim() && line.trim() !== 'ok');
 						for (const line of lines) {
-							const cleanLine = line.replace(/^\/\/\s*/, '').replace(/^;\s*/, '').trim();
+							const cleanLine = line
+								.replace(/^\/\/\s*/, '')
+								.replace(/^;\s*/, '')
+								.trim();
 							if (cleanLine) addOutput(cleanLine, 'response');
 						}
 						return;
@@ -94,7 +106,6 @@
 			websocket.onerror = () => {
 				isConnecting = false;
 				isConnected = false;
-				connectionError = 'WebSocket connection error';
 				addOutput('WebSocket connection error', 'error');
 				toastActions.error('moonraker', 'Console error', 'WebSocket connection error to Moonraker');
 			};
@@ -105,15 +116,22 @@
 				isConnected = false;
 				if (event.code !== 1000) {
 					addOutput('Disconnected from Moonraker', 'error');
-					toastActions.warning('moonraker', 'Console disconnected', 'Lost connection to Moonraker console');
+					toastActions.warning(
+						'moonraker',
+						'Console disconnected',
+						'Lost connection to Moonraker console'
+					);
 				}
 			};
 		} catch {
 			isConnecting = false;
 			isConnected = false;
-			connectionError = 'Failed to create WebSocket connection';
 			addOutput('Failed to create WebSocket connection', 'error');
-			toastActions.error('moonraker', 'Connection failed', 'Failed to create WebSocket connection to Moonraker');
+			toastActions.error(
+				'moonraker',
+				'Connection failed',
+				'Failed to create WebSocket connection to Moonraker'
+			);
 		}
 	}
 
@@ -128,7 +146,6 @@
 	function manualReconnect() {
 		if (isConnected) return;
 		disconnectWebSocket();
-		connectionError = '';
 		connectionAttempts = 0;
 		connectWebSocket();
 	}
@@ -176,7 +193,8 @@
 		if (newIndex >= commandHistory.length) newIndex = commandHistory.length - 1;
 		historyIndex = newIndex;
 
-		currentCommand = historyIndex === -1 ? tempCommand : commandHistory[commandHistory.length - 1 - historyIndex];
+		currentCommand =
+			historyIndex === -1 ? tempCommand : commandHistory[commandHistory.length - 1 - historyIndex];
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -231,14 +249,27 @@
 		</div>
 
 		<div class="command-row">
-			<input type="text" bind:value={currentCommand} onkeydown={handleKeydown} placeholder="Enter Klipper command..." />
+			<input
+				type="text"
+				bind:value={currentCommand}
+				onkeydown={handleKeydown}
+				placeholder="Enter Klipper command..."
+			/>
 		</div>
 
 		<div class="actions-row">
-			<button type="button" class="clear-btn" onclick={clearTerminal} aria-label="Clear console" title="Clear console">
+			<button
+				type="button"
+				class="clear-btn"
+				onclick={clearTerminal}
+				aria-label="Clear console"
+				title="Clear console"
+			>
 				<Trash2 />
 			</button>
-			<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}>Send</button>
+			<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}
+				>Send</button
+			>
 		</div>
 	</div>
 </section>

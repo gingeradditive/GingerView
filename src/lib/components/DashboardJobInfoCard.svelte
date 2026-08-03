@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
-	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
+	import {
+		extractThumbnailFromGcode,
+		getFileMetadata,
+		getFilamentType
+	} from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 2000;
 

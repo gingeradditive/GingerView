@@ -53,17 +53,17 @@ ugello, non come utensili distinti.
 
 ## Cosa fa oggi l'applicazione
 
-| Area | Rotta | Funzioni |
-|---|---|---|
-| **Dashboard** | `/` | Carosello con altezza Z, pellet, info job, temperature, flusso. Barra di controllo con avanzamento/tempo residuo/ETA, pausa, resume, cancel, ventola e luce |
-| **Movimento** | `/movement` | Visualizzazione isometrica della posizione della testa nel volume di stampa + pannello di estrusione |
-| **File** | `/filelist` | Navigazione delle cartelle `gcodes`, anteprime, metadati, upload, creazione cartella, rinomina, sposta, elimina |
-| **Impostazioni** | `/settings` | Elenco di sottopagine: rete, console, update, log, history, statistiche, fuso orario, config editor, wiki |
-| **Rete** | `/settings/network` | Stato adattatore, IP, scansione Wi-Fi, connessione a rete (anche nascosta), disconnessione |
-| **Console** | `/settings/console` | Terminale G-code su WebSocket Moonraker, con cronologia comandi |
-| **Log** | `/settings/log` | Download di `klippy.log`, `moonraker.log`, `crowsnest.log`; un pulsante pulisce (rollover) i log di Klipper e Moonraker |
-| **Update** | `/settings/update` | Update manager di Moonraker: elenco dei componenti con versione e stato, check update, **Update all** (sistema operativo compreso), soft/hard recovery sui repo rotti, log live dell'operazione |
-| **Fuso orario** | `/settings/timezone` | Mappa del mondo con la fascia oraria evidenziata, orologio della zona e tendina con ricerca sulle 419 zone IANA. Il salvataggio è ancora **finto**: manca l'endpoint lato host |
+| Area              | Rotta                     | Funzioni                                                                                                                                                                                                                                  |
+| ----------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Dashboard**     | `/`                       | Carosello con altezza Z, pellet, info job, temperature, flusso. Barra di controllo con avanzamento/tempo residuo/ETA, pausa, resume, cancel, ventola e luce                                                                               |
+| **Movimento**     | `/movement`               | Visualizzazione isometrica della posizione della testa nel volume di stampa + pannello di estrusione                                                                                                                                      |
+| **File**          | `/filelist`               | Navigazione delle cartelle `gcodes`, anteprime, metadati, upload, creazione cartella, rinomina, sposta, elimina                                                                                                                           |
+| **Impostazioni**  | `/settings`               | Elenco di sottopagine: rete, console, update, log, history, statistiche, fuso orario, config editor, wiki                                                                                                                                 |
+| **Rete**          | `/settings/network`       | Stato adattatore, IP, scansione Wi-Fi, connessione a rete (anche nascosta), disconnessione                                                                                                                                                |
+| **Console**       | `/settings/console`       | Terminale G-code su WebSocket Moonraker, con cronologia comandi                                                                                                                                                                           |
+| **Log**           | `/settings/log`           | Download di `klippy.log`, `moonraker.log`, `crowsnest.log`; un pulsante pulisce (rollover) i log di Klipper e Moonraker                                                                                                                   |
+| **Update**        | `/settings/update`        | Update manager di Moonraker: elenco dei componenti con versione e stato, check update, **Update all** (sistema operativo compreso), soft/hard recovery sui repo rotti, log live dell'operazione                                           |
+| **Fuso orario**   | `/settings/timezone`      | Mappa del mondo con la fascia oraria evidenziata, orologio della zona e tendina con ricerca sulle 419 zone IANA. Il salvataggio è ancora **finto**: manca l'endpoint lato host                                                            |
 | **Config editor** | `/settings/config-editor` | Albero dei file di configurazione (cartelle comprese), modifica e salvataggio, crea/rinomina/elimina/upload/download, firmware restart suggerito al salvataggio o lanciabile a mano. Pagina **di sviluppo**, da disattivare in produzione |
 
 Le notifiche di errore/avviso provenienti da Klipper e Moonraker sono globali: arrivano come

@@ -23,18 +23,18 @@ configurazioni. Non richiede Node, perché `build/` arriva già compilato dal re
 
 ### Opzioni
 
-| Opzione | Default | Descrizione |
-|---|---|---|
-| `--src PATH` | cartella padre dello script | Checkout di GingerView da servire |
-| `--user NAME` | `$SUDO_USER`, poi proprietario del checkout, poi primo utente ≥1000 | Proprietario di checkout e `printer_data` |
-| `--port N` | `80` | Porta su cui esporre GingerView |
-| `--moonraker-host H` | `127.0.0.1` | Indirizzo di Moonraker |
-| `--moonraker-port N` | `7125` | Porta di Moonraker |
-| `--printer-data PATH` | `~USER/printer_data` | Per registrare l'`update_manager` |
-| `--purge-mainsail` | off | Elimina anche i file Mainsail e la sua voce `update_manager` |
-| `--skip-packages` | off | Non installa nginx via apt |
-| `--no-reload` | off | Scrive la configurazione senza ricaricare nginx |
-| `--print-config` | — | Stampa il site nginx su stdout ed esce (non richiede root) |
+| Opzione               | Default                                                             | Descrizione                                                  |
+| --------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `--src PATH`          | cartella padre dello script                                         | Checkout di GingerView da servire                            |
+| `--user NAME`         | `$SUDO_USER`, poi proprietario del checkout, poi primo utente ≥1000 | Proprietario di checkout e `printer_data`                    |
+| `--port N`            | `80`                                                                | Porta su cui esporre GingerView                              |
+| `--moonraker-host H`  | `127.0.0.1`                                                         | Indirizzo di Moonraker                                       |
+| `--moonraker-port N`  | `7125`                                                              | Porta di Moonraker                                           |
+| `--printer-data PATH` | `~USER/printer_data`                                                | Per registrare l'`update_manager`                            |
+| `--purge-mainsail`    | off                                                                 | Elimina anche i file Mainsail e la sua voce `update_manager` |
+| `--skip-packages`     | off                                                                 | Non installa nginx via apt                                   |
+| `--no-reload`         | off                                                                 | Scrive la configurazione senza ricaricare nginx              |
+| `--print-config`      | —                                                                   | Stampa il site nginx su stdout ed esce (non richiede root)   |
 
 `--print-config` è utile per ispezionare o diffare la configurazione prima di applicarla:
 
@@ -115,11 +115,11 @@ compito dell'immagine, non dell'installer: l'unica cosa che questo script deve f
 la porta che sta per occupare.
 
 Quindi un site Mainsail viene toccato **solo se rivendica la stessa porta**, e in quel caso
-viene *disabilitato* (rimosso il symlink da `sites-enabled`), non cancellato: la configurazione
+viene _disabilitato_ (rimosso il symlink da `sites-enabled`), non cancellato: la configurazione
 in `sites-available` resta al suo posto. Un Mainsail su un'altra porta — **8081 è il caso
 tipico di una macchina di sviluppo** — viene lasciato in funzione, e lo script lo dice.
 
-Il riconoscimento guarda le direttive `listen`: conta solo un ascolto *wildcard* sulla porta in
+Il riconoscimento guarda le direttive `listen`: conta solo un ascolto _wildcard_ sulla porta in
 questione. Un site legato a un indirizzo specifico, tipo `listen 192.168.4.1:80` di un portale
 access point, può convivere con `listen 80 default_server` e non viene toccato.
 
@@ -166,12 +166,12 @@ Tutti condividono `script/_common.sh` (messaggi, prompt, bootstrap di Node da `.
 `install.sh` è l'eccezione: resta autonomo perché deve girare nella pipeline G2-OS, anche
 lontano dai suoi fratelli.
 
-| Script | A cosa serve |
-|---|---|
-| [script/build.sh](../script/build.sh) | Build di produzione locale. Normalmente non serve: ci pensa la CI |
-| [script/update.sh](../script/update.sh) | Aggiorna un'installazione esistente. Niente Node, niente root |
-| [script/rundev.sh](../script/rundev.sh) | Server di sviluppo. `./rundev.sh` nella root è un forwarder a questo |
-| [script/test-install.sh](../script/test-install.sh) | Test di integrazione dell'installer in container |
+| Script                                              | A cosa serve                                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------- |
+| [script/build.sh](../script/build.sh)               | Build di produzione locale. Normalmente non serve: ci pensa la CI    |
+| [script/update.sh](../script/update.sh)             | Aggiorna un'installazione esistente. Niente Node, niente root        |
+| [script/rundev.sh](../script/rundev.sh)             | Server di sviluppo. `./rundev.sh` nella root è un forwarder a questo |
+| [script/test-install.sh](../script/test-install.sh) | Test di integrazione dell'installer in container                     |
 
 ### build.sh
 
@@ -351,7 +351,7 @@ curl -sS http://<ip>/server/info      # deve rispondere Moonraker
 curl -sS http://<ip>/service/health   # deve rispondere G2-Service
 ```
 
-Se `nginx -t` fallisce con *duplicate default server*, un altro site sta ancora reclamando la
+Se `nginx -t` fallisce con _duplicate default server_, un altro site sta ancora reclamando la
 porta 80:
 
 ```bash

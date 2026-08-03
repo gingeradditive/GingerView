@@ -23,7 +23,12 @@ export type Temperature = 'petg' | 'pla' | 'custom';
 export type ExtrudePhase = 'idle' | 'homing' | 'moving' | 'heating' | 'extruding';
 
 // One nozzle, four heated zones (see extruderKeys in DashboardTemperaturePanel).
-export type TemperatureZones = { extruder: number; extruder1: number; extruder2: number; extruder3: number };
+export type TemperatureZones = {
+	extruder: number;
+	extruder1: number;
+	extruder2: number;
+	extruder3: number;
+};
 
 export type TemperaturePreset = {
 	zones: TemperatureZones;
@@ -31,7 +36,12 @@ export type TemperaturePreset = {
 	rotationVolume: number;
 };
 
-export const zoneKeys: (keyof TemperatureZones)[] = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
+export const zoneKeys: (keyof TemperatureZones)[] = [
+	'extruder',
+	'extruder1',
+	'extruder2',
+	'extruder3'
+];
 
 export const amountOptions: { value: Amount; label: string; volumeMm3: number }[] = [
 	{ value: 'low', label: 'Low', volumeMm3: 1000 },
@@ -111,9 +121,12 @@ const readError = async (response: Response, fallback: string): Promise<string> 
 const runGcode = async (script: string): Promise<void> => {
 	let response: Response;
 	try {
-		response = await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(script)}`, {
-			method: 'POST'
-		});
+		response = await fetch(
+			`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(script)}`,
+			{
+				method: 'POST'
+			}
+		);
 	} catch {
 		throw new Error('Moonraker is unreachable');
 	}
@@ -124,7 +137,9 @@ const runGcode = async (script: string): Promise<void> => {
 
 // Purge/maintenance position: nozzle centered on X, front of the bed, well clear of it on Z.
 const getPurgePositionX = async (): Promise<number> => {
-	const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=axis_maximum`);
+	const response = await fetch(
+		`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=axis_maximum`
+	);
 	if (!response.ok) {
 		throw new Error(await readError(response, 'Could not read the bed size'));
 	}
@@ -189,7 +204,9 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		const setTemperatures = zoneKeys.map(
 			(key) => `SET_HEATER_TEMPERATURE HEATER=${key} TARGET=${preset.zones[key]}`
 		);
-		const waitTemperatures = zoneKeys.map((key) => `TEMPERATURE_WAIT SENSOR=${key} MINIMUM=${preset.zones[key]}`);
+		const waitTemperatures = zoneKeys.map(
+			(key) => `TEMPERATURE_WAIT SENSOR=${key} MINIMUM=${preset.zones[key]}`
+		);
 		await runGcode([...setTemperatures, ...waitTemperatures].join('\n'));
 
 		extrudePhase.set('extruding');

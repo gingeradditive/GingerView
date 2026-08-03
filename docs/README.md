@@ -5,22 +5,23 @@ controllo delle proprie stampanti 3D basate su Klipper/Kalico + Moonraker.
 
 ## Indice
 
-| Documento | Contenuto |
-|---|---|
-| [01 — Panoramica](01-panoramica.md) | Cos'è GingerView, a cosa serve, confronto con Mainsail |
-| [02 — Architettura](02-architettura.md) | Stack tecnologico, struttura del repo, routing, servizi e store |
-| [03 — Configurazione](03-configurazione.md) | Variabili `.env`, `configService`, risoluzione degli endpoint |
-| [04 — Integrazione Moonraker](04-moonraker.md) | Endpoint HTTP e WebSocket usati, polling, G-code inviati |
-| [05 — Sviluppo](05-sviluppo.md) | Setup locale, script, convenzioni di codice, palette |
-| [06 — Build e deploy](06-deploy.md) | Build statica, nginx, script di installazione/aggiornamento, CI |
-| [07 — Stato attuale e limiti noti](07-stato-attuale.md) | Cosa è implementato, cosa è placeholder, incongruenze aperte |
+| Documento                                               | Contenuto                                                       |
+| ------------------------------------------------------- | --------------------------------------------------------------- |
+| [01 — Panoramica](01-panoramica.md)                     | Cos'è GingerView, a cosa serve, confronto con Mainsail          |
+| [02 — Architettura](02-architettura.md)                 | Stack tecnologico, struttura del repo, routing, servizi e store |
+| [03 — Configurazione](03-configurazione.md)             | Variabili `.env`, `configService`, risoluzione degli endpoint   |
+| [04 — Integrazione Moonraker](04-moonraker.md)          | Endpoint HTTP e WebSocket usati, polling, G-code inviati        |
+| [05 — Sviluppo](05-sviluppo.md)                         | Setup locale, script, convenzioni di codice, palette            |
+| [06 — Build e deploy](06-deploy.md)                     | Build statica, nginx, script di installazione/aggiornamento, CI |
+| [07 — Stato attuale e limiti noti](07-stato-attuale.md) | Cosa è implementato, cosa è placeholder, incongruenze aperte    |
 
 ## File di lavoro
 
-| File | Contenuto |
-|---|---|
-| [TODO.md](TODO.md) | Cose da fare, con codice univoco `AREA-n` per riferirvisi. I task completati vengono rimossi |
-| [Q&A.md](Q&A.md) | Solo le domande ancora aperte. Quando una riceve risposta, esce da qui ed entra nella documentazione |
+| File                               | Contenuto                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [TODO.md](TODO.md)                 | Cose da fare, con codice univoco `AREA-n` per riferirvisi. I task completati vengono rimossi                   |
+| [Q&A.md](Q&A.md)                   | Solo le domande ancora aperte. Quando una riceve risposta, esce da qui ed entra nella documentazione           |
+| [PULIZIA-LINT.md](PULIZIA-LINT.md) | Piano per i 27 errori `eslint` residui (`QA-8`…`QA-11`, `CLN-4`) e le trappole di `build/` e del parser Svelte |
 
 ## In breve
 
