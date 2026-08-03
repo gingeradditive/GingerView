@@ -443,7 +443,7 @@ Se entrambe falliscono si usa il placeholder [static/error-thumbnail.png](../sta
 
 ## WebSocket
 
-Ci sono **quattro** utilizzi distinti del WebSocket, che non condividono una connessione comune.
+Ci sono **tre** utilizzi distinti del WebSocket, che non condividono una connessione comune.
 
 ### 1. `moonraker-notifier.ts` — notifiche globali
 
@@ -513,14 +513,6 @@ Non riusa la connessione del notifier perché quella non espone un meccanismo di
 sottoscrizione, e l'output degli aggiornamenti interessa solo a questa pagina. Riconnessione a
 5 secondi, senza limite di tentativi — serve perché aggiornare Moonraker lo fa riavviare, e la
 connessione cade a metà operazione.
-
-### 4. `klipper-websocket.ts` — servizio con store
-
-Espone `connectionStatus` e `klipperStatus` come store Svelte e riconnette con ritardo
-crescente (`1000ms × tentativo`, max 5 tentativi). Il suo unico consumatore è
-`DemoComponent.svelte`, che non è montato da nessuna rotta: in pratica **questa connessione
-non viene mai aperta**. Vedi
-[07 — Stato attuale](07-stato-attuale.md#codice-morto-da-rimuovere).
 
 ## Frequenze di polling
 

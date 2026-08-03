@@ -118,22 +118,21 @@ cosmetica. Vale la pena distinguere due casi:
 
 **Da verificare dopo**: che la console non perda righe né sfarfalli durante uno stream lungo.
 
-### `QA-10` — `@typescript-eslint/no-explicit-any` (4)
+### `QA-10` — `@typescript-eslint/no-explicit-any` (3)
 
-| File                                                                 | Riga | Nota                                          |
-| -------------------------------------------------------------------- | ---- | --------------------------------------------- |
-| [`DemoComponent.svelte`](../src/lib/components/DemoComponent.svelte) | 8    | **coperto da `CLN-1`**: il file va cancellato |
-| [`klipper.ts`](../src/lib/types/klipper.ts)                          | 4, 5 | `params` e `result` di `KlipperMessage`       |
-| [`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts) | 177  | parametro `data` di `handleNotification`      |
+| File                                                                 | Riga | Nota                                     |
+| -------------------------------------------------------------------- | ---- | ---------------------------------------- |
+| [`klipper.ts`](../src/lib/types/klipper.ts)                          | 4, 5 | `params` e `result` di `KlipperMessage`  |
+| [`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts) | 177  | parametro `data` di `handleNotification` |
 
-Uno dei quattro sparisce gratis con `CLN-1`. Restano i tre sul confine JSON-RPC con Moonraker,
-dove `any` è la scorciatoia tipica: la sostituzione corretta è `unknown` più un narrowing
-esplicito dove il valore viene consumato, non un'interfaccia inventata che dichiara più di
-quanto sappiamo davvero della risposta.
+Il quarto (`DemoComponent.svelte`) è sparito con `CLN-1`. Restano i tre sul confine JSON-RPC
+con Moonraker, dove `any` è la scorciatoia tipica: la sostituzione corretta è `unknown` più un
+narrowing esplicito dove il valore viene consumato, non un'interfaccia inventata che dichiara
+più di quanto sappiamo davvero della risposta.
 
-Attenzione all'effetto a cascata: `KlipperMessage` è un tipo condiviso, quindi passare a
-`unknown` fa emergere errori di tipo in tutti i punti che oggi accedono ai campi senza
-controllarli. È il motivo per cui va fatto in un passaggio dedicato e non in mezzo ad altro.
+Attenzione: dopo `CLN-1` i tipi in `klipper.ts` non sono più importati da nessuno (vedi
+`CLN-9`). Se il file viene cancellato, di questi tre ne restano uno solo e `QA-10` diventa una
+modifica di due righe in `moonraker-notifier.ts`; conviene quindi decidere `CLN-9` prima.
 
 ### `QA-11` — `svelte/prefer-svelte-reactivity` (1)
 

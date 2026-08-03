@@ -153,13 +153,6 @@ automatico della sua sequenza, non come controllo libero.
 Queste non sono più questioni aperte: la scelta è fatta, manca l'esecuzione. I task
 corrispondenti sono in [TODO.md](TODO.md).
 
-### Codice morto da rimuovere
-
-[DemoComponent.svelte](../src/lib/components/DemoComponent.svelte) non è referenziato da
-nessuna rotta ed è l'unico consumatore di `klipper-websocket.ts`: i due si tengono in vita a
-vicenda senza che nulla li usi. Le connessioni WebSocket realmente attive sono quelle aperte
-da `moonraker-notifier.ts` e dalla pagina console. **Entrambi vanno eliminati.**
-
 ### Dipendenze React da rimuovere
 
 `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` e `@mdi/react`

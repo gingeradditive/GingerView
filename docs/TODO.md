@@ -73,13 +73,15 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## CLN — Pulizia del codice
 
-- `CLN-1` Rimuovere `DemoComponent.svelte` e `klipper-websocket.ts` (codice morto) — pronto
 - `CLN-2` Disinstallare `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `@mdi/react` — pronto
 - `CLN-4` Convertire `ToolheadPosition.svelte` dalla sintassi legacy `$:` alle rune Svelte 5. Risolve da solo tutti e 9 gli errori `svelte/no-immutable-reactive-statements` del repo, che sono lì (righe 68–77): correggerli a mano prima è lavoro buttato — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-5` Decidere se cablare `configService.validateConfig()`, oggi implementato ma mai chiamato — pronto
 - `CLN-6` Rimuovere `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT` da `config.ts`, oppure usarle davvero: oggi non hanno effetto — pronto
 - `CLN-7` Spostare `:global(.spin)` + `@keyframes spin` in `app.css`: oggi è ridefinita in sei componenti/pagine, e chi usa `class="spin"` senza dichiararla localmente ha uno spinner immobile — la pagina Update funziona solo perché `UpdateLogModal` la porta dietro — pronto
 - `CLN-8` Annullare la subscribe a `currentDirPath` in `CurrentDirectory.svelte:11`, oggi mai disiscritta: il componente è montato dentro `PrintList`, quindi il leak si accumula a ogni entrata/uscita dalla lista di stampa — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
+- `CLN-9` Decidere se cancellare `src/lib/types/klipper.ts`: dopo `CLN-1` nessun file lo importa
+  più, l'unico consumatore era `klipper-websocket.ts`. `KlipperMessage` può tornare utile se si
+  tipizza il confine JSON-RPC (`QA-10`), quindi va deciso insieme a quello — pronto
 
 ## QA — Qualità e strumenti
 
@@ -89,7 +91,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `QA-7` Valutare `npm audit fix`: 15 vulnerabilità, di cui 4 raggiungono il bundle. Comporta rigenerare `build/` — pronto
 - `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `QA-9` Aggiungere le key ai 5 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
-- `QA-10` Togliere i 4 `any` residui passando a `unknown` + narrowing: uno sparisce con `CLN-1`, gli altri tre sono sul confine JSON-RPC di Moonraker e toccano il tipo condiviso `KlipperMessage` — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-1`
+- `QA-10` Togliere i 3 `any` residui passando a `unknown` + narrowing: sono sul confine JSON-RPC di Moonraker e due stanno nel tipo `KlipperMessage`, che oggi nessuno importa più — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-9`
 - `QA-11` Silenziare con commento motivato `svelte/prefer-svelte-reactivity` su `completedApps` in `settings/update`: lì la regola sbaglia, il valore non è mai osservato da un template e `SvelteSet` sarebbe la correzione sbagliata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## ROB — Robustezza
