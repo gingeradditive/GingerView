@@ -166,3 +166,24 @@ button {
 .btn-secondary:hover {
 	background-color: var(--color-border-light);
 }
+
+/*
+ * Spinner.
+ *
+ * `class="spin"` fa ruotare qualsiasi icona (di solito `LoaderCircle`), e `@keyframes spin` è
+ * disponibile anche per le animazioni scritte a mano nei componenti (`animation: spin …`).
+ * Stanno qui perché prima ogni pagina che mostrava uno spinner si portava dietro la propria
+ * copia: chi scriveva `class="spin"` senza ridichiararla otteneva un'icona immobile.
+ */
+.spin {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}

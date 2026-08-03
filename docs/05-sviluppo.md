@@ -90,6 +90,11 @@ Se un colore ti serve e non c'è, aggiungi il token lì invece di scriverlo nel 
 }
 ```
 
+Oltre alla palette, `app.css` tiene le poche classi davvero globali. Tra queste **`.spin`**, che
+fa ruotare qualsiasi icona (`<LoaderCircle class="spin" />`): la classe e i suoi `@keyframes spin`
+sono dichiarati una volta sola lì, quindi non vanno ridefiniti nei componenti — chi ha bisogno di
+un'animazione di rotazione propria può usare direttamente `animation: spin …`.
+
 ### Palette
 
 I cinque colori Ginger, che sono la palette di prodotto:

@@ -947,20 +947,6 @@
 		background: var(--color-background);
 		color: var(--color-red);
 	}
-	/* Ridefinita qui come nelle altre pagine: `.spin` non è in `app.css`, ogni
-	   pagina che mostra uno spinner se la porta dietro (vedi `CLN-7`). Il
-	   `:global` copre anche gli spinner dentro ConfigFileTree. */
-	:global(.spin) {
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
-	}
 	.placeholder {
 		margin: 20px 12px;
 		color: var(--color-text-subtle);
