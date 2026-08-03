@@ -109,8 +109,10 @@ tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo c
 Il bersaglio primario è però **lo schermo di un telefono**: la macchina non ha display e
 l'utente si collega dal proprio cellulare (vedi [01 — Panoramica](01-panoramica.md)). Il
 ramo sotto 768px è quindi quello che conta davvero; i breakpoint superiori servono al tecnico
-che si collega dal portatile. In `src/app.css` sotto 768px viene applicato `zoom: 0.8`, che è
-un residuo dell'impostazione precedente da rivedere.
+che si collega dal portatile. Sotto 768px non viene applicata nessuna scalatura globale: il
+`zoom: 0.8` su `html` che c'era in `src/app.css` era un residuo dell'impostazione precedente,
+pensata per un display fisso, ed è stato rimosso — su telefono rimpiccioliva testi e tocchi
+senza motivo.
 
 ## Servizi (`src/lib/services/`)
 
