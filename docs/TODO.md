@@ -73,7 +73,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## CLN — Pulizia del codice
 
-- `CLN-8` Annullare la subscribe a `currentDirPath` in `CurrentDirectory.svelte:11`, oggi mai disiscritta: il componente è montato dentro `PrintList`, quindi il leak si accumula a ogni entrata/uscita dalla lista di stampa — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-9` Decidere se cancellare `src/lib/types/klipper.ts`: dopo `CLN-1` nessun file lo importa
   più, l'unico consumatore era `klipper-websocket.ts`. `KlipperMessage` può tornare utile se si
   tipizza il confine JSON-RPC (`QA-10`), quindi va deciso insieme a quello — pronto

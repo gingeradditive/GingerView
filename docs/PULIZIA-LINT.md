@@ -51,7 +51,7 @@ il workaround (con la sua dipendenza diretta `svelte-eslint-parser` in `package.
 
 Nota: `CLN-4` ha convertito `ToolheadPosition.svelte` alle rune, ma il workaround **non** è
 diventato inutile: serve finché esiste anche un solo `$:` nel repo, e oggi ne resta uno in
-[`CurrentDirectory.svelte`](../src/lib/components/CurrentDirectory.svelte) (vedi `CLN-8`).
+[`CurrentDirectory.svelte`](../src/lib/components/CurrentDirectory.svelte).
 
 ### 3. Non impostare `destructuredArrayIgnorePattern`
 
@@ -148,19 +148,21 @@ allora `SvelteSet` diventerebbe la risposta vera — vale la pena scriverlo nel 
 ## Due cose emerse durante la pulizia
 
 Non sono errori di lint (`eslint` non le vede), ma sono venute fuori rimuovendo il codice morto
-e vanno decise da una persona. La prima è ancora aperta (`CLN-8`), la seconda è decisa.
+e vanno decise da una persona. Entrambe sono ora decise.
 
-### Subscribe mai disiscritta in `CurrentDirectory.svelte`
+### Subscribe mai disiscritta in `CurrentDirectory.svelte` — risolta (`CLN-8`)
 
-[Riga 11](../src/lib/components/CurrentDirectory.svelte#L11): `currentDirPath.subscribe(...)`
-non viene mai annullata. Prima c'era `const unsubscribe = ...`, ma la variabile non era usata da
-nessuna parte — quindi il valore di ritorno veniva scartato e la sottoscrizione restava viva per
-sempre. Nella pulizia è stato tolto solo il binding inutilizzato, **lasciando il comportamento
-identico**, perché sistemarlo davvero è un cambiamento funzionale.
+Il componente faceva `currentDirPath.subscribe(...)` senza mai annullare la sottoscrizione: prima
+c'era `const unsubscribe = ...`, ma la variabile non era usata da nessuna parte, quindi il valore
+di ritorno veniva scartato e la sottoscrizione restava viva per sempre. Nella pulizia era stato
+tolto solo il binding inutilizzato, lasciando il comportamento identico, perché sistemarlo
+davvero era un cambiamento funzionale. Il componente è montato dentro `PrintList`, quindi il leak
+si accumulava a ogni entrata/uscita dalla lista di stampa.
 
-La correzione è `onDestroy(unsubscribe)`, oppure `$derived`/`$state` se il componente viene
-convertito alle rune. Il componente è montato dentro `PrintList`, quindi il leak si accumula a
-ogni entrata/uscita dalla lista di stampa.
+La correzione applicata è l'auto-subscription: la variabile locale `dirPath` e la `subscribe`
+manuale sono sparite, e `segments` deriva direttamente da `$currentDirPath`. È Svelte a
+disiscrivere quando il componente viene distrutto, quindi non serve né `onDestroy` né la
+conversione alle rune.
 
 ### Il marker di target in `ToolheadPosition.svelte` — deciso: rimozione definitiva
 

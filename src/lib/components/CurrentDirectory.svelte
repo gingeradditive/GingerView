@@ -2,12 +2,7 @@
 	import { mdiChevronLeft } from '@mdi/js';
 	import { currentDirPath, navigateUp } from '$lib/stores/directoryStore';
 
-	let dirPath = '';
-	currentDirPath.subscribe((value) => {
-		dirPath = value;
-	});
-
-	$: segments = dirPath ? dirPath.split('/') : [];
+	$: segments = $currentDirPath ? $currentDirPath.split('/') : [];
 	$: currentFolder = segments.length > 0 ? segments[segments.length - 1] : 'Home';
 	$: hasParent = segments.length > 0;
 </script>
