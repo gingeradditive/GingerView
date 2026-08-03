@@ -157,13 +157,15 @@ markup, dove `var()` non è supportato in modo affidabile dai browser.
 
 ### Lingua
 
-**L'interfaccia va tutta in inglese**, `aria-label` e testi dei dialoghi compresi. La
-documentazione in [docs/](.) resta in italiano.
+**L'interfaccia è tutta in inglese**, `aria-label` e testi dei dialoghi compresi. La
+documentazione in [docs/](.) resta in italiano, e così i commenti nel codice.
 
-Oggi le stringhe sono miste: etichette in inglese ma `aria-label` e alcuni dialoghi in
-italiano ("Crea", "Annulla", "Rinomina", "Torna a Settings"). Se tocchi un componente che
-contiene stringhe italiane, convertile — non esiste un sistema di i18n, sono letterali nei
-componenti.
+Non esiste un sistema di i18n: le stringhe sono letterali nei componenti. Quando ne aggiungi
+una, scrivila direttamente in inglese — non c'è un file di traduzioni da aggiornare.
+
+L'unica eccezione è il confine con G2-Service, che risponde con messaggi in italiano: le
+traduzioni verso l'inglese stanno in `SERVICE_MESSAGES` nella pagina di rete e in
+`TIMEZONE_MESSAGES` in `timezone.ts`, vedi [04-moonraker.md](04-moonraker.md).
 
 ### Formattazione
 

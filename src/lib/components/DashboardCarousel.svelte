@@ -79,7 +79,7 @@
 			<button
 				class="dot"
 				class:active={isDotActive(index)}
-				aria-label={`Pagina ${index + 1}`}
+				aria-label={`Page ${index + 1}`}
 				onclick={() => scrollTo(index)}
 			></button>
 		{/each}

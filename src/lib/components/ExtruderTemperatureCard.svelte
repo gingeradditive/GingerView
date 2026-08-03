@@ -35,7 +35,7 @@
 
 <div
 	class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
-	aria-label={`Temperatura estrusore ${index}`}
+	aria-label={`Extruder ${index} temperature`}
 >
 	<span class="index">{index}</span>
 	<div class={`temperature-stack ${showSet ? 'with-set' : ''}`}>

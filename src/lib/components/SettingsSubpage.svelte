@@ -6,7 +6,7 @@
 
 <section class="subpage">
 	<header class="subpage-header">
-		<a href="/settings" class="back-btn" aria-label="Torna a Settings" title="Torna a Settings">
+		<a href="/settings" class="back-btn" aria-label="Back to Settings" title="Back to Settings">
 			<ArrowLeft />
 		</a>
 		<h1>{title}</h1>

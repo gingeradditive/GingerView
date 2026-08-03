@@ -194,10 +194,10 @@
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
 	>
-		<button class="context-menu-item" role="menuitem" onclick={handleRename}> Rinomina </button>
-		<button class="context-menu-item" role="menuitem" onclick={handleMove}> Sposta </button>
+		<button class="context-menu-item" role="menuitem" onclick={handleRename}> Rename </button>
+		<button class="context-menu-item" role="menuitem" onclick={handleMove}> Move </button>
 		<button class="context-menu-item delete" role="menuitem" onclick={handleDelete}>
-			{item.isDirectory ? 'Elimina cartella' : 'Elimina stampa'}
+			{item.isDirectory ? 'Delete folder' : 'Delete print'}
 		</button>
 	</div>
 {/if}
@@ -213,17 +213,17 @@
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-			<h3>Rinomina</h3>
+			<h3>Rename</h3>
 			<input
 				type="text"
 				bind:value={newName}
-				placeholder="Nuovo nome"
+				placeholder="New name"
 				class="rename-input"
 				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
 			/>
 			<div class="modal-actions">
-				<button class="modal-confirm" onclick={confirmRename}>Rinomina</button>
-				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Annulla</button>
+				<button class="modal-confirm" onclick={confirmRename}>Rename</button>
+				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -240,9 +240,9 @@
 	>
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-			<h3>Sposta "{item.name}"</h3>
+			<h3>Move "{item.name}"</h3>
 			{#if loadingDirs}
-				<p class="modal-loading">Caricamento cartelle...</p>
+				<p class="modal-loading">Loading folders...</p>
 			{:else}
 				<div class="folder-list">
 					<button class="folder-option" onclick={() => confirmMove('')}>
@@ -261,7 +261,7 @@
 					{/each}
 				</div>
 			{/if}
-			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Annulla</button>
+			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Cancel</button>
 		</div>
 	</div>
 {/if}

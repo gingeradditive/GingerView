@@ -186,12 +186,6 @@ resto: **nessuna gestione del conflitto** se due client salvano lo stesso file (
 che scrive), e nessuna validazione del config prima del salvataggio — l'errore si scopre al
 riavvio, quando Klippy torna in stato `error`.
 
-### Interfaccia da riportare tutta in inglese
-
-Oggi è mista: etichette in inglese, `aria-label` e alcuni dialoghi in italiano ("Crea",
-"Annulla", "Rinomina", "Torna a Settings"). **La lingua dell'interfaccia è l'inglese**; la
-documentazione resta in italiano. Non serve i18n: le stringhe sono letterali nei componenti.
-
 ## Incoerenze aperte
 
 ### `validateConfig()` mai chiamato

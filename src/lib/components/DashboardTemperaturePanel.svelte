@@ -107,7 +107,7 @@
 	});
 </script>
 
-<section class="temperature-panel" aria-label="Pannello temperature Klipper">
+<section class="temperature-panel" aria-label="Klipper temperature panel">
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
@@ -118,7 +118,7 @@
 		{/each}
 	</div>
 
-	<div class="bed-section" aria-label="Temperatura bed">
+	<div class="bed-section" aria-label="Bed temperature">
 		<div class="bed-triangle">
 			<img src="/NozzleHead.svg" alt="Nozzle" class="bed-triangle-icon" />
 		</div>

@@ -71,10 +71,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 - `CFG-1` Dare all'applicazione un modo per sapere su quale modello di macchina gira → Q26
 
-## UI — Interfaccia, layout, lingua
-
-- `UI-2` Portare tutta l'interfaccia in inglese, `aria-label` e dialoghi compresi — pronto
-
 ## CLN — Pulizia del codice
 
 - `CLN-1` Rimuovere `DemoComponent.svelte` e `klipper-websocket.ts` (codice morto) — pronto

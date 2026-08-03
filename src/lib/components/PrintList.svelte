@@ -175,7 +175,7 @@
 				alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
 			}
 		} else if (file) {
-			alert('Per favore seleziona un file .gcode');
+			alert('Please select a .gcode file');
 		}
 		// Reset input so re-selecting same file triggers change
 		if (target) target.value = '';
@@ -259,7 +259,7 @@
 			<button
 				class="action-button"
 				onclick={() => (showCreateFolderModal = true)}
-				aria-label="Crea cartella"
+				aria-label="Create folder"
 			>
 				<svg viewBox="0 0 24 24" width="40" height="40"
 					><path d={mdiFolderPlus} fill="#D72E28" /></svg
@@ -289,19 +289,19 @@
 		>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-				<h3>Crea nuova cartella</h3>
+				<h3>Create new folder</h3>
 				<input
 					type="text"
 					bind:value={folderName}
-					placeholder="Nome cartella"
+					placeholder="Folder name"
 					class="folder-input"
 					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
 					autofocus
 				/>
 				<div class="modal-actions">
-					<button class="modal-confirm" onclick={handleCreateFolder}>Crea</button>
+					<button class="modal-confirm" onclick={handleCreateFolder}>Create</button>
 					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}
-						>Annulla</button
+						>Cancel</button
 					>
 				</div>
 			</div>
