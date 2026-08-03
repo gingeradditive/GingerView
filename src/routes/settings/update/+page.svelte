@@ -553,7 +553,7 @@
 		opacity: 0.55;
 		cursor: default;
 	}
-	@media (max-width: 560px) {
+	@media (max-width: 767.98px) {
 		.update-page {
 			padding: 16px 16px 112px;
 		}

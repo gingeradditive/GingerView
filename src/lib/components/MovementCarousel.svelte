@@ -35,7 +35,8 @@
 	};
 
 	const updateVisibleCount = (): void => {
-		if (window.matchMedia('(min-width: 768px)').matches) visibleCount = 2;
+		// Stessa condizione della media query in fondo al file (vedi i breakpoint in app.css).
+		if (window.matchMedia('(min-width: 768px) and (min-height: 600px)').matches) visibleCount = 2;
 		else visibleCount = 1;
 	};
 
@@ -103,7 +104,7 @@
 		box-sizing: border-box;
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 768px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 50%;
 		}

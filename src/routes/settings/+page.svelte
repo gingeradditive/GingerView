@@ -219,7 +219,7 @@
 		height: 1px;
 		background: #ececec;
 	}
-	@media (max-width: 560px) {
+	@media (max-width: 767.98px) {
 		.settings-page {
 			padding: 16px 16px 112px;
 		}

@@ -129,7 +129,7 @@
 		opacity: 1;
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: 767.98px) {
 		.extruder-card {
 			width: 88px;
 			height: 49px;

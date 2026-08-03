@@ -978,15 +978,15 @@
 		color: #d72e28;
 		font-size: 0.9rem;
 	}
-	@media (max-width: 900px) {
-		/* Two panes side by side stop working before the phone breakpoint: the tree
+	@media (max-width: 1023.98px) {
+		/* Two panes side by side stop working well before the phone breakpoint: the tree
 		   goes on top with a capped height and the editor keeps the rest. */
 		.split {
 			grid-template-columns: 1fr;
 			grid-template-rows: minmax(120px, 30%) 1fr;
 		}
 	}
-	@media (max-width: 560px) {
+	@media (max-width: 767.98px) {
 		.config-page {
 			padding: 16px 16px 112px;
 		}

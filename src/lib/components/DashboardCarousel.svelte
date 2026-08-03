@@ -39,8 +39,11 @@
 	};
 
 	const updateVisibleCount = (): void => {
-		if (window.matchMedia('(min-width: 1200px)').matches) visibleCount = 5;
-		else if (window.matchMedia('(min-width: 768px)').matches) visibleCount = 3;
+		// Stesse condizioni delle media query in fondo al file: l'altezza serve a tenere il
+		// telefono in orizzontale sul layout a una slide (vedi i breakpoint in app.css).
+		if (window.matchMedia('(min-width: 1200px) and (min-height: 600px)').matches) visibleCount = 5;
+		else if (window.matchMedia('(min-width: 768px) and (min-height: 600px)').matches)
+			visibleCount = 3;
 		else visibleCount = 1;
 	};
 
@@ -117,13 +120,13 @@
 		box-sizing: border-box;
 	}
 
-	@media (min-width: 768px) and (max-width: 1199px) {
+	@media (min-width: 768px) and (max-width: 1199.98px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 calc(100% / 3);
 		}
 	}
 
-	@media (min-width: 1200px) {
+	@media (min-width: 1200px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 20%;
 		}
@@ -135,7 +138,7 @@
 		flex-shrink: 0;
 	}
 
-	@media (min-width: 1200px) {
+	@media (min-width: 1200px) and (min-height: 600px) {
 		.dots {
 			display: none;
 		}

@@ -103,13 +103,30 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/config-editor`        | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
 | `/settings/{history,statistics}` | `SettingsSubpage`                             | Solo intestazione + "Coming soon"                                                                                                                                                                               |
 
-I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
-tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo caso.
+### Breakpoint
 
-Il bersaglio primario è però **lo schermo di un telefono**: la macchina non ha display e
-l'utente si collega dal proprio cellulare (vedi [01 — Panoramica](01-panoramica.md)). Il
-ramo sotto 768px è quindi quello che conta davvero; i breakpoint superiori servono al tecnico
-che si collega dal portatile. Sotto 768px non viene applicata nessuna scalatura globale: il
+Il bersaglio primario è **lo schermo di un telefono**: la macchina non ha display e l'utente si
+collega dal proprio cellulare (vedi [01 — Panoramica](01-panoramica.md)). I breakpoint superiori
+servono al tecnico che si collega dal portatile. Le soglie sono queste, elencate in testa a
+[app.css](../src/app.css), e sono le uniche da usare nei componenti:
+
+| Condizione                                | Significato                                                                   |
+| ----------------------------------------- | ----------------------------------------------------------------------------- |
+| `max-width: 767.98px`                     | Telefono in verticale: il caso reale                                          |
+| `max-width: 1023.98px`                    | Due colonne affiancate non ci stanno più (config editor, dettagli di un file) |
+| `min-width: 768px` e `min-height: 600px`  | Schermo grande: 3 slide in dashboard, 2 in movimento                          |
+| `min-width: 1200px` e `min-height: 600px` | Schermo largo: 5 slide in dashboard, pallini di navigazione nascosti          |
+
+Le soglie che decidono **quante slide** mostrare chiedono anche l'altezza perché la larghezza da
+sola non distingue un telefono in orizzontale (~850×390) da un portatile: senza `min-height` un
+telefono ruotato finiva sul layout a 3 o 5 pannelli su 390px di altezza. Le soglie `max` usano
+`.98px` perché con il viewport a larghezza frazionaria (zoom del browser) `767`/`768` secchi
+lascerebbero scoperta la fascia intermedia.
+
+I valori intermedi che c'erano prima (480, 560, 640, 900, 980, 1199) erano arbitrari e su un
+telefono erano tutti sempre veri, cioè non distinguevano niente.
+
+Sotto i 768px non viene applicata nessuna scalatura globale: il
 `zoom: 0.8` su `html` che c'era in `src/app.css` era un residuo dell'impostazione precedente,
 pensata per un display fisso, ed è stato rimosso — su telefono rimpiccioliva testi e tocchi
 senza motivo.

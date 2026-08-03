@@ -1,6 +1,27 @@
 @import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
+/*
+ * Breakpoint della responsività.
+ *
+ * Il bersaglio reale è lo schermo di un telefono: la macchina non ha display e l'utente si
+ * collega dal proprio cellulare. Le soglie qui sotto sono le uniche da usare nei componenti;
+ * i valori intermedi (480, 560, 640, 900, 980) che c'erano prima erano arbitrari e su un
+ * telefono si comportavano tutti allo stesso modo, cioè erano sempre veri.
+ *
+ * - Telefono in verticale        @media (max-width: 767.98px)
+ * - Due colonne che non stanno   @media (max-width: 1023.98px)
+ * - Schermo grande (3 slide)     @media (min-width: 768px) and (min-height: 600px)
+ * - Schermo grande (5 slide)     @media (min-width: 1200px) and (min-height: 600px)
+ *
+ * La larghezza da sola non distingue un telefono in orizzontale (~850x390) da un portatile:
+ * per questo le soglie che decidono *quante* slide mostrare chiedono anche l'altezza. Sotto i
+ * 600px di altezza si resta sul layout da telefono, dove ogni pannello è a pieno schermo.
+ *
+ * Le soglie "max" usano .98px perché il viewport può avere larghezza frazionaria (zoom del
+ * browser): con 767/768 secchi una finestra da 767.5px non ricadrebbe in nessuno dei due rami.
+ */
+
 /* GingerView Light Theme */
 html,
 body {
