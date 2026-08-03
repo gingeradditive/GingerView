@@ -73,7 +73,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## CLN — Pulizia del codice
 
-- `CLN-4` Convertire `ToolheadPosition.svelte` dalla sintassi legacy `$:` alle rune Svelte 5. Risolve da solo tutti e 9 gli errori `svelte/no-immutable-reactive-statements` del repo, che sono lì (righe 68–77): correggerli a mano prima è lavoro buttato — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-5` Decidere se cablare `configService.validateConfig()`, oggi implementato ma mai chiamato — pronto
 - `CLN-6` Rimuovere `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT` da `config.ts`, oppure usarle davvero: oggi non hanno effetto — pronto
 - `CLN-7` Spostare `:global(.spin)` + `@keyframes spin` in `app.css`: oggi è ridefinita in sei componenti/pagine, e chi usa `class="spin"` senza dichiararla localmente ha uno spinner immobile — la pagina Update funziona solo perché `UpdateLogModal` la porta dietro — pronto

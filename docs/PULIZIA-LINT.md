@@ -1,10 +1,10 @@
 # Pulizia lint
 
-Piano di lavoro per i **26 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11` e `CLN-4`.
+Piano di lavoro per i **16 errori `eslint` residui**, più le trappole da conoscere prima di
+metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11`.
 
-Fotografia al 2026-08-03: `prettier --check .` passa, `eslint .` riporta 26 errori,
-`svelte-check` 0 errori e 16 warning (quelli sono `QA-6`, non riguardano questo file).
+Fotografia al 2026-08-03, dopo `CLN-4`: `prettier --check .` passa, `eslint .` riporta 16
+errori, `svelte-check` 0 errori e 16 warning (quelli sono `QA-6`, non riguardano questo file).
 
 ---
 
@@ -49,8 +49,9 @@ Per capire se un domani si può togliere: elimina il wrapper, lascia almeno un `
 utilizzato nel codice e lancia `eslint`. Se non crasha, upstream ha aggiunto il ramo mancante e
 il workaround (con la sua dipendenza diretta `svelte-eslint-parser` in `package.json`) va via.
 
-Nota: `CLN-4` converte `ToolheadPosition.svelte` alle rune, ma **non** rende il workaround
-inutile — serve finché esiste anche un solo `$:` nel repo, e oggi ce ne sono in vari componenti.
+Nota: `CLN-4` ha convertito `ToolheadPosition.svelte` alle rune, ma il workaround **non** è
+diventato inutile: serve finché esiste anche un solo `$:` nel repo, e oggi ne resta uno in
+[`CurrentDirectory.svelte`](../src/lib/components/CurrentDirectory.svelte) (vedi `CLN-8`).
 
 ### 3. Non impostare `destructuredArrayIgnorePattern`
 
@@ -65,18 +66,11 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 26 errori residui
+## I 16 errori residui
 
-### `CLN-4` — `svelte/no-immutable-reactive-statements` (9)
-
-Tutti e nove in [`ToolheadPosition.svelte`](../src/lib/components/ToolheadPosition.svelte),
-righe 68–77. Sono i `$: pNNN = project(...)` con argomenti costanti: gli otto vertici del
-cubo e il centro base, che non dipendono da nulla di mutabile e quindi non sono reattivi.
-
-Non vanno corretti uno per uno: **rientrano interamente in `CLN-4`**, la conversione del
-componente alle rune Svelte 5. In rune, i valori costanti diventano semplici `const` e i
-derivati veri `$derived`, e i nove errori spariscono insieme. Farlo prima a mano sarebbe lavoro
-buttato.
+I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
+conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
+vertici del cubo e il centro base) e `$derived` i derivati veri.
 
 ### `QA-8` — `svelte/no-navigation-without-resolve` (7)
 

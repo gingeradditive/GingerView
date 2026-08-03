@@ -65,9 +65,12 @@ seguire lo stesso stile.
 </script>
 ```
 
-Attenzione: [ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte) usa ancora
-la sintassi reattiva vecchia (`$:`) mescolata a `tweened`. È codice preesistente, non un
-modello da replicare.
+Attenzione: [CurrentDirectory.svelte](../src/lib/components/CurrentDirectory.svelte) usa ancora
+la sintassi reattiva vecchia (`$:`). È codice preesistente, non un modello da replicare.
+
+Per le animazioni si usa la classe `Tween` di `svelte/motion` (API a rune, `.current` per
+leggere e `.set()` per animare), non lo store `tweened` deprecato — vedi
+[ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte).
 
 ### Stili
 
