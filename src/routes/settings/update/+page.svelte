@@ -16,6 +16,8 @@
 		startRecover,
 		startUpgrade
 	} from '$lib/services/moonraker-update';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 	import type { UpdateLogState, UpdateStatus } from '$lib/types/update';
 
@@ -80,6 +82,7 @@
 	);
 
 	onMount(() => {
+		ensurePrinterTimezone();
 		loadStatus();
 		updatePrintState();
 
@@ -298,9 +301,10 @@
 		pending?.run();
 	}
 
+	/** Nel fuso della stampante, come tutti gli orari dell'interfaccia. */
 	function formatResetTime(unixSeconds: number): string {
 		if (!unixSeconds) return '';
-		return new Date(unixSeconds * 1000).toLocaleTimeString();
+		return formatZoneTime($printerTimezone, new Date(unixSeconds * 1000), true);
 	}
 </script>
 

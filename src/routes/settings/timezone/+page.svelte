@@ -14,6 +14,7 @@
 		getOffsetMinutes,
 		setSystemTimezone
 	} from '$lib/services/timezone';
+	import { setPrinterTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 
 	/** L'orologio mostra ore e minuti: al secondo si accorge dello scatto di minuto. */
@@ -48,6 +49,7 @@
 			appliedTimezone = status.timezone;
 			selectedTimezone = status.timezone;
 			ntpSynchronized = status.ntpSynchronized;
+			setPrinterTimezone(status.timezone);
 		} catch (e) {
 			loadError = describeTimezoneError(e, 'Failed to read the current timezone.');
 		} finally {
@@ -65,6 +67,9 @@
 			appliedTimezone = status.timezone;
 			selectedTimezone = status.timezone;
 			ntpSynchronized = status.ntpSynchronized;
+			// Gli orari già a schermo (ETA in primis) seguono questo fuso: si
+			// aggiorna lo store subito, senza aspettare un ricaricamento.
+			setPrinterTimezone(status.timezone);
 			toastActions.success(
 				'network',
 				'Timezone saved',

@@ -146,7 +146,7 @@ senza motivo.
 | [moonraker-update.ts](../src/lib/services/moonraker-update.ts)     | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente                                                                                       |
 | [g2-service.ts](../src/lib/services/g2-service.ts)                 | Trasporto comune a tutte le API di G2-Service: prefisso `/service`, modello degli errori (`ServiceError`) e attesa dei job asincroni (`waitForJob`)                                                                        |
 | [network-api.ts](../src/lib/services/network-api.ts)               | Endpoint di rete di G2-Service: stato unificato WiFi/Ethernet, elenco reti, rescan e connessione (che è un job)                                                                                                            |
-| [timezone.ts](../src/lib/services/timezone.ts)                     | Fuso orario di sistema via `GET`/`POST /service/timezone`, più tutto il calcolo locale — offset via `Intl`, formattazione, ricerca sull'elenco IANA                                                                        |
+| [timezone.ts](../src/lib/services/timezone.ts)                     | Fuso orario di sistema via `GET`/`POST /service/timezone`, più tutto il calcolo locale — offset via `Intl`, formattazione (`formatZoneTime`, usata da tutti gli orari dell'interfaccia), ricerca sull'elenco IANA          |
 
 ### Dati generati (`src/lib/data/`)
 
@@ -164,6 +164,14 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 - **`directoryStore.ts`** — percorso corrente relativo alla root `gcodes`, con helper
   `navigateToDir`, `navigateUp`, `navigateToRoot`, `navigateToSegment`.
 - **`contextMenuStore.ts`** — id del menu contestuale aperto, così che aprirne uno chiuda gli altri.
+- **`timezoneStore.ts`** — fuso orario della **stampante**, letto una volta sola per sessione
+  (`ensurePrinterTimezone()`, che condivide la stessa promise fra tutti i componenti che lo
+  chiedono) e riscritto da `/settings/timezone` a ogni lettura o salvataggio
+  (`setPrinterTimezone()`). Ogni orario dell'interfaccia — ETA della dashboard, timestamp della
+  console, ora di reset del rate limit GitHub nella pagina Update — si formatta in questo fuso
+  con `formatZoneTime()`. Finché il valore è `null` (non ancora arrivato, o G2-Service muto) si
+  ripiega sul fuso del browser, che sul kiosk della macchina coincide. Le **durate** (tempo
+  trascorso, tempo residuo) non passano di qui: sono differenze, e un fuso non le cambia.
 - **`movementStore.ts`** — stato della pagina Movement che deve **sopravvivere alla pagina**:
   parametri di estrusione selezionati (`extrudeAmount`, `extrudeSpeed`, `extrudeTemperature`,
   `customTemperaturePreset`), fase corrente (`extrudePhase`) e flag `homingBusy`. Le due sequenze

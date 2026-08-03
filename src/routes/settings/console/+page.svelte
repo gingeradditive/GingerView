@@ -2,6 +2,8 @@
 	import { Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 
 	type OutputEntry = {
@@ -25,6 +27,7 @@
 	const config = configService.getKlipperConfig();
 
 	onMount(() => {
+		ensurePrinterTimezone();
 		connectWebSocket();
 		return () => disconnectWebSocket();
 	});
@@ -236,7 +239,12 @@
 		<div bind:this={terminalRef} class="terminal-output">
 			{#each outputHistory as entry}
 				<div class="line">
-					<span class="time">{entry.timestamp.toLocaleTimeString()}</span>
+					<!--
+						Il timestamp lo mette il browser quando la riga arriva, ma quello
+						che descrive è uno scambio con la stampante: si legge nel suo
+						fuso, come l'ETA.
+					-->
+					<span class="time">{formatZoneTime($printerTimezone, entry.timestamp, true)}</span>
 					{#if entry.type === 'command'}
 						<span class="cmd">&gt; {entry.content}</span>
 					{:else if entry.type === 'error'}

@@ -6,6 +6,8 @@
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 
 	const pollIntervalMs = 2000;
 
@@ -13,7 +15,13 @@
 	let jobMaterial = $state('');
 	let elapsed = $state('--:--:--');
 	let remaining = $state('--:--:--');
-	let eta = $state('--:--');
+	/*
+		L'istante di fine, non la stringa: l'ETA va riscritta anche quando cambia
+		il fuso della stampante (arrivo del primo valore, o salvataggio da
+		`/settings/timezone`), non solo al polling successivo.
+	*/
+	let etaAt = $state<Date | null>(null);
+	let eta = $derived(etaAt ? formatZoneTime($printerTimezone, etaAt) : '--:--');
 	let progress = $state(0);
 	let printState = $state<string>('standby');
 	let thumbnailUrl = $state<string>('/error-thumbnail.png');
@@ -30,10 +38,6 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.floor(seconds % 60);
 		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
-
-	const formatTime = (date: Date): string => {
-		return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 	};
 
 	const stripExtension = (filename: string): string => {
@@ -99,16 +103,14 @@
 				const totalEstimated = printDuration / prog;
 				const remainingSeconds = totalEstimated - printDuration;
 				remaining = formatDuration(remainingSeconds);
-				const etaDate = new Date(Date.now() + remainingSeconds * 1000);
-				eta = formatTime(etaDate);
+				etaAt = new Date(Date.now() + remainingSeconds * 1000);
 			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
 				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
 				remaining = formatDuration(remainingSeconds);
-				const etaDate = new Date(Date.now() + remainingSeconds * 1000);
-				eta = formatTime(etaDate);
+				etaAt = new Date(Date.now() + remainingSeconds * 1000);
 			} else {
 				remaining = '--:--:--';
-				eta = '--:--';
+				etaAt = null;
 			}
 		} catch {
 			return;
@@ -141,6 +143,7 @@
 	};
 
 	onMount(() => {
+		ensurePrinterTimezone();
 		updatePrintJob();
 		const interval = window.setInterval(updatePrintJob, pollIntervalMs);
 		return () => window.clearInterval(interval);

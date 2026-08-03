@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
 	const pollIntervalMs = 2000;
@@ -9,7 +11,9 @@
 
 	let elapsed = $state('--:--:--');
 	let remaining = $state('--:--:--');
-	let eta = $state('--:--');
+	/* L'istante di fine, non la stringa: vedi `DashboardPrintJobPanel`. */
+	let etaAt = $state<Date | null>(null);
+	let eta = $derived(etaAt ? formatZoneTime($printerTimezone, etaAt) : '--:--');
 	let progress = $state(0);
 	let isPrinting = $state(false);
 	let isPaused = $state(false);
@@ -33,10 +37,6 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.floor(seconds % 60);
 		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
-
-	const formatTime = (date: Date): string => {
-		return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 	};
 
 	const sendGcode = async (gcode: string): Promise<void> => {
@@ -98,14 +98,14 @@
 				const totalEstimated = printDuration / prog;
 				const remainingSeconds = totalEstimated - printDuration;
 				remaining = formatDuration(remainingSeconds);
-				eta = formatTime(new Date(Date.now() + remainingSeconds * 1000));
+				etaAt = new Date(Date.now() + remainingSeconds * 1000);
 			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
 				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
 				remaining = formatDuration(remainingSeconds);
-				eta = formatTime(new Date(Date.now() + remainingSeconds * 1000));
+				etaAt = new Date(Date.now() + remainingSeconds * 1000);
 			} else {
 				remaining = '--:--:--';
-				eta = '--:--';
+				etaAt = null;
 			}
 
 			const fan = status.fan;
@@ -175,6 +175,7 @@
 	};
 
 	onMount(() => {
+		ensurePrinterTimezone();
 		updateStatus();
 		const interval = window.setInterval(updateStatus, pollIntervalMs);
 		return () => window.clearInterval(interval);

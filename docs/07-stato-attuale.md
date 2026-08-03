@@ -32,7 +32,11 @@ scambi un segnaposto per un bug.
 - Pagina Timezone (`/settings/timezone`): mappa del mondo con la fascia oraria selezionata
   evidenziata e un segnaposto sulla città, orologio e data della zona aggiornati al secondo, e
   tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). Lettura e
-  salvataggio passano da `GET`/`POST /service/timezone` di G2-Service.
+  salvataggio passano da `GET`/`POST /service/timezone` di G2-Service. Il fuso scelto **decide
+  come si leggono tutti gli orari dell'interfaccia** (ETA in dashboard, timestamp della console,
+  ora di reset del rate limit GitHub): sono istanti assoluti scritti nell'ora della macchina, non
+  in quella del telefono che guarda — vedi
+  [02 — Store](02-architettura.md#store-srclibstores).
 - Pagina Config editor (`/settings/config-editor`): equivalente dell'editor dei config di
   Mainsail — albero della root `config` con cartelle e sottocartelle espandibili a richiesta,
   apertura in modifica, salvataggio, crea file, crea cartella, upload, rinomina, elimina,
@@ -74,18 +78,6 @@ senza contenuto. La voce è nel menu, la rotta esiste, la funzionalità no. Sono
 Indicazioni già raccolte:
 
 - **History** e **Statistics** restano da progettare.
-
-### Gli orari mostrati non seguono il fuso della stampante
-
-Il fuso orario ora si salva davvero (`POST /service/timezone`), ma va tenuto presente quando se
-ne valuta l'utilità: **gli orari mostrati in GingerView non dipendono dal fuso della
-stampante.** L'ETA in dashboard è calcolato nel
-browser (`new Date(Date.now() + rimanente)` in
-[DashboardControlPanel.svelte](../src/lib/components/DashboardControlPanel.svelte)) e reso con
-`getHours()`, quindi segue il fuso del telefono che sta guardando. Il fuso dell'host conta per
-i timestamp scritti nei log e per tutto ciò che la macchina calcola in ora locale — non per
-quello che si legge nell'interfaccia. Se si vuole che l'interfaccia segua l'ora della
-stampante, è un lavoro a parte (`UI-7`).
 
 ### Webcam assente
 
