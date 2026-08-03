@@ -1,10 +1,10 @@
 # Pulizia lint
 
-Piano di lavoro per gli **11 errori `eslint` residui**, più le trappole da conoscere prima di
+Piano di lavoro per i **9 errori `eslint` residui**, più le trappole da conoscere prima di
 metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`, `QA-10` e `QA-11`.
 
-Fotografia al 2026-08-03, dopo `CLN-4` e `QA-9`: `prettier --check .` passa, `eslint .` riporta
-11 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
+Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9` e `CLN-9`: `prettier --check .` passa, `eslint .`
+riporta 9 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
 `PrintCard.svelte` e `PrintList.svelte`.
 
 ---
@@ -67,18 +67,19 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## Gli 11 errori residui
+## I 9 errori residui
 
 I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
 conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
 vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
-`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo).
+`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo), e due dei tre
+`no-explicit-any` con `CLN-9` (vedi sotto).
 
 ### `QA-8` — `svelte/no-navigation-without-resolve` (7)
 
 | File                                                                       | Righe          |
 | -------------------------------------------------------------------------- | -------------- |
-| [`+layout.svelte`](../src/routes/+layout.svelte)                           | 29, 36, 47, 58 |
+| [`+layout.svelte`](../src/routes/+layout.svelte)                           | 45, 52, 63, 74 |
 | [`settings/+page.svelte`](../src/routes/settings/+page.svelte)             | 121            |
 | [`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte)   | 9              |
 | [`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte) | 82 (`goto()`)  |
@@ -94,21 +95,19 @@ errori permanenti che rendono `npm run lint` rumoroso.
 
 **Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
 
-### `QA-10` — `@typescript-eslint/no-explicit-any` (3)
+### `QA-10` — `@typescript-eslint/no-explicit-any` (1)
 
-| File                                                                 | Riga | Nota                                     |
-| -------------------------------------------------------------------- | ---- | ---------------------------------------- |
-| [`klipper.ts`](../src/lib/types/klipper.ts)                          | 4, 5 | `params` e `result` di `KlipperMessage`  |
-| [`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts) | 177  | parametro `data` di `handleNotification` |
+[`moonraker-notifier.ts:177`](../src/lib/services/moonraker-notifier.ts#L177) — il parametro
+`data` di `handleNotification`.
 
-Il quarto (`DemoComponent.svelte`) è sparito con `CLN-1`. Restano i tre sul confine JSON-RPC
-con Moonraker, dove `any` è la scorciatoia tipica: la sostituzione corretta è `unknown` più un
-narrowing esplicito dove il valore viene consumato, non un'interfaccia inventata che dichiara
-più di quanto sappiamo davvero della risposta.
+Il quarto (`DemoComponent.svelte`) è sparito con `CLN-1`, gli altri due con `CLN-9` (vedi
+sotto). Resta quello sul confine JSON-RPC con Moonraker, dove `any` è la scorciatoia tipica: la
+sostituzione corretta è `unknown` più un narrowing esplicito dove il valore viene consumato, non
+un'interfaccia inventata che dichiara più di quanto sappiamo davvero della risposta.
 
-Attenzione: dopo `CLN-1` i tipi in `klipper.ts` non sono più importati da nessuno (vedi
-`CLN-9`). Se il file viene cancellato, di questi tre ne restano uno solo e `QA-10` diventa una
-modifica di due righe in `moonraker-notifier.ts`; conviene quindi decidere `CLN-9` prima.
+Nel caso concreto il narrowing serve a poco lì dentro: `handleNotification` legge `data.method`
+e `data.params?.[0]`, quindi con `unknown` vanno aggiunti i controlli di forma prima di ogni
+accesso, oppure un type guard `isNotification(data)` in cima alla funzione.
 
 ### `QA-11` — `svelte/prefer-svelte-reactivity` (1)
 
@@ -149,6 +148,22 @@ costruzione e costa una riga.
 
 **Da verificare su macchina**: che la console non perda righe né sfarfalli durante uno stream
 lungo, e che il modal "Move" di `PrintCard` mostri la lista giusta dopo un cambio di cartella.
+
+## `src/lib/types/klipper.ts` — deciso: cancellato (`CLN-9`)
+
+Il file dichiarava `KlipperMessage`, `KlipperStatus` e `WebSocketConnectionStatus`. L'unico
+consumatore era `klipper-websocket.ts`, che non esiste più: dopo `CLN-1` nessun file del repo
+importava più niente da lì, verificato con una ricerca sui tre nomi in tutto `src/`.
+
+La decisione è **cancellarlo**. Non serviva tenerlo in attesa di `QA-10`: la strada giusta per
+il confine JSON-RPC è `unknown` più narrowing esplicito nel punto di consumo, non un'interfaccia
+scritta a priori — e quella interfaccia, con `params: Record<string, any>` e `result: any`,
+dichiarava di sapere quello che non sapeva. Se un domani si vorrà tipizzare davvero il
+protocollo, si riparte dalla documentazione di Moonraker, non da questo file; il contenuto
+vecchio resta comunque recuperabile da git.
+
+Effetto collaterale: due dei tre `no-explicit-any` sono spariti insieme al file, e `QA-10` si è
+ridotto a una funzione sola in `moonraker-notifier.ts`.
 
 ## Due cose emerse durante la pulizia
 
