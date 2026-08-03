@@ -75,32 +75,79 @@ Lo stile predominante è **CSS scoped dentro il componente**, non classi Tailwin
 configurato e disponibile, ma nella pratica i componenti scrivono il proprio blocco `<style>`.
 Segui la convenzione del file che stai modificando invece di introdurre l'altro approccio.
 
-I valori della palette sono spesso scritti a mano nei CSS dei componenti (`#D72E28`,
-`#C8C8C8`, …) invece di passare dai token Tailwind. È duplicazione esistente: se tocchi un
-componente puoi allinearlo, ma non è richiesto un refactor generale.
+**Nei CSS dei componenti non si scrivono valori esadecimali**: si usano i token della
+palette, cioè i custom properties dichiarati in `:root` in [src/app.css](../src/app.css).
+Se un colore ti serve e non c'è, aggiungi il token lì invece di scriverlo nel componente.
+
+```css
+.qualcosa {
+	color: var(--color-text-soft);
+	background: var(--color-white);
+	border: 1px solid var(--color-gray);
+}
+```
 
 ### Palette
 
-| Nome        | Hex       | Uso                                       |
-| ----------- | --------- | ----------------------------------------- |
-| Bianco      | `#FFFFFF` | Sfondi card, testo su fondo scuro         |
-| Sfondo      | `#F5F5F5` | Sfondi secondari                          |
-| Grigio      | `#C8C8C8` | Bordi, separatori, sfondo applicativo     |
-| RossoGinger | `#D72E28` | Azioni primarie, accenti, stati di errore |
-| Nero        | `#111111` | Testo principale                          |
+I cinque colori Ginger, che sono la palette di prodotto:
 
-Definita in [tailwind.config.cjs](../tailwind.config.cjs) e in
-[src/app.css](../src/app.css). Font: **Montserrat**.
+| Nome        | Token                | Hex       | Uso                                       |
+| ----------- | -------------------- | --------- | ----------------------------------------- |
+| Bianco      | `--color-white`      | `#FFFFFF` | Sfondi card, testo su fondo scuro         |
+| Sfondo      | `--color-background` | `#F5F5F5` | Sfondi secondari                          |
+| Grigio      | `--color-gray`       | `#C8C8C8` | Bordi, separatori, sfondo applicativo     |
+| RossoGinger | `--color-red`        | `#D72E28` | Azioni primarie, accenti, stati di errore |
+| Nero        | `--color-black`      | `#111111` | Testo principale                          |
 
-Fuori palette ci sono tre coppie sfondo/testo usate per gli **stati**, nate nella pagina
-console e riprese da quella update. Non sono in `tailwind.config.cjs`: se ne servono altre,
-riusa queste invece di inventarne di nuove.
+Sono ripetuti in [tailwind.config.cjs](../tailwind.config.cjs) per le classi Tailwind, ma la
+sorgente per i CSS dei componenti è `app.css`. Font: **Montserrat**.
 
-| Stato     | Sfondo    | Testo     | Uso                                               |
-| --------- | --------- | --------- | ------------------------------------------------- |
-| Positivo  | `#DDF3DF` | `#1A7F37` | "Connected", "Up to date", operazione riuscita    |
-| In attesa | `#FDF0D5` | `#9A6700` | "Update available", avvisi, operazione in corso   |
-| Negativo  | `#F7D9D8` | `#D72E28` | "Disconnected", repo corrotto, operazione fallita |
+`--color-red-dark` (`#B82520`) è il rosso premuto: hover e stato attivo delle azioni primarie.
+
+### Neutri
+
+Scala di grigi fuori palette, dal testo secondario allo sfondo incassato. Esisteva già sparsa
+nei componenti in decine di varianti indistinguibili (`#333`/`#444`/`#4a4a4a`,
+`#666`/`#6e6e6e`, `#828282`/`#888`/`#8a8a8a`, …): qui è ridotta a un valore per gradino.
+Prendi il gradino più vicino invece di introdurne uno nuovo.
+
+| Token                    | Hex       | Uso                                              |
+| ------------------------ | --------- | ------------------------------------------------ |
+| `--color-text-secondary` | `#222222` | Titoli e testo secondario                        |
+| `--color-text-muted`     | `#444444` | Testo di supporto                                |
+| `--color-text-soft`      | `#6E6E6E` | Etichette, didascalie                            |
+| `--color-text-subtle`    | `#8A8A8A` | Testo terziario, icone spente                    |
+| `--color-text-disabled`  | `#9A9A9A` | Controlli disabilitati                           |
+| `--color-gray-light`     | `#B5B5B5` | Tratti e riempimenti chiari                      |
+| `--color-divider`        | `#D9D9D9` | Separatori                                       |
+| `--color-border-light`   | `#E2E2E2` | Bordi tenui                                      |
+| `--color-surface-sunken` | `#ECECEC` | Sfondi incassati                                 |
+| `--color-black-pure`     | `#000000` | Nero pieno, solo dove serve (console, contrasto) |
+
+### Stati
+
+Quattro famiglie: sfondo (`-bg`), bordo (`-border`) e variante satura per icone e indicatori
+(`-vivid`). Lo stato negativo non ha un colore di testo proprio, usa `--color-red`. Se ti
+serve un colore di stato, riusa questi invece di inventarne di nuovi.
+
+| Stato     | Testo             | Sfondo               | Uso                                               |
+| --------- | ----------------- | -------------------- | ------------------------------------------------- |
+| Positivo  | `--color-success` | `--color-success-bg` | "Connected", "Up to date", operazione riuscita    |
+| In attesa | `--color-warning` | `--color-warning-bg` | "Update available", avvisi, operazione in corso   |
+| Negativo  | `--color-red`     | `--color-danger-bg`  | "Disconnected", repo corrotto, operazione fallita |
+| Neutro    | `--color-info`    | `--color-info-bg`    | Informazioni, assi del toolhead, mappa fusi       |
+
+### Trasparenze e ombre
+
+`rgba()` non accetta un colore già composto, quindi i colori usati con trasparenza hanno
+anche un token con i soli canali: `rgba(var(--rgb-black), 0.25)`, `rgba(var(--rgb-red), 0.3)`.
+Le due ombre ricorrenti — quella dei pannelli e quella degli elementi flottanti — sono
+`var(--shadow-panel)` e `var(--shadow-float)`, da usare come declaration intera.
+
+Restano fuori dai token due casi: i colori del **syntax highlighting** in
+[klipper-config-language.ts](../src/lib/editor/klipper-config-language.ts), che sono un tema
+per il codice e non colori di interfaccia, e gli attributi `fill=` degli **SVG inline** nel
+markup, dove `var()` non è supportato in modo affidabile dai browser.
 
 ### Nomenclatura
 

@@ -99,14 +99,14 @@
 
 <style>
 	.z-height-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		align-items: stretch;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		overflow: hidden;
 	}
 
@@ -121,10 +121,10 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 0;
 		overflow: hidden;
-		border-right: 1px solid #000000;
+		border-right: 1px solid var(--color-black-pure);
 	}
 
 	.z-progress-fill {
@@ -132,7 +132,7 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: #d72e28;
+		background: var(--color-red);
 		border-radius: 0;
 		transition: height 0.3s ease;
 	}
@@ -151,7 +151,7 @@
 		left: 0;
 		right: 50%;
 		height: 1px;
-		background: #000000;
+		background: var(--color-black-pure);
 	}
 
 	.z-labels {
@@ -166,7 +166,7 @@
 		position: absolute;
 		right: 0;
 		font-size: 0.7rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		transform: translateY(50%);
 		white-space: nowrap;
 	}
@@ -185,18 +185,18 @@
 	.z-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 	}
 
 	.z-value {
 		font-size: 1.7rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 
 	.z-value-sub {
 		font-size: 1.5rem;
-		color: #999999;
+		color: var(--color-text-disabled);
 		font-weight: 400;
 	}
 </style>

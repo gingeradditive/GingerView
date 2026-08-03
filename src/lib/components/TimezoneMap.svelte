@@ -104,7 +104,7 @@
 		margin: 0 auto;
 		border-radius: 16px;
 		overflow: hidden;
-		background: #eef2f7;
+		background: var(--color-info-bg);
 		flex-shrink: 0;
 	}
 	.map svg {
@@ -113,21 +113,21 @@
 		height: auto;
 	}
 	.ocean {
-		fill: #eef2f7;
+		fill: var(--color-info-bg);
 	}
 	.land {
-		fill: #ccd5e0;
+		fill: var(--color-info-soft);
 	}
 	.separator {
-		stroke: #ffffff;
+		stroke: var(--color-white);
 		stroke-width: 1;
 		vector-effect: non-scaling-stroke;
 		opacity: 0.7;
 	}
 	.band {
-		fill: #d72e28;
+		fill: var(--color-red);
 		fill-opacity: 0.16;
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-opacity: 0.45;
 		stroke-width: 1;
 		vector-effect: non-scaling-stroke;
@@ -138,9 +138,9 @@
 		width: 12px;
 		height: 12px;
 		border-radius: 50%;
-		background: #d72e28;
-		border: 2px solid #ffffff;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+		background: var(--color-red);
+		border: 2px solid var(--color-white);
+		box-shadow: 0 1px 4px rgba(var(--rgb-black), 0.35);
 		transform: translate(-50%, -50%);
 		transition:
 			left 350ms ease,
@@ -150,8 +150,8 @@
 	.label {
 		position: absolute;
 		transform: translate(-50%, calc(-100% - 12px));
-		background: rgba(34, 34, 34, 0.88);
-		color: #ffffff;
+		background: rgba(var(--rgb-text-secondary), 0.88);
+		color: var(--color-white);
 		font-size: 0.8rem;
 		font-weight: 600;
 		white-space: nowrap;

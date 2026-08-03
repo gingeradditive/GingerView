@@ -160,13 +160,13 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.settings-list {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
 		padding: 0 20px 4px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 	}
 	.settings-row {
 		width: 100%;
@@ -187,7 +187,7 @@
 		justify-content: center;
 		width: 28px;
 		height: 28px;
-		color: #444444;
+		color: var(--color-text-muted);
 		flex-shrink: 0;
 	}
 	.icon :global(svg) {
@@ -206,18 +206,18 @@
 	.row-text p {
 		margin: 2px 0 0;
 		font-size: 0.85rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 	}
 	.chevron {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.divider {
 		height: 1px;
-		background: #ececec;
+		background: var(--color-surface-sunken);
 	}
 	@media (max-width: 767.98px) {
 		.settings-page {

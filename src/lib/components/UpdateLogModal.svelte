@@ -89,7 +89,11 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2600;
@@ -100,7 +104,7 @@
 		box-sizing: border-box;
 	}
 	.modal-content {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
 		padding: 24px;
 		width: min(720px, 100%);
@@ -108,7 +112,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 	}
 	.log-header {
@@ -121,7 +125,7 @@
 		margin: 0;
 		font-size: 1.25rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.state-pill {
 		margin-left: auto;
@@ -135,46 +139,46 @@
 		flex-shrink: 0;
 	}
 	.state-pill.running {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.state-pill.success {
-		background: #ddf3df;
-		color: #1a7f37;
+		background: var(--color-success-bg);
+		color: var(--color-success);
 	}
 	.state-pill.error {
-		background: #f7d9d8;
-		color: #d72e28;
+		background: var(--color-danger-bg);
+		color: var(--color-red);
 	}
 	.log-output {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		padding: 16px 20px;
 		box-sizing: border-box;
-		background: #fafafa;
+		background: var(--color-background);
 	}
 	.log-line {
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-size: 0.82rem;
 		line-height: 1.5;
-		color: #2e2e2e;
+		color: var(--color-text-secondary);
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
 	.log-line.muted {
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 	}
 	.note {
 		margin: 0;
 		font-size: 0.85rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		flex-shrink: 0;
 	}
 	.note.error {
-		color: #d72e28;
+		color: var(--color-red);
 		font-weight: 600;
 	}
 	.log-actions {
@@ -184,8 +188,8 @@
 	}
 	.close-btn {
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 32px;
 		font-size: 1rem;

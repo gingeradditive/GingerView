@@ -84,13 +84,13 @@
 
 <style>
 	.flow-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -113,7 +113,7 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 10;
 		fill: none;
 		stroke-dasharray: none;
@@ -121,7 +121,7 @@
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 14;
 		fill: none;
 		stroke-linecap: round;
@@ -143,7 +143,7 @@
 	.flow-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;
 	}
@@ -151,7 +151,7 @@
 	.flow-value {
 		font-size: 1.7rem;
 		font-weight: 500;
-		color: #666666;
+		color: var(--color-text-soft);
 		line-height: 1.3;
 	}
 </style>

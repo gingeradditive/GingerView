@@ -125,12 +125,12 @@
 		height: 8px;
 		border-radius: 50%;
 		border: none;
-		background: #d9d9d9;
+		background: var(--color-divider);
 		padding: 0;
 		cursor: pointer;
 	}
 
 	.dot.active {
-		background: #828282;
+		background: var(--color-text-subtle);
 	}
 </style>

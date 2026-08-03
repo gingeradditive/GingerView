@@ -82,11 +82,11 @@
 		display: flex;
 		gap: 0.64rem;
 		padding: 9.6px;
-		background: rgba(255, 255, 255, 0.85);
+		background: rgba(var(--rgb-white), 0.85);
 		border-radius: 19.2px;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 20px rgba(var(--rgb-black), 0.15);
 		z-index: 1000;
 	}
 
@@ -96,26 +96,26 @@
 		justify-content: center;
 		width: 52.8px;
 		height: 52.8px;
-		color: #828282;
+		color: var(--color-text-subtle);
 		border-radius: 14.4px;
 		text-decoration: none;
-		background: #ffffff;
+		background: var(--color-white);
 		border: 3px solid transparent;
 		cursor: pointer;
 		padding: 0;
 	}
 
 	.dock a:hover {
-		background: #ffffff;
+		background: var(--color-white);
 	}
 
 	.dock a.active {
-		background: #ffffff;
-		border: 3px solid #d72e28;
+		background: var(--color-white);
+		border: 3px solid var(--color-red);
 	}
 
 	.dock a:focus-visible {
-		outline: 2px solid #d72e28;
+		outline: 2px solid var(--color-red);
 		outline-offset: 2px;
 	}
 
@@ -126,9 +126,9 @@
 	}
 
 	.settings-icon {
-		background: #ffffff !important;
+		background: var(--color-white) !important;
 		margin-left: 19.2px;
-		color: #828282 !important;
+		color: var(--color-text-subtle) !important;
 		border: 3px solid transparent !important;
 	}
 
@@ -137,16 +137,16 @@
 	}
 
 	.settings-icon:hover {
-		background: #ffffff !important;
+		background: var(--color-white) !important;
 	}
 
 	.settings-icon.active svg {
-		fill: #d72e28;
+		fill: var(--color-red);
 	}
 
 	.settings-icon.active {
-		background: #ffffff !important;
-		border: 3px solid #d72e28 !important;
+		background: var(--color-white) !important;
+		border: 3px solid var(--color-red) !important;
 	}
 
 	.logo-container {

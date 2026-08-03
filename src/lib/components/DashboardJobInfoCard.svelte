@@ -83,7 +83,7 @@
 
 <style>
 	.job-info-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
@@ -94,14 +94,14 @@
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		text-align: center;
 	}
 
 	.job-name {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 
 	.job-preview {
@@ -120,7 +120,7 @@
 
 	.job-material {
 		font-size: 0.85rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 </style>

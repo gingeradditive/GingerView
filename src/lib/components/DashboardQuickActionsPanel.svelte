@@ -177,7 +177,7 @@
 	}
 
 	.action-subpanel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 12px;
 		padding: 16px;
 		display: flex;
@@ -185,7 +185,7 @@
 		justify-content: center;
 		width: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.action-btn {
@@ -193,8 +193,8 @@
 		height: 56px;
 		border-radius: 12px;
 		border: none;
-		background: #ffffff;
-		color: #d72e28;
+		background: var(--color-white);
+		color: var(--color-red);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -202,12 +202,12 @@
 	}
 
 	.action-btn:focus-visible {
-		outline: 2px solid #d72e28;
+		outline: 2px solid var(--color-red);
 		outline-offset: 2px;
 	}
 
 	.action-btn svg {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 	}
 
 	.circular-progress {
@@ -217,13 +217,13 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 4;
 		fill: none;
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 4;
 		fill: none;
 		stroke-linecap: round;

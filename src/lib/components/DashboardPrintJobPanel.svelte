@@ -206,7 +206,7 @@
 
 <style>
 	.print-job-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 16px 0 0 0;
 		display: flex;
@@ -214,7 +214,7 @@
 		gap: 12px;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.idle-header {
@@ -233,7 +233,7 @@
 	.idle-title {
 		font-size: 2rem;
 		font-weight: 600;
-		color: #222222;
+		color: var(--color-text-secondary);
 		line-height: 1.1;
 	}
 
@@ -250,7 +250,7 @@
 		position: absolute;
 		left: 16px;
 		bottom: -0.9rem;
-		color: #222222;
+		color: var(--color-text-secondary);
 		font-size: 2.5rem;
 		font-weight: 600;
 		white-space: nowrap;
@@ -266,13 +266,13 @@
 	.job-name {
 		font-size: 1.6rem;
 		font-weight: 600;
-		color: #222222;
+		color: var(--color-text-secondary);
 		line-height: 1.1;
 	}
 
 	.job-material {
 		font-size: 0.8rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 
@@ -300,7 +300,7 @@
 		width: 58px;
 		height: 58px;
 		border-radius: 14px;
-		border: 3px solid #d72e28;
+		border: 3px solid var(--color-red);
 		background: transparent;
 		cursor: pointer;
 		display: flex;
@@ -310,7 +310,7 @@
 	}
 
 	.control-btn:hover {
-		background: #fde8e7;
+		background: var(--color-danger-bg);
 	}
 
 	.progress-bar {
@@ -328,7 +328,7 @@
 	}
 
 	.progress-elapsed {
-		background: #d72e28;
+		background: var(--color-red);
 	}
 
 	.elapsed-time {
@@ -338,14 +338,14 @@
 		height: 36px;
 		display: flex;
 		align-items: center;
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 0.95rem;
 		font-weight: 700;
 		white-space: nowrap;
 	}
 
 	.progress-remaining {
-		background: #b0b0b0;
+		background: var(--color-gray-light);
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
@@ -354,7 +354,7 @@
 	}
 
 	.eta-time {
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 0.8rem;
 		font-weight: 600;
 		white-space: nowrap;

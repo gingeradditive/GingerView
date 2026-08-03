@@ -93,13 +93,17 @@
 		justify-content: center;
 		padding: 24px;
 		box-sizing: border-box;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 	}
 
 	.card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
@@ -109,7 +113,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.icon {
@@ -120,14 +124,14 @@
 		margin: 0 0 12px;
 		font-size: 1.15rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		text-align: center;
 	}
 
 	.message {
 		margin: 0 0 12px;
 		font-size: 0.95rem;
-		color: #333333;
+		color: var(--color-text-muted);
 		text-align: center;
 	}
 
@@ -140,8 +144,8 @@
 		box-sizing: border-box;
 		padding: 10px 14px;
 		border-radius: 8px;
-		background: #f5f5f5;
-		color: #6e6e6e;
+		background: var(--color-background);
+		color: var(--color-text-soft);
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: 0.78rem;
 		line-height: 1.4;
@@ -153,7 +157,7 @@
 	.hint {
 		margin: 0;
 		font-size: 0.85rem;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		text-align: center;
 	}
 </style>

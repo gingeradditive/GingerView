@@ -37,12 +37,12 @@
 		gap: 12px;
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		font-family: 'Montserrat', sans-serif;
 	}
 
 	.back-button {
-		color: #d72e28;
+		color: var(--color-red);
 		padding: 4px;
 		background: transparent;
 		border: none;

@@ -138,7 +138,7 @@
 
 <style>
 	.temperature-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
@@ -149,7 +149,7 @@
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.extruders {
@@ -190,8 +190,8 @@
 		height: 81px;
 		padding: 7px 8px;
 		border-radius: 7px;
-		border: 1px solid #8f8f93;
-		background: #b9b9bc;
+		border: 1px solid var(--color-text-subtle);
+		background: var(--color-gray-light);
 		box-sizing: border-box;
 		transition:
 			background-color 220ms ease,
@@ -199,18 +199,18 @@
 	}
 
 	.bed-card.heating {
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.bed-card.ready {
-		border-color: #d72e28;
-		background: #d72e28;
+		border-color: var(--color-red);
+		background: var(--color-red);
 	}
 
 	.bed-label {
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: #ececec;
+		color: var(--color-surface-sunken);
 		line-height: 1;
 	}
 
@@ -228,7 +228,7 @@
 	.bed-value {
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #7a7a7e;
+		color: var(--color-text-subtle);
 		line-height: 1;
 		position: relative;
 	}
@@ -241,18 +241,18 @@
 	}
 
 	.bed-value.heating {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.bed-value.ready {
-		color: #ffffff;
+		color: var(--color-white);
 	}
 
 	.bed-set-temperature {
 		font-size: 0.8rem;
 		font-weight: 500;
 		line-height: 1;
-		color: #ffffff;
+		color: var(--color-white);
 		opacity: 1;
 	}
 </style>

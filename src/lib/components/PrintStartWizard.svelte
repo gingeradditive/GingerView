@@ -132,7 +132,11 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 3500;
@@ -142,7 +146,7 @@
 	}
 
 	.modal-content {
-		background: #fff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		/* Fixed per-viewport size across every step, so Cancel/Proceed never move —
@@ -153,7 +157,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.progress-bar {
@@ -168,12 +172,12 @@
 		flex: 1;
 		height: 6px;
 		border-radius: 3px;
-		background: #ececec;
+		background: var(--color-surface-sunken);
 		transition: background-color 0.2s ease;
 	}
 
 	.progress-segment.filled {
-		background: #d72e28;
+		background: var(--color-red);
 	}
 
 	.step-body {
@@ -195,7 +199,7 @@
 		margin: 0 0 16px 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111;
+		color: var(--color-black);
 		text-align: center;
 	}
 
@@ -214,8 +218,8 @@
 		align-items: center;
 		gap: 10px;
 		font-size: 0.95rem;
-		color: #333;
-		background: #f5f5f5;
+		color: var(--color-text-muted);
+		background: var(--color-background);
 		border-radius: 8px;
 		padding: 10px 14px;
 	}
@@ -226,7 +230,7 @@
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
-		background: #d72e28;
+		background: var(--color-red);
 	}
 
 	.modal-actions {
@@ -239,16 +243,16 @@
 
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #fff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666;
+		color: var(--color-text-soft);
 	}
 
 	.modal-cancel:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 
 	.modal-cancel:disabled,
@@ -262,7 +266,7 @@
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
+		background: var(--color-red);
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -270,6 +274,6 @@
 	}
 
 	.modal-confirm:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 </style>

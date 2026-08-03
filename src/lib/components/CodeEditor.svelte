@@ -41,10 +41,10 @@
 		'&': {
 			height: '100%',
 			fontSize: '0.82rem',
-			backgroundColor: '#fbfbfb',
-			color: '#222222'
+			backgroundColor: 'var(--color-background)',
+			color: 'var(--color-text-secondary)'
 		},
-		'&.cm-focused': { outline: 'none', backgroundColor: '#ffffff' },
+		'&.cm-focused': { outline: 'none', backgroundColor: 'var(--color-white)' },
 		'.cm-scroller': {
 			fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
 			lineHeight: '1.55'
@@ -53,20 +53,20 @@
 		'.cm-gutters': {
 			backgroundColor: 'transparent',
 			border: 'none',
-			color: '#b5b5b5',
+			color: 'var(--color-gray-light)',
 			paddingRight: '4px'
 		},
-		'.cm-activeLine': { backgroundColor: '#00000008' },
-		'.cm-activeLineGutter': { backgroundColor: 'transparent', color: '#8a8a8a' },
+		'.cm-activeLine': { backgroundColor: 'rgba(var(--rgb-black), 0.03)' },
+		'.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--color-text-subtle)' },
 		'.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
-			backgroundColor: '#d72e281f'
+			backgroundColor: 'rgba(var(--rgb-red), 0.12)'
 		},
-		'.cm-cursor': { borderLeftColor: '#d72e28', borderLeftWidth: '2px' },
+		'.cm-cursor': { borderLeftColor: 'var(--color-red)', borderLeftWidth: '2px' },
 		'.cm-matchingBracket, &.cm-focused .cm-matchingBracket': {
-			backgroundColor: '#d72e2814',
-			outline: '1px solid #d72e2855'
+			backgroundColor: 'rgba(var(--rgb-red), 0.08)',
+			outline: '1px solid rgba(var(--rgb-red), 0.33)'
 		},
-		'.cm-panels': { backgroundColor: '#f5f5f5', color: '#444444' },
+		'.cm-panels': { backgroundColor: 'var(--color-background)', color: 'var(--color-text-muted)' },
 		'.cm-panels input, .cm-panels button': { fontFamily: 'inherit' }
 	});
 

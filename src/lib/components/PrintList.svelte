@@ -378,12 +378,12 @@
 		text-align: center;
 		padding: 48px 16px;
 		font-size: 1.1rem;
-		color: #888;
+		color: var(--color-text-subtle);
 		font-family: 'Montserrat', sans-serif;
 	}
 
 	.status-message.error {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.modal-overlay {
@@ -392,7 +392,11 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2000;
@@ -402,25 +406,25 @@
 	}
 
 	.modal-content {
-		background: #fff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
 		max-width: 400px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.modal-content h3 {
 		margin: 0 0 16px 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111;
+		color: var(--color-black);
 	}
 
 	.folder-input {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
 		font-size: 0.9rem;
 		margin-bottom: 16px;
@@ -429,7 +433,7 @@
 
 	.folder-input:focus {
 		outline: none;
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.modal-actions {
@@ -442,7 +446,7 @@
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
+		background: var(--color-red);
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -450,11 +454,11 @@
 
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #fff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666;
+		color: var(--color-text-soft);
 	}
 </style>

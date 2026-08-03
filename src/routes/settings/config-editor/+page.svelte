@@ -696,9 +696,9 @@
 	}
 	.config-card {
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -715,13 +715,13 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.dev-badge {
 		border-radius: 999px;
 		padding: 4px 12px;
-		background: #ececec;
-		color: #6e6e6e;
+		background: var(--color-surface-sunken);
+		color: var(--color-text-soft);
 		font-size: 0.75rem;
 		font-weight: 700;
 		text-transform: uppercase;
@@ -745,16 +745,16 @@
 		background: currentColor;
 	}
 	.status-pill.ok {
-		background: #ddf3df;
-		color: #1a7f37;
+		background: var(--color-success-bg);
+		color: var(--color-success);
 	}
 	.status-pill.pending {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.status-pill.problem {
-		background: #fdeaea;
-		color: #b82520;
+		background: var(--color-danger-bg);
+		color: var(--color-red-dark);
 	}
 	.toolbar {
 		display: flex;
@@ -777,20 +777,20 @@
 		flex-shrink: 0;
 	}
 	.banner.warn {
-		background: #fdeaea;
-		color: #b82520;
+		background: var(--color-danger-bg);
+		color: var(--color-red-dark);
 	}
 	.banner.suggest {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.banner span {
 		flex: 1;
 	}
 	.banner-btn {
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 12px;
 		padding: 8px 16px;
 		font-size: 0.85rem;
@@ -821,7 +821,7 @@
 	}
 	.tree-pane,
 	.editor-pane {
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		display: flex;
 		flex-direction: column;
@@ -835,13 +835,13 @@
 		align-items: center;
 		gap: 10px;
 		padding: 10px 12px;
-		border-bottom: 1px solid #ececec;
+		border-bottom: 1px solid var(--color-surface-sunken);
 		flex-shrink: 0;
 	}
 	.pane-title {
 		font-size: 0.8rem;
 		font-weight: 700;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 	}
@@ -856,18 +856,18 @@
 		min-width: 0;
 		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		font-size: 0.82rem;
-		color: #444444;
+		color: var(--color-text-muted);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.dirty {
-		color: #d72e28;
+		color: var(--color-red);
 		margin-left: 6px;
 	}
 	.line-count {
 		font-size: 0.75rem;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.editor-actions {
@@ -875,16 +875,16 @@
 		align-items: center;
 		gap: 8px;
 		padding: 10px 12px;
-		border-top: 1px solid #ececec;
+		border-top: 1px solid var(--color-surface-sunken);
 		flex-shrink: 0;
 	}
 	.ghost-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		border: 1px solid #c8c8c8;
-		background: #ffffff;
-		color: #444444;
+		border: 1px solid var(--color-gray);
+		background: var(--color-white);
+		color: var(--color-text-muted);
 		border-radius: 14px;
 		padding: 9px 16px;
 		font-size: 0.88rem;
@@ -893,21 +893,21 @@
 		cursor: pointer;
 	}
 	.ghost-btn:hover:not(:disabled) {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.ghost-btn:disabled {
 		opacity: 0.55;
 		cursor: default;
 	}
 	.restart-select {
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 14px;
 		padding: 9px 12px;
 		font-size: 0.88rem;
 		font-weight: 600;
 		font-family: inherit;
-		color: #444444;
-		background: #ffffff;
+		color: var(--color-text-muted);
+		background: var(--color-white);
 		cursor: pointer;
 	}
 	.restart-btn,
@@ -916,8 +916,8 @@
 		align-items: center;
 		gap: 8px;
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 14px;
 		padding: 9px 20px;
 		font-size: 0.9rem;
@@ -939,13 +939,13 @@
 		border: none;
 		border-radius: 10px;
 		background: transparent;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		cursor: pointer;
 		flex-shrink: 0;
 	}
 	.icon-btn:hover {
-		background: #f5f5f5;
-		color: #d72e28;
+		background: var(--color-background);
+		color: var(--color-red);
 	}
 	/* Ridefinita qui come nelle altre pagine: `.spin` non è in `app.css`, ogni
 	   pagina che mostra uno spinner se la porta dietro (vedi `CLN-7`). Il
@@ -963,7 +963,7 @@
 	}
 	.placeholder {
 		margin: 20px 12px;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		font-size: 0.9rem;
 	}
 	.load-error {
@@ -975,7 +975,7 @@
 	}
 	.load-error p {
 		margin: 0;
-		color: #d72e28;
+		color: var(--color-red);
 		font-size: 0.9rem;
 	}
 	@media (max-width: 1023.98px) {

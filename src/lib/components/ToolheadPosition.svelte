@@ -313,9 +313,9 @@
 	}
 
 	.viz-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex: 1;
 		min-height: 0;
@@ -342,42 +342,42 @@
 	}
 
 	.bed-fill {
-		fill: #d3d3d3;
+		fill: var(--color-divider);
 	}
 
 	.cube-edge {
-		stroke: #bcbcbc;
+		stroke: var(--color-gray-light);
 		stroke-width: 1.8;
 	}
 
 	.z-plane {
-		fill: #d72e284d;
-		stroke: #d72e2899;
+		fill: rgba(var(--rgb-red), 0.3);
+		stroke: rgba(var(--rgb-red), 0.6);
 		stroke-width: 1;
 	}
 
 	.axis-x {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 2.2;
 	}
 
 	.axis-y {
-		stroke: #26b73f;
+		stroke: var(--color-success-vivid);
 		stroke-width: 2.2;
 	}
 
 	.axis-z-inner {
-		stroke: #3d67d899;
+		stroke: rgba(var(--rgb-info), 0.6);
 		stroke-width: 2;
 	}
 
 	.axis-z-outer {
-		stroke: #3d67d8;
+		stroke: var(--color-info);
 		stroke-width: 2.2;
 	}
 
 	.z-guide {
-		stroke: #3d67d855;
+		stroke: rgba(var(--rgb-info), 0.33);
 		stroke-width: 1.4;
 		stroke-dasharray: 4 4;
 	}
@@ -389,30 +389,30 @@
 	}
 
 	.axis-label-x {
-		fill: #d72e28;
+		fill: var(--color-red);
 	}
 
 	.axis-label-y {
-		fill: #26b73f;
+		fill: var(--color-success-vivid);
 	}
 
 	.axis-label-z {
-		fill: #3d67d8;
+		fill: var(--color-info);
 		text-anchor: middle;
 	}
 
 	.toolhead-shadow {
-		fill: #00000033;
+		fill: rgba(var(--rgb-black), 0.2);
 	}
 
 	.toolhead-marker {
-		fill: #d72e28;
+		fill: var(--color-red);
 	}
 
 	.position-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex-shrink: 0;
 		padding: 0 20px;
@@ -423,7 +423,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 14px 0;
-		border-bottom: 1px solid #ececec;
+		border-bottom: 1px solid var(--color-surface-sunken);
 	}
 
 	.position-row:last-child {
@@ -436,27 +436,27 @@
 	}
 
 	.position-label-x {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.position-label-y {
-		color: #26b73f;
+		color: var(--color-success-vivid);
 	}
 
 	.position-label-z {
-		color: #3d67d8;
+		color: var(--color-info);
 	}
 
 	.position-value {
-		color: #9a9a9a;
+		color: var(--color-text-disabled);
 		font-size: 1.4rem;
 		font-weight: 600;
 	}
 
 	.controls-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex-shrink: 0;
 		display: flex;
@@ -470,8 +470,8 @@
 		width: 92px;
 		height: 92px;
 		aspect-ratio: 1 / 1;
-		background: #ffffff;
-		border: 1px solid #e0e0e0;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
 		border-radius: 12px;
 		box-sizing: border-box;
 		display: flex;
@@ -479,12 +479,12 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		color: #4a4a4a;
+		color: var(--color-text-muted);
 		cursor: pointer;
 	}
 
 	.control-btn:hover {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 
 	.control-btn span {
@@ -495,13 +495,13 @@
 	}
 
 	.control-btn.home {
-		background: #d72e28;
-		border-color: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		border-color: var(--color-red);
+		color: var(--color-white);
 	}
 
 	.control-btn.home:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 
 	.control-btn:disabled {

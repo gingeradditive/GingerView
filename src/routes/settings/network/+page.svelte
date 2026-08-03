@@ -431,9 +431,9 @@
 	}
 	.network-card {
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -453,7 +453,7 @@
 	}
 	.header-icon {
 		display: inline-flex;
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.header-icon :global(svg) {
 		width: 30px;
@@ -463,7 +463,7 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.status-banner {
 		display: flex;
@@ -474,10 +474,10 @@
 	}
 	.status-banner.connected,
 	.status-banner.wired {
-		background: #dff5e1;
+		background: var(--color-success-bg);
 	}
 	.status-banner.disconnected {
-		background: #f9dcdb;
+		background: var(--color-danger-bg);
 	}
 	.status-banner .banner-icon {
 		display: inline-flex;
@@ -485,10 +485,10 @@
 	}
 	.status-banner.connected .banner-icon,
 	.status-banner.wired .banner-icon {
-		color: #2f9e44;
+		color: var(--color-success);
 	}
 	.status-banner.disconnected .banner-icon {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.status-banner .banner-icon :global(svg) {
 		width: 40px;
@@ -505,25 +505,25 @@
 	}
 	.status-banner.connected .banner-text strong,
 	.status-banner.wired .banner-text strong {
-		color: #2f9e44;
+		color: var(--color-success);
 	}
 	.status-banner.disconnected .banner-text strong {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.banner-text .ip {
 		font-size: 0.95rem;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 	}
 	.error-box {
-		background: #f9dcdb;
-		color: #d72e28;
+		background: var(--color-danger-bg);
+		color: var(--color-red);
 		border-radius: 14px;
 		padding: 12px 16px;
 		font-size: 0.9rem;
 	}
 	.info-box {
-		background: #f1f1f1;
-		color: #444444;
+		background: var(--color-background);
+		color: var(--color-text-muted);
 		border-radius: 14px;
 		padding: 12px 16px;
 		font-size: 0.9rem;
@@ -547,19 +547,19 @@
 		display: flex;
 		align-items: center;
 		gap: 16px;
-		background: #ffffff;
-		border: 1px solid #e2e2e2;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		padding: 14px 18px;
 		text-align: left;
 	}
 	.row-icon {
 		display: inline-flex;
-		color: #9a9a9a;
+		color: var(--color-text-disabled);
 		flex-shrink: 0;
 	}
 	.row-icon.active {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.row-icon :global(svg) {
 		width: 26px;
@@ -574,15 +574,15 @@
 	.row-text strong {
 		font-size: 1.05rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 	}
 	.row-text span {
 		font-size: 0.9rem;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 	}
 	.chevron {
 		display: inline-flex;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.scan-row {
@@ -590,9 +590,9 @@
 		justify-content: flex-end;
 	}
 	.scan-btn {
-		border: 1px solid #d72e28;
+		border: 1px solid var(--color-red);
 		background: transparent;
-		color: #d72e28;
+		color: var(--color-red);
 		border-radius: 14px;
 		padding: 12px 28px;
 		font-size: 1rem;
@@ -609,12 +609,12 @@
 		align-items: center;
 		justify-content: center;
 		padding: 16px;
-		background: rgba(60, 60, 60, 0.45);
+		background: rgba(var(--rgb-gray-dark), 0.45);
 		backdrop-filter: blur(10px);
 	}
 	.dialog {
 		width: min(420px, calc(100vw - 32px));
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
 		padding: 24px;
 		box-sizing: border-box;
@@ -627,7 +627,7 @@
 	}
 	.dialog-icon {
 		display: inline-flex;
-		color: #d72e28;
+		color: var(--color-red);
 		flex-shrink: 0;
 	}
 	.dialog-icon :global(svg) {
@@ -642,7 +642,7 @@
 		min-width: 0;
 	}
 	.security-label {
-		color: #9a9a9a;
+		color: var(--color-text-disabled);
 		font-size: 0.9rem;
 		flex-shrink: 0;
 	}
@@ -656,7 +656,7 @@
 	.dialog input[type='password'] {
 		width: 100%;
 		box-sizing: border-box;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 14px;
 		padding: 12px 14px;
 		font-size: 0.95rem;
@@ -681,20 +681,20 @@
 	.checkbox-box {
 		width: 20px;
 		height: 20px;
-		border: 2px solid #d72e28;
+		border: 2px solid var(--color-red);
 		border-radius: 5px;
 		flex-shrink: 0;
 	}
 	.show-password input[type='checkbox']:checked + .checkbox-box {
-		background: #d72e28;
+		background: var(--color-red);
 	}
 	.checkbox-label {
-		color: #d72e28;
+		color: var(--color-red);
 		font-size: 0.95rem;
 		font-weight: 600;
 	}
 	.dialog-error {
-		color: #d72e28;
+		color: var(--color-red);
 		font-size: 0.85rem;
 		margin: 10px 0 0;
 	}
@@ -712,12 +712,12 @@
 		font-weight: 700;
 	}
 	.btn.cancel {
-		background: #e2e2e2;
-		color: #ffffff;
+		background: var(--color-border-light);
+		color: var(--color-white);
 	}
 	.btn.confirm {
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 	}
 	.btn.confirm:disabled {
 		opacity: 0.55;

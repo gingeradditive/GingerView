@@ -118,7 +118,11 @@
 	.details-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		display: flex;
@@ -131,17 +135,17 @@
 	.details-modal {
 		width: min(800px, 100%);
 		min-height: 400px;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 27px;
 		display: grid;
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		min-width: 0;
 	}
 
 	.preview-pane {
-		background: #ffffff;
+		background: var(--color-white);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -159,7 +163,7 @@
 		height: auto;
 		aspect-ratio: 1 / 1;
 		object-fit: contain;
-		background: #fff;
+		background: var(--color-white);
 	}
 
 	.rotate-overlay {
@@ -168,7 +172,7 @@
 		left: 12px;
 		width: 40px;
 		height: 40px;
-		background: rgba(255, 255, 255, 0.9);
+		background: rgba(var(--rgb-white), 0.9);
 		border-radius: 0;
 		display: flex;
 		align-items: center;
@@ -199,7 +203,7 @@
 	h2 {
 		margin: 0;
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
-		color: #111;
+		color: var(--color-black);
 		font-weight: 600;
 	}
 
@@ -237,7 +241,7 @@
 	.subtitle {
 		margin: 8px 0 0;
 		font-size: 1rem;
-		color: #666;
+		color: var(--color-text-soft);
 	}
 
 	.stats-grid {
@@ -253,7 +257,7 @@
 		justify-content: center;
 		gap: 8px;
 		font-weight: 600;
-		color: #222;
+		color: var(--color-text-secondary);
 	}
 
 	.actions-row {
@@ -263,14 +267,14 @@
 
 	.print-button {
 		border: none;
-		background: #d72e28;
-		color: #fff;
+		background: var(--color-red);
+		color: var(--color-white);
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		font-weight: 600;
 		padding: 14px 56px;
 		border-radius: 7px;
 		cursor: pointer;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	@media (max-width: 1023.98px) {
@@ -292,7 +296,7 @@
 		}
 
 		.preview-pane {
-			background: #ffffff;
+			background: var(--color-white);
 			display: flex;
 			align-items: center;
 			justify-content: center;

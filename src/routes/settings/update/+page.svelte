@@ -413,9 +413,9 @@
 	}
 	.update-card {
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -432,7 +432,7 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.status-pill {
 		margin-left: auto;
@@ -452,19 +452,19 @@
 		background: currentColor;
 	}
 	.status-pill.ok {
-		background: #ddf3df;
-		color: #1a7f37;
+		background: var(--color-success-bg);
+		color: var(--color-success);
 	}
 	.status-pill.pending {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.banner {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 		border-radius: 12px;
 		padding: 12px 14px;
 		font-size: 0.88rem;
@@ -475,18 +475,18 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		padding: 4px 20px;
 		box-sizing: border-box;
 	}
 	.placeholder {
 		margin: 20px 0;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		font-size: 0.9rem;
 	}
 	.placeholder code {
-		background: #f5f5f5;
+		background: var(--color-background);
 		border-radius: 6px;
 		padding: 1px 6px;
 		font-size: 0.85em;
@@ -500,13 +500,13 @@
 	}
 	.load-error p {
 		margin: 0;
-		color: #d72e28;
+		color: var(--color-red);
 		font-size: 0.9rem;
 	}
 	.rate-limit {
 		margin: 0;
 		font-size: 0.78rem;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.actions-row {
@@ -520,9 +520,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		border: 1px solid #c8c8c8;
-		background: #ffffff;
-		color: #444444;
+		border: 1px solid var(--color-gray);
+		background: var(--color-white);
+		color: var(--color-text-muted);
 		border-radius: 16px;
 		padding: 12px 20px;
 		font-size: 0.95rem;
@@ -530,7 +530,7 @@
 		cursor: pointer;
 	}
 	.ghost-btn:hover:not(:disabled) {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.ghost-btn:disabled {
 		opacity: 0.55;
@@ -541,8 +541,8 @@
 		align-items: center;
 		gap: 8px;
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 28px;
 		font-size: 1rem;

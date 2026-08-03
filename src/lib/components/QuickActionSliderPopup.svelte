@@ -80,7 +80,11 @@
 	.popup-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		display: flex;
@@ -92,9 +96,9 @@
 
 	.popup-modal {
 		width: min(520px, 100%);
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 27px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		padding: 28px 32px;
 		display: flex;
 		flex-direction: column;
@@ -106,14 +110,14 @@
 		text-align: center;
 		font-size: 26px;
 		font-weight: 700;
-		color: #333333;
+		color: var(--color-text-muted);
 	}
 
 	.popup-percent {
 		text-align: center;
 		font-size: 22px;
 		font-weight: 600;
-		color: #000000;
+		color: var(--color-black-pure);
 	}
 
 	.popup-slider-row {
@@ -129,7 +133,7 @@
 
 	.popup-slider-row input[type='range'] {
 		width: 100%;
-		accent-color: #d72e28;
+		accent-color: var(--color-red);
 	}
 
 	.popup-slider-row input[type='range']::-webkit-slider-thumb {
@@ -137,7 +141,7 @@
 		width: 20px;
 		height: 20px;
 		border-radius: 50%;
-		background: #d72e28;
+		background: var(--color-red);
 		cursor: pointer;
 	}
 
@@ -145,7 +149,7 @@
 		width: 20px;
 		height: 20px;
 		border-radius: 50%;
-		background: #d72e28;
+		background: var(--color-red);
 		cursor: pointer;
 		border: none;
 	}

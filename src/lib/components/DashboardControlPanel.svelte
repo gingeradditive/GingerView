@@ -273,7 +273,7 @@
 
 <style>
 	.control-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 20px;
 		display: flex;
@@ -281,7 +281,7 @@
 		gap: 12px;
 		width: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.progress-bar {
@@ -293,14 +293,14 @@
 		width: 100%;
 		height: 36px;
 		border-radius: 18px;
-		background: #d9d9d9;
+		background: var(--color-divider);
 		overflow: hidden;
 	}
 
 	.progress-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
-		background: #d72e28;
+		background: var(--color-red);
 		border-radius: 18px;
 		transition: width 0.3s ease;
 		display: flex;
@@ -310,7 +310,7 @@
 
 	.progress-percentage {
 		padding-right: 12px;
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 1.1rem;
 		font-weight: 700;
 		white-space: nowrap;
@@ -320,7 +320,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		color: #222222;
+		color: var(--color-text-secondary);
 		font-size: 0.95rem;
 		font-weight: 600;
 	}
@@ -353,13 +353,13 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 4;
 		fill: none;
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 4;
 		fill: none;
 		stroke-linecap: round;
@@ -391,7 +391,7 @@
 		width: 56px;
 		height: 56px;
 		border-radius: 12px;
-		border: 3px solid #d72e28;
+		border: 3px solid var(--color-red);
 		background: transparent;
 		cursor: pointer;
 		display: flex;
@@ -401,6 +401,6 @@
 	}
 
 	.square-btn:hover {
-		background: #fde8e7;
+		background: var(--color-danger-bg);
 	}
 </style>

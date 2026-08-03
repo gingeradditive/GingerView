@@ -115,7 +115,7 @@
 
 <style>
 	.pellet-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
@@ -126,13 +126,13 @@
 		box-sizing: border-box;
 		overflow: hidden;
 		position: relative;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.pellet-visual {
 		width: 100%;
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		overflow: hidden;
 		position: relative;
@@ -146,7 +146,7 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background: #d72e28;
+		background: var(--color-red);
 		transition: height 0.3s ease;
 		z-index: 1;
 	}
@@ -177,19 +177,19 @@
 		align-items: center;
 		gap: 4px;
 		z-index: 2;
-		color: #000000;
+		color: var(--color-black-pure);
 		text-align: center;
 	}
 
 	.pellet-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #000000;
+		color: var(--color-black-pure);
 	}
 
 	.pellet-value {
 		font-size: 1.7rem;
-		color: #000000;
+		color: var(--color-black-pure);
 		font-weight: 500;
 	}
 </style>
