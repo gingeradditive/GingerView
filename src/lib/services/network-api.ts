@@ -1,113 +1,66 @@
-import type { 
-	WiFiNetwork, 
-	WiFiConnectionRequest, 
-	WiFiConnectionResult, 
-	NetworkStatus, 
-	NetworkScanResult,
-	APIResponse,
-	HTTPValidationError 
-} from '$lib/types/wifi';
-import { toastActions } from '$lib/stores/toastStore';
-import { configService } from '$lib/services/config';
+import { serviceRequest, waitForJob } from '$lib/services/g2-service';
+import type { Job } from '$lib/types/service';
+import type {
+	NetworkStatus,
+	WifiConnectRequest,
+	WifiConnectResult,
+	WifiNetwork
+} from '$lib/types/network';
 
-function getApiBaseUrl(): string {
-	const config = configService.getNetworkConfig();
-	return config.apiBaseUrl ?? `http://${config.apiHost}:${config.apiPort}`;
+/**
+ * Network endpoints of G2-Service (`docs/03`).
+ *
+ * The status is unified over Wi-Fi and Ethernet: there is no separate "am I on a
+ * cable" call to make, `adapter.type` says which one is carrying the connection.
+ *
+ * Connecting is asynchronous and for a reason that is not about duration: it
+ * changes the machine's IP address, so the HTTP connection carrying the request
+ * dies before a synchronous answer could come back. The service therefore hands
+ * back a job, and `connectToWifi()` follows it — see `waitForJob()`.
+ */
+
+/** `GET /service/network/status`. */
+export function fetchNetworkStatus(): Promise<NetworkStatus> {
+	return serviceRequest<NetworkStatus>('/network/status');
 }
 
-class NetworkAPIError extends Error {
-	constructor(
-		message: string,
-		public status?: number,
-		public response?: HTTPValidationError
-	) {
-		super(message);
-		this.name = 'NetworkAPIError';
-	}
+/**
+ * `GET /service/network/wifi/networks` — NetworkManager's last known scan,
+ * without forcing a new one. This is the one to call on page load: it answers
+ * immediately.
+ */
+export function fetchWifiNetworks(): Promise<WifiNetwork[]> {
+	return serviceRequest<WifiNetwork[]>('/network/wifi/networks');
 }
 
-class NetworkAPI {
-	private async request<T>(
-		endpoint: string,
-		options: RequestInit = {}
-	): Promise<T> {
-		const url = `${getApiBaseUrl()}${endpoint}`;
-		console.log(`Making request to: ${url}`);
-		
-		try {
-			const response = await fetch(url, {
-				headers: {
-					'Content-Type': 'application/json',
-					...options.headers,
-				},
-				...options,
-			});
-
-			console.log(`Response status: ${response.status} for ${url}`);
-
-			if (!response.ok) {
-				let errorData: HTTPValidationError;
-				try {
-					errorData = await response.json();
-				} catch {
-					errorData = { detail: [{ loc: [], msg: response.statusText, type: 'error' }] };
-				}
-				
-				throw new NetworkAPIError(
-					errorData.detail[0]?.msg || `HTTP ${response.status} - ${response.statusText}`,
-					response.status,
-					errorData
-				);
-			}
-
-			const data = await response.json();
-			console.log(`Response data for ${url}:`, data);
-			return data;
-		} catch (error) {
-			if (error instanceof NetworkAPIError) {
-				throw error;
-			}
-			
-			if (error instanceof TypeError && error.message.includes('fetch')) {
-				const msg = 'Failed to connect to the network service. Please check if the service is running.';
-				toastActions.error('network', 'Service unavailable', msg);
-				throw new NetworkAPIError(msg);
-			}
-			
-			const msg = `Network request failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-			toastActions.error('network', 'Request failed', msg);
-			throw new NetworkAPIError(msg);
-		}
-	}
-
-	async getNetworkStatus(): Promise<NetworkStatus> {
-		return this.request<NetworkStatus>('/api/wifi/status');
-	}
-
-	async scanNetworks(): Promise<NetworkScanResult> {
-		// The scan endpoint doesn't exist, use networks endpoint instead
-		const networks = await this.request<WiFiNetwork[]>('/api/wifi/networks');
-		return { networks };
-	}
-
-	async connectToNetwork(request: WiFiConnectionRequest): Promise<WiFiConnectionResult> {
-		return this.request<WiFiConnectionResult>('/api/wifi/connect', {
-			method: 'POST',
-			body: JSON.stringify(request),
-		});
-	}
-
-	async disconnectNetwork(): Promise<APIResponse> {
-		return this.request<APIResponse>('/api/wifi/disconnect', {
-			method: 'POST',
-		});
-	}
-
-	async getAvailableNetworks(): Promise<WiFiNetwork[]> {
-		return this.request<WiFiNetwork[]>('/api/wifi/networks');
-	}
+/**
+ * `POST /service/network/wifi/rescan` — forces a scan and waits for its results.
+ * Slower than reading the last one, so it belongs to an explicit "Scan", not to
+ * a poll.
+ */
+export function rescanWifiNetworks(): Promise<WifiNetwork[]> {
+	return serviceRequest<WifiNetwork[]>('/network/wifi/rescan', { method: 'POST' });
 }
 
-export const networkAPI = new NetworkAPI();
-export { NetworkAPIError };
-export type { NetworkStatus, WiFiNetwork, WiFiConnectionRequest, WiFiConnectionResult };
+/**
+ * `POST /service/network/wifi/connect`, followed to its outcome.
+ *
+ * Resolves with the new address once the machine is on the network. A wrong
+ * password comes back as a rejection carrying `WIFI_AUTH_FAILED` — it is the
+ * job's failed outcome, never an HTTP error.
+ */
+export async function connectToWifi(request: WifiConnectRequest): Promise<WifiConnectResult> {
+	const job = await serviceRequest<Job<WifiConnectResult>>('/network/wifi/connect', {
+		method: 'POST',
+		body: JSON.stringify(request)
+	});
+	return waitForJob<WifiConnectResult>(job.jobId);
+}
+
+/**
+ * Whether a network needs a password. The contract says to compare against
+ * `open`: an empty string is not what an unencrypted network reports.
+ */
+export function isSecured(network: WifiNetwork): boolean {
+	return network.security !== 'open';
+}

@@ -7,3 +7,15 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+# Output di `vite build`. È tracciato in git (viene deployato), ma è generato e
+# minificato: riformattarlo gonfia l'artefatto e viene comunque sovrascritto al
+# build successivo.
+/build/
+
+# File di lavoro personale, chiede esplicitamente di non essere modificato.
+/docs/PROMPTS.md
+
+# Dati generati da script/generate-timezone-data.mjs: riformattarli renderebbe il
+# diff della prossima rigenerazione illeggibile.
+/src/lib/data/

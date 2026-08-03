@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 3000;
@@ -12,14 +12,17 @@
 	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
 	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
 
+	// Generate circles for the SVG
+	const circles = Array.from({ length: 40 }, (_, i) => ({
+		cx: (i + 0.5) * 2.5,
+		cy: 24,
+		r: Math.random() * 12 + 6,
+		duration: (Math.random() * 0.6 + 0.6).toFixed(2),
+		delay: (Math.random() * 0.6).toFixed(2)
+	}));
+
 	let lastFilename: string | null = null;
 	let filamentWeightTotal: number | null = null;
-
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
 
 	const loadFileWeight = async (filename: string): Promise<void> => {
 		if (!filename || filename === lastFilename) return;
@@ -42,7 +45,7 @@
 
 	const updatePellet = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats`);
+			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -85,12 +88,24 @@
 <section class="pellet-panel" aria-label="Pellet Level">
 	<div class="pellet-visual">
 		{#if !isIdle}
-			<div class="pellet-fill" style="height: {percentage}%"></div>
+			<div class="pellet-fill" style="height: {percentage}%">
+				<svg width="100%" height="48px" style="position: absolute; top: -24px; left: 0;">
+					{#each circles as circle}
+						<circle
+							cx="{circle.cx}%"
+							cy={circle.cy}
+							r={circle.r}
+							fill="#D72E28"
+							style="animation: pellet-vibrate {circle.duration}s ease-in-out {circle.delay}s infinite;"
+						/>
+					{/each}
+				</svg>
+			</div>
 		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br/>your material!</span>
+				<span class="pellet-value">Waiting for<br />your material!</span>
 			{:else}
 				<span class="pellet-value">{remainingKg.toFixed(1)}/{totalKg.toFixed(1)} KG</span>
 			{/if}
@@ -101,7 +116,7 @@
 <style>
 	.pellet-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		flex-direction: column;
@@ -118,7 +133,7 @@
 		width: 100%;
 		height: 100%;
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		overflow: hidden;
 		position: relative;
 		display: flex;
@@ -131,9 +146,25 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background: #D72E28;
+		background: #d72e28;
 		transition: height 0.3s ease;
 		z-index: 1;
+	}
+
+	@keyframes -global-pellet-vibrate {
+		0%,
+		100% {
+			transform: translate(0, 0);
+		}
+		25% {
+			transform: translate(1px, -1.5px);
+		}
+		50% {
+			transform: translate(-1.5px, 1px);
+		}
+		75% {
+			transform: translate(1px, 1px);
+		}
 	}
 
 	.pellet-text {
@@ -151,13 +182,13 @@
 	}
 
 	.pellet-label {
-		font-size: 1rem;
+		font-size: 2rem;
 		font-weight: 700;
 		color: #000000;
 	}
 
 	.pellet-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		color: #000000;
 		font-weight: 500;
 	}

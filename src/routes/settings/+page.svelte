@@ -1,286 +1,227 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
-	import { Wifi, Terminal, PanelTop, Network, Wrench, Droplets, CircleDot, Shield, ChevronDown, X, Pin, ExternalLink } from 'lucide-svelte';
-	import NetworkManager from '$lib/components/NetworkManager.svelte';
-	import KlipperConsole from '$lib/components/KlipperConsole.svelte';
+	import {
+		Wifi,
+		Terminal,
+		CloudDownload,
+		FileText,
+		FileCode,
+		BookOpen,
+		History,
+		ChartColumn,
+		Globe,
+		ExternalLink,
+		ChevronRight
+	} from 'lucide-svelte';
+	import { CONFIG_EDITOR_ENABLED } from '$lib/services/moonraker-config';
 
-	type Card = { id: string; title: string; description: string; icon: typeof Wifi };
-	type Item = { id: string; title: string; icon: typeof Wifi; type: 'action' | 'toggle' };
-	type Group = { id: string; title: string; items: Item[] };
-	type PinnedAction = { id: string; title: string };
+	type Item = {
+		id: string;
+		title: string;
+		description: string;
+		icon: typeof Wifi;
+		kind: 'route' | 'external';
+		href?: string;
+		/** Rows that only exist while the machine is in development. */
+		enabled?: boolean;
+	};
 
-	const PINNED_ACTIONS_KEY = 'GingerView:pinned-actions';
-
-	const topCards: Card[] = [
-		{ id: 'wifi', title: 'Wifi Configuration', description: 'Manage current network and Wi-Fi setup.', icon: Wifi },
-		{ id: 'material', title: 'Change material', description: 'Switch printing material settings.', icon: Droplets },
-		{ id: 'nozzle', title: 'Change nozzle', description: 'Configure nozzle settings and replacement.', icon: CircleDot }
-	];
-
-	const groups: Group[] = [
+	const allItems: Item[] = [
 		{
 			id: 'network',
-			title: 'Network Settings',
-			items: [{ id: 'tablet-network', title: 'Show tablet network settings', icon: Network, type: 'toggle' }]
+			title: 'Network',
+			description: 'Manage your network connection',
+			icon: Wifi,
+			kind: 'route',
+			href: '/settings/network'
 		},
 		{
-			id: 'printer',
-			title: 'Printer settings',
-			items: [
-				{ id: 'screw', title: 'Screw Adjustment', icon: Wrench, type: 'action' },
-				{ id: 'advanced', title: 'Advanced user mode', icon: Shield, type: 'toggle' }
-			]
+			id: 'console',
+			title: 'Console',
+			description: 'Access the system console',
+			icon: Terminal,
+			kind: 'route',
+			href: '/settings/console'
 		},
 		{
-			id: 'troubleshooting',
-			title: 'Troubleshooting',
-			items: [
-				{ id: 'console', title: 'Console', icon: Terminal, type: 'action' },
-				{ id: 'log-viewer', title: 'Log Viewer', icon: PanelTop, type: 'action' },
-				{ id: 'mainsail', title: 'Mainsail', icon: ExternalLink, type: 'action' }
-			]
+			id: 'update',
+			title: 'Update',
+			description: 'Check for updates and install',
+			icon: CloudDownload,
+			kind: 'route',
+			href: '/settings/update'
+		},
+		{
+			id: 'log',
+			title: 'Logs',
+			description: 'Download or clear Klipper, Moonraker and Crowsnest logs',
+			icon: FileText,
+			kind: 'route',
+			href: '/settings/log'
+		},
+		{
+			id: 'wiki',
+			title: 'Open Wiki',
+			description: 'Visit the project wiki',
+			icon: BookOpen,
+			kind: 'external',
+			href: 'https://wiki.gingeradditive.com/'
+		},
+		{
+			id: 'history',
+			title: 'History',
+			description: 'View system history',
+			icon: History,
+			kind: 'route',
+			href: '/settings/history'
+		},
+		{
+			id: 'statistics',
+			title: 'Statistics',
+			description: 'View usage statistics and metrics',
+			icon: ChartColumn,
+			kind: 'route',
+			href: '/settings/statistics'
+		},
+		{
+			id: 'timezone',
+			title: 'Timezone',
+			description: 'Set your timezone',
+			icon: Globe,
+			kind: 'route',
+			href: '/settings/timezone'
+		},
+		{
+			id: 'config-editor',
+			title: 'Config editor',
+			description: 'Edit the printer config files and restart the firmware',
+			icon: FileCode,
+			kind: 'route',
+			href: '/settings/config-editor',
+			enabled: CONFIG_EDITOR_ENABLED
 		}
 	];
 
-	let popupOpen = $state(false);
-	let popupId = $state('');
-	let popupTitle = $state('');
-	let toggles = $state<Record<string, boolean>>({ 'tablet-network': false, advanced: false });
-	let pinnedActions = $state<PinnedAction[]>(browser ? readPinnedActions() : []);
+	const items = allItems.filter((item) => item.enabled !== false);
 
-	function readPinnedActions(): PinnedAction[] {
-		try {
-			const raw = localStorage.getItem(PINNED_ACTIONS_KEY);
-			if (!raw) return [];
-			const parsed = JSON.parse(raw) as PinnedAction[];
-			if (!Array.isArray(parsed)) return [];
-			return parsed.filter((item) => typeof item?.id === 'string' && typeof item?.title === 'string');
-		} catch {
-			return [];
+	function handleExternalClick(item: Item) {
+		if (item.href) {
+			window.open(item.href, '_blank');
 		}
-	}
-
-	function openPopup(id: string, title: string) {
-		popupId = id;
-		popupTitle = title;
-		popupOpen = true;
-	}
-
-	function handleOpenPopup(event: MouseEvent, id: string, title: string) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (id === 'mainsail') {
-			const url = new URL(window.location.href);
-			url.port = '8081';
-			window.open(url.toString(), '_blank');
-		} else {
-			openPopup(id, title);
-		}
-	}
-
-	function toggleItem(id: string) {
-		toggles[id] = !toggles[id];
-	}
-
-	function closePopup() {
-		popupOpen = false;
-		popupId = '';
-		popupTitle = '';
-	}
-
-	function isPinned(actionId: string) {
-		return pinnedActions.some((item) => item.id === actionId);
-	}
-
-	function togglePin(action: PinnedAction) {
-		if (!browser) return;
-		if (isPinned(action.id)) {
-			pinnedActions = pinnedActions.filter((item) => item.id !== action.id);
-		} else {
-			pinnedActions = [...pinnedActions, action];
-		}
-		localStorage.setItem(PINNED_ACTIONS_KEY, JSON.stringify(pinnedActions));
-		window.dispatchEvent(new CustomEvent('pinned-actions-updated'));
 	}
 </script>
 
 <section class="settings-page">
-	<p>test 4</p>
-	<div class="top-grid">
-		{#each topCards as card (card.id)}
-			<div class="action-wrap">
-				<button class="top-card" type="button" onclick={(e) => handleOpenPopup(e, card.id, card.title)}>
-					<span class="icon-lg"><card.icon /></span>
-					<div>
-						<h2>{card.title}</h2>
-						<p>{card.description}</p>
-					</div>
-				</button>
-				<button
-					type="button"
-					class="pin-btn {isPinned(card.id) ? 'active' : ''}"
-					title={isPinned(card.id) ? 'Rimuovi dal menu' : 'Aggiungi al menu'}
-					aria-label={isPinned(card.id) ? 'Rimuovi dal menu' : 'Aggiungi al menu'}
-					onclick={() => togglePin({ id: card.id, title: card.title })}
-				>
-					<span class="icon-sm"><Pin /></span>
-				</button>
-			</div>
-		{/each}
-	</div>
+	<div class="settings-list">
+		<header class="settings-header">
+			<h1>Settings</h1>
+		</header>
 
-	<div class="accordion-list">
-		{#each groups as group (group.id)}
-			<details class="accordion">
-				<summary>
-					<span>{group.title}</span>
-					<span class="chevron"><ChevronDown class="icon-sm" /></span>
-				</summary>
-				<div class="mini-grid">
-					{#each group.items as item (item.id)}
-						{#if item.type === 'toggle'}
-							<button
-								class="item-btn toggle-btn {toggles[item.id] ? 'active' : ''}"
-								type="button"
-								aria-pressed={toggles[item.id]}
-								onclick={() => toggleItem(item.id)}
-							>
-								<span class="icon-sm"><item.icon /></span>
-								<span>{item.title}</span>
-							</button>
-						{:else}
-							<div class="action-wrap mini-wrap">
-								<button class="item-btn" type="button" onclick={(e) => handleOpenPopup(e, item.id, item.title)}>
-									<span class="icon-sm"><item.icon /></span>
-									<span>{item.title}</span>
-								</button>
-								<button
-									type="button"
-									class="pin-btn {isPinned(item.id) ? 'active' : ''}"
-									title={isPinned(item.id) ? 'Rimuovi dal menu' : 'Aggiungi al menu'}
-									aria-label={isPinned(item.id) ? 'Rimuovi dal menu' : 'Aggiungi al menu'}
-									onclick={() => togglePin({ id: item.id, title: item.title })}
-								>
-									<span class="icon-sm"><Pin /></span>
-								</button>
-							</div>
-						{/if}
-					{/each}
-				</div>
-			</details>
+		{#each items as item, index (item.id)}
+			{#if item.kind === 'route'}
+				<a class="settings-row" href={item.href}>
+					<span class="icon"><item.icon /></span>
+					<div class="row-text">
+						<h2>{item.title}</h2>
+						<p>{item.description}</p>
+					</div>
+					<span class="chevron"><ChevronRight /></span>
+				</a>
+			{:else}
+				<button type="button" class="settings-row" onclick={() => handleExternalClick(item)}>
+					<span class="icon"><item.icon /></span>
+					<div class="row-text">
+						<h2>{item.title}</h2>
+						<p>{item.description}</p>
+					</div>
+					<span class="chevron"><ExternalLink /></span>
+				</button>
+			{/if}
+			{#if index < items.length - 1}
+				<div class="divider"></div>
+			{/if}
 		{/each}
 	</div>
 </section>
 
-{#if popupOpen}
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="mock-title"
-		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closePopup()}
-		onclick={(e) => e.target === e.currentTarget && closePopup()}
-	>
-		<div class="modal-content" role="document">
-			<div class="modal-body">
-				{#if popupId === 'wifi'}
-					<NetworkManager embedded={true} />
-				{:else if popupId === 'console'}
-					<KlipperConsole onClose={closePopup} />
-				{:else}
-					<p>Empty popup mock.</p>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
-
 <style>
-	.settings-page { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-	.top-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-	.action-wrap { position: relative; }
-	.top-card {
-		background: #FFFFFF;  border-radius: 20px; padding: 16px; display: flex; gap: 12px;
-		align-items: flex-start; text-align: left; cursor: pointer; transition: box-shadow 0.2s;
-		width: 100%; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+	.settings-page {
+		padding: 24px 24px 112px;
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
 	}
-	.top-card:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16); }
-	.top-card h2 { margin: 0; font-size: 1rem; }
-	.top-card p { margin: 5px 0 0; font-size: 0.85rem; color: #6e6e6e; }
-	.accordion-list { display: flex; flex-direction: column; gap: 10px; }
-	.accordion { border: none; background: transparent; }
-	.accordion summary {
-		list-style: none; cursor: pointer; padding: 8px 0; display: flex; justify-content: space-between; align-items: center;
-		font-weight: 700; font-size: 0.95rem;
-	}
-	.accordion summary::-webkit-details-marker { display: none; }
-	.chevron { display: inline-flex; transition: transform 0.15s; }
-	.accordion[open] .chevron { transform: rotate(180deg); }
-	.mini-grid { padding: 4px 0 10px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-	.mini-wrap .item-btn { padding-right: 40px; }
-	.item-btn {
-		
-		border-radius: 20px;
-		background: #FFFFFF;
-		min-height: 52px;
-		padding: 10px 12px;
+	.settings-header {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: space-between;
+		padding: 20px 4px 16px;
+	}
+	.settings-header h1 {
+		margin: 0;
+		font-size: 2rem;
+		font-weight: 700;
+		color: #222222;
+	}
+	.settings-list {
+		background: #ffffff;
+		border-radius: 20px;
+		padding: 0 20px 4px;
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+	}
+	.settings-row {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		padding: 16px 4px;
+		background: transparent;
+		border: none;
 		text-align: left;
 		cursor: pointer;
-		color: #111111;
-		transition: box-shadow 0.2s;
-		width: 100%; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+		color: inherit;
+		text-decoration: none;
 	}
-	.item-btn:hover { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16); }
-	.item-btn span { font-size: 0.84rem; line-height: 1.2; }
-	.pin-btn {
-		position: absolute;
-		right: 8px;
-		top: 8px;
-		width: 28px;
-		height: 28px;
-		border: none;
-		border-radius: 20px;
-		background: transparent;
+	.icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		cursor: pointer;
-		color: #666666;
+		width: 28px;
+		height: 28px;
+		color: #444444;
+		flex-shrink: 0;
 	}
-	.pin-btn:hover { color: #d72e28; }
-	.pin-btn.active { background: #d72e28; border-color: #d72e28; color: #ffffff; }
-	.pin-btn.active .icon-sm :global(svg) { color: #ffffff; }
-	.toggle-btn.active {
-		background: #d72e28;
-		border-color: #d72e28;
-		color: #ffffff;
+	.icon :global(svg) {
+		width: 26px;
+		height: 26px;
 	}
-	.toggle-btn.active .icon-sm :global(svg) { color: #ffffff; }
-	.modal-overlay {
-		position: fixed; inset: 0; background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22));
-		backdrop-filter: blur(12px) saturate(130%); -webkit-backdrop-filter: blur(12px) saturate(130%);
-		display: flex; align-items: center; justify-content: center; z-index: 2200;
+	.row-text {
+		flex: 1;
+		min-width: 0;
 	}
-	.modal-content {
-		width: min(900px, calc(100vw - 32px)); background: #FFFFFF; border-radius: 20px; padding: 32px;
-		max-height: calc(100vh - 64px); overflow-y: auto; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10); transition: box-shadow 0.2s; 
+	.row-text h2 {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 700;
 	}
-	.modal-body { min-height: 120px; color: #666; font-size: 0.95rem; }
-	.icon-lg { width: 20px; height: 20px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
-	.icon-sm { width: 16px; height: 16px; color: #d72e28; flex-shrink: 0; display: inline-flex; }
-	.icon-lg :global(svg) { width: 20px; height: 20px; color: #d72e28; }
-	.icon-sm :global(svg) { width: 16px; height: 16px; color: #d72e28; }
-	@media (max-width: 980px) {
-		.top-grid { grid-template-columns: 1fr; }
-		.mini-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.row-text p {
+		margin: 2px 0 0;
+		font-size: 0.85rem;
+		color: #8a8a8a;
+	}
+	.chevron {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #b5b5b5;
+		flex-shrink: 0;
+	}
+	.divider {
+		height: 1px;
+		background: #ececec;
 	}
 	@media (max-width: 560px) {
-		.settings-page { padding: 16px; }
-		.mini-grid { grid-template-columns: 1fr; }
+		.settings-page {
+			padding: 16px 16px 112px;
+		}
 	}
 </style>

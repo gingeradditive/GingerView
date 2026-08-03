@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	const pollIntervalMs = 1500;
 	const minValue = 0;
@@ -15,15 +15,11 @@
 	let progress = $derived((clampedValue - minValue) / (maxValue - minValue));
 	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const updateFlow = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -46,7 +42,8 @@
 			if (gcodeMove) {
 				// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
 				const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
-				const extrudeFactor = typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
+				const extrudeFactor =
+					typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
 				flowValue = speed * extrudeFactor;
 			}
 		} catch {
@@ -63,7 +60,12 @@
 
 <section class="flow-panel" aria-label="Flow Rate">
 	<div class="flow-gauge">
-		<svg viewBox="0 0 220 220" class="circular-progress" role="img" aria-label={isIdle ? 'Flow idle' : `Flow ${Math.round(clampedValue)} mm³/s`}>
+		<svg
+			viewBox="0 0 220 220"
+			class="circular-progress"
+			role="img"
+			aria-label={isIdle ? 'Flow idle' : `Flow ${Math.round(clampedValue)} mm³/s`}
+		>
 			<circle class="circle-bg" cx="110" cy="110" r={radius} />
 			{#if !isIdle}
 				<circle class="circle" cx="110" cy="110" r={radius} stroke-dasharray={strokeDasharray} />
@@ -83,18 +85,22 @@
 <style>
 	.flow-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 16px;
 		width: 100%;
-		aspect-ratio: 1 / 1;
+		height: 100%;
 		box-sizing: border-box;
 		box-shadow: 0px 4px 3px 0px #00000040;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.flow-gauge {
 		position: relative;
-		width: 100%;
 		height: 100%;
+		aspect-ratio: 1 / 1;
+		max-width: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -103,7 +109,7 @@
 	.circular-progress {
 		width: 100%;
 		height: 100%;
-		transform: rotate(-90deg);
+		transform: rotate(90deg);
 	}
 
 	.circle-bg {
@@ -135,16 +141,15 @@
 	}
 
 	.flow-label {
-		font-size: 1rem;
-    	font-weight: 700;
-    	color: #000000;
+		font-size: 2rem;
+		font-weight: 700;
 		color: #111111;
 		line-height: 1.1;
 		letter-spacing: 0.02em;
 	}
 
 	.flow-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		font-weight: 500;
 		color: #666666;
 		line-height: 1.3;

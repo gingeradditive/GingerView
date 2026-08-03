@@ -1,61 +1,16 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
-	import { Wifi, Terminal, PanelTop, Droplets, CircleDot, Wrench } from 'lucide-svelte';
-	import { mdiTabletDashboard, mdiFileMultiple, mdiCog } from '@mdi/js';
+	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
+	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
+	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import '../app.css';
 
-	type PinnedAction = { id: string; title: string };
-
-	const PINNED_ACTIONS_KEY = 'GingerView:pinned-actions';
 	const logoImage = '/Printers/G2/Logo.svg';
 
 	let { children } = $props();
-	let pinnedActions = $state<PinnedAction[]>([]);
-	let popupOpen = $state(false);
-	let popupTitle = $state('');
-
-	function readPinnedActions(): PinnedAction[] {
-		try {
-			const raw = localStorage.getItem(PINNED_ACTIONS_KEY);
-			if (!raw) return [];
-			const parsed = JSON.parse(raw) as PinnedAction[];
-			if (!Array.isArray(parsed)) return [];
-			return parsed.filter((item) => typeof item?.id === 'string' && typeof item?.title === 'string');
-		} catch {
-			return [];
-		}
-	}
-
-	function syncPinnedActions() {
-		if (!browser) return;
-		pinnedActions = readPinnedActions();
-	}
-
-	function openPinnedPopup(title: string) {
-		popupTitle = title;
-		popupOpen = true;
-	}
-
-	function closePinnedPopup() {
-		popupOpen = false;
-		popupTitle = '';
-	}
-
-	onMount(() => {
-		syncPinnedActions();
-		const refreshPinned = () => syncPinnedActions();
-		window.addEventListener('pinned-actions-updated', refreshPinned);
-		window.addEventListener('storage', refreshPinned);
-		return () => {
-			window.removeEventListener('pinned-actions-updated', refreshPinned);
-			window.removeEventListener('storage', refreshPinned);
-		};
-	});
 </script>
 
 <svelte:head>
@@ -65,14 +20,26 @@
 <ToastContainer />
 <MoonrakerNotifier />
 <main class="page-content">{@render children()}</main>
+<KlipperDownOverlay />
 
-<nav class="dock" aria-label="Navigazione principale">
+<nav class="dock" aria-label="Main navigation">
 	<div class="logo-container">
 		<img src={logoImage} alt="Logo" class="logo-image" />
 	</div>
 	<a href="/" class:active={$page.url.pathname === '/'} aria-label="Dashboard" title="Dashboard">
 		<svg viewBox="0 0 24 24" aria-hidden="true">
 			<path d={mdiTabletDashboard} />
+		</svg>
+	</a>
+
+	<a
+		href="/movement"
+		class:active={$page.url.pathname.startsWith('/movement')}
+		aria-label="Movement"
+		title="Movement"
+	>
+		<svg viewBox="0 0 24 24" aria-hidden="true">
+			<path d={mdiCursorMove} />
 		</svg>
 	</a>
 
@@ -87,33 +54,6 @@
 		</svg>
 	</a>
 
-	{#each pinnedActions as action, index (action.id)}
-		<button
-			type="button"
-			class="pinned-action"
-			class:first-pinned={index === 0}
-			onclick={() => openPinnedPopup(action.title)}
-			aria-label={action.title}
-			title={action.title}
-		>
-			{#if action.id === 'wifi'}
-				<Wifi />
-			{:else if action.id === 'console'}
-				<Terminal />
-			{:else if action.id === 'tbd'}
-				<PanelTop />
-			{:else if action.id === 'material'}
-				<Droplets />
-			{:else if action.id === 'nozzle'}
-				<CircleDot />
-			{:else if action.id === 'screw'}
-				<Wrench />
-			{:else}
-				<PanelTop />
-			{/if}
-		</button>
-	{/each}
-
 	<a
 		href="/settings"
 		class:active={$page.url.pathname.startsWith('/settings')}
@@ -125,31 +65,13 @@
 			<path d={mdiCog} />
 		</svg>
 	</a>
-</nav>
 
-{#if popupOpen}
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="pinned-popup-title"
-		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closePinnedPopup()}
-		onclick={(e) => e.target === e.currentTarget && closePinnedPopup()}
-	>
-		<div class="modal-content" role="document">
-			<div class="modal-header">
-				<h3 id="pinned-popup-title">{popupTitle}</h3>
-				<button type="button" class="close-modal" aria-label="Close popup" onclick={closePinnedPopup}>×</button>
-			</div>
-			<div class="modal-body">Empty popup mock.</div>
-		</div>
-	</div>
-{/if}
+	<EmergencyStopButton />
+</nav>
 
 <style>
 	.page-content {
-		min-height: 100vh;
+		height: 100%;
 	}
 
 	.dock {
@@ -168,8 +90,7 @@
 		z-index: 1000;
 	}
 
-	.dock a,
-	.dock button {
+	.dock a {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -184,34 +105,18 @@
 		padding: 0;
 	}
 
-	.dock a:hover,
-	.dock button:hover {
+	.dock a:hover {
 		background: #ffffff;
 	}
 
 	.dock a.active {
 		background: #ffffff;
-		border: 3px solid #D72E28;
+		border: 3px solid #d72e28;
 	}
 
-	.dock a:focus-visible,
-	.dock button:focus-visible {
+	.dock a:focus-visible {
 		outline: 2px solid #d72e28;
 		outline-offset: 2px;
-	}
-
-	.pinned-action {
-		background: #ffffff !important;
-		color: #828282 !important;
-		border: 3px solid transparent !important;
-	}
-
-	.first-pinned {
-		margin-left: 19.2px;
-	}
-
-	.pinned-action:hover {
-		background: #ffffff !important;
 	}
 
 	.dock svg {
@@ -236,12 +141,12 @@
 	}
 
 	.settings-icon.active svg {
-		fill: #D72E28;
+		fill: #d72e28;
 	}
 
 	.settings-icon.active {
 		background: #ffffff !important;
-		border: 3px solid #D72E28 !important;
+		border: 3px solid #d72e28 !important;
 	}
 
 	.logo-container {
@@ -258,56 +163,4 @@
 		height: 48px;
 		object-fit: contain;
 	}
-
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22));
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1300;
-	}
-
-	.modal-content {
-		width: min(460px, calc(100vw - 32px));
-		background: #FFFFFF;
-		border: 1px solid #C8C8C8;
-		border-radius: 16px;
-		padding: 16px;
-	}
-
-	.modal-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-	}
-
-	.modal-header h3 {
-		margin: 0;
-		color: #111111;
-		font-size: 1rem;
-	}
-
-	.close-modal {
-		border: none;
-		background: transparent;
-		color: #666666;
-		font-size: 1.3rem;
-		line-height: 1;
-		cursor: pointer;
-	}
-
-	.modal-body {
-		margin-top: 12px;
-		min-height: 120px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #666666;
-	}
-
 </style>

@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
-	import { extractThumbnailFromGcode, getFileMetadata, getFilamentType } from '$lib/services/moonraker-files';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import {
+		extractThumbnailFromGcode,
+		getFileMetadata,
+		getFilamentType
+	} from '$lib/services/moonraker-files';
 
 	const pollIntervalMs = 2000;
 
@@ -19,12 +23,6 @@
 
 	let estimatedTotalSeconds: number | null = null;
 	let lastFilename: string | null = null;
-
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
 
 	const formatDuration = (seconds: number): string => {
 		if (!seconds || seconds < 0) return '--:--:--';
@@ -63,7 +61,9 @@
 
 	const updatePrintJob = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -117,7 +117,10 @@
 
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
-			await fetch(`${getApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`, { method: 'POST' });
+			await fetch(
+				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`,
+				{ method: 'POST' }
+			);
 		} catch {
 			// ignore
 		}
@@ -158,7 +161,7 @@
 	{:else}
 		<div class="job-header">
 			<div class="job-info">
-				<span class="job-name">{jobName}</span>
+				<span class="job-name">{jobName.length > 30 ? jobName.slice(0, 30) + '...' : jobName}</span>
 				<span class="job-material">{jobMaterial}</span>
 			</div>
 			<div class="job-preview">
@@ -166,35 +169,37 @@
 			</div>
 			<div class="job-controls">
 				<button class="control-btn stop" aria-label="Stop" onclick={handleCancel}>
-					<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+					<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 						<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 					</svg>
 				</button>
-				<button class="control-btn pause" aria-label={isPaused ? 'Resume' : 'Pause'} onclick={handlePauseResume}>
+				<button
+					class="control-btn pause"
+					aria-label={isPaused ? 'Resume' : 'Pause'}
+					onclick={handlePauseResume}
+				>
 					{#if isPaused}
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+						<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 							<polygon points="4,1 17,9 4,17" fill="#d72e28" />
 						</svg>
 					{:else}
-						<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+						<svg width="24" height="24" viewBox="0 0 18 18" fill="none">
 							<rect x="3" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 							<rect x="11" y="1" width="4" height="16" rx="1.5" fill="#d72e28" />
 						</svg>
 					{/if}
 				</button>
 			</div>
+			<span class="job-percentage">{progress}%</span>
 		</div>
 		<div class="progress-bar">
 			<div class="progress-track">
-				<div class="progress-elapsed" style="width: {progress}%">
-					<span class="elapsed-time">{elapsed}</span>
-					<span class="percentage">{progress}%</span>
-				</div>
+				<div class="progress-elapsed" style="width: {progress}%"></div>
 				<div class="progress-remaining" style="width: {100 - progress}%">
-					<span class="remaining-time">{remaining}</span>
-					<span class="eta-time">ETA: {eta}</span>
+					<span class="eta-time">ETA: {eta} / {remaining}</span>
 				</div>
 			</div>
+			<span class="elapsed-time">{elapsed}</span>
 		</div>
 	{/if}
 </section>
@@ -227,7 +232,7 @@
 
 	.idle-title {
 		font-size: 2rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: #222222;
 		line-height: 1.1;
 	}
@@ -238,6 +243,17 @@
 		gap: 12px;
 		flex: 1;
 		padding: 0 16px;
+		position: relative;
+	}
+
+	.job-percentage {
+		position: absolute;
+		left: 16px;
+		bottom: -0.9rem;
+		color: #222222;
+		font-size: 2.5rem;
+		font-weight: 600;
+		white-space: nowrap;
 	}
 
 	.job-info {
@@ -249,7 +265,7 @@
 
 	.job-name {
 		font-size: 1.6rem;
-		font-weight: 800;
+		font-weight: 600;
 		color: #222222;
 		line-height: 1.1;
 	}
@@ -263,6 +279,7 @@
 	.job-preview {
 		flex-shrink: 0;
 		margin-left: auto;
+		transform: translateY(20px);
 	}
 
 	.job-preview img {
@@ -299,6 +316,7 @@
 	.progress-bar {
 		display: flex;
 		flex-direction: column;
+		position: relative;
 	}
 
 	.progress-track {
@@ -311,24 +329,18 @@
 
 	.progress-elapsed {
 		background: #d72e28;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0 12px;
-		min-width: 0;
 	}
 
 	.elapsed-time {
+		position: absolute;
+		left: 16px;
+		top: 0;
+		height: 36px;
+		display: flex;
+		align-items: center;
 		color: #ffffff;
 		font-size: 0.95rem;
 		font-weight: 700;
-		white-space: nowrap;
-	}
-
-	.percentage {
-		color: #ffffff;
-		font-size: 1.15rem;
-		font-weight: 800;
 		white-space: nowrap;
 	}
 
@@ -336,16 +348,9 @@
 		background: #b0b0b0;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		padding: 0 12px;
 		min-width: 0;
-	}
-
-	.remaining-time {
-		color: #ffffff;
-		font-size: 0.8rem;
-		font-weight: 600;
-		white-space: nowrap;
 	}
 
 	.eta-time {

@@ -47,8 +47,7 @@ export interface MoonrakerDirectoryResponse {
 }
 
 function getApiUrl(): string {
-	const config = configService.getKlipperConfig();
-	return config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
+	return configService.getKlipperConfig().moonrakerApiUrl;
 }
 
 export async function fetchDirectory(path: string = 'gcodes'): Promise<MoonrakerDirectoryResponse> {
@@ -89,20 +88,28 @@ export interface MoonrakerFileMetadata {
 	thumbnails?: MoonrakerThumbnail[];
 }
 
-export async function getFileMetadata(filename: string, dirPath: string = 'gcodes'): Promise<MoonrakerFileMetadata> {
+export async function getFileMetadata(
+	filename: string,
+	dirPath: string = 'gcodes'
+): Promise<MoonrakerFileMetadata> {
 	const apiUrl = getApiUrl();
 	const fullPath = dirPath === 'gcodes' ? filename : `${dirPath}/${filename}`;
-	const res = await fetch(`${apiUrl}/server/files/metadata?filename=${encodeURIComponent(fullPath)}`);
+	const res = await fetch(
+		`${apiUrl}/server/files/metadata?filename=${encodeURIComponent(fullPath)}`
+	);
 	if (!res.ok) {
-		const msg = `Failed to fetch file metadata: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Metadata error', msg);
-		throw new Error(msg);
+		// Every caller already falls back gracefully when metadata isn't available yet
+		// (e.g. a file Moonraker hasn't scanned), so this is not toast-worthy.
+		throw new Error(`Failed to fetch file metadata: ${res.status} ${res.statusText}`);
 	}
 	const json = await res.json();
 	return json.result;
 }
 
-export function getThumbnailUrl(file: MoonrakerFileItem, dirPath: string = 'gcodes'): string | undefined {
+export function getThumbnailUrl(
+	file: MoonrakerFileItem,
+	dirPath: string = 'gcodes'
+): string | undefined {
 	if (!file.thumbnails || file.thumbnails.length === 0) return undefined;
 
 	// Pick the largest thumbnail available
@@ -115,43 +122,48 @@ export function getErrorThumbnailUrl(): string {
 	return '/error-thumbnail.png';
 }
 
-export async function extractThumbnailFromGcode(filename: string, dirPath: string = 'gcodes'): Promise<string | null> {
+export async function extractThumbnailFromGcode(
+	filename: string,
+	dirPath: string = 'gcodes'
+): Promise<string | null> {
 	try {
 		const apiUrl = getApiUrl();
 		// Construct the full path - if dirPath already includes gcodes/, don't double-prefix
 		const fullPath = dirPath === 'gcodes' ? `gcodes/${filename}` : `${dirPath}/${filename}`;
-		
+
 		// Only fetch the first 32KB — thumbnails are always in the header
 		// Split the path and encode each part separately (same as deleteFile)
 		const parts = fullPath.split('/');
-		const encodedPath = parts.map(part => encodeURIComponent(part)).join('/');
+		const encodedPath = parts.map((part) => encodeURIComponent(part)).join('/');
 		const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, {
 			headers: { Range: 'bytes=0-32767' }
 		});
 		if (!res.ok && res.status !== 206) {
 			throw new Error(`Failed to fetch G-code header: ${res.status} ${res.statusText}`);
 		}
-		
+
 		const content = await res.text();
-		
+
 		// Look for the thumbnail block more flexibly
 		// The format can have blank lines and different whitespace
-		const thumbnailMatch = content.match(/; thumbnail begin (\d+)x(\d+) \d+\r?\n([\s\S]*?)\r?\n; thumbnail end/);
-		
+		const thumbnailMatch = content.match(
+			/; thumbnail begin (\d+)x(\d+) \d+\r?\n([\s\S]*?)\r?\n; thumbnail end/
+		);
+
 		if (thumbnailMatch) {
 			// Extract base64 lines - strip leading '; ' or just ';'
 			const base64Lines = thumbnailMatch[3]
 				.split('\n')
-				.map(line => line.replace(/^;\s?/, '').trim())
-				.filter(line => line.length > 0);
-			
+				.map((line) => line.replace(/^;\s?/, '').trim())
+				.filter((line) => line.length > 0);
+
 			const base64 = base64Lines.join('');
-			
+
 			if (base64.length > 0) {
 				return `data:image/png;base64,${base64}`;
 			}
 		}
-		
+
 		return null;
 	} catch (e) {
 		console.warn(`Failed to extract thumbnail from ${filename}:`, e);
@@ -189,7 +201,7 @@ export async function deleteFile(path: string): Promise<void> {
 	const apiUrl = getApiUrl();
 	// Split the path and encode each part separately
 	const parts = path.split('/');
-	const encodedPath = parts.map(part => encodeURIComponent(part)).join('/');
+	const encodedPath = parts.map((part) => encodeURIComponent(part)).join('/');
 	const res = await fetch(`${apiUrl}/server/files/${encodedPath}`, { method: 'DELETE' });
 	if (!res.ok) {
 		const msg = `Failed to delete file: ${res.status} ${res.statusText}`;
@@ -200,7 +212,10 @@ export async function deleteFile(path: string): Promise<void> {
 
 export async function deleteDirectory(path: string): Promise<void> {
 	const apiUrl = getApiUrl();
-	const res = await fetch(`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}&force=true`, { method: 'DELETE' });
+	const res = await fetch(
+		`${apiUrl}/server/files/directory?path=${encodeURIComponent(path)}&force=true`,
+		{ method: 'DELETE' }
+	);
 	if (!res.ok) {
 		const msg = `Failed to delete directory: ${res.status} ${res.statusText}`;
 		toastActions.error('moonraker', 'Delete error', msg);
@@ -222,12 +237,15 @@ export async function moveFile(source: string, dest: string): Promise<void> {
 	}
 }
 
-export async function fetchDirectoriesRecursive(path: string = 'gcodes'): Promise<{ name: string; path: string }[]> {
+export async function fetchDirectoriesRecursive(
+	path: string = 'gcodes'
+): Promise<{ name: string; path: string }[]> {
 	const result = await fetchDirectory(path);
 	const dirs: { name: string; path: string }[] = [];
 	for (const d of result.dirs) {
 		if (d.dirname.startsWith('.')) continue;
-		const dirRelPath = path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
+		const dirRelPath =
+			path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
 		const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
 		dirs.push({ name: d.dirname, path: dirRelPath });
 		const subDirs = await fetchDirectoriesRecursive(dirFullPath);

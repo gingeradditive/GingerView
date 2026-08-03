@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PrintItem } from '$lib/types/print';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
+	import PrintStartWizard from '$lib/components/PrintStartWizard.svelte';
 
 	let {
 		item,
@@ -11,6 +12,21 @@
 		isOpen: boolean;
 		onClose: () => void;
 	} = $props();
+
+	let showPrintWizard = $state(false);
+
+	function handlePrintClick(): void {
+		showPrintWizard = true;
+	}
+
+	function cancelPrintWizard(): void {
+		showPrintWizard = false;
+	}
+
+	function handlePrintStarted(): void {
+		showPrintWizard = false;
+		onClose();
+	}
 
 	function formatNozzleDiameter(value?: number): string {
 		if (value == null || value <= 0) return '--';
@@ -39,7 +55,12 @@
 
 			<div class="preview-pane">
 				<div class="preview-image-wrapper">
-					<img src={item.imageUrl ?? '/error-thumbnail.png'} alt={item.name} width="500" height="500" />
+					<img
+						src={item.imageUrl ?? '/error-thumbnail.png'}
+						alt={item.name}
+						width="500"
+						height="500"
+					/>
 					<div class="rotate-overlay">
 						<img src="/3DView.svg" alt="3D View" width="40" height="40" />
 					</div>
@@ -48,7 +69,14 @@
 
 			<div class="info-pane">
 				<div class="desktop-header">
-					<h2>{item.name}</h2>
+					<h2 class="desktop-title-track">
+						<span class:desktop-title-marquee={item.name.length > 30}>
+							<span class="desktop-title-text">{item.name}</span>
+							{#if item.name.length > 30}
+								<span class="desktop-title-text" aria-hidden="true">{item.name}</span>
+							{/if}
+						</span>
+					</h2>
 					<p class="subtitle">{item.filamentName || item.material || '--'}</p>
 				</div>
 
@@ -72,18 +100,25 @@
 				</div>
 
 				<div class="actions-row">
-					<button class="print-button" type="button">Print</button>
+					<button class="print-button" type="button" onclick={handlePrintClick}>Print</button>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<PrintStartWizard
+		isOpen={showPrintWizard}
+		filepath={item.filepath}
+		onCancel={cancelPrintWizard}
+		onStarted={handlePrintStarted}
+	/>
 {/if}
 
 <style>
 	.details-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(240, 244, 248, 0.22));
+		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		display: flex;
@@ -97,11 +132,12 @@
 		width: min(800px, 100%);
 		min-height: 400px;
 		background: #ffffff;
-		border-radius: 54px;
+		border-radius: 27px;
 		display: grid;
 		grid-template-columns: 1fr 2fr;
 		overflow: hidden;
-		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+		box-shadow: 0px 4px 3px 0px #00000040;
+		min-width: 0;
 	}
 
 	.preview-pane {
@@ -117,9 +153,9 @@
 		display: inline-block;
 	}
 
-	.preview-image-wrapper img {
-		width: 100%;
-		max-width: 500px;
+	.preview-image-wrapper > img {
+		width: 200px;
+		max-width: 200px;
 		height: auto;
 		aspect-ratio: 1 / 1;
 		object-fit: contain;
@@ -147,10 +183,17 @@
 		justify-content: space-between;
 		padding: 40px;
 		gap: 28px;
+		min-width: 0;
 	}
 
 	.mobile-header {
 		display: none;
+	}
+
+	.desktop-header {
+		overflow: hidden;
+		width: 100%;
+		min-width: 0;
 	}
 
 	h2 {
@@ -158,6 +201,37 @@
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		color: #111;
 		font-weight: 600;
+	}
+
+	.desktop-title-track {
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.desktop-title-track > span {
+		display: inline-flex;
+		align-items: baseline;
+		width: max-content;
+	}
+
+	.desktop-title-marquee {
+		gap: 32px;
+		animation: desktop-title-marquee 14s linear infinite;
+	}
+
+	.desktop-title-text {
+		flex-shrink: 0;
+		white-space: nowrap;
+	}
+
+	@keyframes desktop-title-marquee {
+		0%,
+		10% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(calc(-50% - 16px));
+		}
 	}
 
 	.subtitle {
@@ -194,14 +268,9 @@
 		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
 		font-weight: 600;
 		padding: 14px 56px;
-		border-radius: 14px;
+		border-radius: 7px;
 		cursor: pointer;
-		transition: background-color 0.15s, box-shadow 0.15s;
-		box-shadow: 0px 4px 4px 0px #00000040;
-	}
-
-	.print-button:hover {
-		background: #b82520;
+		box-shadow: 0px 4px 3px 0px #00000040;
 	}
 
 	@media (max-width: 980px) {
@@ -223,7 +292,11 @@
 		}
 
 		.preview-pane {
-			padding: 16px 24px;
+			background: #ffffff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 24px;
 		}
 
 		.preview-image-wrapper img {

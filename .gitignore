@@ -1,5 +1,7 @@
 node_modules
-package-lock.json
+
+# package-lock.json is deliberately NOT ignored: it is tracked, and CI runs
+# `npm ci`, which fails without it.
 
 # Output
 .output

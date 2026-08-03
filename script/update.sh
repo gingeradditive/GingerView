@@ -1,73 +1,105 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Update an installed GingerView.
+#
+# The compiled bundle is committed to the repository by CI, and nginx serves that
+# directory directly, so updating is just a fast-forward pull: no Node, no build
+# step, no nginx restart, and no root. This is the same thing Moonraker's
+# update_manager does for a git_repo entry.
+#
+# Usage: update.sh [options]
+#   --build           Rebuild locally after pulling, instead of using the
+#                     committed build/ (needs Node; for development machines)
+#   --reload-nginx    Reload nginx afterwards. Not needed for a static update,
+#                     only useful if you also changed its configuration.
+#   -h, --help        Show this help
 
-# GingerView Update Script
-# This script handles the update process for GingerView
+set -Eeuo pipefail
 
-set -e
+# shellcheck source=script/_common.sh
+. "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+DO_BUILD=0
+RELOAD_NGINX=0
 
-print_success() {
-    echo -e "${GREEN}✓ $1${NC}"
-}
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--build)        DO_BUILD=1; shift ;;
+		--reload-nginx) RELOAD_NGINX=1; shift ;;
+		-h|--help)      awk 'NR < 3 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"; exit 0 ;;
+		*)              fail "unknown option: $1 (try --help)" ;;
+	esac
+done
 
-print_error() {
-    echo -e "${RED}✗ $1${NC}"
-}
+ROOT="$(repo_root)"
+cd "$ROOT"
 
-print_info() {
-    echo -e "${YELLOW}ℹ $1${NC}"
-}
+command -v git >/dev/null 2>&1 || fail "git is not installed"
+git rev-parse --git-dir >/dev/null 2>&1 || fail "$ROOT is not a git repository"
 
-# Get the directory where this script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+# --------------------------------------------------------------------------
+# Pull
+# --------------------------------------------------------------------------
+# The old script forced `git checkout main`, which silently threw away whatever
+# you had checked out. Update the branch you are actually on, and stop if there
+# is anything uncommitted rather than risk overwriting it.
 
-print_info "Updating GingerView..."
-print_info "Project directory: $PROJECT_DIR"
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+[ "$BRANCH" != "HEAD" ] || fail "detached HEAD: check out a branch before updating"
 
-cd "$PROJECT_DIR"
-
-# Pull latest changes (non-destructive)
-print_info "Pulling latest changes from git..."
-git fetch origin
-git checkout main
-git pull --ff-only origin main
-
-# Install dependencies
-print_info "Installing npm dependencies..."
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-if ! command -v nvm >/dev/null 2>&1; then
-    print_error "nvm not found. Please install nvm and Node.js 20 first."
-    exit 1
-fi
-nvm use 20
-npm install
-
-# Build the application
-print_info "Building GingerView..."
-npm run build
-
-if [ ! -d "$PROJECT_DIR/build" ]; then
-    print_error "Build failed: build directory not found"
-    exit 1
+if [ -n "$(git status --porcelain)" ]; then
+	warn "Uncommitted changes in $ROOT:"
+	git status --short | sed 's/^/      /' >&2
+	fail "commit or stash them first — refusing to touch a dirty working tree"
 fi
 
-# Set permissions
-print_info "Setting permissions..."
-chmod -R 755 build/
+info "Updating branch '$BRANCH'..."
+git fetch --quiet origin "$BRANCH" || fail "could not fetch origin/$BRANCH"
 
-# Restart nginx
-print_info "Restarting nginx..."
-if command -v sudo >/dev/null 2>&1; then
-    sudo -n systemctl restart nginx 2>/dev/null || print_info "Cannot restart nginx without passwordless sudo, skipping"
+BEFORE="$(git rev-parse HEAD)"
+git merge --ff-only "origin/$BRANCH" >/dev/null || fail \
+	"'$BRANCH' cannot be fast-forwarded to origin/$BRANCH — it has diverged, resolve it by hand"
+AFTER="$(git rev-parse HEAD)"
+
+if [ "$BEFORE" = "$AFTER" ]; then
+	ok "Already up to date ($(git rev-parse --short HEAD))"
 else
-    systemctl restart nginx 2>/dev/null || print_info "Cannot restart nginx in current context, skipping"
+	ok "Updated $(git rev-parse --short "$BEFORE") → $(git rev-parse --short "$AFTER")"
+	git --no-pager log --oneline "$BEFORE..$AFTER" | sed 's/^/      /'
 fi
 
-print_success "GingerView updated successfully!"
+# --------------------------------------------------------------------------
+# Bundle
+# --------------------------------------------------------------------------
+
+if [ "$DO_BUILD" -eq 1 ]; then
+	info "Rebuilding locally..."
+	"$ROOT/script/build.sh"
+fi
+
+[ -f build/index.html ] || fail \
+	"build/index.html is missing. CI commits build/ on pushes to main; if this branch has no
+   artifacts, re-run with --build or merge main."
+
+# Newly pulled files inherit the umask, so re-assert what nginx needs to read.
+find build -type d -exec chmod 755 {} +
+find build -type f -exec chmod 644 {} +
+
+# --------------------------------------------------------------------------
+# nginx
+# --------------------------------------------------------------------------
+# Static files are served straight from disk and index.html is sent with
+# no-store, so a plain content update needs nothing here.
+
+if [ "$RELOAD_NGINX" -eq 1 ]; then
+	if [ "$(id -u)" -eq 0 ]; then
+		nginx -t && systemctl reload nginx && ok "nginx reloaded"
+	elif command -v sudo >/dev/null 2>&1; then
+		sudo nginx -t && sudo systemctl reload nginx && ok "nginx reloaded"
+	else
+		warn "cannot reload nginx without root"
+	fi
+fi
+
+echo
+ok "GingerView is up to date"

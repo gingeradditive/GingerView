@@ -1,4 +1,24 @@
-import type { Config, KlipperConfig, NetworkConfig } from '$lib/types/config';
+import type { Config, KlipperConfig, ServiceConfig } from '$lib/types/config';
+
+/**
+ * Endpoint resolution
+ * -------------------
+ * By default GingerView talks to Moonraker on its *own origin*: nginx serves the
+ * static build on port 80 and proxies `/printer/`, `/server/`, `/machine/`,
+ * `/access/`, `/api/` and `/websocket` to Moonraker. That is how Mainsail works,
+ * and it is what lets GingerSlicer connect to the printer without a port number.
+ *
+ * Same-origin means the compiled bundle contains no addresses at all, so a single
+ * build works on every machine. Note that `VITE_*` values are inlined at build
+ * time, and `.env` is gitignored, so anything host-specific baked in here would
+ * be wrong for every printer but the one it was built for.
+ *
+ * The same holds for G2-Service, the host's own API (network, timezone): nginx
+ * proxies `/service/` to it on port 8000.
+ *
+ * The `VITE_MOONRAKER_*` / `VITE_G2_SERVICE_*` variables exist to override this
+ * during development, when the dev server and the printer are different hosts.
+ */
 
 class ConfigService {
 	private config: Config | null = null;
@@ -8,98 +28,129 @@ class ConfigService {
 			return this.config;
 		}
 
-		// Use current page location for dynamic IP handling
-		// This works regardless of server IP changes
-		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-	 const httpProtocol = window.location.protocol;
-		const hostname = window.location.hostname;
-		const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-		const moonrakerPath = this.getEnvVar('VITE_MOONRAKER_PATH', '/moonraker');
-
-		const klipperConfig: KlipperConfig = {
-			moonrakerHost: hostname,
-			moonrakerPort: parseInt(port, 10),
-			moonrakerWsUrl: this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL') || `${protocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}${moonrakerPath}/websocket`,
-			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL') || `${httpProtocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}${moonrakerPath}`,
-			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Klipper Printer'),
-			connectionTimeout: this.getNumberEnvVar('VITE_CONNECTION_TIMEOUT', 5000)
+		const config: Config = {
+			klipper: this.buildKlipperConfig(),
+			service: this.buildServiceConfig()
 		};
 
-		const networkConfig: NetworkConfig = {
-			apiHost: hostname,
-			apiPort: parseInt(port, 10),
-			apiBaseUrl: this.getOptionalEnvVar('VITE_NETWORK_API_BASE_URL') || `${httpProtocol}//${hostname}${port !== '80' && port !== '443' ? ':' + port : ''}/network`
-		};
-
-		this.config = { klipper: klipperConfig, network: networkConfig };
-		return this.config;
+		// Only memoize in the browser: the same-origin WebSocket URL is derived from
+		// `window.location`, so caching a build-time result would pin an empty URL.
+		if (typeof window !== 'undefined') {
+			this.config = config;
+		}
+		return config;
 	}
 
-	private getEnvVar(key: string, defaultValue?: string): string {
-		const value = import.meta.env[key];
-		if (value === undefined) {
-			if (defaultValue !== undefined) {
-				return defaultValue;
-			}
-			throw new Error(`Environment variable ${key} is not set and no default value provided`);
-		}
-		return value;
+	private buildKlipperConfig(): KlipperConfig {
+		const host = this.getOptionalEnvVar('VITE_MOONRAKER_HOST');
+		const port = this.getNumberEnvVar('VITE_MOONRAKER_PORT', 7125);
+		const explicitOrigin = host ? `http://${host}:${port}` : '';
+
+		return {
+			moonrakerApiUrl: this.getOptionalEnvVar('VITE_MOONRAKER_API_URL') ?? explicitOrigin,
+			moonrakerWsUrl:
+				this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL') ??
+				(host ? `ws://${host}:${port}/websocket` : sameOriginWebSocketUrl()),
+			moonrakerHost: host ?? '',
+			moonrakerPort: host ? port : 0,
+			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Ginger Printer'),
+			connectionTimeout: this.getNumberEnvVar('VITE_CONNECTION_TIMEOUT', 5000)
+		};
+	}
+
+	private buildServiceConfig(): ServiceConfig {
+		// Falls back to the Moonraker host so that pointing the dev server at a
+		// printer configures both services at once.
+		const host =
+			this.getOptionalEnvVar('VITE_G2_SERVICE_HOST') ??
+			this.getOptionalEnvVar('VITE_MOONRAKER_HOST');
+		const port = this.getNumberEnvVar('VITE_G2_SERVICE_PORT', 8000);
+
+		return {
+			apiBaseUrl:
+				this.getOptionalEnvVar('VITE_G2_SERVICE_BASE_URL') ??
+				(host ? `http://${host}:${port}` : ''),
+			apiHost: host ?? '',
+			apiPort: host ? port : 0
+		};
+	}
+
+	private getEnvVar(key: string, defaultValue: string): string {
+		return this.getOptionalEnvVar(key) ?? defaultValue;
 	}
 
 	private getOptionalEnvVar(key: string): string | undefined {
 		const value = import.meta.env[key];
-		return value === undefined ? undefined : value;
+		if (typeof value !== 'string') return undefined;
+		const trimmed = value.trim();
+		return trimmed === '' ? undefined : trimmed;
 	}
 
 	private getNumberEnvVar(key: string, defaultValue: number): number {
-		const parsedValue = parseInt(this.getEnvVar(key, String(defaultValue)), 10);
-		if (Number.isNaN(parsedValue)) {
-			return defaultValue;
-		}
-		return parsedValue;
+		const raw = this.getOptionalEnvVar(key);
+		if (raw === undefined) return defaultValue;
+		const parsedValue = parseInt(raw, 10);
+		return Number.isNaN(parsedValue) ? defaultValue : parsedValue;
 	}
 
 	getKlipperConfig(): KlipperConfig {
 		return this.loadConfig().klipper;
 	}
 
-	getNetworkConfig(): NetworkConfig {
-		return this.loadConfig().network;
+	getServiceConfig(): ServiceConfig {
+		return this.loadConfig().service;
+	}
+
+	/** True when requests go to the page's own origin through the nginx proxy. */
+	isSameOrigin(): boolean {
+		return this.getKlipperConfig().moonrakerApiUrl === '';
 	}
 
 	validateConfig(): { isValid: boolean; errors: string[] } {
 		const errors: string[] = [];
-		const config = this.getKlipperConfig();
+		const klipper = this.getKlipperConfig();
 
-		// Validate host
-		if (!config.moonrakerHost) {
-			errors.push('Moonraker host is required');
-		}
-
-		// Validate port
-		if (!config.moonrakerPort || config.moonrakerPort < 1 || config.moonrakerPort > 65535) {
+		// An explicit override must be complete: a host without a usable port, or a
+		// malformed URL, is a misconfiguration rather than a fallback to same-origin.
+		if (klipper.moonrakerHost && (klipper.moonrakerPort < 1 || klipper.moonrakerPort > 65535)) {
 			errors.push('Moonraker port must be between 1 and 65535');
 		}
 
-		// Validate timeout
-		if (config.connectionTimeout && config.connectionTimeout < 1000) {
+		if (!klipper.moonrakerWsUrl) {
+			errors.push('Moonraker WebSocket URL could not be resolved');
+		}
+
+		if (klipper.connectionTimeout && klipper.connectionTimeout < 1000) {
 			errors.push('Connection timeout should be at least 1000ms');
 		}
 
-		const networkConfig = this.getNetworkConfig();
-		if (!networkConfig.apiHost) {
-			errors.push('Network API host is required');
+		const service = this.getServiceConfig();
+		if (service.apiHost && (service.apiPort < 1 || service.apiPort > 65535)) {
+			errors.push('G2-Service port must be between 1 and 65535');
 		}
 
-		if (!networkConfig.apiPort || networkConfig.apiPort < 1 || networkConfig.apiPort > 65535) {
-			errors.push('Network API port must be between 1 and 65535');
-		}
-
-		return {
-			isValid: errors.length === 0,
-			errors
-		};
+		return { isValid: errors.length === 0, errors };
 	}
 }
 
+/**
+ * Derived from `window.location` so the same bundle works over http and https and
+ * on any hostname. Guarded because the static adapter renders the fallback page in
+ * Node at build time, where `window` does not exist.
+ */
+function sameOriginWebSocketUrl(): string {
+	if (typeof window === 'undefined') return '';
+	const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+	return `${protocol}//${window.location.host}/websocket`;
+}
+
 export const configService = new ConfigService();
+
+/**
+ * Moonraker HTTP base without a trailing slash, ready to be concatenated with a
+ * path. Returns an empty string in the same-origin setup, which turns callers
+ * into relative requests such as `/printer/objects/query`.
+ */
+export function getMoonrakerApiUrl(): string {
+	return configService.getKlipperConfig().moonrakerApiUrl.replace(/\/$/, '');
+}

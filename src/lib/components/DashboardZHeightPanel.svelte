@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	const pollIntervalMs = 1500;
 	const totalSections = 10;
@@ -10,7 +10,9 @@
 	let maxHeight = $state(950);
 	let isIdle = $state(true);
 
-	let fillPercentage = $derived(maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0);
+	let fillPercentage = $derived(
+		maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0
+	);
 
 	let sections = $derived(
 		Array.from({ length: totalSections }, (_, i) => {
@@ -22,15 +24,11 @@
 		})
 	);
 
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
-	};
-
 	const updateZHeight = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`);
+			const response = await fetch(
+				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`
+			);
 			if (!response.ok) return;
 
 			const payload = await response.json();
@@ -48,7 +46,11 @@
 			}
 
 			const gcodeMove = status.gcode_move;
-			if (gcodeMove && Array.isArray(gcodeMove.gcode_position) && gcodeMove.gcode_position.length > 2) {
+			if (
+				gcodeMove &&
+				Array.isArray(gcodeMove.gcode_position) &&
+				gcodeMove.gcode_position.length > 2
+			) {
 				currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
 			} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
 				currentHeight = Math.max(0, toolhead.position[2]);
@@ -71,7 +73,7 @@
 			<div class="z-progress-fill" style="height: {fillPercentage}%"></div>
 			<!-- Section marks and labels -->
 			<div class="z-marks">
-				{#each sections as section, i}
+				{#each sections as _section, i}
 					<div class="z-mark" style="bottom: {(i + 1) * 10}%"></div>
 				{/each}
 			</div>
@@ -98,7 +100,7 @@
 <style>
 	.z-height-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		align-items: stretch;
@@ -110,7 +112,7 @@
 
 	.z-progress-container {
 		position: relative;
-		width: 40px;
+		width: 80px;
 		height: 100%;
 		flex-shrink: 0;
 	}
@@ -130,7 +132,7 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: #D72E28;
+		background: #d72e28;
 		border-radius: 0;
 		transition: height 0.3s ease;
 	}
@@ -176,22 +178,24 @@
 		flex: 1;
 		padding: 20px;
 		justify-content: center;
+		align-items: center;
+		text-align: center;
 	}
 
 	.z-label {
-		font-size: 1rem;
+		font-size: 2rem;
 		font-weight: 700;
 		color: #111111;
 	}
 
 	.z-value {
-		font-size: 0.85rem;
+		font-size: 1.7rem;
 		color: #666666;
 		font-weight: 500;
 	}
 
 	.z-value-sub {
-		font-size: 0.75rem;
+		font-size: 1.5rem;
 		color: #999999;
 		font-weight: 400;
 	}

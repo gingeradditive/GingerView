@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
-	import { configService } from '$lib/services/config';
+	import { getMoonrakerApiUrl } from '$lib/services/config';
 
 	type HeaterStatus = {
 		temperature?: number;
@@ -46,18 +46,7 @@
 	};
 
 	const showBedSet = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			!isBedReady()
-		);
-	};
-
-	const getApiUrl = (): string => {
-		const config = configService.getKlipperConfig();
-		const baseUrl = config.moonrakerApiUrl ?? `http://${config.moonrakerHost}:${config.moonrakerPort}`;
-		return baseUrl.replace(/\/$/, '');
+		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
 	};
 
 	const getQueryPath = (): string => {
@@ -67,7 +56,7 @@
 
 	const updateTemperatures = async (): Promise<void> => {
 		try {
-			const response = await fetch(`${getApiUrl()}${getQueryPath()}`);
+			const response = await fetch(`${getMoonrakerApiUrl()}${getQueryPath()}`);
 			if (!response.ok) {
 				return;
 			}
@@ -93,7 +82,8 @@
 			bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
 
 			const heaterBedTarget = status.heater_bed?.target;
-			bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
+			bedTarget =
+				typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 		} catch {
 			return;
 		}
@@ -109,7 +99,11 @@
 <section class="temperature-panel" aria-label="Pannello temperature Klipper">
 	<div class="extruders">
 		{#each extruderTemperatures as temperature, index}
-			<ExtruderTemperatureCard index={index + 1} {temperature} target={extruderTargets[index] ?? null} />
+			<ExtruderTemperatureCard
+				index={index + 1}
+				{temperature}
+				target={extruderTargets[index] ?? null}
+			/>
 		{/each}
 	</div>
 
@@ -120,7 +114,9 @@
 		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
 			<span class="bed-label">BED</span>
 			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
-				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>{formatTemperature(bedTemperature)}</span>
+				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}
+					>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span
+				>
 				{#if showBedSet()}
 					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
 				{/if}
@@ -132,7 +128,7 @@
 <style>
 	.temperature-panel {
 		background: #ffffff;
-		border-radius: 16px;
+		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
 		flex-direction: column;
@@ -174,7 +170,6 @@
 		object-fit: contain;
 	}
 
-	
 	.bed-card {
 		display: flex;
 		align-items: baseline;
@@ -187,7 +182,9 @@
 		border: 1px solid #8f8f93;
 		background: #b9b9bc;
 		box-sizing: border-box;
-		transition: background-color 220ms ease, border-color 220ms ease;
+		transition:
+			background-color 220ms ease,
+			border-color 220ms ease;
 	}
 
 	.bed-card.heating {
@@ -209,7 +206,7 @@
 	.bed-temperature-stack {
 		position: absolute;
 		bottom: 7px;
-		right: 8px;
+		right: 18px;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
@@ -217,18 +214,19 @@
 		gap: 1px;
 	}
 
-
 	.bed-value {
 		font-size: 1.5rem;
 		font-weight: 600;
 		color: #7a7a7e;
 		line-height: 1;
+		position: relative;
 	}
 
-	.bed-value::after {
-		content: '°';
+	.degree-symbol {
 		font-size: 0.8em;
-		margin-left: 0.1em;
+		position: absolute;
+		left: 100%;
+		top: 0;
 	}
 
 	.bed-value.heating {
