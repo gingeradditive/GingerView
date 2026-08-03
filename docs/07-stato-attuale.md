@@ -175,11 +175,6 @@ riavvio, quando Klippy torna in stato `error`.
 
 ## Incoerenze aperte
 
-### `validateConfig()` mai chiamato
-
-`configService.validateConfig()` è implementato e testabile, ma non viene invocato all'avvio:
-una configurazione errata si manifesta come richieste fallite invece che come messaggio chiaro.
-
 ### `npm run lint` non è eseguibile
 
 Due problemi indipendenti, entrambi preesistenti:

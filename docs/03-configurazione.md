@@ -46,9 +46,9 @@ dentro i file JavaScript, quindi:
 | `VITE_MOONRAKER_API_URL` | derivato                | URL HTTP completo, ha la precedenza      |
 
 `configService` legge anche `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT`, ma **nessuna delle
-due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout è usato solo da
-`validateConfig()`, che non viene mai invocato (la console ha il proprio timeout scritto nel
-codice). Per questo non compaiono in [.env.example](../.env.example).
+due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout viene solo
+validato da `validateConfig()`, mai usato per una richiesta (la console ha il proprio timeout
+scritto nel codice). Per questo non compaiono in [.env.example](../.env.example).
 
 ### G2-Service (rete e fuso orario)
 
@@ -101,8 +101,19 @@ Due dettagli che vale la pena conoscere:
   la build; per lo stesso motivo la configurazione viene messa in cache **solo nel browser**.
 
 `configService.validateConfig()` restituisce `{ isValid, errors }` e verifica la coerenza di
-un eventuale override esplicito. **Non è invocato da nessuna parte dell'applicazione**:
-è disponibile ma non cablato.
+un eventuale override esplicito: porte fuori intervallo (Moonraker e G2-Service), URL WebSocket
+non risolto, timeout di connessione sotto il secondo.
+
+È cablato nel layout radice ([+layout.svelte](../src/routes/+layout.svelte)) **solo in
+sviluppo**, dentro `onMount`: se la configurazione non è valida gli errori finiscono in
+console. Le due restrizioni sono volute:
+
+- **solo in sviluppo**, perché le variabili `VITE_*` sono un meccanismo di sviluppo. Una build
+  di produzione è same-origin e non contiene indirizzi, quindi non c'è niente da validare e
+  nessun errore che l'utente della stampante possa correggere;
+- **dentro `onMount`** e non a livello di modulo, perché l'URL WebSocket viene derivato da
+  `window.location`: durante il prerender in Node è vuoto per costruzione, e il controllo
+  segnalerebbe un errore inesistente.
 
 ## Configurazione tipica in sviluppo
 

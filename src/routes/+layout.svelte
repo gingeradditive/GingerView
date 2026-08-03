@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import favicon from '$lib/assets/favicon.svg';
+	import { configService } from '$lib/services/config';
 	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
@@ -11,6 +13,20 @@
 	const logoImage = '/Printers/G2/Logo.svg';
 
 	let { children } = $props();
+
+	// The only way to misconfigure the endpoints is a wrong `.env`, and `VITE_*` values
+	// exist only during development: a production build is same-origin and carries no
+	// addresses at all. So the check runs in dev only, and on mount rather than at module
+	// scope, because the WebSocket URL is resolved from `window.location`.
+	onMount(() => {
+		if (!import.meta.env.DEV) return;
+		const { isValid, errors } = configService.validateConfig();
+		if (!isValid) {
+			console.error(
+				`GingerView: invalid configuration, check your .env\n${errors.map((error) => `  - ${error}`).join('\n')}`
+			);
+		}
+	});
 </script>
 
 <svelte:head>
