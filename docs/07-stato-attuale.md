@@ -188,6 +188,20 @@ Due problemi indipendenti, entrambi preesistenti:
 
 Poiché lo script è `prettier --check . && eslint .`, oggi eslint non viene nemmeno raggiunto.
 
+### Restano 4 vulnerabilità `low` senza fix disponibile
+
+`npm audit fix` è stato eseguito e ha risolto 11 delle 15 vulnerabilità aggiornando il solo
+`package-lock.json`, dentro i range di `package.json` (svelte, vite, postcss, rollup, esbuild,
+`@sveltejs/kit` e le loro transitive). Le 4 rimaste sono la stessa segnalazione ripetuta lungo
+la catena: `cookie < 0.7.0`, dipendenza diretta di `@sveltejs/kit`, che la richiede come
+`^0.6.0` anche nell'ultima versione pubblicata (2.70.2). Non c'è quindi una versione di kit che
+la risolva: `npm audit fix --force` "risolve" proponendo `@sveltejs/kit@0.0.30`, cioè un
+downgrade di sette anni, e va rifiutato.
+
+Sono `low` e non riguardano il browser: `cookie` è usato da kit lato server, mentre la build è
+statica (`adapter-static`) e non esegue codice Node in produzione. Vanno rivalutate quando kit
+aggiornerà la dipendenza.
+
 ### Il modello di macchina non è noto all'applicazione
 
 Serve per parametrizzare la capienza della tramoggia e il numero di zone dell'ugello, e già
@@ -203,7 +217,9 @@ Trattato per esteso in [06 — Build e deploy](06-deploy.md):
 - se qualcuno compila in locale con un `.env` e committa `build/`, l'IP della sua stampante
   finisce nel bundle distribuito. `build.sh` ora avvisa prima e dopo la build, ed elenca cosa è
   stato compilato dentro, ma **nulla impedisce materialmente quel commit**: manca un controllo
-  in CI o un hook.
+  in CI o un hook. Non è un rischio teorico: il `build/` committato conteneva davvero
+  `192.168.1.20`, finito lì da una build locale. La ricompilazione fatta per `QA-7` l'ha
+  rimosso, ma senza il controllo può ricapitare.
 
 Il repository [gingeradditive/g2-os](https://github.com/gingeradditive/g2-os) esiste ma è
 ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modulo GingerView**.

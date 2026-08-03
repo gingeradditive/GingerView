@@ -81,7 +81,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 - `QA-4` Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` — pronto
 - `QA-5` Valutare test unitari o end-to-end sul frontend — pronto
-- `QA-7` Valutare `npm audit fix`: 15 vulnerabilità, di cui 4 raggiungono il bundle. Comporta rigenerare `build/` — pronto
 - `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `QA-9` Aggiungere le key ai 5 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `QA-10` Togliere i 3 `any` residui passando a `unknown` + narrowing: sono sul confine JSON-RPC di Moonraker e due stanno nel tipo `KlipperMessage`, che oggi nessuno importa più — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-9`
