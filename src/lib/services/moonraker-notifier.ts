@@ -174,16 +174,44 @@ let notifierWs: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 const shownWarnings = new Set<string>();
 
-function handleNotification(data: any): void {
+/** A JSON object, as far as the JSON-RPC boundary lets us claim. */
+type JsonObject = Record<string, unknown>;
+
+function isJsonObject(value: unknown): value is JsonObject {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The shape we actually rely on: a notification carries a method name and,
+ * optionally, positional parameters. Everything past that is checked where it
+ * is read, because Moonraker's payloads are not ours to declare.
+ */
+function isNotification(data: unknown): data is { method: string; params?: unknown[] } {
+	if (!isJsonObject(data)) return false;
+	if (typeof data.method !== 'string') return false;
+	return data.params === undefined || Array.isArray(data.params);
+}
+
+/** The warning strings inside `notify_proc_stat_update`, or none if absent. */
+function readProcStatWarnings(params: unknown[] | undefined): string[] {
+	const first = params?.[0];
+	if (!isJsonObject(first)) return [];
+	const stats = first.moonraker_stats;
+	if (!isJsonObject(stats)) return [];
+	const warnings = stats.warnings;
+	if (!Array.isArray(warnings)) return [];
+	return warnings.filter((w): w is string => typeof w === 'string');
+}
+
+function handleNotification(data: unknown): void {
+	if (!isNotification(data)) return;
+
 	// Moonraker notify_proc_stat_update can contain warnings
 	if (data.method === 'notify_proc_stat_update') {
-		const params = data.params?.[0];
-		if (params?.moonraker_stats?.warnings) {
-			for (const w of params.moonraker_stats.warnings) {
-				if (!shownWarnings.has(w)) {
-					shownWarnings.add(w);
-					toastActions.warning('moonraker', 'Moonraker warning', w, 0);
-				}
+		for (const w of readProcStatWarnings(data.params)) {
+			if (!shownWarnings.has(w)) {
+				shownWarnings.add(w);
+				toastActions.warning('moonraker', 'Moonraker warning', w, 0);
 			}
 		}
 	}

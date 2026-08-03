@@ -1,11 +1,11 @@
 # Pulizia lint
 
-Piano di lavoro per i **9 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`, `QA-10` e `QA-11`.
+Piano di lavoro per gli **8 errori `eslint` residui**, più le trappole da conoscere prima di
+metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8` e `QA-11`.
 
-Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9` e `CLN-9`: `prettier --check .` passa, `eslint .`
-riporta 9 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
-`PrintCard.svelte` e `PrintList.svelte`.
+Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9`, `CLN-9` e `QA-10`: `prettier --check .` passa,
+`eslint .` riporta 8 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha
+sistemato `PrintCard.svelte` e `PrintList.svelte`.
 
 ---
 
@@ -67,13 +67,13 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 9 errori residui
+## Gli 8 errori residui
 
 I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
 conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
 vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
-`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo), e due dei tre
-`no-explicit-any` con `CLN-9` (vedi sotto).
+`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo), due dei tre
+`no-explicit-any` con `CLN-9` (vedi sotto) e il terzo con `QA-10`.
 
 ### `QA-8` — `svelte/no-navigation-without-resolve` (7)
 
@@ -94,20 +94,6 @@ regola in `eslint.config.js` con un commento che spiega il perché, invece di la
 errori permanenti che rendono `npm run lint` rumoroso.
 
 **Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
-
-### `QA-10` — `@typescript-eslint/no-explicit-any` (1)
-
-[`moonraker-notifier.ts:177`](../src/lib/services/moonraker-notifier.ts#L177) — il parametro
-`data` di `handleNotification`.
-
-Il quarto (`DemoComponent.svelte`) è sparito con `CLN-1`, gli altri due con `CLN-9` (vedi
-sotto). Resta quello sul confine JSON-RPC con Moonraker, dove `any` è la scorciatoia tipica: la
-sostituzione corretta è `unknown` più un narrowing esplicito dove il valore viene consumato, non
-un'interfaccia inventata che dichiara più di quanto sappiamo davvero della risposta.
-
-Nel caso concreto il narrowing serve a poco lì dentro: `handleNotification` legge `data.method`
-e `data.params?.[0]`, quindi con `unknown` vanno aggiunti i controlli di forma prima di ogni
-accesso, oppure un type guard `isNotification(data)` in cima alla funzione.
 
 ### `QA-11` — `svelte/prefer-svelte-reactivity` (1)
 
@@ -148,6 +134,32 @@ costruzione e costa una riga.
 
 **Da verificare su macchina**: che la console non perda righe né sfarfalli durante uno stream
 lungo, e che il modal "Move" di `PrintCard` mostri la lista giusta dopo un cambio di cartella.
+
+## L'`any` sul confine JSON-RPC — fatto (`QA-10`)
+
+L'ultimo `no-explicit-any` era il parametro `data` di `handleNotification` in
+[`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts): la funzione riceve i
+messaggi grezzi della WebSocket di Moonraker, appena passati da `JSON.parse`.
+
+La correzione applicata è quella già indicata come giusta qui sopra: `unknown` più narrowing
+esplicito nel punto di consumo, **non** un'interfaccia del protocollo scritta a priori. In
+concreto sono comparse tre funzioni piccole sopra `handleNotification`:
+
+- `isJsonObject(value)` — il predicato di base, un oggetto che non è `null` né un array;
+- `isNotification(data)` — il type guard in cima alla funzione, che pretende solo quello su cui
+  il codice si appoggia davvero: `method` stringa e, se c'è, `params` array. Se non passa, la
+  notifica viene ignorata invece di far esplodere l'handler;
+- `readProcStatWarnings(params)` — scende in `params[0].moonraker_stats.warnings` un livello
+  alla volta e restituisce `[]` appena qualcosa non ha la forma attesa, filtrando poi le sole
+  stringhe. Il chiamante fa un `for` su un `string[]`, senza `?.` a catena.
+
+Il guadagno non è solo il lint: il vecchio `data.params?.[0]` su un `any` non aveva alcuna
+garanzia che `warnings` fosse iterabile, e un payload malformato sarebbe finito in un `TypeError`
+dentro `onmessage`. Ora ogni accesso è verificato e il caso strano degrada a "nessun warning".
+
+Il confine resta volutamente sottotipizzato: se un domani servirà il protocollo Moonraker
+tipizzato per intero, si riparte dalla sua documentazione (vedi la nota su `klipper.ts` qui
+sotto), non da questi tre guard, che coprono solo ciò che questo modulo legge.
 
 ## `src/lib/types/klipper.ts` — deciso: cancellato (`CLN-9`)
 
