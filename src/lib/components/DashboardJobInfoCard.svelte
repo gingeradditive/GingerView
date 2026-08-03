@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import {
 		extractThumbnailFromGcode,
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
+	type JobInfoStatus = { print_stats?: { state?: string; filename?: string } };
+
+	const pollSource = 'dashboard-job-info';
 	const pollIntervalMs = 2000;
 
 	let jobName = $state('--');
@@ -36,40 +39,35 @@
 	};
 
 	const updateJobInfo = async (): Promise<void> => {
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<JobInfoStatus>(pollSource, 'print_stats');
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		// Kalico keeps `print_stats.filename` after a job ends — `complete`,
+		// `cancelled` and `error` all still carry the name of the last file, and
+		// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
+		// what empties the card when the print is over.
+		const printState = status.print_stats?.state ?? 'standby';
+		const isIdle = printState !== 'printing' && printState !== 'paused';
 
-			// Kalico keeps `print_stats.filename` after a job ends — `complete`,
-			// `cancelled` and `error` all still carry the name of the last file, and
-			// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
-			// what empties the card when the print is over.
-			const printState = status.print_stats?.state ?? 'standby';
-			const isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
-			if (filename) {
-				jobName = stripExtension(filename);
-				loadFileMetadata(filename);
-			} else {
-				jobName = '--';
-				jobMaterial = '';
-				thumbnailUrl = '/error-thumbnail.png';
-				lastFilename = null;
-			}
-		} catch {
-			return;
+		const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
+		if (filename) {
+			jobName = stripExtension(filename);
+			loadFileMetadata(filename);
+		} else {
+			jobName = '--';
+			jobMaterial = '';
+			thumbnailUrl = '/error-thumbnail.png';
+			lastFilename = null;
 		}
 	};
 
 	onMount(() => {
 		updateJobInfo();
 		const interval = window.setInterval(updateJobInfo, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

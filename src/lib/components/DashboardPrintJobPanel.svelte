@@ -8,7 +8,14 @@
 	} from '$lib/services/moonraker-files';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
+	type PrintJobStatus = {
+		print_stats?: { state?: string; filename?: string; print_duration?: number };
+		virtual_sdcard?: { progress?: number };
+	};
+
+	const pollSource = 'dashboard-print-job';
 	const pollIntervalMs = 2000;
 
 	let jobName = $state('--');
@@ -64,56 +71,49 @@
 	};
 
 	const updatePrintJob = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<PrintJobStatus>(
+			pollSource,
+			'print_stats&virtual_sdcard'
+		);
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printStats = status.print_stats;
+		const vsd = status.virtual_sdcard;
 
-			const printStats = status.print_stats;
-			const vsd = status.virtual_sdcard;
+		printState = printStats?.state ?? 'standby';
+		isPrinting = printState === 'printing';
+		isPaused = printState === 'paused';
 
-			printState = printStats?.state ?? 'standby';
-			isPrinting = printState === 'printing';
-			isPaused = printState === 'paused';
+		const filename = printStats?.filename ?? '';
+		if (filename) {
+			jobName = stripExtension(filename);
+			loadFileMetadata(filename);
+		} else {
+			jobName = '--';
+			jobMaterial = '';
+			thumbnailUrl = '/error-thumbnail.png';
+			lastFilename = null;
+			estimatedTotalSeconds = null;
+		}
 
-			const filename = printStats?.filename ?? '';
-			if (filename) {
-				jobName = stripExtension(filename);
-				loadFileMetadata(filename);
-			} else {
-				jobName = '--';
-				jobMaterial = '';
-				thumbnailUrl = '/error-thumbnail.png';
-				lastFilename = null;
-				estimatedTotalSeconds = null;
-			}
+		const printDuration = printStats?.print_duration ?? 0;
+		elapsed = formatDuration(printDuration);
 
-			const printDuration = printStats?.print_duration ?? 0;
-			elapsed = formatDuration(printDuration);
+		const prog = vsd?.progress ?? 0;
+		progress = Math.round(prog * 100);
 
-			const prog = vsd?.progress ?? 0;
-			progress = Math.round(prog * 100);
-
-			if (prog > 0.001 && printDuration > 0) {
-				const totalEstimated = printDuration / prog;
-				const remainingSeconds = totalEstimated - printDuration;
-				remaining = formatDuration(remainingSeconds);
-				etaAt = new Date(Date.now() + remainingSeconds * 1000);
-			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
-				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
-				remaining = formatDuration(remainingSeconds);
-				etaAt = new Date(Date.now() + remainingSeconds * 1000);
-			} else {
-				remaining = '--:--:--';
-				etaAt = null;
-			}
-		} catch {
-			return;
+		if (prog > 0.001 && printDuration > 0) {
+			const totalEstimated = printDuration / prog;
+			const remainingSeconds = totalEstimated - printDuration;
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
+			const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else {
+			remaining = '--:--:--';
+			etaAt = null;
 		}
 	};
 
@@ -146,7 +146,10 @@
 		ensurePrinterTimezone();
 		updatePrintJob();
 		const interval = window.setInterval(updatePrintJob, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

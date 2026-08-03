@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
 	type HeaterStatus = {
 		temperature?: number;
 		target?: number;
 	};
 
+	const pollSource = 'dashboard-temperature';
 	const pollIntervalMs = 1500;
 
 	// The heated zones of the one nozzle, as the machine declares them: four on
@@ -54,10 +55,7 @@
 		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
 	};
 
-	const getQueryPath = (): string => {
-		const objects = [...zoneKeys, 'heater_bed'];
-		return `/printer/objects/query?${objects.join('&')}`;
-	};
+	const getQuery = (): string => [...zoneKeys, 'heater_bed'].join('&');
 
 	const updateTemperatures = async (): Promise<void> => {
 		// Cached after the first answer, so this costs one request until the
@@ -66,44 +64,34 @@
 			zoneKeys = await loadNozzleZones();
 		}
 
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}${getQueryPath()}`);
-			if (!response.ok) {
-				return;
-			}
+		const status = await queryPrinterObjects<Record<string, HeaterStatus>>(pollSource, getQuery());
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status as Record<string, HeaterStatus> | undefined;
-			if (!status) {
-				return;
-			}
+		extruderTemperatures = zoneKeys.map((key) => {
+			const temperature = status[key]?.temperature;
+			return typeof temperature === 'number' ? temperature : null;
+		});
 
-			extruderTemperatures = zoneKeys.map((key) => {
-				const temperature = status[key]?.temperature;
-				return typeof temperature === 'number' ? temperature : null;
-			});
+		extruderTargets = zoneKeys.map((key) => {
+			const target = status[key]?.target;
+			if (typeof target !== 'number' || Number.isNaN(target)) return null;
+			return target > 0 ? target : null;
+		});
 
-			extruderTargets = zoneKeys.map((key) => {
-				const target = status[key]?.target;
-				if (typeof target !== 'number' || Number.isNaN(target)) return null;
-				return target > 0 ? target : null;
-			});
+		const heaterBed = status.heater_bed?.temperature;
+		bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
 
-			const heaterBed = status.heater_bed?.temperature;
-			bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
-
-			const heaterBedTarget = status.heater_bed?.target;
-			bedTarget =
-				typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
-		} catch {
-			return;
-		}
+		const heaterBedTarget = status.heater_bed?.target;
+		bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 	};
 
 	onMount(() => {
 		updateTemperatures();
 		const interval = window.setInterval(updateTemperatures, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

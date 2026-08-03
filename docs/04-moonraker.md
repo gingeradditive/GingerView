@@ -536,6 +536,46 @@ attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al s
 Moonraker è la somma dei pannelli montati — anche di quelli fuori dalla viewport del carosello,
 che restano montati e continuano a interrogare.
 
+## Dati non aggiornati
+
+Quando una query fallisce il pannello non ha niente da scrivere e lascia a schermo l'ultima
+lettura riuscita. È il comportamento giusto — quei numeri sono spesso ancora l'informazione più
+utile disponibile — ma da solo è disonesto: un valore fermo da dieci minuti e uno appena letto
+si assomigliano.
+
+[moonraker-poll.ts](../src/lib/services/moonraker-poll.ts) tiene il conto. Ogni pannello passa
+per `queryPrinterObjects<T>(pollSource, query)`, che fa `GET /printer/objects/query?<query>`,
+restituisce lo `status` o `null` e registra l'esito sotto il nome della sorgente. `T` è la forma
+che il pannello si aspetta, dichiarata in cima al componente accanto alla query che la chiede:
+non è verificabile a compile time (è JSON di Moonraker) ma dice quali campi quel pannello legge,
+e tiene fuori l'`any` che `QA-10` ha tolto dal progetto.
+
+| Esito                                                 | Effetto                                |
+| ----------------------------------------------------- | -------------------------------------- |
+| risposta con `result.status`                          | la sorgente riparte da zero fallimenti |
+| HTTP non-2xx, errore di rete, risposta senza `status` | +1 fallimento consecutivo              |
+
+Alla **seconda** richiesta persa consecutiva di una qualsiasi sorgente lo store `dataStale`
+passa a `true` e `staleSince` registra l'istante. Due e non una perché una richiesta persa
+capita (un riavvio di Moonraker, il wifi che sfarfalla) e l'avviso non deve lampeggiare a ogni
+singhiozzo; il conteggio è per sorgente perché i pannelli montano e smontano con il carosello.
+
+[StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte), montato nel layout,
+mostra allora una pillola in alto — _"Data not updating — the printer stopped answering, showing
+the last reading (1m)"_ — con il tempo trascorso che avanza ogni secondo. Non copre niente, non
+si chiude e non offre un pulsante di ritentativo: il polling ritenta già da sé e la pillola
+sparisce da sola alla prima risposta buona.
+
+Non compare quando Kalico è `shutdown`/`error`/`disconnected`: lì le query falliscono per un
+motivo che [KlipperDownOverlay](#avviso-a-schermo-quando-kalico-è-fermo) spiega già per esteso,
+con la via d'uscita. Due avvisi per lo stesso guasto sono uno di troppo. Resta invece visibile —
+ed è il caso che prima passava sotto silenzio — quando è **Moonraker** a non rispondere: lì il
+notifier non riceve nulla e continua a riportare l'ultimo stato noto di Kalico.
+
+Le pagine di Impostazioni che interrogano per conto proprio (`network`, `update`,
+`config-editor`) non passano di qui: hanno un dominio e un'interfaccia propri, e i loro
+fallimenti sono già visibili in pagina.
+
 ## Calcolo del tempo residuo
 
 `DashboardControlPanel` stima il tempo rimanente con due strategie in cascata:

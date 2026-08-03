@@ -2,8 +2,15 @@
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
+	type QuickActionsStatus = {
+		fan?: { speed?: number };
+		'led LED_CAMERA'?: { color_data?: number[][] };
+	};
+
+	const pollSource = 'dashboard-quick-actions';
 	const pollIntervalMs = 2000;
 	const circumference = 2 * Math.PI * 16;
 
@@ -29,31 +36,21 @@
 	};
 
 	const updateStatus = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?fan&led LED_CAMERA`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<QuickActionsStatus>(pollSource, 'fan&led LED_CAMERA');
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const fan = status.fan;
+		if (fan) {
+			fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
+			fanOn = fanSpeed > 0;
+		}
 
-			const fan = status.fan;
-			if (fan) {
-				fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
-				fanOn = fanSpeed > 0;
-			}
-
-			const led = status['led LED_CAMERA'];
-			if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
-				// color_data is [[r, g, b, w]] — white channel is index 3
-				const white = led.color_data[0][3] ?? 0;
-				lightValue = typeof white === 'number' ? white : 0;
-				lightOn = lightValue > 0;
-			}
-		} catch {
-			return;
+		const led = status['led LED_CAMERA'];
+		if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
+			// color_data is [[r, g, b, w]] — white channel is index 3
+			const white = led.color_data[0][3] ?? 0;
+			lightValue = typeof white === 'number' ? white : 0;
+			lightOn = lightValue > 0;
 		}
 	};
 
@@ -95,7 +92,10 @@
 	onMount(() => {
 		updateStatus();
 		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

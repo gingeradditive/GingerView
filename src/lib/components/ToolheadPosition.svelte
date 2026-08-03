@@ -6,6 +6,7 @@
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
@@ -30,6 +31,13 @@
 	let motorsEnabled = $state(true);
 	let motorsBusy = $state(false);
 
+	type ToolheadStatus = {
+		toolhead?: { position?: number[]; axis_maximum?: number[] };
+		gcode_move?: { gcode_position?: number[] };
+		stepper_enable?: { steppers?: Record<string, boolean> };
+	};
+
+	const pollSource = 'movement-toolhead';
 	const pollIntervalMs = 1000;
 
 	const clamp = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
@@ -74,53 +82,46 @@
 		points.map((point) => `${point.x},${point.y}`).join(' ');
 
 	const updateToolheadPosition = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<ToolheadStatus>(
+			pollSource,
+			'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers'
+		);
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const toolhead = status.toolhead;
+		if (toolhead && Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
+			maxX = Number(toolhead.axis_maximum[0]) || maxX;
+			maxY = Number(toolhead.axis_maximum[1]) || maxY;
+			maxZ = Number(toolhead.axis_maximum[2]) || maxZ;
+		}
 
-			const toolhead = status.toolhead;
-			if (toolhead && Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
-				maxX = Number(toolhead.axis_maximum[0]) || maxX;
-				maxY = Number(toolhead.axis_maximum[1]) || maxY;
-				maxZ = Number(toolhead.axis_maximum[2]) || maxZ;
-			}
+		const gcodeMove = status.gcode_move;
+		if (
+			gcodeMove &&
+			Array.isArray(gcodeMove.gcode_position) &&
+			gcodeMove.gcode_position.length > 2
+		) {
+			targetX.set(Number(gcodeMove.gcode_position[0]) || 0);
+			targetY.set(Number(gcodeMove.gcode_position[1]) || 0);
+			targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
+		}
 
-			const gcodeMove = status.gcode_move;
-			if (
-				gcodeMove &&
-				Array.isArray(gcodeMove.gcode_position) &&
-				gcodeMove.gcode_position.length > 2
-			) {
-				targetX.set(Number(gcodeMove.gcode_position[0]) || 0);
-				targetY.set(Number(gcodeMove.gcode_position[1]) || 0);
-				targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
-			}
+		if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+			actualX.set(Number(toolhead.position[0]) || 0);
+			actualY.set(Number(toolhead.position[1]) || 0);
+			actualZ.set(Number(toolhead.position[2]) || 0);
+		} else {
+			actualX.set(targetX.current);
+			actualY.set(targetY.current);
+			actualZ.set(targetZ.current);
+		}
 
-			if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
-				actualX.set(Number(toolhead.position[0]) || 0);
-				actualY.set(Number(toolhead.position[1]) || 0);
-				actualZ.set(Number(toolhead.position[2]) || 0);
-			} else {
-				actualX.set(targetX.current);
-				actualY.set(targetY.current);
-				actualZ.set(targetZ.current);
-			}
-
-			const stepperEnable = status.stepper_enable;
-			const steppers = stepperEnable?.steppers;
-			if (steppers && typeof steppers === 'object') {
-				// M84 disables every stepper at once, so any stepper still enabled
-				// means the motors have not been disabled.
-				motorsEnabled = Object.values(steppers).some((value) => Boolean(value));
-			}
-		} catch {
-			return;
+		const stepperEnable = status.stepper_enable;
+		const steppers = stepperEnable?.steppers;
+		if (steppers && typeof steppers === 'object') {
+			// M84 disables every stepper at once, so any stepper still enabled
+			// means the motors have not been disabled.
+			motorsEnabled = Object.values(steppers).some((value) => Boolean(value));
 		}
 	};
 
@@ -140,6 +141,7 @@
 
 		return () => {
 			window.clearInterval(interval);
+			forgetPollSource(pollSource);
 		};
 	});
 

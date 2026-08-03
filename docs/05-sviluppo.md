@@ -227,7 +227,9 @@ diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
 ## Aggiungere un pannello alla dashboard
 
 1. Crea `src/lib/components/Dashboard<Nome>Panel.svelte` seguendo il pattern di polling
-   descritto in [02 — Architettura](02-architettura.md#pattern-ricorrenti).
+   descritto in [02 — Architettura](02-architettura.md#pattern-ricorrenti): lo stato si legge
+   con `queryPrinterObjects()`, non con una `fetch` a mano, altrimenti i suoi fallimenti non
+   arrivano all'avviso di dati non aggiornati.
 2. Aggiungi una `<div class="embla__slide">` in
    [DashboardCarousel.svelte](../src/lib/components/DashboardCarousel.svelte).
 3. Aggiorna `pageCount` (usato per i pallini di navigazione) e verifica `startIndex`, che

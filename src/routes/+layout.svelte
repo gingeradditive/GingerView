@@ -8,6 +8,7 @@
 	import MoonrakerNotifier from '$lib/components/MoonrakerNotifier.svelte';
 	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
+	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
 	import '../app.css';
 
 	const logoImage = '/Printers/G2/Logo.svg';
@@ -36,6 +37,7 @@
 <ToastContainer />
 <MoonrakerNotifier />
 <main class="page-content">{@render children()}</main>
+<StaleDataBanner />
 <KlipperDownOverlay />
 
 <nav class="dock" aria-label="Main navigation">

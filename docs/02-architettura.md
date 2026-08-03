@@ -77,6 +77,9 @@ build/                      output della build — committato nel repo (vedi doc
   una destinazione ma un comando. Rosso pieno mentre la macchina è in marcia, si inverte in un
   pulsante di firmware restart quando Kalico è fermo (vedi
   [04 — Emergency stop](04-moonraker.md#emergency-stop)).
+- **`<StaleDataBanner />`** — pillola fissa in alto che compare quando il polling dei pannelli
+  smette di rispondere: i valori a schermo restano, ma dichiarati vecchi e con da quanto (vedi
+  [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati)).
 - **`<KlipperDownOverlay />`** — avviso non chiudibile che copre le pagine operative quando Kalico
   è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
   `/settings`, così il pulsante che fa ripartire la macchina e le pagine diagnostiche restano
@@ -182,18 +185,38 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 **Polling con `onMount`.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
 
 ```ts
+const pollSource = 'dashboard-<nome>';
+
+const update = async (): Promise<void> => {
+	const status = await queryPrinterObjects(pollSource, 'print_stats');
+	if (!status) return; // niente di nuovo: resta a schermo l'ultima lettura
+	// …
+};
+
 onMount(() => {
 	update();
 	const interval = window.setInterval(update, pollIntervalMs);
-	return () => window.clearInterval(interval);
+	return () => {
+		window.clearInterval(interval);
+		forgetPollSource(pollSource);
+	};
 });
 ```
 
 Gli intervalli sono definiti componente per componente (1000–3000 ms); l'elenco completo è in
 [04 — Integrazione Moonraker](04-moonraker.md#frequenze-di-polling).
 
+`queryPrinterObjects()` di [moonraker-poll.ts](../src/lib/services/moonraker-poll.ts) fa la
+richiesta, restituisce lo `status` (o `null`) e **registra l'esito**: è quello che alimenta
+l'avviso di dati non aggiornati descritto in
+[04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). Il `pollSource` è il nome con
+cui il pannello si identifica, e `forgetPollSource()` lo ritira allo smontaggio: senza, un
+pannello uscito di scena mentre la macchina non rispondeva terrebbe acceso l'avviso per sempre.
+
 **Base URL condivisa.** I componenti importano `getMoonrakerApiUrl()` da
-`$lib/services/config` e concatenano il percorso:
+`$lib/services/config` e concatenano il percorso (per le query di stato lo fa già
+`queryPrinterObjects()`, quindi l'import serve solo per gli altri endpoint — l'invio di G-code,
+per esempio):
 
 ```ts
 const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
@@ -211,8 +234,10 @@ non passa dagli store.
 
 **Errori come toast.** I servizi non propagano errori all'interfaccia: chiamano
 `toastActions.error(...)` e poi rilanciano (o restituiscono `null`). I componenti della
-dashboard, al contrario, ignorano silenziosamente i fallimenti di polling con `catch {}`, per
-non riempire lo schermo di toast quando la stampante è offline.
+dashboard, al contrario, non fanno nessun rumore per il singolo fallimento di polling — sarebbe
+un toast ogni secondo e mezzo con la stampante offline: l'esito finisce in `moonraker-poll.ts`,
+che dopo due fallimenti consecutivi accende **un solo** avviso di dati fermi per tutta
+l'applicazione.
 
 **Modali dentro `MovementCarousel`: `use:portal`.** Embla applica un `transform` inline al
 proprio track per l'animazione dello slide, il che crea un nuovo containing block per qualsiasi

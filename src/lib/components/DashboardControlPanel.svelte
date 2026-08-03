@@ -4,8 +4,17 @@
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
+	type ControlStatus = {
+		print_stats?: { state?: string; filename?: string; print_duration?: number };
+		virtual_sdcard?: { progress?: number };
+		fan?: { speed?: number };
+		'led LED_CAMERA'?: { color_data?: number[][] };
+	};
+
+	const pollSource = 'dashboard-control';
 	const pollIntervalMs = 2000;
 	const circumference = 2 * Math.PI * 16;
 
@@ -63,65 +72,58 @@
 	};
 
 	const updateStatus = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard&fan&led LED_CAMERA`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<ControlStatus>(
+			pollSource,
+			'print_stats&virtual_sdcard&fan&led LED_CAMERA'
+		);
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printStats = status.print_stats;
+		const vsd = status.virtual_sdcard;
 
-			const printStats = status.print_stats;
-			const vsd = status.virtual_sdcard;
+		const printState = printStats?.state ?? 'standby';
+		isPrinting = printState === 'printing';
+		isPaused = printState === 'paused';
 
-			const printState = printStats?.state ?? 'standby';
-			isPrinting = printState === 'printing';
-			isPaused = printState === 'paused';
+		const filename = printStats?.filename ?? '';
+		if (filename) {
+			loadEstimatedTime(filename);
+		} else {
+			lastFilename = null;
+			estimatedTotalSeconds = null;
+		}
 
-			const filename = printStats?.filename ?? '';
-			if (filename) {
-				loadEstimatedTime(filename);
-			} else {
-				lastFilename = null;
-				estimatedTotalSeconds = null;
-			}
+		const printDuration = printStats?.print_duration ?? 0;
+		elapsed = formatDuration(printDuration);
 
-			const printDuration = printStats?.print_duration ?? 0;
-			elapsed = formatDuration(printDuration);
+		const prog = vsd?.progress ?? 0;
+		progress = Math.round(prog * 100);
 
-			const prog = vsd?.progress ?? 0;
-			progress = Math.round(prog * 100);
+		if (prog > 0.001 && printDuration > 0) {
+			const totalEstimated = printDuration / prog;
+			const remainingSeconds = totalEstimated - printDuration;
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
+			const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else {
+			remaining = '--:--:--';
+			etaAt = null;
+		}
 
-			if (prog > 0.001 && printDuration > 0) {
-				const totalEstimated = printDuration / prog;
-				const remainingSeconds = totalEstimated - printDuration;
-				remaining = formatDuration(remainingSeconds);
-				etaAt = new Date(Date.now() + remainingSeconds * 1000);
-			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
-				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
-				remaining = formatDuration(remainingSeconds);
-				etaAt = new Date(Date.now() + remainingSeconds * 1000);
-			} else {
-				remaining = '--:--:--';
-				etaAt = null;
-			}
+		const fan = status.fan;
+		if (fan) {
+			fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
+			fanOn = fanSpeed > 0;
+		}
 
-			const fan = status.fan;
-			if (fan) {
-				fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
-				fanOn = fanSpeed > 0;
-			}
-
-			const led = status['led LED_CAMERA'];
-			if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
-				const white = led.color_data[0][3] ?? 0;
-				lightValue = typeof white === 'number' ? white : 0;
-				lightOn = lightValue > 0;
-			}
-		} catch {
-			return;
+		const led = status['led LED_CAMERA'];
+		if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
+			const white = led.color_data[0][3] ?? 0;
+			lightValue = typeof white === 'number' ? white : 0;
+			lightOn = lightValue > 0;
 		}
 	};
 
@@ -178,7 +180,10 @@
 		ensurePrinterTimezone();
 		updateStatus();
 		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

@@ -79,7 +79,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## ROB — Robustezza
 
-- `ROB-1` Mostrare uno stato "dati non aggiornati" quando il polling fallisce, oggi silenzioso — pronto
 - `ROB-2` Sospendere il polling dei pannelli fuori dalla viewport del carosello — pronto
 - `ROB-3` Ottimizzare `fetchDirectoriesRecursive()`, che scarica tutto l'albero `gcodes` in sequenza — pronto
 - `ROB-4` Valutare `printer.objects.subscribe` via WebSocket al posto del polling HTTP — pronto

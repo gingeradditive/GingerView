@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
+	type FlowStatus = {
+		print_stats?: { state?: string };
+		motion_report?: { live_extruder_velocity?: number };
+		gcode_move?: { speed?: number; extrude_factor?: number };
+	};
+
+	const pollSource = 'dashboard-flow';
 	const pollIntervalMs = 1500;
 	const minValue = 0;
 	const maxValue = 800;
@@ -16,45 +23,41 @@
 	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
 
 	const updateFlow = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<FlowStatus>(
+			pollSource,
+			'gcode_move&motion_report&print_stats'
+		);
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printState = status.print_stats?.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const printState = status.print_stats?.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const motionReport = status.motion_report;
-			if (motionReport && typeof motionReport.live_extruder_velocity === 'number') {
-				// live_extruder_velocity is in mm/s of filament; convert to volumetric
-				// Assume 1.75mm filament diameter -> cross-section area = π * (0.875)² ≈ 2.405 mm²
-				const filamentArea = Math.PI * Math.pow(0.875, 2);
-				flowValue = Math.abs(motionReport.live_extruder_velocity) * filamentArea;
-				return;
-			}
-
-			const gcodeMove = status.gcode_move;
-			if (gcodeMove) {
-				// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
-				const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
-				const extrudeFactor =
-					typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
-				flowValue = speed * extrudeFactor;
-			}
-		} catch {
+		const motionReport = status.motion_report;
+		if (motionReport && typeof motionReport.live_extruder_velocity === 'number') {
+			// live_extruder_velocity is in mm/s of filament; convert to volumetric
+			// Assume 1.75mm filament diameter -> cross-section area = π * (0.875)² ≈ 2.405 mm²
+			const filamentArea = Math.PI * Math.pow(0.875, 2);
+			flowValue = Math.abs(motionReport.live_extruder_velocity) * filamentArea;
 			return;
+		}
+
+		const gcodeMove = status.gcode_move;
+		if (gcodeMove) {
+			// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
+			const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
+			const extrudeFactor =
+				typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
+			flowValue = speed * extrudeFactor;
 		}
 	};
 
 	onMount(() => {
 		updateFlow();
 		const interval = window.setInterval(updateFlow, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

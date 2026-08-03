@@ -59,6 +59,13 @@ scambi un segnaposto per un bug.
   `/settings`, quindi né la navigazione né le pagine diagnostiche vengono bloccate. Vedi
   [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo). **Non ancora
   provato su hardware reale** (`UI-8`).
+- Avviso di dati non aggiornati
+  ([StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte)): dopo due poll persi
+  di fila da un qualsiasi pannello compare una pillola in alto che dice da quanto i valori a
+  schermo sono fermi, e sparisce da sola alla prima risposta buona. Sta zitta quando Kalico è
+  fermo, perché lì parla già `KlipperDownOverlay`. Vedi
+  [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). **Non ancora provato su
+  hardware reale.**
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
   (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
@@ -227,10 +234,6 @@ ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modul
 
 ## Robustezza
 
-- **Fallimenti di polling silenziosi.** I pannelli della dashboard usano `catch {}`: se la
-  stampante non risponde, i valori restano fermi all'ultima lettura senza indicazione visiva.
-  È voluto per non riempire lo schermo di toast, ma significa che un dato "vecchio" e uno
-  "attuale" sono indistinguibili.
 - **Pannelli non visibili continuano a interrogare.** Le slide fuori dalla viewport del
   carosello restano montate e mantengono attivo il proprio `setInterval`.
 - **Nessun test sul frontend.** L'unico test del progetto è

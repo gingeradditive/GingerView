@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
+	type PelletStatus = {
+		print_stats?: { state?: string; filename?: string; filament_used?: number };
+	};
+
+	const pollSource = 'dashboard-pellet';
 	const pollIntervalMs = 3000;
 	const maxPelletKg = 5;
 
@@ -44,44 +49,39 @@
 	};
 
 	const updatePellet = async (): Promise<void> => {
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<PelletStatus>(pollSource, 'print_stats');
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printStats = status.print_stats;
+		if (!printStats) return;
 
-			const printStats = status.print_stats;
-			if (!printStats) return;
+		const printState = printStats.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const printState = printStats.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const filename = printStats.filename ?? '';
-			if (filename) {
-				loadFileWeight(filename);
-			} else {
-				lastFilename = null;
-				filamentWeightTotal = null;
-				totalKg = maxPelletKg;
-			}
-
-			// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
-			// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
-			const filamentUsedMm = printStats.filament_used ?? 0;
-			const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
-			const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
-			usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
-		} catch {
-			return;
+		const filename = printStats.filename ?? '';
+		if (filename) {
+			loadFileWeight(filename);
+		} else {
+			lastFilename = null;
+			filamentWeightTotal = null;
+			totalKg = maxPelletKg;
 		}
+
+		// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
+		// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
+		const filamentUsedMm = printStats.filament_used ?? 0;
+		const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
+		const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
+		usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
 	};
 
 	onMount(() => {
 		updatePellet();
 		const interval = window.setInterval(updatePellet, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 

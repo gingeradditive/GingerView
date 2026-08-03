@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
 
+	type ZHeightStatus = {
+		print_stats?: { state?: string };
+		toolhead?: { position?: number[]; axis_maximum?: number[] };
+		gcode_move?: { gcode_position?: number[] };
+	};
+
+	const pollSource = 'dashboard-z-height';
 	const pollIntervalMs = 1500;
 	const totalSections = 10;
 	const sectionHeight = 100;
@@ -25,45 +32,41 @@
 	);
 
 	const updateZHeight = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`
-			);
-			if (!response.ok) return;
+		const status = await queryPrinterObjects<ZHeightStatus>(
+			pollSource,
+			'toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state'
+		);
+		if (!status) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printState = status.print_stats?.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const printState = status.print_stats?.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const toolhead = status.toolhead;
-			if (toolhead) {
-				if (Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
-					maxHeight = toolhead.axis_maximum[2];
-				}
+		const toolhead = status.toolhead;
+		if (toolhead) {
+			if (Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
+				maxHeight = toolhead.axis_maximum[2];
 			}
+		}
 
-			const gcodeMove = status.gcode_move;
-			if (
-				gcodeMove &&
-				Array.isArray(gcodeMove.gcode_position) &&
-				gcodeMove.gcode_position.length > 2
-			) {
-				currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
-			} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
-				currentHeight = Math.max(0, toolhead.position[2]);
-			}
-		} catch {
-			return;
+		const gcodeMove = status.gcode_move;
+		if (
+			gcodeMove &&
+			Array.isArray(gcodeMove.gcode_position) &&
+			gcodeMove.gcode_position.length > 2
+		) {
+			currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
+		} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+			currentHeight = Math.max(0, toolhead.position[2]);
 		}
 	};
 
 	onMount(() => {
 		updateZHeight();
 		const interval = window.setInterval(updateZHeight, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		return () => {
+			window.clearInterval(interval);
+			forgetPollSource(pollSource);
+		};
 	});
 </script>
 
