@@ -42,6 +42,10 @@
 	let logState = $state<UpdateLogState>('running');
 	let logError = $state('');
 	let lastLoggedApp = '';
+	// A plain Set is correct here: completedApps is only written and read from imperative
+	// code inside runOperation(), never from a template or a $derived, so it needs no
+	// reactivity. If it ever ends up in markup, switch it to SvelteSet.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	let completedApps = new Set<string>();
 
 	// Set when the operation updated GingerView itself: the files nginx serves have

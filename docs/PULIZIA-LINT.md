@@ -1,11 +1,11 @@
 # Pulizia lint
 
-Piano di lavoro per gli **8 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8` e `QA-11`.
+Piano di lavoro per i **7 errori `eslint` residui**, più le trappole da conoscere prima di
+metterci mano. Il task corrispondente in [TODO.md](TODO.md) è `QA-8`.
 
-Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9`, `CLN-9` e `QA-10`: `prettier --check .` passa,
-`eslint .` riporta 8 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha
-sistemato `PrintCard.svelte` e `PrintList.svelte`.
+Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9`, `CLN-9`, `QA-10` e `QA-11`: `prettier --check .`
+passa, `eslint .` riporta 7 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando
+`QA-6` ha sistemato `PrintCard.svelte` e `PrintList.svelte`.
 
 ---
 
@@ -67,13 +67,14 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## Gli 8 errori residui
+## I 7 errori residui
 
 I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
 conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
 vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
 `svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo), due dei tre
-`no-explicit-any` con `CLN-9` (vedi sotto) e il terzo con `QA-10`.
+`no-explicit-any` con `CLN-9` (vedi sotto) e il terzo con `QA-10`. L'unico
+`svelte/prefer-svelte-reactivity` è sparito con `QA-11` (vedi sotto).
 
 ### `QA-8` — `svelte/no-navigation-without-resolve` (7)
 
@@ -95,22 +96,22 @@ errori permanenti che rendono `npm run lint` rumoroso.
 
 **Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
 
-### `QA-11` — `svelte/prefer-svelte-reactivity` (1)
+---
 
-[`settings/update/+page.svelte:40`](../src/routes/settings/update/+page.svelte#L40) —
+## Il `Set` non reattivo di `settings/update` — fatto (`QA-11`)
+
+L'unico `svelte/prefer-svelte-reactivity` era su
+[`settings/update/+page.svelte`](../src/routes/settings/update/+page.svelte) —
 `let completedApps = new Set<string>()`.
 
-**Qui la regola ha torto.** Suggerisce `SvelteSet` perché le mutazioni di un `Set` normale non
+**Lì la regola aveva torto.** Suggerisce `SvelteSet` perché le mutazioni di un `Set` normale non
 sono reattive, ma `completedApps` non viene mai letto da un template né da un `$derived`: è
-scritto alla riga 80 e riletto alla 166 dentro il `catch` di `runOperation`, in codice
-puramente imperativo. Convertirlo a `SvelteSet` aggiungerebbe overhead di reattività per un
-valore che nessuno osserva.
+scritto e riletto solo dentro `runOperation`, in codice puramente imperativo. Convertirlo a
+`SvelteSet` avrebbe aggiunto overhead di reattività per un valore che nessuno osserva.
 
-La correzione giusta è un `eslint-disable-next-line` mirato con una riga di commento che spiega
-perché lì il `Set` semplice è corretto. Se invece un domani quel valore finisse in un template,
-allora `SvelteSet` diventerebbe la risposta vera — vale la pena scriverlo nel commento.
-
----
+La correzione applicata è un `eslint-disable-next-line svelte/prefer-svelte-reactivity` mirato,
+preceduto da un commento che spiega perché lì il `Set` semplice è corretto e dice che se un
+domani quel valore finisse in un template allora `SvelteSet` diventerebbe la risposta giusta.
 
 ## Le key degli `{#each}` — fatto (`QA-9`)
 
