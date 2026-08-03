@@ -31,7 +31,7 @@ Query per componente:
 | `DashboardZHeightPanel` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
 | `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA` |
 | `ToolheadPosition` | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
-| `ExtrudeDialog` | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
+| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
 | `/settings/update` | `print_stats` (polling, solo per sapere se c'è una stampa in corso) |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
@@ -50,6 +50,16 @@ Due conseguenze pratiche:
   uno alla volta;
 - l'elenco fisso a quattro voci non si adatta a una macchina con un numero diverso di zone,
   e andrebbe ricavato da `/printer/objects/list`.
+
+### `print_stats.filename` sopravvive alla fine della stampa
+
+Kalico **non** azzera `print_stats.filename` quando un lavoro finisce: negli stati `complete`,
+`cancelled` ed `error` il campo contiene ancora il nome dell'ultimo file, e si svuota solo con
+una nuova stampa o con `SDCARD_RESET_FILE`. Un componente che si fidi del solo `filename`
+continua quindi a mostrare la stampa appena conclusa come se fosse in corso — è il motivo per
+cui `DashboardJobInfoCard` guarda prima `print_stats.state` e considera "in corso" soltanto
+`printing` e `paused`, come già fanno `DashboardZHeightPanel`, `DashboardFlowPanel` e
+`DashboardPelletPanel`.
 
 ### Le misure di materiale sono in filamento, non in pellet
 
@@ -75,16 +85,23 @@ Comandi effettivamente inviati dall'interfaccia:
 | `CANCEL_PRINT` | `DashboardPrintJobPanel` |
 | `M106 S<0-255>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola |
 | `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>` | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce |
-| `G28` | `ToolheadPosition` (pulsante Home, dietro conferma `HomingWarningModal`) / primo passo di `ExtrudeDialog` |
+| `G28` | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()` |
 | `M84` | `ToolheadPosition` — pulsante Disable Motors |
-| `G90` + `G1 X<centro> Y0 Z250 F3000` | `ExtrudeDialog` — spostamento in posizione di purge dopo l'homing |
-| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `ExtrudeDialog` — una coppia per zona, preset PETG/PLA/Custom |
-| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `ExtrudeDialog` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md) |
+| `G90` + `G1 X<centro> Y0 Z250 F3000` | `movementStore` — spostamento in posizione di purge dopo l'homing |
+| `SET_HEATER_TEMPERATURE HEATER=<extruder\|extruder1\|extruder2\|extruder3> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stesso> MINIMUM=<°C>` | `movementStore` — una coppia per zona, preset PETG/PLA/Custom |
+| `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `movementStore` — ultimo passo, estrusione vera e propria. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md) |
 
 Ognuno di questi script multi-linea viene inviato in **una sola chiamata**: `printer/gcode/script`
 accetta più comandi separati da `\n` nello stesso `script` urlencoded, eseguiti in sequenza da
 Klipper prima che la risposta HTTP torni al browser (per `TEMPERATURE_WAIT` questo significa che
 la richiesta resta in attesa finché la temperatura non è raggiunta).
+
+Proprio perché la risposta arriva a comandi eseguiti, uno status non-2xx significa che la macchina
+**non** ha fatto quel che le è stato chiesto: `movementStore` lo tratta come errore e interrompe la
+sequenza, invece di passare al passo successivo. Senza quel controllo un `G28` rifiutato (ugello
+sporco, Kalico in `shutdown`) veniva ignorato e si andava comunque a spostare, scaldare ed estrudere
+da una posizione sconosciuta. Il messaggio mostrato è quello di Kalico, letto da
+`{"error": {"message": ...}}`, in un toast intitolato con il passo fallito.
 
 La console (`/settings/console`) invia G-code arbitrario, ma via WebSocket (vedi sotto).
 

@@ -107,8 +107,10 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   **Disable Motors** invia `M84` (`POST /printer/gcode/script?script=M84`) ed è disabilitato,
   con etichetta "Motors Disabled", quando `stepper_enable.steppers` riporta tutti gli stepper
   spenti. Il pulsante **Home** apre prima [HomingWarningModal.svelte](../src/lib/components/HomingWarningModal.svelte)
-  (verifica ugello pulito / bed libero) e solo alla conferma invia `G28`; è disabilitato mentre
-  il comando è in corso.
+  (verifica ugello pulito / bed libero) e solo alla conferma invia `G28`; mentre il comando è in
+  corso è disabilitato e l'etichetta diventa "Homing...", come fa il pulsante Extrude con le
+  proprie fasi. Segnala anche l'homing avviato dalla sequenza di estrusione, perché lo stato è
+  condiviso in [movementStore.ts](../src/lib/stores/movementStore.ts).
 - [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha tre selettori: quantità
   (Low/Mid/High → 1000/10000/20000 mm³), velocità (Slow/Standard/Boost → 50/150/250 mm³/s) e
   temperatura (PETG/PLA/Custom). I preset temperatura coprono le 4 zone dell'ugello
@@ -120,6 +122,12 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   `TEMPERATURE_WAIT` sulle 4 zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
   L'ultimo passaggio è **non verificato su hardware reale** (Q32 in [Q&A.md](Q&A.md)): presuppone
   che il `rotation_distance` dell'estrusore reale sia calibrato in mm³/rotazione per materiale.
+  Parametri selezionati e fase in corso stanno in [movementStore.ts](../src/lib/stores/movementStore.ts),
+  non nel componente: si può andare sulla dashboard a controllare le temperature mentre scalda e
+  tornare indietro ritrovando "Heating..." e le proprie scelte. Se un comando viene rifiutato la
+  sequenza si ferma lì e lo dice con un toast (vedi
+  [04 — Comandi G-code](04-moonraker.md#comandi-g-code)); i riscaldatori già impostati restano
+  però al target, e a spegnerli è solo l'`idle_timeout` di Kalico.
 
 Il pulsante **Move** non ha ancora un bersaglio (Q6).
 

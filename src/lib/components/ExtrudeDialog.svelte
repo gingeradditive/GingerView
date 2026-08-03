@@ -1,32 +1,29 @@
 <script lang="ts">
 	import { portal } from '$lib/actions/portal';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
+	import {
+		amountOptions,
+		customTemperaturePreset,
+		extrudeAmount,
+		extrudePhase,
+		extrudeSpeed,
+		extrudeTemperature,
+		speedOptions,
+		startExtrudeSequence,
+		temperatureOptions,
+		zoneKeys,
+		type Amount,
+		type ExtrudePhase,
+		type Speed,
+		type Temperature,
+		type TemperatureZones
+	} from '$lib/stores/movementStore';
 
-	type Amount = 'low' | 'mid' | 'high';
-	type Speed = 'slow' | 'standard' | 'boost';
-	type Temperature = 'petg' | 'pla' | 'custom';
-	type Phase = 'idle' | 'homing' | 'moving' | 'heating' | 'extruding';
-
-	// One nozzle, four heated zones (see extruderKeys in DashboardTemperaturePanel).
-	type TemperatureZones = { extruder: number; extruder1: number; extruder2: number; extruder3: number };
-
-	type TemperaturePreset = {
-		zones: TemperatureZones;
-		// Klipper rotation_distance for this material; not shown in the UI.
-		rotationVolume: number;
-	};
-
-	const zoneKeys: (keyof TemperatureZones)[] = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
-
-	let amount = $state<Amount>('mid');
-	let speed = $state<Speed>('standard');
-	let temperature = $state<Temperature>('pla');
-
-	let phase = $state<Phase>('idle');
+	// Selected parameters and running phase live in the store, so leaving the page
+	// mid-sequence no longer resets the dialog — see movementStore.
 	let showHomingWarning = $state(false);
 
-	const phaseLabels: Record<Phase, string> = {
+	const phaseLabels: Record<ExtrudePhase, string> = {
 		idle: 'EXTRUDE',
 		homing: 'Homing...',
 		moving: 'Moving...',
@@ -41,55 +38,22 @@
 		extruder2: 200,
 		extruder3: 200
 	});
-	let customPreset = $state<TemperaturePreset>({
-		zones: { extruder: 200, extruder1: 200, extruder2: 200, extruder3: 200 },
-		rotationVolume: 330
-	});
-
-	const amountOptions: { value: Amount; label: string; volumeMm3: number }[] = [
-		{ value: 'low', label: 'Low', volumeMm3: 1000 },
-		{ value: 'mid', label: 'Mid', volumeMm3: 10000 },
-		{ value: 'high', label: 'High', volumeMm3: 20000 }
-	];
-
-	const speedOptions: { value: Speed; label: string; speedMm3PerS: number }[] = [
-		{ value: 'slow', label: 'Slow', speedMm3PerS: 50 },
-		{ value: 'standard', label: 'Standard', speedMm3PerS: 150 },
-		{ value: 'boost', label: 'Boost', speedMm3PerS: 250 }
-	];
-
-	const temperaturePresets: Record<'petg' | 'pla', TemperaturePreset> = {
-		petg: {
-			zones: { extruder: 200, extruder1: 220, extruder2: 220, extruder3: 220 },
-			rotationVolume: 450
-		},
-		pla: {
-			zones: { extruder: 200, extruder1: 200, extruder2: 200, extruder3: 200 },
-			rotationVolume: 330
-		}
-	};
-
-	const temperatureOptions: { value: Temperature; label: string }[] = [
-		{ value: 'petg', label: 'PETG' },
-		{ value: 'pla', label: 'PLA' },
-		{ value: 'custom', label: 'Custom' }
-	];
 
 	const selectAmount = (value: Amount): void => {
-		amount = value;
+		extrudeAmount.set(value);
 	};
 
 	const selectSpeed = (value: Speed): void => {
-		speed = value;
+		extrudeSpeed.set(value);
 	};
 
 	const selectTemperature = (value: Temperature): void => {
 		if (value === 'custom') {
-			customTemperatureInputs = { ...customPreset.zones };
+			customTemperatureInputs = { ...$customTemperaturePreset.zones };
 			showCustomTemperatureModal = true;
 			return;
 		}
-		temperature = value;
+		extrudeTemperature.set(value);
 	};
 
 	const cancelCustomTemperature = (): void => {
@@ -101,75 +65,17 @@
 			(key) => Number.isFinite(customTemperatureInputs[key]) && customTemperatureInputs[key] > 0
 		);
 		if (isValid) {
-			customPreset = {
+			customTemperaturePreset.set({
 				zones: { ...customTemperatureInputs },
-				rotationVolume: customPreset.rotationVolume
-			};
+				rotationVolume: $customTemperaturePreset.rotationVolume
+			});
 		}
-		temperature = 'custom';
+		extrudeTemperature.set('custom');
 		showCustomTemperatureModal = false;
 	};
 
-	const resolveTemperaturePreset = (): TemperaturePreset =>
-		temperature === 'custom' ? customPreset : temperaturePresets[temperature];
-
-	const runGcode = async (script: string): Promise<void> => {
-		await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(script)}`, {
-			method: 'POST'
-		});
-	};
-
-	// Purge/maintenance position: nozzle centered on X, front of the bed, well clear of it on Z.
-	const getPurgePositionX = async (): Promise<number> => {
-		const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=axis_maximum`);
-		const payload = await response.json();
-		const axisMaximum = payload?.result?.status?.toolhead?.axis_maximum;
-		if (!Array.isArray(axisMaximum) || typeof axisMaximum[0] !== 'number') {
-			throw new Error('axis_maximum unavailable');
-		}
-		return axisMaximum[0] / 2;
-	};
-
-	const runExtrudeSequence = async (): Promise<void> => {
-		try {
-			phase = 'homing';
-			await runGcode('G28');
-
-			phase = 'moving';
-			const centerX = await getPurgePositionX();
-			await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
-
-			phase = 'heating';
-			const preset = resolveTemperaturePreset();
-			const setTemperatures = zoneKeys.map(
-				(key) => `SET_HEATER_TEMPERATURE HEATER=${key} TARGET=${preset.zones[key]}`
-			);
-			const waitTemperatures = zoneKeys.map((key) => `TEMPERATURE_WAIT SENSOR=${key} MINIMUM=${preset.zones[key]}`);
-			await runGcode([...setTemperatures, ...waitTemperatures].join('\n'));
-
-			phase = 'extruding';
-			const amountValue = amountOptions.find((option) => option.value === amount)!;
-			const speedValue = speedOptions.find((option) => option.value === speed)!;
-			// Assumes `extruder`'s rotation_distance is calibrated in mm3-per-rotation for the
-			// active material ("rotation volume"), so a relative E move of <volumeMm3> mm
-			// dispenses that many mm3. Unconfirmed on real hardware — see Q32 in docs/Q&A.md.
-			await runGcode(
-				[
-					`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=extruder DISTANCE=${preset.rotationVolume}`,
-					'M83',
-					`G1 E${amountValue.volumeMm3} F${speedValue.speedMm3PerS * 60}`,
-					'M82'
-				].join('\n')
-			);
-		} catch (error) {
-			console.error('Extrude sequence failed', error);
-		} finally {
-			phase = 'idle';
-		}
-	};
-
 	const handleExtrude = (): void => {
-		if (phase !== 'idle') return;
+		if ($extrudePhase !== 'idle') return;
 		showHomingWarning = true;
 	};
 
@@ -179,7 +85,7 @@
 
 	const confirmHomingWarning = (): void => {
 		showHomingWarning = false;
-		runExtrudeSequence();
+		startExtrudeSequence();
 	};
 </script>
 
@@ -247,7 +153,7 @@
 				{#each amountOptions as option (option.value)}
 					<button
 						class="option-btn"
-						class:selected={amount === option.value}
+						class:selected={$extrudeAmount === option.value}
 						onclick={() => selectAmount(option.value)}
 					>
 						{option.label}
@@ -264,7 +170,7 @@
 				{#each speedOptions as option (option.value)}
 					<button
 						class="option-btn"
-						class:selected={speed === option.value}
+						class:selected={$extrudeSpeed === option.value}
 						onclick={() => selectSpeed(option.value)}
 					>
 						{option.label}
@@ -281,7 +187,7 @@
 				{#each temperatureOptions as option (option.value)}
 					<button
 						class="option-btn"
-						class:selected={temperature === option.value}
+						class:selected={$extrudeTemperature === option.value}
 						onclick={() => selectTemperature(option.value)}
 					>
 						{option.label}
@@ -290,8 +196,8 @@
 			</div>
 		</div>
 
-		<button class="extrude-btn" disabled={phase !== 'idle'} onclick={handleExtrude}>
-			{phaseLabels[phase]}
+		<button class="extrude-btn" disabled={$extrudePhase !== 'idle'} onclick={handleExtrude}>
+			{phaseLabels[$extrudePhase]}
 		</button>
 	</div>
 </div>

@@ -5,6 +5,7 @@
 	import { mdiCursorMove } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
+	import { homingBusy, startHoming } from '$lib/stores/movementStore';
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
@@ -44,7 +45,6 @@
 	// state is unknown, and an enabled button is the useful fallback.
 	let motorsEnabled = true;
 	let motorsBusy = false;
-	let homingBusy = false;
 
 	const pollIntervalMs = 1000;
 
@@ -168,7 +168,7 @@
 	let showHomingWarning = false;
 
 	const handleHome = (): void => {
-		if (homingBusy) return;
+		if ($homingBusy) return;
 		showHomingWarning = true;
 	};
 
@@ -176,16 +176,11 @@
 		showHomingWarning = false;
 	};
 
-	const confirmHoming = async (): Promise<void> => {
+	// The homing itself runs in the store, so it survives leaving the page and the
+	// button still reports it when the user comes back — see movementStore.
+	const confirmHoming = (): void => {
 		showHomingWarning = false;
-		homingBusy = true;
-		try {
-			await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=G28`, { method: 'POST' });
-		} catch {
-			// ignore; the position poll will reflect whatever the printer actually did
-		} finally {
-			homingBusy = false;
-		}
+		startHoming();
 	};
 
 	const handleMotorOff = async (): Promise<void> => {
@@ -274,11 +269,16 @@
 			</svg>
 			<span>Move</span>
 		</button>
-		<button class="control-btn home" aria-label="Home" disabled={homingBusy} onclick={handleHome}>
+		<button
+			class="control-btn home"
+			aria-label={$homingBusy ? 'Homing' : 'Home'}
+			disabled={$homingBusy}
+			onclick={handleHome}
+		>
 			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor" />
 			</svg>
-			<span>Home</span>
+			<span>{$homingBusy ? 'Homing...' : 'Home'}</span>
 		</button>
 		<button
 			class="control-btn"

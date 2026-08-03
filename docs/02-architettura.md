@@ -50,7 +50,7 @@ src/
 │   ├── data/               dati generati da script (zone IANA, sagoma della mappa)
 │   ├── editor/             modo CodeMirror per i `.cfg` Klipper (solo config editor)
 │   ├── services/           accesso a Moonraker e al servizio di rete
-│   ├── stores/             stato condiviso (toast, directory corrente, context menu)
+│   ├── stores/             stato condiviso (toast, directory corrente, context menu, movement)
 │   └── types/              tipi TypeScript (config, klipper, print, wifi, update, timezone)
 └── routes/                 rotte SvelteKit
     ├── +layout.svelte      shell applicativa: dock di navigazione, toast, notifier
@@ -142,6 +142,14 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 - **`directoryStore.ts`** — percorso corrente relativo alla root `gcodes`, con helper
   `navigateToDir`, `navigateUp`, `navigateToRoot`, `navigateToSegment`.
 - **`contextMenuStore.ts`** — id del menu contestuale aperto, così che aprirne uno chiuda gli altri.
+- **`movementStore.ts`** — stato della pagina Movement che deve **sopravvivere alla pagina**:
+  parametri di estrusione selezionati (`extrudeAmount`, `extrudeSpeed`, `extrudeTemperature`,
+  `customTemperaturePreset`), fase corrente (`extrudePhase`) e flag `homingBusy`. Le due sequenze
+  — `startHoming()` e `startExtrudeSequence()` — girano qui e non nel componente, perché entrambe
+  le slide vengono smontate appena si cambia pagina e un'estrusione passa la maggior parte del
+  tempo a scaldare: tenerle nel componente faceva ritrovare il pulsante "EXTRUDE" inattivo e i
+  parametri di default al ritorno. `homingBusy` è unico per entrambe le origini del `G28`, così il
+  pulsante Home segnala qualsiasi homing in corso.
 
 ## Pattern ricorrenti
 

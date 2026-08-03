@@ -40,7 +40,14 @@
 			const status = payload?.result?.status;
 			if (!status) return;
 
-			const filename = status.print_stats?.filename ?? '';
+			// Kalico keeps `print_stats.filename` after a job ends — `complete`,
+			// `cancelled` and `error` all still carry the name of the last file, and
+			// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
+			// what empties the card when the print is over.
+			const printState = status.print_stats?.state ?? 'standby';
+			const isIdle = printState !== 'printing' && printState !== 'paused';
+
+			const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
 			if (filename) {
 				jobName = stripExtension(filename);
 				loadFileMetadata(filename);
