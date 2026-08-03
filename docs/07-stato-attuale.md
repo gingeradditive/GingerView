@@ -153,12 +153,6 @@ automatico della sua sequenza, non come controllo libero.
 Queste non sono più questioni aperte: la scelta è fatta, manca l'esecuzione. I task
 corrispondenti sono in [TODO.md](TODO.md).
 
-### Dipendenze React da rimuovere
-
-`@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` e `@mdi/react`
-sono librerie React, presenti in `package.json` ma non importate da alcun file Svelte.
-**Da disinstallare**; se in futuro servissero, si reinstallano.
-
 ### Il config editor va disattivato in produzione
 
 `/settings/config-editor` è nato come pagina **di sviluppo**: serve a mettere a punto la

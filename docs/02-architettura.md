@@ -14,9 +14,6 @@
 | Editor di codice | CodeMirror 6 — **solo** nel chunk di `/settings/config-editor`, pagina di sviluppo |
 | Font             | Montserrat (importato da Google Fonts in `src/app.css`)                            |
 
-Sono presenti anche `@mui/material` ed `@emotion/*` tra le dipendenze, ma **non sono usati**
-dal codice Svelte: vedi [07 — Stato attuale](07-stato-attuale.md#dipendenze-react-da-rimuovere).
-
 ## Modalità di rendering
 
 In [svelte.config.js](../svelte.config.js) l'adapter statico è configurato con

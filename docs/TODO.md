@@ -73,7 +73,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## CLN — Pulizia del codice
 
-- `CLN-2` Disinstallare `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `@mdi/react` — pronto
 - `CLN-4` Convertire `ToolheadPosition.svelte` dalla sintassi legacy `$:` alle rune Svelte 5. Risolve da solo tutti e 9 gli errori `svelte/no-immutable-reactive-statements` del repo, che sono lì (righe 68–77): correggerli a mano prima è lavoro buttato — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-5` Decidere se cablare `configService.validateConfig()`, oggi implementato ma mai chiamato — pronto
 - `CLN-6` Rimuovere `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT` da `config.ts`, oppure usarle davvero: oggi non hanno effetto — pronto
