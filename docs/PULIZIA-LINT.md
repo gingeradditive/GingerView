@@ -1,10 +1,10 @@
 # Pulizia lint
 
-Piano di lavoro per i **16 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11`.
+Piano di lavoro per gli **11 errori `eslint` residui**, più le trappole da conoscere prima di
+metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`, `QA-10` e `QA-11`.
 
-Fotografia al 2026-08-03, dopo `CLN-4`: `prettier --check .` passa, `eslint .` riporta 16
-errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
+Fotografia al 2026-08-03, dopo `CLN-4` e `QA-9`: `prettier --check .` passa, `eslint .` riporta
+11 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
 `PrintCard.svelte` e `PrintList.svelte`.
 
 ---
@@ -67,11 +67,12 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 16 errori residui
+## Gli 11 errori residui
 
 I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
 conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
-vertici del cubo e il centro base) e `$derived` i derivati veri.
+vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
+`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo).
 
 ### `QA-8` — `svelte/no-navigation-without-resolve` (7)
 
@@ -92,26 +93,6 @@ regola in `eslint.config.js` con un commento che spiega il perché, invece di la
 errori permanenti che rendono `npm run lint` rumoroso.
 
 **Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
-
-### `QA-9` — `svelte/require-each-key` (5)
-
-| File                                                                                 | Riga   |
-| ------------------------------------------------------------------------------------ | ------ |
-| [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte)   | 93     |
-| [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte) | 76, 81 |
-| [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte)                         | 254    |
-| [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte)       | 237    |
-
-Aggiungere una key a un `{#each}` **cambia come Svelte riconcilia il DOM**: non è una modifica
-cosmetica. Vale la pena distinguere due casi:
-
-- liste **statiche** (tacche e etichette dei pannelli dashboard): l'indice come key è corretto
-  e innocuo, perché gli elementi non vengono mai riordinati;
-- liste **dinamiche** (le righe della console, che crescono nel tempo): serve una key
-  realmente identificante, non l'indice, altrimenti si sposta il problema invece di risolverlo.
-  La console ha già un `timestamp` per riga.
-
-**Da verificare dopo**: che la console non perda righe né sfarfalli durante uno stream lungo.
 
 ### `QA-10` — `@typescript-eslint/no-explicit-any` (3)
 
@@ -145,6 +126,29 @@ perché lì il `Set` semplice è corretto. Se invece un domani quel valore finis
 allora `SvelteSet` diventerebbe la risposta vera — vale la pena scriverlo nel commento.
 
 ---
+
+## Le key degli `{#each}` — fatto (`QA-9`)
+
+I 5 `{#each}` senza key sono stati sistemati distinguendo due casi, perché aggiungere una key
+**cambia come Svelte riconcilia il DOM** e non è una modifica cosmetica:
+
+- liste **statiche**, dove l'indice _è_ l'identità dell'elemento e non c'è riordino: le 40 bolle
+  di [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte) e le
+  tacche/etichette di [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte)
+  usano `(i)`, con un commento accanto che dice perché lì va bene;
+- liste **dinamiche**: le cartelle di destinazione in
+  [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte) sono ricaricate e filtrate, quindi
+  la key è `dir.path`; le righe della console in
+  [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte) hanno ora un
+  campo `id` progressivo.
+
+Sulla console il `timestamp` sembrava una key pronta all'uso, ma non lo è: è un `Date` preso dal
+browser all'arrivo della riga e più righe possono cadere nello stesso millisecondo (una risposta
+multilinea di Klipper), quindi le key si duplicherebbero. Il contatore `nextEntryId` è unico per
+costruzione e costa una riga.
+
+**Da verificare su macchina**: che la console non perda righe né sfarfalli durante uno stream
+lungo, e che il modal "Move" di `PrintCard` mostri la lista giusta dopo un cambio di cartella.
 
 ## Due cose emerse durante la pulizia
 

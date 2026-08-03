@@ -90,7 +90,8 @@
 		{#if !isIdle}
 			<div class="pellet-fill" style="height: {percentage}%">
 				<svg width="100%" height="48px" style="position: absolute; top: -24px; left: 0;">
-					{#each circles as circle}
+					<!-- Lista statica di 40 bolle, mai riordinata: l'indice è una key corretta. -->
+					{#each circles as circle, i (i)}
 						<circle
 							cx="{circle.cx}%"
 							cy={circle.cy}

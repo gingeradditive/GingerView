@@ -73,12 +73,13 @@
 			<div class="z-progress-fill" style="height: {fillPercentage}%"></div>
 			<!-- Section marks and labels -->
 			<div class="z-marks">
-				{#each sections as _section, i}
+				<!-- Tacche posizionali: l'indice è la loro identità, non c'è riordino. -->
+				{#each sections as _section, i (i)}
 					<div class="z-mark" style="bottom: {(i + 1) * 10}%"></div>
 				{/each}
 			</div>
 			<div class="z-labels">
-				{#each sections as section, i}
+				{#each sections as section, i (i)}
 					<div class="z-label-mark" style="bottom: {(i + 1) * 10}%">
 						{section.label}
 					</div>

@@ -7,10 +7,15 @@
 	import { toastActions } from '$lib/stores/toastStore';
 
 	type OutputEntry = {
+		// Identità della riga. Serve come key dell'{#each}: il timestamp non basta,
+		// più righe possono arrivare nello stesso millisecondo.
+		id: number;
 		type: 'command' | 'response' | 'error';
 		content: string;
 		timestamp: Date;
 	};
+
+	let nextEntryId = 0;
 
 	let outputHistory = $state<OutputEntry[]>([]);
 	let currentCommand = $state('');
@@ -33,7 +38,7 @@
 	});
 
 	function addOutput(content: string, type: OutputEntry['type']) {
-		outputHistory = [...outputHistory, { type, content, timestamp: new Date() }];
+		outputHistory = [...outputHistory, { id: nextEntryId++, type, content, timestamp: new Date() }];
 		setTimeout(() => {
 			if (terminalRef) terminalRef.scrollTop = terminalRef.scrollHeight;
 		}, 10);
@@ -237,7 +242,7 @@
 		</header>
 
 		<div bind:this={terminalRef} class="terminal-output">
-			{#each outputHistory as entry}
+			{#each outputHistory as entry (entry.id)}
 				<div class="line">
 					<!--
 						Il timestamp lo mette il browser quando la riga arriva, ma quello

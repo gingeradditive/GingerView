@@ -82,7 +82,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `QA-4` Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` — pronto
 - `QA-5` Valutare test unitari o end-to-end sul frontend — pronto
 - `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
-- `QA-9` Aggiungere le key ai 5 `{#each}` che ne sono privi (`svelte/require-each-key`), distinguendo liste statiche (indice va bene) da liste dinamiche come la console (serve una key vera) — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `QA-10` Togliere i 3 `any` residui passando a `unknown` + narrowing: sono sul confine JSON-RPC di Moonraker e due stanno nel tipo `KlipperMessage`, che oggi nessuno importa più — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — dipende da `CLN-9`
 - `QA-11` Silenziare con commento motivato `svelte/prefer-svelte-reactivity` su `completedApps` in `settings/update`: lì la regola sbaglia, il valore non è mai osservato da un template e `SvelteSet` sarebbe la correzione sbagliata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 

@@ -247,7 +247,7 @@
 						>
 						/ (Root)
 					</button>
-					{#each availableDirs as dir}
+					{#each availableDirs as dir (dir.path)}
 						<button class="folder-option" onclick={() => confirmMove(dir.path)}>
 							<svg viewBox="0 0 24 24" width="20" height="20"
 								><path d={mdiFolder} fill="#D72E28" /></svg
