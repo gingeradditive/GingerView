@@ -203,16 +203,14 @@
 {/if}
 
 {#if showRenameModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
-		onclick={() => (showRenameModal = false)}
+		onclick={(e) => e.target === e.currentTarget && (showRenameModal = false)}
 		onkeydown={(e) => e.key === 'Escape' && (showRenameModal = false)}
 	>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+		<div class="modal-content">
 			<h3>Rename</h3>
 			<input
 				type="text"
@@ -230,16 +228,14 @@
 {/if}
 
 {#if showMoveModal}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
-		onclick={() => (showMoveModal = false)}
+		onclick={(e) => e.target === e.currentTarget && (showMoveModal = false)}
 		onkeydown={(e) => e.key === 'Escape' && (showMoveModal = false)}
 	>
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+		<div class="modal-content">
 			<h3>Move "{item.name}"</h3>
 			{#if loadingDirs}
 				<p class="modal-loading">Loading folders...</p>

@@ -4,7 +4,8 @@ Piano di lavoro per i **16 errori `eslint` residui**, più le trappole da conosc
 metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11`.
 
 Fotografia al 2026-08-03, dopo `CLN-4`: `prettier --check .` passa, `eslint .` riporta 16
-errori, `svelte-check` 0 errori e 16 warning (quelli sono `QA-6`, non riguardano questo file).
+errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando `QA-6` ha sistemato
+`PrintCard.svelte` e `PrintList.svelte`.
 
 ---
 
@@ -186,11 +187,11 @@ Da `GingerView/`, nell'ordine:
 
 ```sh
 npm run lint     # prettier --check . && eslint .
-npm run check    # svelte-check: atteso 0 errori, 16 warning (QA-6)
+npm run check    # svelte-check: atteso 0 errori, 0 warning
 ```
 
-Il conteggio dei warning di `svelte-check` è il controllo più utile: **deve restare 16**, tutti
-in `PrintCard.svelte` e `PrintList.svelte`. Se sale, la modifica ha introdotto qualcosa.
+Il conteggio dei warning di `svelte-check` è il controllo più utile: **deve restare 0**. Se
+sale, la modifica ha introdotto qualcosa.
 
 Per confrontare con lo stato precedente senza fidarsi della memoria:
 

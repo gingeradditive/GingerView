@@ -213,8 +213,7 @@
 	const visiblePrints = $derived(() => allItems.slice(0, visibleCount));
 	const hasMore = $derived(() => visibleCount < allItems.length);
 
-	let sentinel: HTMLElement;
-	let observer: IntersectionObserver;
+	let sentinel = $state<HTMLElement | undefined>();
 
 	function loadMore() {
 		if (hasMore()) {
@@ -222,19 +221,32 @@
 		}
 	}
 
-	function handleFileDeleted() {
-		loadDirectory();
-	}
+	// Il sentinel esiste solo quando ci sono altri elementi da caricare: va osservato
+	// ogni volta che compare, non una sola volta al mount.
+	$effect(() => {
+		const node = sentinel;
+		if (!node) return;
 
-	onMount(() => {
-		observer = new IntersectionObserver(
+		const observer = new IntersectionObserver(
 			(entries) => {
 				if (entries[0].isIntersecting) loadMore();
 			},
 			{ rootMargin: '200px' }
 		);
-		if (sentinel) observer.observe(sentinel);
+		observer.observe(node);
 
+		return () => observer.disconnect();
+	});
+
+	function focusOnMount(node: HTMLInputElement) {
+		node.focus();
+	}
+
+	function handleFileDeleted() {
+		loadDirectory();
+	}
+
+	onMount(() => {
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
@@ -242,7 +254,6 @@
 	});
 
 	onDestroy(() => {
-		observer?.disconnect();
 		unsubscribe();
 
 		// Only remove window event listeners in browser environment
@@ -279,16 +290,14 @@
 	</div>
 
 	{#if showCreateFolderModal}
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div
 			class="modal-overlay"
 			role="dialog"
 			tabindex="0"
-			onclick={() => (showCreateFolderModal = false)}
+			onclick={(e) => e.target === e.currentTarget && (showCreateFolderModal = false)}
 			onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}
 		>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
+			<div class="modal-content">
 				<h3>Create new folder</h3>
 				<input
 					type="text"
@@ -296,7 +305,7 @@
 					placeholder="Folder name"
 					class="folder-input"
 					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
-					autofocus
+					use:focusOnMount
 				/>
 				<div class="modal-actions">
 					<button class="modal-confirm" onclick={handleCreateFolder}>Create</button>
@@ -317,8 +326,13 @@
 	{:else}
 		<div class="grid">
 			{#each visiblePrints() as item (item.id)}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div onclick={() => handleItemClick(item)} role="button" tabindex="0">
+				<div
+					onclick={() => handleItemClick(item)}
+					onkeydown={(e) =>
+						(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), handleItemClick(item))}
+					role="button"
+					tabindex="0"
+				>
 					<PrintCard {item} />
 				</div>
 			{/each}
