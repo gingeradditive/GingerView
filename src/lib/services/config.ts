@@ -52,9 +52,7 @@ class ConfigService {
 				this.getOptionalEnvVar('VITE_MOONRAKER_WS_URL') ??
 				(host ? `ws://${host}:${port}/websocket` : sameOriginWebSocketUrl()),
 			moonrakerHost: host ?? '',
-			moonrakerPort: host ? port : 0,
-			printerName: this.getEnvVar('VITE_PRINTER_NAME', 'Ginger Printer'),
-			connectionTimeout: this.getNumberEnvVar('VITE_CONNECTION_TIMEOUT', 5000)
+			moonrakerPort: host ? port : 0
 		};
 	}
 
@@ -73,10 +71,6 @@ class ConfigService {
 			apiHost: host ?? '',
 			apiPort: host ? port : 0
 		};
-	}
-
-	private getEnvVar(key: string, defaultValue: string): string {
-		return this.getOptionalEnvVar(key) ?? defaultValue;
 	}
 
 	private getOptionalEnvVar(key: string): string | undefined {
@@ -118,10 +112,6 @@ class ConfigService {
 
 		if (!klipper.moonrakerWsUrl) {
 			errors.push('Moonraker WebSocket URL could not be resolved');
-		}
-
-		if (klipper.connectionTimeout && klipper.connectionTimeout < 1000) {
-			errors.push('Connection timeout should be at least 1000ms');
 		}
 
 		const service = this.getServiceConfig();

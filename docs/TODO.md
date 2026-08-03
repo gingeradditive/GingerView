@@ -73,7 +73,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## CLN — Pulizia del codice
 
-- `CLN-6` Rimuovere `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT` da `config.ts`, oppure usarle davvero: oggi non hanno effetto (nessuna richiesta usa il timeout, `validateConfig()` si limita a controllarlo; togliendolo va tolto anche quel controllo) — pronto
 - `CLN-7` Spostare `:global(.spin)` + `@keyframes spin` in `app.css`: oggi è ridefinita in sei componenti/pagine, e chi usa `class="spin"` senza dichiararla localmente ha uno spinner immobile — la pagina Update funziona solo perché `UpdateLogModal` la porta dietro — pronto
 - `CLN-8` Annullare la subscribe a `currentDirPath` in `CurrentDirectory.svelte:11`, oggi mai disiscritta: il componente è montato dentro `PrintList`, quindi il leak si accumula a ogni entrata/uscita dalla lista di stampa — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 - `CLN-9` Decidere se cancellare `src/lib/types/klipper.ts`: dopo `CLN-1` nessun file lo importa

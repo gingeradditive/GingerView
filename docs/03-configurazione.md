@@ -45,10 +45,8 @@ dentro i file JavaScript, quindi:
 | `VITE_MOONRAKER_WS_URL`  | derivato                | URL WebSocket completo, ha la precedenza |
 | `VITE_MOONRAKER_API_URL` | derivato                | URL HTTP completo, ha la precedenza      |
 
-`configService` legge anche `VITE_PRINTER_NAME` e `VITE_CONNECTION_TIMEOUT`, ma **nessuna delle
-due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout viene solo
-validato da `validateConfig()`, mai usato per una richiesta (la console ha il proprio timeout
-scritto nel codice). Per questo non compaiono in [.env.example](../.env.example).
+Queste quattro sono **tutte** le variabili Moonraker lette da `configService`: quello che c'è
+qui è quello che c'è in [.env.example](../.env.example).
 
 ### G2-Service (rete e fuso orario)
 
