@@ -104,7 +104,8 @@ funzionalità mancanti:
 
 GingerView è una **SPA statica**: viene compilata in HTML/JS/CSS e servita da nginx
 direttamente sul Raspberry Pi della stampante, sulla porta 80. Non c'è un backend proprio —
-tutta la logica è nel browser, che parla direttamente con Moonraker e con il servizio di rete.
+tutta la logica è nel browser, che parla direttamente con Moonraker e con G2-Service (rete e
+fuso orario).
 
 L'obiettivo di distribuzione è **G2-OS**, un fork di
 [MainsailOS](https://github.com/mainsail-crew/MainsailOS) in cui, al posto di Mainsail, viene

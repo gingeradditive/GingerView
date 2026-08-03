@@ -7,15 +7,22 @@
  * e un Raspberry Pi appena installato è su `Etc/UTC`.
  */
 
-/** Risposta attesa da `GET /api/timezone`. Rispecchia `timedatectl show`. */
+/**
+ * Risposta di `GET /service/timezone` e di `POST /service/timezone`, che
+ * risponde con lo stato aggiornato. Rispecchia `timedatectl show`.
+ */
 export interface TimezoneStatus {
 	/** Identificatore IANA attivo sull'host, es. `Europe/Rome`. */
 	timezone: string;
-	/** `true` se l'orologio è sincronizzato via NTP: se no gli orari non sono affidabili. */
+	/**
+	 * `true` se l'orologio è sincronizzato via NTP: se no gli orari non sono
+	 * affidabili. È in **sola lettura** — non c'è un endpoint per accendere o
+	 * spegnere NTP, né per impostare l'ora a mano.
+	 */
 	ntpSynchronized: boolean;
 }
 
-/** Corpo di `POST /api/timezone`. */
+/** Corpo di `POST /service/timezone`. */
 export interface TimezoneUpdateRequest {
 	timezone: string;
 }

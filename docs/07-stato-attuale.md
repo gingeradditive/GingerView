@@ -1,9 +1,10 @@
 # 07 — Stato attuale e limiti noti
 
-Fotografia del progetto al **30 luglio 2026**, branch `graphics-fixes`, dopo la riscrittura
+Fotografia del progetto al **3 agosto 2026**, branch `graphics-fixes`, dopo la riscrittura
 dell'installer, il passaggio a same-origin, l'implementazione di homing/estrusione/avvio
-stampa guidati e delle pagine Log, Update, Timezone e Config editor. Serve a evitare che si
-perda tempo su cose già note o si scambi un segnaposto per un bug.
+stampa guidati, delle pagine Log, Update, Timezone e Config editor, e il passaggio di rete e
+fuso orario alle API di G2-Service. Serve a evitare che si perda tempo su cose già note o si
+scambi un segnaposto per un bug.
 
 ## Funzionalità complete
 
@@ -12,7 +13,9 @@ perda tempo su cose già note o si scambi un segnaposto per un bug.
 - Ventola e luce (`LED_CAMERA`) con popup a slider.
 - Browser file: navigazione cartelle, thumbnail, metadati, upload, crea cartella, rinomina,
   sposta, elimina.
-- Impostazioni rete: stato, scansione Wi-Fi, connessione (anche a rete nascosta), disconnessione.
+- Impostazioni rete: stato unificato Wi-Fi/Ethernet, elenco reti e nuova scansione,
+  connessione (anche a una rete nascosta) seguita come job asincrono. Parla con G2-Service,
+  vedi [04 — G2-Service](04-moonraker.md#g2-service-non-moonraker).
 - Console G-code con cronologia comandi.
 - Pagina Log (`/settings/log`): download di `klippy.log`, `moonraker.log`, `crowsnest.log` e
   pulsante per pulire (rollover) i log di Klipper e Moonraker in un colpo solo, senza chiedere
@@ -26,8 +29,8 @@ perda tempo su cose già note o si scambi un segnaposto per un bug.
   [04 — Update manager](04-moonraker.md#update-manager).
 - Pagina Timezone (`/settings/timezone`): mappa del mondo con la fascia oraria selezionata
   evidenziata e un segnaposto sulla città, orologio e data della zona aggiornati al secondo, e
-  tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). L'interfaccia è
-  completa; **il salvataggio no**, vedi il segnaposto più sotto.
+  tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). Lettura e
+  salvataggio passano da `GET`/`POST /service/timezone` di G2-Service.
 - Pagina Config editor (`/settings/config-editor`): equivalente dell'editor dei config di
   Mainsail — albero della root `config` con cartelle e sottocartelle espandibili a richiesta,
   apertura in modifica, salvataggio, crea file, crea cartella, upload, rinomina, elimina,
@@ -70,23 +73,11 @@ Indicazioni già raccolte:
 
 - **History** e **Statistics** restano da progettare.
 
-### Il salvataggio del fuso orario è finto
+### Gli orari mostrati non seguono il fuso della stampante
 
-La pagina Timezone è l'unica che non ha un vero interlocutore: **Moonraker non espone alcun
-endpoint** per il fuso orario, perché è una funzione dell'host e non della stampante. Il posto
-giusto è il servizio di rete già installato da G2-OS (Q16), che gira con i privilegi per
-chiamare `timedatectl`, ma i due endpoint non sono ancora scritti (`SET-9`).
-
-Nel frattempo [timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la
-zona dal browser, la scrittura la ricorda in `localStorage`. Il resto del file — offset via
-`Intl`, formattazione, ricerca — è calcolo locale e resterà valido.
-
-**Nell'interfaccia non se ne accorge nessuno.** Il riquadro che lo dichiarava è stato rimosso
-per scelta esplicita: chi salva vede solo il toast "Timezone saved". Finché `SET-9` non è
-fatto, quel messaggio non è vero.
-
-Da tenere presente quando si valuterà l'utilità della funzione: **gli orari mostrati in
-GingerView non dipendono dal fuso della stampante.** L'ETA in dashboard è calcolato nel
+Il fuso orario ora si salva davvero (`POST /service/timezone`), ma va tenuto presente quando se
+ne valuta l'utilità: **gli orari mostrati in GingerView non dipendono dal fuso della
+stampante.** L'ETA in dashboard è calcolato nel
 browser (`new Date(Date.now() + rimanente)` in
 [DashboardControlPanel.svelte](../src/lib/components/DashboardControlPanel.svelte)) e reso con
 `getHours()`, quindi segue il fuso del telefono che sta guardando. Il fuso dell'host conta per
@@ -216,13 +207,6 @@ Due problemi indipendenti, entrambi preesistenti:
   verosimilmente legato alla sintassi reattiva legacy `$:` presente in quel componente.
 
 Poiché lo script è `prettier --check . && eslint .`, oggi eslint non viene nemmeno raggiunto.
-
-### Il servizio di rete è un'architettura da decidere
-
-La gestione Wi-Fi passa da un servizio separato sulla porta 8000, installato da G2-OS. È in
-discussione se assorbirlo dentro GingerView, dato che fa poche cose — scelta che però
-trasformerebbe il progetto da SPA statica a interfaccia + backend, con un servizio e un unit
-systemd da installare. Vedi Q16 in [Q&A.md](Q&A.md).
 
 ### Il modello di macchina non è noto all'applicazione
 

@@ -1,29 +1,22 @@
 import { TIMEZONES, type TimezoneEntry } from '$lib/data/timezones';
+import { ServiceError, serviceRequest } from '$lib/services/g2-service';
 import { toastActions } from '$lib/stores/toastStore';
 import type { TimezoneStatus } from '$lib/types/timezone';
 
 /**
  * Fuso orario di sistema.
  *
- * **Il backend non esiste ancora.** Moonraker non espone niente per il fuso
- * orario (non è una funzione della stampante, è una funzione dell'host), quindi
- * l'endpoint andrà nel servizio di rete già presente sulla porta 8000 — lo
- * stesso di `network-api.ts` — che gira come root e può chiamare `timedatectl`:
+ * Moonraker non espone niente per il fuso orario — non è una funzione della
+ * stampante, è una funzione dell'host — quindi le due chiamate sono di
+ * G2-Service, che gira come root e può chiamare `timedatectl`:
  *
- *     GET  /api/timezone   → { timezone, ntpSynchronized }
- *     POST /api/timezone   ← { timezone }
+ *     GET  /service/timezone   → { timezone, ntpSynchronized }
+ *     POST /service/timezone   ← { timezone }   → stesso shape, dopo l'impostazione
  *
- * Finché non c'è, `fetchTimezoneStatus()` e `setSystemTimezone()` sono **mock**:
- * la lettura ricava il fuso dal browser e la scrittura lo ricorda in
- * `localStorage` senza toccare l'orologio della macchina. Vedi `SET-9` in
- * docs/TODO.md. Quando l'endpoint arriverà va sostituito solo il corpo di quelle
- * due funzioni: tutto il resto di questo file è calcolo locale e resta valido.
+ * Tutto il resto di questo file è calcolo locale: l'elenco delle zone lo genera
+ * il client da `zone.tab` di tzdata (`data/timezones.ts`), e il servizio non lo
+ * espone apposta.
  */
-
-/** Chiave di `localStorage` usata dal mock. Sparisce insieme al mock. */
-const MOCK_STORAGE_KEY = 'gingerview.mock.timezone';
-/** Latenza finta, così l'interfaccia mostra davvero i suoi stati di attesa. */
-const MOCK_LATENCY_MS = 500;
 
 /**
  * `zone.tab` non contiene UTC, ma `timedatectl set-timezone UTC` lo accetta ed è
@@ -39,64 +32,65 @@ export const UTC_ZONE: TimezoneEntry = {
 
 export const ALL_TIMEZONES: TimezoneEntry[] = [UTC_ZONE, ...TIMEZONES];
 
-// --- lettura e scrittura (mock) ----------------------------------------------
+// --- lettura e scrittura ------------------------------------------------------
 
-function delay(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * I codici che questi due endpoint possono produrre, tradotti.
+ *
+ * I messaggi di G2-Service sono in italiano e l'interfaccia è in inglese: il
+ * `code` è la parte stabile del contratto, il messaggio no, quindi si passa da
+ * lì. Quello del servizio resta come ultima risorsa per i codici imprevisti —
+ * meglio una frase nella lingua sbagliata che nessuna informazione.
+ */
+const TIMEZONE_MESSAGES: Record<string, string> = {
+	INVALID_INPUT: 'The printer does not know that timezone.',
+	VALIDATION_ERROR: 'That is not a valid timezone identifier.',
+	SYSTEM_TOOL_UNAVAILABLE: 'The printer cannot read its clock settings (timedatectl).',
+	SERVICE_UNREACHABLE: 'The printer service is not answering.'
+};
+
+/** Perché una chiamata sul fuso orario non è andata, in inglese. */
+export function describeTimezoneError(error: unknown, fallback: string): string {
+	if (error instanceof ServiceError) {
+		return TIMEZONE_MESSAGES[error.code] ?? error.message ?? fallback;
+	}
+	return fallback;
 }
 
 /**
- * MOCK di `GET /api/timezone`.
+ * `GET /service/timezone`.
  *
- * Legge il valore salvato dal mock; in mancanza usa quello del browser. Sul
- * kiosk della stampante il browser gira sull'host, quindi il fuso che riporta è
- * davvero quello di sistema — ma da telefono è il fuso del telefono, ed è
- * esattamente il motivo per cui questo dato deve arrivare dall'host.
+ * Il dato deve arrivare dall'host e non dal browser: sul kiosk della stampante
+ * il browser gira sulla macchina e i due coinciderebbero, ma da telefono
+ * `Intl` riporta il fuso del telefono — che è il motivo per cui questa pagina
+ * esiste. Se `timedatectl` non risponde arriva un errore
+ * (`SYSTEM_TOOL_UNAVAILABLE`) e non un ripiego: un "UTC" inventato sarebbe un
+ * dato su cui l'utente potrebbe agire.
  */
-export async function fetchTimezoneStatus(): Promise<TimezoneStatus> {
-	await delay(MOCK_LATENCY_MS);
-
-	const stored =
-		typeof localStorage !== 'undefined' ? localStorage.getItem(MOCK_STORAGE_KEY) : null;
-	return {
-		timezone: stored ?? getBrowserTimezone(),
-		ntpSynchronized: true
-	};
+export function fetchTimezoneStatus(): Promise<TimezoneStatus> {
+	return serviceRequest<TimezoneStatus>('/timezone');
 }
 
 /**
- * MOCK di `POST /api/timezone`.
+ * `POST /service/timezone`, che risponde con lo stato aggiornato.
  *
- * Non cambia l'orologio di nessuno: memorizza la scelta perché la pagina la
- * ritrovi al ricaricamento. Rifiuta un identificatore che `Intl` non riconosce,
- * come farà il backend vero con uno che `timedatectl` non accetta.
+ * Un fuso che la macchina non conosce è `400 INVALID_INPUT`, uno malformato un
+ * `422`. Il toast lo emette questa funzione e non la pagina: il fallimento è lo
+ * stesso ovunque si salvi, e chi chiama deve solo sapere che non è andata.
  */
-export async function setSystemTimezone(id: string): Promise<void> {
-	await delay(MOCK_LATENCY_MS);
-
-	if (!isValidTimezone(id)) {
-		const msg = `Unknown timezone: ${id}`;
-		toastActions.error('network', 'Timezone not applied', msg);
-		throw new Error(msg);
-	}
-
-	if (typeof localStorage !== 'undefined') localStorage.setItem(MOCK_STORAGE_KEY, id);
-}
-
-export function getBrowserTimezone(): string {
+export async function setSystemTimezone(id: string): Promise<TimezoneStatus> {
 	try {
-		return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-	} catch {
-		return 'UTC';
-	}
-}
-
-function isValidTimezone(id: string): boolean {
-	try {
-		new Intl.DateTimeFormat('en-GB', { timeZone: id });
-		return true;
-	} catch {
-		return false;
+		return await serviceRequest<TimezoneStatus>('/timezone', {
+			method: 'POST',
+			body: JSON.stringify({ timezone: id })
+		});
+	} catch (error) {
+		toastActions.error(
+			'network',
+			'Timezone not applied',
+			describeTimezoneError(error, `The printer did not accept ${id}.`)
+		);
+		throw error;
 	}
 }
 

@@ -49,9 +49,10 @@ src/
 │   ├── components/         componenti UI (dashboard, file list, dialoghi, toast)
 │   ├── data/               dati generati da script (zone IANA, sagoma della mappa)
 │   ├── editor/             modo CodeMirror per i `.cfg` Klipper (solo config editor)
-│   ├── services/           accesso a Moonraker e al servizio di rete
+│   ├── services/           accesso a Moonraker e a G2-Service
 │   ├── stores/             stato condiviso (toast, directory corrente, context menu, movement)
-│   └── types/              tipi TypeScript (config, klipper, print, wifi, update, timezone)
+│   └── types/              tipi TypeScript (config, klipper, print, network, service,
+│                            update, timezone)
 └── routes/                 rotte SvelteKit
     ├── +layout.svelte      shell applicativa: dock di navigazione, toast, notifier
     ├── +page.svelte        dashboard
@@ -123,8 +124,9 @@ un residuo dell'impostazione precedente da rivedere.
 | [moonraker-config.ts](../src/lib/services/moonraker-config.ts) | Config editor: albero della root `config`, lettura/scrittura/download dei file, `CONFIG_EDITOR_ENABLED` |
 | [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts) | Download dei log e rollover |
 | [moonraker-update.ts](../src/lib/services/moonraker-update.ts) | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente |
-| [network-api.ts](../src/lib/services/network-api.ts) | Client per il servizio Wi-Fi esterno (`/api/wifi/*`), con classe d'errore dedicata `NetworkAPIError` |
-| [timezone.ts](../src/lib/services/timezone.ts) | Fuso orario di sistema: lettura e scrittura (per ora **mock**), più tutto il calcolo locale — offset via `Intl`, formattazione, ricerca sull'elenco IANA |
+| [g2-service.ts](../src/lib/services/g2-service.ts) | Trasporto comune a tutte le API di G2-Service: prefisso `/service`, modello degli errori (`ServiceError`) e attesa dei job asincroni (`waitForJob`) |
+| [network-api.ts](../src/lib/services/network-api.ts) | Endpoint di rete di G2-Service: stato unificato WiFi/Ethernet, elenco reti, rescan e connessione (che è un job) |
+| [timezone.ts](../src/lib/services/timezone.ts) | Fuso orario di sistema via `GET`/`POST /service/timezone`, più tutto il calcolo locale — offset via `Intl`, formattazione, ricerca sull'elenco IANA |
 
 ### Dati generati (`src/lib/data/`)
 

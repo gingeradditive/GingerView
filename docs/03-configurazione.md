@@ -50,17 +50,21 @@ due ha effetto**: il nome non viene mostrato da alcun componente, e il timeout �
 `validateConfig()`, che non viene mai invocato (la console ha il proprio timeout scritto nel
 codice). Per questo non compaiono in [.env.example](../.env.example).
 
-### Servizio di rete (Wi-Fi)
+### G2-Service (rete e fuso orario)
 
-La gestione Wi-Fi **non** passa da Moonraker: è un servizio separato con API proprie
-(`/api/wifi/*`), tipicamente sulla porta `8000`. Anche questo viene proxato da nginx sulla
-porta 80, quindi in produzione non va configurato nulla.
+Rete e fuso orario **non** passano da Moonraker: sono funzioni dell'host, e stanno in
+[G2-Service](https://github.com/gingeradditive/G2-Service), un servizio separato sulla porta
+`8000` che espone tutto sotto `/service/`. Anche questo viene proxato da nginx sulla porta 80,
+quindi in produzione non va configurato nulla.
 
 | Variabile | Default | Descrizione |
 |---|---|---|
-| `VITE_NETWORK_API_HOST` | valore di `VITE_MOONRAKER_HOST` | Impostandolo si passa a URL assoluti |
-| `VITE_NETWORK_API_PORT` | `8000` | Usata solo se è impostato l'host |
-| `VITE_NETWORK_API_BASE_URL` | derivato | URL base completo, ha la precedenza |
+| `VITE_G2_SERVICE_HOST` | valore di `VITE_MOONRAKER_HOST` | Impostandolo si passa a URL assoluti |
+| `VITE_G2_SERVICE_PORT` | `8000` | Usata solo se è impostato l'host |
+| `VITE_G2_SERVICE_BASE_URL` | derivato | URL base completo, ha la precedenza |
+
+Il prefisso `/service` **non** è configurabile e non va incluso in queste variabili: lo
+aggiunge `g2-service.ts`, ed è appaiato alla regola nginx `location ^~ /service/`.
 
 ## Come vengono risolti gli endpoint
 

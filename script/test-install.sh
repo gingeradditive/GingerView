@@ -2,9 +2,10 @@
 #
 # Integration test for install.sh, run inside a throwaway Debian container.
 #
-# Exercises what actually matters: that nginx serves the SPA, that Moonraker and
-# the Wi-Fi service are proxied on the same origin, that a Mainsail site squatting
-# on our port is disabled while one on another port survives, and that re-running
+# Exercises what actually matters: that nginx serves the SPA, that Moonraker is
+# proxied on the same origin, that a location dropped into g2-locations.d is
+# included and wins over the Moonraker regex, that a Mainsail site squatting on
+# our port is disabled while one on another port survives, and that re-running
 # changes nothing.
 #
 # Requires Docker. Usage: script/test-install.sh
@@ -60,7 +61,13 @@ printf 'server {\n listen 8081 default_server;\n server_name _;\n root /home/pi/
 	> /etc/nginx/sites-available/mainsail-8081
 ln -sf /etc/nginx/sites-available/mainsail-8081 /etc/nginx/sites-enabled/mainsail-8081
 
-# Fake Moonraker (7125) and Wi-Fi service (8000), each echoing the path it got.
+# G2-Service's own nginx location, dropped where its installer puts it. Having it
+# there before install.sh runs is what proves the include is honoured.
+mkdir -p /etc/nginx/g2-locations.d
+printf 'location ^~ /service/ {\n    proxy_pass http://127.0.0.1:8000;\n}\n' \
+	> /etc/nginx/g2-locations.d/g2-service.conf
+
+# Fake Moonraker (7125) and G2-Service (8000), each echoing the path it got.
 python3 - <<'PY' &
 import http.server, socketserver, threading
 def make(tag):
@@ -73,7 +80,7 @@ def make(tag):
             self.end_headers(); self.wfile.write(body)
         def log_message(self, *a): pass
     return H
-for port, tag in ((7125, "MOONRAKER"), (8000, "WIFI")):
+for port, tag in ((7125, "MOONRAKER"), (8000, "G2SERVICE")):
     srv = socketserver.TCPServer(("127.0.0.1", port), make(tag))
     srv.allow_reuse_address = True
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -94,7 +101,7 @@ check "moonraker /server"     "MOONRAKER:/server/info"  "$(curl -sS http://127.0
 check "moonraker /printer"    "MOONRAKER:/printer/info" "$(curl -sS http://127.0.0.1/printer/info)"
 check "query string kept"     "MOONRAKER:/printer/objects/query?print_stats" "$(curl -sS 'http://127.0.0.1/printer/objects/query?print_stats')"
 check "octoprint /api"        "MOONRAKER:/api/version"  "$(curl -sS http://127.0.0.1/api/version)"
-check "wifi beats /api regex" "WIFI:/api/wifi/status"   "$(curl -sS http://127.0.0.1/api/wifi/status)"
+check "g2-service /service"   "G2SERVICE:/service/health" "$(curl -sS http://127.0.0.1/service/health)"
 check "moonraker /machine"    "MOONRAKER:/machine/system_info" "$(curl -sS http://127.0.0.1/machine/system_info)"
 check "websocket proxied"     "MOONRAKER:/websocket"    "$(curl -sS http://127.0.0.1/websocket)"
 check "index not cached"      "no-store"                "$(curl -sSI http://127.0.0.1/ | tr -d '\r')"
@@ -110,6 +117,13 @@ check "gingerview enabled"    "present" "$([ -e /etc/nginx/sites-enabled/gingerv
 check "update_manager added"  "[update_manager GingerView]" "$(cat /home/pi/printer_data/config/moonraker.conf)"
 check "correct repo path"     "path: /home/pi/GingerView"   "$(cat /home/pi/printer_data/config/moonraker.conf)"
 check "no .env written"       "absent"  "$([ -e /home/pi/GingerView/.env ] && echo present || echo absent)"
+check "locations dir created" "present" "$([ -d /etc/nginx/g2-locations.d ] && echo present || echo absent)"
+
+# The site has to work on a machine where no other service is installed: an
+# include whose wildcard matches nothing is not an error for nginx.
+rm -f /etc/nginx/g2-locations.d/g2-service.conf
+if nginx -t 2>&1 | grep -q successful; then echo "  PASS  valid with no G2-Service"; PASS=$((PASS+1));
+else echo "  FAIL  empty g2-locations.d breaks the site"; FAIL=$((FAIL+1)); fi
 
 echo
 echo "### idempotence"

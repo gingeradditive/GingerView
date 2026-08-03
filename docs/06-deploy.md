@@ -30,8 +30,6 @@ configurazioni. Non richiede Node, perché `build/` arriva già compilato dal re
 | `--port N` | `80` | Porta su cui esporre GingerView |
 | `--moonraker-host H` | `127.0.0.1` | Indirizzo di Moonraker |
 | `--moonraker-port N` | `7125` | Porta di Moonraker |
-| `--network-api-host H` | `127.0.0.1` | Indirizzo del servizio Wi-Fi |
-| `--network-api-port N` | `8000` | Porta del servizio Wi-Fi |
 | `--printer-data PATH` | `~USER/printer_data` | Per registrare l'`update_manager` |
 | `--purge-mainsail` | off | Elimina anche i file Mainsail e la sua voce `update_manager` |
 | `--skip-packages` | off | Non installa nginx via apt |
@@ -68,16 +66,19 @@ namespaced (`$gingerview_connection_upgrade`) per non collidere con il
 
 ```nginx
 location /websocket                            → 127.0.0.1:7125/websocket
-location ^~ /api/wifi/                         → 127.0.0.1:8000
+include /etc/nginx/g2-locations.d/*.conf;      → le location degli altri servizi G2
 location ~ ^/(printer|api|access|machine|server)/ → 127.0.0.1:7125$request_uri
 location /                                     → try_files … /index.html
 ```
 
 Tre dettagli non ovvi:
 
-- **`/api/wifi/` usa `^~`.** Senza quel modificatore la regex di Moonraker, che include `api`,
-  avrebbe la precedenza sul prefisso e le chiamate Wi-Fi finirebbero a Moonraker con un 404.
-  Con `^~` il prefisso vince sulla regex.
+- **Le altre location arrivano da una `include`.** Ogni servizio G2 deposita la propria in
+  `/etc/nginx/g2-locations.d/`: G2-Service ci mette `location ^~ /service/ → 127.0.0.1:8000`
+  dal proprio installer, così cambiare un suo path non richiede di toccare un file che vive in
+  un altro repository. Il `^~` serve perché la regex di Moonraker qui sotto non gliela porti
+  via; una `include` con wildcard che non trova file **non è un errore**, quindi il site
+  funziona anche su una macchina dove G2-Service non è installato.
 - **`/api/` va a Moonraker** perché è il suo livello di compatibilità OctoPrint, che gli
   slicer interrogano (`/api/version`).
 - **La location di Moonraker imposta `proxy_read_timeout`/`proxy_send_timeout` a 3600s.**
@@ -320,12 +321,13 @@ GingerView ed esegue `install.sh`.
 ## Test dell'installer
 
 [script/test-install.sh](../script/test-install.sh) esegue `install.sh` dentro un container
-Debian usa e getta, con finti Moonraker e servizio Wi-Fi, e verifica che:
+Debian usa e getta, con finti Moonraker e G2-Service, e verifica che:
 
 - la SPA venga servita e che il fallback funzioni su una rotta client-side;
 - `/server/`, `/printer/`, `/machine/`, `/api/version` e `/websocket` finiscano a Moonraker,
   query string inclusa;
-- `/api/wifi/` vinca sulla regex di Moonraker e vada al servizio Wi-Fi;
+- una `location` depositata in `g2-locations.d/` venga inclusa e vinca sulla regex di
+  Moonraker, e che il site resti valido quando quella cartella è vuota;
 - un site Mainsail preesistente venga rimosso e la porta 80 resti a GingerView;
 - `index.html` non sia cacheato e `/_app/immutable/` lo sia;
 - l'`update_manager` venga registrato una sola volta anche rieseguendo lo script;
@@ -346,7 +348,7 @@ che è la causa più comune di 403 dopo l'installazione.
 curl -sS http://<ip>/                 # deve restituire l'HTML di GingerView
 curl -sS http://<ip>/settings/network # stessa pagina: fallback SPA
 curl -sS http://<ip>/server/info      # deve rispondere Moonraker
-curl -sS http://<ip>/api/wifi/status  # deve rispondere il servizio Wi-Fi
+curl -sS http://<ip>/service/health   # deve rispondere G2-Service
 ```
 
 Se `nginx -t` fallisce con *duplicate default server*, un altro site sta ancora reclamando la

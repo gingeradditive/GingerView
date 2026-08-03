@@ -525,38 +525,56 @@ che restano montati e continuano a interrogare.
 
 Se nessuna delle due è disponibile, l'interfaccia mostra `--:--:--`.
 
-## Servizio di rete (non Moonraker)
+## G2-Service (non Moonraker)
 
-[network-api.ts](../src/lib/services/network-api.ts) parla con un servizio separato, per
-default sulla porta `8000`:
+Rete e fuso orario non sono funzioni della stampante ma dell'host, e Moonraker non se ne occupa.
+Stanno in [G2-Service](https://github.com/gingeradditive/G2-Service), sulla porta `8000`, con
+**tutti** gli endpoint sotto il prefisso `/service/` — scelto per non collidere con i namespace
+di Moonraker (`/api/`, `/printer/`, `/machine/`, `/server/`, `/access/`). Attenzione a non
+confondere `/service/` con `/server/`, che è di Moonraker.
 
-| Endpoint | Metodo | Uso |
-|---|---|---|
-| `/api/wifi/status` | GET | Stato adattatore, IP, segnale, SSID corrente |
-| `/api/wifi/networks` | GET | Reti disponibili |
-| `/api/wifi/connect` | POST | Connessione (`ssid`, `password`) |
-| `/api/wifi/disconnect` | POST | Disconnessione |
+Il contratto completo è in
+[G2-Service `docs/03`](https://github.com/gingeradditive/G2-Service/blob/main/docs/03-proposta-api-rete-timezone.md).
+Qui interessa quello che GingerView usa davvero:
 
-Il metodo `scanNetworks()` non chiama un endpoint di scansione dedicato: **non esiste**, quindi
-usa `/api/wifi/networks` e ne incapsula il risultato. Gli errori seguono il formato di
-validazione FastAPI (`{ detail: [{ loc, msg, type }] }`), tipizzato in
-[src/lib/types/wifi.ts](../src/lib/types/wifi.ts).
+| Endpoint | Metodo | Uso | Client |
+|---|---|---|---|
+| `/service/network/status` | GET | Stato unificato: `adapter`, `ip`, `signalInfo`, `interfaces` | `network-api.ts` |
+| `/service/network/wifi/networks` | GET | Ultima scansione nota, risponde subito | `network-api.ts` |
+| `/service/network/wifi/rescan` | POST | Forza una scansione e aspetta i risultati | `network-api.ts` |
+| `/service/network/wifi/connect` | POST | `{ ssid, password? }` → `202` + job | `network-api.ts` |
+| `/service/jobs/{jobId}` | GET | Avanzamento ed esito di un'operazione asincrona | `g2-service.ts` |
+| `/service/timezone` | GET/POST | `{ timezone, ntpSynchronized }` | `timezone.ts` |
 
-### Fuso orario: endpoint ancora da scrivere
+Tre cose valgono per tutti e stanno in
+[g2-service.ts](../src/lib/services/g2-service.ts), non nei singoli client:
 
-Il fuso orario non è una funzione della stampante ma dell'host, e **Moonraker non espone niente**
-per impostarlo. Il posto giusto è lo stesso servizio di rete, che gira già con i privilegi
-necessari per chiamare `timedatectl`:
+- **`camelCase`** in tutti i corpi JSON, richieste comprese.
+- **Due forme di errore**, entrambe sotto `detail`: `{ code, message }` per gli errori
+  applicativi (`SYSTEM_TOOL_UNAVAILABLE`, `INVALID_INPUT`, ...) e la lista di FastAPI per i
+  `422` di validazione. `ServiceError` le normalizza in un `code` unico su cui il chiamante può
+  ramificare, aggiungendo i propri per i casi che non hanno una risposta:
+  `SERVICE_UNREACHABLE` e `JOB_TIMEOUT`.
+- **I job asincroni**: `connect` risponde `202` con un `jobId` e l'esito si legge da
+  `/service/jobs/{jobId}`. Non è una questione di durata — connettersi **cambia l'indirizzo IP
+  della macchina**, quindi la risposta a una chiamata sincrona non avrebbe dove tornare.
+  `waitForJob()` continua a interrogare il job anche mentre il servizio non risponde, perché
+  perdere la connessione a metà è il decorso *normale* dell'operazione che sta seguendo.
 
-| Endpoint | Metodo | Uso |
-|---|---|---|
-| `/api/timezone` | GET | `{ timezone, ntpSynchronized }` — l'equivalente di `timedatectl show` |
-| `/api/timezone` | POST | `{ timezone }` — `timedatectl set-timezone <id>` |
+Gli esiti negativi previsti **non sono errori HTTP**: una password sbagliata arriva come
+`status: "failed"` del job con `WIFI_AUTH_FAILED` (o `WIFI_NETWORK_NOT_FOUND`, `WIFI_TIMEOUT`).
 
-Nessuno dei due esiste ancora (`SET-9` in [TODO.md](TODO.md)). Finché non ci sono,
-[timezone.ts](../src/lib/services/timezone.ts) li simula: la lettura ricava la zona dal browser,
-la scrittura la ricorda in `localStorage`. Quando arriveranno, va sostituito **solo il corpo** di
-`fetchTimezoneStatus()` e `setSystemTimezone()`: il resto della pagina non cambia.
+I messaggi mostrati all'utente si scelgono in base al **`code`**, non al `message`: il primo è
+la parte stabile del contratto, e i messaggi di G2-Service sono in italiano mentre
+l'interfaccia è in inglese. Le traduzioni stanno in `SERVICE_MESSAGES` nella pagina di rete e
+in `TIMEZONE_MESSAGES` in `timezone.ts`; il messaggio del servizio resta come ultima risorsa
+per un codice imprevisto.
+
+### Endpoint disponibili ma non usati
+
+G2-Service ne espone altri, che oggi nessuna pagina chiama: `GET /service/health`,
+`POST /service/network/wifi/disconnect`, `GET`/`DELETE /service/network/wifi/saved[/{ssid}]` e
+`GET /service/network/ethernet/status`. Vedi `NET-6`…`NET-9` in [TODO.md](TODO.md).
 
 **L'interfaccia non segnala che il salvataggio è finto** — l'avviso c'era ed è stato tolto per
 scelta. Chi salva vede il toast "Timezone saved" e nient'altro, quindi finché `SET-9` non è

@@ -4,6 +4,7 @@
 	import TimezoneMap from '$lib/components/TimezoneMap.svelte';
 	import TimezoneSelect from '$lib/components/TimezoneSelect.svelte';
 	import {
+		describeTimezoneError,
 		fetchTimezoneStatus,
 		findZone,
 		formatOffset,
@@ -48,7 +49,7 @@
 			selectedTimezone = status.timezone;
 			ntpSynchronized = status.ntpSynchronized;
 		} catch (e) {
-			loadError = e instanceof Error ? e.message : 'Failed to read the current timezone';
+			loadError = describeTimezoneError(e, 'Failed to read the current timezone.');
 		} finally {
 			isLoading = false;
 		}
@@ -58,8 +59,12 @@
 		if (!hasChanges || isSaving) return;
 		isSaving = true;
 		try {
-			await setSystemTimezone(selectedTimezone);
-			appliedTimezone = selectedTimezone;
+			// La POST risponde con lo stato aggiornato: si prende da lì, invece di
+			// dare per scontato che l'host abbia applicato esattamente la richiesta.
+			const status = await setSystemTimezone(selectedTimezone);
+			appliedTimezone = status.timezone;
+			selectedTimezone = status.timezone;
+			ntpSynchronized = status.ntpSynchronized;
 			toastActions.success(
 				'network',
 				'Timezone saved',

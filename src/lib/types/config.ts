@@ -15,10 +15,12 @@ export interface KlipperConfig {
 	connectionTimeout?: number;
 }
 
-export interface NetworkConfig {
+export interface ServiceConfig {
 	/**
-	 * Base URL for the Wi-Fi service API.
-	 * An empty string means "same origin", with nginx proxying `/api/wifi/`.
+	 * Base URL for G2-Service, the host's own API (network, timezone).
+	 * An empty string means "same origin", with nginx proxying `/service/`.
+	 * The `/service` prefix itself is not configurable — it is part of the
+	 * contract and is added by `g2-service.ts`.
 	 */
 	apiBaseUrl: string;
 	/** Set only when an explicit host override is configured, otherwise empty. */
@@ -29,5 +31,5 @@ export interface NetworkConfig {
 
 export interface Config {
 	klipper: KlipperConfig;
-	network: NetworkConfig;
+	service: ServiceConfig;
 }

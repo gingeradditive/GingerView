@@ -42,15 +42,6 @@ lato macchina e va solo proxato (`/webcam/`) e mostrato. Da definire: se diventa
 carosello dashboard, una pagina dedicata, o un riquadro sempre visibile durante la stampa.
 A:
 
-**Q16: Il servizio di rete resta separato o entra dentro GingerView?**
-Contesto: stavi riflettendo se implementarlo nel repo GingerView visto che fa poche cose.
-Un vincolo da tenere presente: **GingerView oggi è una SPA statica senza backend** — non c'è
-un processo lato server. Portarlo dentro significa aggiungere al repository un servizio
-(Python/FastAPI o altro) con il suo systemd unit, e l'installer dovrebbe installarlo e
-avviarlo. Non è impossibile, ma cambia la natura del progetto: da interfaccia pura a
-interfaccia + servizio. In alternativa resta separato e G2-OS lo installa.
-A: ok rimarrà separato e installato da G2-OS
-
 **Q26: Come fa GingerView a sapere su quale modello di macchina sta girando?**
 Contesto: serve per parametrizzare la capienza tramoggia (G2 = 5 kg, ma cambierà) e il numero
 di zone dell'ugello. Già oggi c'è un asset per modello, `static/Printers/G2/Logo.svg`,

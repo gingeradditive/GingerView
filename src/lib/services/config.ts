@@ -1,4 +1,4 @@
-import type { Config, KlipperConfig, NetworkConfig } from '$lib/types/config';
+import type { Config, KlipperConfig, ServiceConfig } from '$lib/types/config';
 
 /**
  * Endpoint resolution
@@ -13,7 +13,10 @@ import type { Config, KlipperConfig, NetworkConfig } from '$lib/types/config';
  * time, and `.env` is gitignored, so anything host-specific baked in here would
  * be wrong for every printer but the one it was built for.
  *
- * The `VITE_MOONRAKER_*` / `VITE_NETWORK_API_*` variables exist to override this
+ * The same holds for G2-Service, the host's own API (network, timezone): nginx
+ * proxies `/service/` to it on port 8000.
+ *
+ * The `VITE_MOONRAKER_*` / `VITE_G2_SERVICE_*` variables exist to override this
  * during development, when the dev server and the printer are different hosts.
  */
 
@@ -27,7 +30,7 @@ class ConfigService {
 
 		const config: Config = {
 			klipper: this.buildKlipperConfig(),
-			network: this.buildNetworkConfig()
+			service: this.buildServiceConfig()
 		};
 
 		// Only memoize in the browser: the same-origin WebSocket URL is derived from
@@ -55,17 +58,18 @@ class ConfigService {
 		};
 	}
 
-	private buildNetworkConfig(): NetworkConfig {
+	private buildServiceConfig(): ServiceConfig {
 		// Falls back to the Moonraker host so that pointing the dev server at a
 		// printer configures both services at once.
 		const host =
-			this.getOptionalEnvVar('VITE_NETWORK_API_HOST') ??
+			this.getOptionalEnvVar('VITE_G2_SERVICE_HOST') ??
 			this.getOptionalEnvVar('VITE_MOONRAKER_HOST');
-		const port = this.getNumberEnvVar('VITE_NETWORK_API_PORT', 8000);
+		const port = this.getNumberEnvVar('VITE_G2_SERVICE_PORT', 8000);
 
 		return {
 			apiBaseUrl:
-				this.getOptionalEnvVar('VITE_NETWORK_API_BASE_URL') ?? (host ? `http://${host}:${port}` : ''),
+				this.getOptionalEnvVar('VITE_G2_SERVICE_BASE_URL') ??
+				(host ? `http://${host}:${port}` : ''),
 			apiHost: host ?? '',
 			apiPort: host ? port : 0
 		};
@@ -93,8 +97,8 @@ class ConfigService {
 		return this.loadConfig().klipper;
 	}
 
-	getNetworkConfig(): NetworkConfig {
-		return this.loadConfig().network;
+	getServiceConfig(): ServiceConfig {
+		return this.loadConfig().service;
 	}
 
 	/** True when requests go to the page's own origin through the nginx proxy. */
@@ -120,9 +124,9 @@ class ConfigService {
 			errors.push('Connection timeout should be at least 1000ms');
 		}
 
-		const network = this.getNetworkConfig();
-		if (network.apiHost && (network.apiPort < 1 || network.apiPort > 65535)) {
-			errors.push('Network API port must be between 1 and 65535');
+		const service = this.getServiceConfig();
+		if (service.apiHost && (service.apiPort < 1 || service.apiPort > 65535)) {
+			errors.push('G2-Service port must be between 1 and 65535');
 		}
 
 		return { isValid: errors.length === 0, errors };

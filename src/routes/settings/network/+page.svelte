@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ChevronRight, Component, EthernetPort, Wifi, WifiHigh, WifiLow, WifiZero } from 'lucide-svelte';
-	import { networkAPI, NetworkAPIError } from '$lib/services/network-api';
-	import type { WiFiNetwork, NetworkStatus } from '$lib/types/wifi';
+	import { ServiceError } from '$lib/services/g2-service';
+	import {
+		connectToWifi,
+		fetchNetworkStatus,
+		fetchWifiNetworks,
+		isSecured,
+		rescanWifiNetworks
+	} from '$lib/services/network-api';
+	import type { NetworkStatus, WifiNetwork } from '$lib/types/network';
 
-	interface NetworkInfo extends WiFiNetwork {
+	interface NetworkInfo extends WifiNetwork {
 		current: boolean;
 		signal: 1 | 2 | 3 | 4;
 		secured: boolean;
@@ -12,20 +19,44 @@
 
 	const STATUS_POLL_INTERVAL_MS = 5000;
 
-	let isConnected = $state(false);
-	let connectionType = $state('wifi');
-	let ipAddress = $state('Unknown');
-	let currentSsid = $state('');
-	let currentSignalBars = $state<1 | 2 | 3 | 4>(4);
-	let availableNetworks = $state<NetworkInfo[]>([]);
+	/**
+	 * What a failed call means to the person in front of the machine.
+	 *
+	 * The `WIFI_*` ones are the failed outcomes of the `wifi.connect` job, not
+	 * HTTP errors: the printer did try. `SERVICE_UNREACHABLE` is the awkward one —
+	 * it is also what a *successful* connection looks like from a browser that was
+	 * talking to the printer over the network it just left.
+	 *
+	 * The mapping is by `code` because that is the stable half of the contract:
+	 * G2-Service's own messages are in Italian, and this interface is in English.
+	 */
+	const SERVICE_MESSAGES: Record<string, string> = {
+		WIFI_AUTH_FAILED: 'Wrong password.',
+		WIFI_NETWORK_NOT_FOUND: 'Network not found. Scan again and retry.',
+		WIFI_TIMEOUT: 'The printer could not join the network in time.',
+		CONFLICT: 'Another connection is already being attempted.',
+		SYSTEM_TOOL_UNAVAILABLE: 'Network management is not available on this printer.',
+		NOT_FOUND: 'The printer lost track of the operation. Check the status above.',
+		INVALID_INPUT: 'The printer rejected those network details.',
+		VALIDATION_ERROR: 'The printer rejected those network details.',
+		INTERNAL_ERROR: 'The printer reported an internal error.',
+		SERVICE_UNREACHABLE:
+			'The printer stopped answering. Joining a network changes its address: reopen GingerView at the new one.',
+		JOB_TIMEOUT: 'The printer is taking longer than expected. Check this page again in a moment.'
+	};
+
+	let status = $state<NetworkStatus | null>(null);
+	let wifiNetworks = $state<WifiNetwork[]>([]);
 	let isScanning = $state(false);
-	let error = $state<string | null>(null);
+	let error = $state('');
 
 	let showPasswordDialog = $state(false);
 	let selectedNetwork = $state<NetworkInfo | null>(null);
 	let networkPassword = $state('');
 	let showPassword = $state(false);
 	let connecting = $state(false);
+	/** Kept so that an open network, which skips the dialog, still says what it is doing. */
+	let connectingSsid = $state('');
 	let dialogError = $state('');
 
 	let showHiddenDialog = $state(false);
@@ -33,11 +64,19 @@
 	let hiddenPassword = $state('');
 	let showHiddenPassword = $state(false);
 
-	const isWired = $derived(connectionType.toLowerCase() !== 'wifi');
+	// The status is unified over Wi-Fi and Ethernet: `adapter` is whichever one is
+	// carrying the connection, and `signalInfo` is there only when it is Wi-Fi.
+	const isWired = $derived(status?.adapter.type === 'ethernet');
+	const isConnected = $derived(status?.adapter.state === 'connected');
+	const ipAddress = $derived(status?.ip.ipv4 ?? 'Unknown');
+	const currentSsid = $derived(status?.signalInfo?.ssid ?? '');
+	const currentSignalBars = $derived(signalBars(status?.signalInfo?.signalStrength ?? 0));
 
-	function isNetworkSecured(security: string) {
-		return security !== '' && security !== 'Open';
-	}
+	// Hidden networks come back with an empty SSID, so there is nothing to show
+	// and nothing to tap: they are reached through the dialog at the bottom.
+	const availableNetworks = $derived(
+		wifiNetworks.filter((network) => network.ssid !== '').map(toNetworkInfo)
+	);
 
 	function signalBars(strength: number): 1 | 2 | 3 | 4 {
 		return Math.max(1, Math.min(4, Math.ceil(strength / 25))) as 1 | 2 | 3 | 4;
@@ -57,37 +96,69 @@
 		return WifiZero;
 	}
 
-	function convertToNetworkInfo(network: WiFiNetwork, current: string | null): NetworkInfo {
+	function toNetworkInfo(network: WifiNetwork): NetworkInfo {
 		return {
 			...network,
-			current: network.ssid === current,
-			signal: signalBars(network.signal_strength),
-			secured: isNetworkSecured(network.security)
+			current: network.ssid === currentSsid,
+			signal: signalBars(network.signalStrength),
+			secured: isSecured(network)
 		};
 	}
 
+	/** Turns a rejection into something worth reading, with its own code first. */
+	function describe(err: unknown, fallback: string): string {
+		if (err instanceof ServiceError) return SERVICE_MESSAGES[err.code] ?? err.message ?? fallback;
+		return fallback;
+	}
+
+	/**
+	 * Why there is no connection. `interfaces` lists the idle ones too, which is
+	 * the only way to tell "no cable" from "cable in, nothing on it" — two
+	 * situations that ask different things of whoever is reading.
+	 */
+	function describeDisconnected(state: NetworkStatus | null): string {
+		if (!state) return 'Reading the network status...';
+		if (state.adapter.state === 'connecting') return 'Connecting...';
+
+		const ethernet = state.interfaces.find((iface) => iface.type === 'ethernet');
+		if (!ethernet || ethernet.state === 'unavailable') {
+			return 'No cable plugged in — pick a network below.';
+		}
+		return 'The cable is plugged in but did not get an address.';
+	}
+
+	const disconnectedReason = $derived(describeDisconnected(status));
+
 	async function updateNetworkStatus() {
 		try {
-			error = null;
-			const status: NetworkStatus = await networkAPI.getNetworkStatus();
-			isConnected = status.adapter.state === 'connected';
-			ipAddress = status.ip.ipv4 || 'Unknown';
-			connectionType = status.adapter.type || 'wifi';
-			currentSsid = status.signal_info.current_ssid || '';
-			currentSignalBars = signalBars(status.signal_info.current_connection_signal);
+			status = await fetchNetworkStatus();
+			error = '';
 		} catch (err) {
-			error = err instanceof NetworkAPIError ? err.message : 'Failed to update network status';
+			error = describe(err, 'Failed to read the network status.');
 		}
 	}
 
+	/** The last known scan: it answers immediately, so it is what page load uses. */
+	async function loadNetworks() {
+		try {
+			wifiNetworks = await fetchWifiNetworks();
+			error = '';
+			// A machine that has not scanned since boot has nothing cached, and an
+			// empty list would look like "no networks around" instead of "no scan yet".
+			if (wifiNetworks.length === 0) await scanNetworks();
+		} catch (err) {
+			error = describe(err, 'Failed to list the Wi-Fi networks.');
+		}
+	}
+
+	/** Forces a fresh scan and waits for it — the "Scan" button. */
 	async function scanNetworks() {
 		try {
 			isScanning = true;
-			error = null;
-			const result = await networkAPI.scanNetworks();
-			availableNetworks = result.networks.map((network) => convertToNetworkInfo(network, currentSsid));
+			wifiNetworks = await rescanWifiNetworks();
+			error = '';
 		} catch (err) {
-			error = err instanceof NetworkAPIError ? err.message : 'Failed to scan for networks';
+			error = describe(err, 'Failed to scan for networks.');
 		} finally {
 			isScanning = false;
 		}
@@ -95,8 +166,13 @@
 
 	onMount(() => {
 		updateNetworkStatus();
-		scanNetworks();
-		const interval = setInterval(updateNetworkStatus, STATUS_POLL_INTERVAL_MS);
+		loadNetworks();
+		// The poll stands down while a connection is running: the machine is
+		// changing address, so a failed poll says nothing new and would put an
+		// alarming message next to a dialog that is doing exactly what it should.
+		const interval = setInterval(() => {
+			if (!connecting) updateNetworkStatus();
+		}, STATUS_POLL_INTERVAL_MS);
 		return () => clearInterval(interval);
 	});
 
@@ -130,22 +206,31 @@
 		hiddenPassword = '';
 	}
 
+	/**
+	 * Connecting is a job, not a request that answers when it is done: the
+	 * printer's address changes on the way, so the reply to the request that
+	 * started it would have nowhere to arrive. `connectToWifi()` follows the job
+	 * and resolves only once the machine is on the network.
+	 */
 	async function connectToNetwork(ssid: string, password: string) {
 		try {
 			connecting = true;
+			connectingSsid = ssid;
 			dialogError = '';
-			const result = await networkAPI.connectToNetwork({ ssid, password: password || null });
-			if (!result.success) {
-				dialogError = result.message || 'Failed to connect to network';
-				return;
-			}
-			await updateNetworkStatus();
-			await scanNetworks();
+			error = '';
+			await connectToWifi({ ssid, password: password || null });
 			closeDialogs();
+			await updateNetworkStatus();
+			await loadNetworks();
 		} catch (err) {
-			dialogError = err instanceof NetworkAPIError ? err.message : 'Failed to connect to network';
+			const message = describe(err, 'Failed to connect to the network.');
+			// An open network connects straight from the list, with no dialog to
+			// put the message in.
+			if (showPasswordDialog || showHiddenDialog) dialogError = message;
+			else error = message;
 		} finally {
 			connecting = false;
+			connectingSsid = '';
 		}
 	}
 </script>
@@ -157,7 +242,7 @@
 			<h1>Network</h1>
 		</header>
 
-		<div class="status-banner {isWired ? 'wired' : isConnected ? 'connected' : 'disconnected'}">
+		<div class="status-banner {!isConnected ? 'disconnected' : isWired ? 'wired' : 'connected'}">
 			<span class="banner-icon">
 				{#if isWired}
 					<EthernetPort />
@@ -167,22 +252,31 @@
 				{/if}
 			</span>
 			<div class="banner-text">
-				{#if isWired}
+				{#if !isConnected}
+					<strong>Disconnected</strong>
+					<span class="ip">{disconnectedReason}</span>
+				{:else if isWired}
 					<strong>Wired</strong>
 					<span class="ip">IP: {ipAddress}</span>
-				{:else if isConnected}
+				{:else}
 					<strong>{currentSsid || 'Connected'}</strong>
 					<span class="ip">IP: {ipAddress}</span>
 					<strong class="signal-label">{signalLabel(currentSignalBars)} Signal</strong>
-				{:else}
-					<strong>Disconnected</strong>
-					<span class="ip">IP: ???</span>
 				{/if}
 			</div>
 		</div>
 
 		{#if error}
 			<div class="error-box">{error}</div>
+		{/if}
+
+		<!--
+			Joining a network can take up to a minute, and an open one is connected
+			straight from the list: without this the page would look idle while the
+			printer works.
+		-->
+		{#if connecting && !showPasswordDialog && !showHiddenDialog}
+			<div class="info-box">Connecting to {connectingSsid}...</div>
 		{/if}
 
 		<div class="network-list">
@@ -262,7 +356,7 @@
 					disabled={!networkPassword || connecting}
 					onclick={() => connectToNetwork(network.ssid, networkPassword)}
 				>
-					Connect
+					{connecting ? 'Connecting...' : 'Connect'}
 				</button>
 			</div>
 		</div>
@@ -314,7 +408,7 @@
 					disabled={!hiddenSSID || !hiddenPassword || connecting}
 					onclick={() => connectToNetwork(hiddenSSID, hiddenPassword)}
 				>
-					Connect
+					{connecting ? 'Connecting...' : 'Connect'}
 				</button>
 			</div>
 		</div>
@@ -340,7 +434,8 @@
 	}
 	.page-header,
 	.status-banner,
-	.error-box {
+	.error-box,
+	.info-box {
 		flex-shrink: 0;
 	}
 	.page-header {
@@ -414,6 +509,13 @@
 	.error-box {
 		background: #f9dcdb;
 		color: #d72e28;
+		border-radius: 14px;
+		padding: 12px 16px;
+		font-size: 0.9rem;
+	}
+	.info-box {
+		background: #f1f1f1;
+		color: #444444;
 		border-radius: 14px;
 		padding: 12px 16px;
 		font-size: 0.9rem;

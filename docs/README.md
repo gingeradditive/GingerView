@@ -25,8 +25,9 @@ controllo delle proprie stampanti 3D basate su Klipper/Kalico + Moonraker.
 ## In breve
 
 - **Cos'è**: SPA SvelteKit (adapter statico) servita da nginx sulla stampante.
-- **Con cosa parla**: Moonraker (HTTP + WebSocket) e un servizio di rete separato per il Wi-Fi,
-  entrambi raggiunti **sulla stessa origine** tramite proxy nginx — nessuna porta da indicare.
+- **Con cosa parla**: Moonraker (HTTP + WebSocket) e G2-Service, il servizio di sistema
+  dell'host per rete e fuso orario (`/service/`), entrambi raggiunti **sulla stessa origine**
+  tramite proxy nginx — nessuna porta da indicare.
 - **Come si installa**: `sudo script/install.sh` → build statica servita da nginx sulla porta 80.
 - **Dove gira**: Raspberry Pi della stampante, all'interno dell'immagine di sistema (in prospettiva **G2OS**).
 

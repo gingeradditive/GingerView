@@ -184,6 +184,5 @@ diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
   visualizzazione senza una stampante collegata.
 - I toast riportano la sorgente (`klipper`, `moonraker`, `network`, `system`): utile per capire
   da quale integrazione arriva un problema.
-- `network-api.ts` logga in console ogni richiesta e risposta.
 - Con `duration: 0` un toast resta finché non viene chiuso a mano — comodo per riprodurre
   errori che altrimenti sparirebbero.

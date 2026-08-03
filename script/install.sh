@@ -18,8 +18,6 @@
 #   --port N               Port to serve GingerView on (default: 80)
 #   --moonraker-host HOST  Moonraker address (default: 127.0.0.1)
 #   --moonraker-port N     Moonraker port (default: 7125)
-#   --network-api-host H   Wi-Fi service address (default: 127.0.0.1)
-#   --network-api-port N   Wi-Fi service port (default: 8000)
 #   --printer-data PATH    printer_data dir (default: ~USER/printer_data)
 #   --purge-mainsail       Also delete Mainsail files and its update_manager entry
 #   --skip-packages        Do not apt-get install nginx
@@ -34,8 +32,6 @@ GINGERVIEW_USER="${GINGERVIEW_USER:-}"
 NGINX_PORT="${NGINX_PORT:-80}"
 MOONRAKER_HOST="${MOONRAKER_HOST:-127.0.0.1}"
 MOONRAKER_PORT="${MOONRAKER_PORT:-7125}"
-NETWORK_API_HOST="${NETWORK_API_HOST:-127.0.0.1}"
-NETWORK_API_PORT="${NETWORK_API_PORT:-8000}"
 PRINTER_DATA="${PRINTER_DATA:-}"
 PURGE_MAINSAIL=0
 SKIP_PACKAGES=0
@@ -44,6 +40,10 @@ PRINT_CONFIG=0
 
 SITE_NAME="gingerview"
 COMMON_CONF="/etc/nginx/conf.d/gingerview-common.conf"
+
+# Every other G2 service drops its own `location` here instead of having it
+# wired into this file: G2-Service installs `/service/` from its own repository.
+LOCATIONS_DIR="/etc/nginx/g2-locations.d"
 
 RED=$'\033[0;31m'; GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'; NC=$'\033[0m'
 info()  { echo "${YELLOW}ℹ${NC} $*"; }
@@ -67,8 +67,6 @@ while [ $# -gt 0 ]; do
 		--port)             NGINX_PORT="${2:?--port needs a number}"; shift 2 ;;
 		--moonraker-host)   MOONRAKER_HOST="${2:?--moonraker-host needs a host}"; shift 2 ;;
 		--moonraker-port)   MOONRAKER_PORT="${2:?--moonraker-port needs a number}"; shift 2 ;;
-		--network-api-host) NETWORK_API_HOST="${2:?--network-api-host needs a host}"; shift 2 ;;
-		--network-api-port) NETWORK_API_PORT="${2:?--network-api-port needs a number}"; shift 2 ;;
 		--printer-data)     PRINTER_DATA="${2:?--printer-data needs a path}"; shift 2 ;;
 		--purge-mainsail)   PURGE_MAINSAIL=1; shift ;;
 		--skip-packages)    SKIP_PACKAGES=1; shift ;;
@@ -79,7 +77,7 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-for n in NGINX_PORT MOONRAKER_PORT NETWORK_API_PORT; do
+for n in NGINX_PORT MOONRAKER_PORT; do
 	[[ "${!n}" =~ ^[0-9]+$ ]] && [ "${!n}" -ge 1 ] && [ "${!n}" -le 65535 ] \
 		|| fail "$n must be a port number between 1 and 65535, got '${!n}'"
 done
@@ -147,15 +145,14 @@ ${listen}
         proxy_read_timeout 86400;
     }
 
-    # --- Wi-Fi service ----------------------------------------------------
-    # '^~' so this wins over the Moonraker regex below, which also matches /api/.
-    location ^~ /api/wifi/ {
-        proxy_pass http://${NETWORK_API_HOST}:${NETWORK_API_PORT};
-        proxy_set_header Host \$http_host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Scheme \$scheme;
-    }
+    # --- Other G2 services -------------------------------------------------
+    # Each service installs its own location here from its own repository, so
+    # that changing one of its paths never means editing this file. G2-Service
+    # drops '/service/' in, using '^~' to win over the Moonraker regex below.
+    #
+    # A wildcard include matching no file is not an error, so this site still
+    # works on a machine where nothing else is installed.
+    include ${LOCATIONS_DIR}/*.conf;
 
     # --- Moonraker HTTP API -----------------------------------------------
     # /api/ is Moonraker's OctoPrint-compatible layer, which slicers probe.
@@ -235,7 +232,7 @@ info "web root:     $BUILD_DIR"
 info "user:         $GINGERVIEW_USER"
 info "listen:       :$NGINX_PORT"
 info "moonraker:    $MOONRAKER_HOST:$MOONRAKER_PORT"
-info "wifi service: $NETWORK_API_HOST:$NETWORK_API_PORT"
+info "locations:    $LOCATIONS_DIR/*.conf"
 
 # --------------------------------------------------------------------------
 # nginx package
@@ -325,6 +322,11 @@ else
 	SITE_ENABLED=""
 	mkdir -p /etc/nginx/conf.d
 fi
+
+# Created even when nothing installs into it: nginx does not mind a wildcard
+# include that matches nothing, but the directory being there is what makes the
+# arrangement discoverable to whoever installs the next service.
+mkdir -p "$LOCATIONS_DIR"
 
 # `map` lives in the http context. The variable is namespaced because MainsailOS
 # images may already define $connection_upgrade in conf.d/common_vars.conf.

@@ -91,7 +91,7 @@ ok "Build written to $ROOT/build"
 # A same-origin bundle contains no addresses at all. Anything found here would be
 # wrong on every printer except the one it was built for.
 
-BAKED="$(grep -rhoE 'VITE_(MOONRAKER|NETWORK_API)_[A-Z_]*:"[^"]+"' build/_app 2>/dev/null | sort -u || true)"
+BAKED="$(grep -rhoE 'VITE_(MOONRAKER|G2_SERVICE)_[A-Z_]*:"[^"]+"' build/_app 2>/dev/null | sort -u || true)"
 
 if [ -n "$BAKED" ]; then
 	warn "This bundle has configuration compiled in:"
