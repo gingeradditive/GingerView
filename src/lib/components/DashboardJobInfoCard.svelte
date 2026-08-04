@@ -1,11 +1,14 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import {
 		extractThumbnailFromGcode,
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type JobInfoStatus = { print_stats?: { state?: string; filename?: string } };
 
@@ -61,14 +64,7 @@
 		}
 	};
 
-	onMount(() => {
-		updateJobInfo();
-		const interval = window.setInterval(updateJobInfo, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	pollWhileVisible(pollSource, pollIntervalMs, updateJobInfo, () => visible);
 </script>
 
 <section class="job-info-card" aria-label="Print Job Info">

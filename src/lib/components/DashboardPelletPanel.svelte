@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type PelletStatus = {
 		print_stats?: { state?: string; filename?: string; filament_used?: number };
@@ -75,14 +78,7 @@
 		usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
 	};
 
-	onMount(() => {
-		updatePellet();
-		const interval = window.setInterval(updatePellet, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	pollWhileVisible(pollSource, pollIntervalMs, updatePellet, () => visible);
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">

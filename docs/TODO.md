@@ -74,18 +74,15 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 ## QA — Qualità e strumenti
 
 - `QA-4` Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` — pronto
-- `QA-5` Valutare test unitari o end-to-end sul frontend — pronto
 - `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
 
 ## ROB — Robustezza
 
-- `ROB-2` Sospendere il polling dei pannelli fuori dalla viewport del carosello — pronto
 - `ROB-3` Ottimizzare `fetchDirectoriesRecursive()`, che scarica tutto l'albero `gcodes` in sequenza — pronto
 - `ROB-4` Valutare `printer.objects.subscribe` via WebSocket al posto del polling HTTP — pronto
 - `ROB-6` `uploadFile()` in `moonraker-files.ts` passa il percorso completo nel campo `root` (`root=gcodes/sottocartella`), ma per Moonraker `root` può essere solo `gcodes` o `config` e la sottocartella va nel campo `path`: l'upload in una sottocartella dei G-code dovrebbe quindi fallire. Da verificare su una macchina reale e, se confermato, allineare a `writeConfigFile()` in `moonraker-config.ts`, che separa i due campi — pronto
 
 ## DEP — Build, deploy e G2-OS
 
-- `DEP-3` Scrivere il modulo GingerView per G2-OS, o concordare chi lo fa → Q30
 - `DEP-7` Aggiungere un controllo in CI o un hook che impedisca di committare un `build/` con indirizzi compilati dentro — pronto
 - `DEP-10` Documentare la configurazione `moonraker.conf` attesa (`authorization`, `update_manager`) — pronto

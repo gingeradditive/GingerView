@@ -6,7 +6,11 @@
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
@@ -135,15 +139,9 @@
 			targetY.set(y);
 			targetZ.set(z);
 		};
-
-		updateToolheadPosition();
-		const interval = window.setInterval(updateToolheadPosition, pollIntervalMs);
-
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
 	});
+
+	pollWhileVisible(pollSource, pollIntervalMs, updateToolheadPosition, () => visible);
 
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {

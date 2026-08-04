@@ -9,9 +9,10 @@ import { getMoonrakerApiUrl } from './config';
  * ha niente di nuovo da scrivere e lascia a schermo l'ultimo valore letto: numeri
  * plausibili, aggiornati a chissà quando. È il caso che questo modulo rende visibile.
  *
- * Il conteggio è **per sorgente** (un nome per pannello) perché i pannelli montano e
- * smontano con il carosello: una sorgente che sparisce non deve lasciare acceso
- * l'avviso, e una che fallisce da sola basta a spegnere la fiducia sui suoi dati.
+ * Il conteggio è **per sorgente** (un nome per pannello) perché i pannelli vanno e
+ * vengono — cambiano pagina, o escono dalla viewport del carosello e sospendono il
+ * polling (vedi `panel-poll.svelte.ts`): una sorgente che sparisce non deve lasciare
+ * acceso l'avviso, e una che fallisce da sola basta a spegnere la fiducia sui suoi dati.
  */
 
 /** Lo `status` di una query, quando al chiamante non serve dichiararne la forma. */
@@ -64,8 +65,9 @@ export function reportPollFailed(source: string): void {
 }
 
 /**
- * Da chiamare quando un pannello smonta: senza questo un pannello uscito di scena
- * mentre la macchina non rispondeva terrebbe acceso l'avviso per sempre.
+ * Da chiamare quando un pannello smonta o sospende il polling: senza questo un
+ * pannello uscito di scena mentre la macchina non rispondeva terrebbe acceso
+ * l'avviso per sempre.
  */
 export function forgetPollSource(source: string): void {
 	if (consecutiveFailures.delete(source)) publish();

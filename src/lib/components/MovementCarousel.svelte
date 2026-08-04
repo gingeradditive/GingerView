@@ -11,6 +11,10 @@
 	let selectedIndex = $state(0);
 	let visibleCount = $state(1);
 
+	// Le slide che si vedono adesso: come nella dashboard, il pannello fuori schermo
+	// resta montato e va sospeso a mano (vedi DashboardCarousel.svelte).
+	let slidesInView = $state<number[]>([]);
+
 	const options: EmblaOptionsType = {
 		axis: 'x',
 		loop: true,
@@ -20,10 +24,19 @@
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
 		emblaApi = event.detail;
 		selectedIndex = emblaApi.selectedScrollSnap();
+		slidesInView = emblaApi.slidesInView();
 		emblaApi.on('select', () => {
 			selectedIndex = emblaApi!.selectedScrollSnap();
 		});
+		emblaApi.on('slidesInView', () => {
+			slidesInView = emblaApi!.slidesInView();
+		});
+		emblaApi.on('reInit', () => {
+			slidesInView = emblaApi!.slidesInView();
+		});
 	};
+
+	const isInView = (index: number): boolean => slidesInView.includes(index);
 
 	const scrollTo = (index: number): void => {
 		emblaApi?.scrollTo(index);
@@ -51,7 +64,7 @@
 	<div class="embla" use:emblaCarouselSvelte={{ options, plugins: [] }} onemblaInit={onInit}>
 		<div class="embla__container">
 			<div class="embla__slide">
-				<ToolheadPosition />
+				<ToolheadPosition visible={isInView(0)} />
 			</div>
 			<div class="embla__slide">
 				<ExtrudeDialog />

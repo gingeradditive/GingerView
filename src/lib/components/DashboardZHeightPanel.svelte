@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type ZHeightStatus = {
 		print_stats?: { state?: string };
@@ -60,14 +63,7 @@
 		}
 	};
 
-	onMount(() => {
-		updateZHeight();
-		const interval = window.setInterval(updateZHeight, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	pollWhileVisible(pollSource, pollIntervalMs, updateZHeight, () => visible);
 </script>
 
 <section class="z-height-panel" aria-label="Z Height">

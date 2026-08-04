@@ -182,9 +182,12 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 
 ## Pattern ricorrenti
 
-**Polling con `onMount`.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
+**Polling di un pannello.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
 
 ```ts
+/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+let { visible = true }: { visible?: boolean } = $props();
+
 const pollSource = 'dashboard-<nome>';
 
 const update = async (): Promise<void> => {
@@ -193,14 +196,7 @@ const update = async (): Promise<void> => {
 	// …
 };
 
-onMount(() => {
-	update();
-	const interval = window.setInterval(update, pollIntervalMs);
-	return () => {
-		window.clearInterval(interval);
-		forgetPollSource(pollSource);
-	};
-});
+pollWhileVisible(pollSource, pollIntervalMs, update, () => visible);
 ```
 
 Gli intervalli sono definiti componente per componente (1000–3000 ms); l'elenco completo è in
@@ -210,8 +206,17 @@ Gli intervalli sono definiti componente per componente (1000–3000 ms); l'elenc
 richiesta, restituisce lo `status` (o `null`) e **registra l'esito**: è quello che alimenta
 l'avviso di dati non aggiornati descritto in
 [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). Il `pollSource` è il nome con
-cui il pannello si identifica, e `forgetPollSource()` lo ritira allo smontaggio: senza, un
-pannello uscito di scena mentre la macchina non rispondeva terrebbe acceso l'avviso per sempre.
+cui il pannello si identifica.
+
+`pollWhileVisible()` di [panel-poll.svelte.ts](../src/lib/services/panel-poll.svelte.ts) è il
+ciclo: un `$effect` che chiama `update()` subito e poi a intervalli, e che si ferma quando il
+pannello smonta **o esce dalla viewport**. Embla tiene tutte le slide nel DOM, quindi senza
+questo controllo i pannelli fuori schermo continuerebbero a interrogare Moonraker; i caroselli
+passano `visible` guardando `slidesInView()`. Rientrando in vista il ciclo riparte con una
+lettura immediata, così non si vedono numeri vecchi. Fermandosi chiama `forgetPollSource()`:
+senza, un pannello sospeso mentre la macchina non rispondeva terrebbe acceso l'avviso per
+sempre. I pannelli fuori dai caroselli (`DashboardControlPanel`, `DashboardQuickActionsPanel`,
+`DashboardPrintJobPanel`) non passano `visible` e restano sempre attivi.
 
 **Base URL condivisa.** I componenti importano `getMoonrakerApiUrl()` da
 `$lib/services/config` e concatenano il percorso (per le query di stato lo fa già

@@ -1,8 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type HeaterStatus = {
 		temperature?: number;
@@ -85,14 +88,7 @@
 		bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 	};
 
-	onMount(() => {
-		updateTemperatures();
-		const interval = window.setInterval(updateTemperatures, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	pollWhileVisible(pollSource, pollIntervalMs, updateTemperatures, () => visible);
 </script>
 
 <section class="temperature-panel" aria-label="Klipper temperature panel">

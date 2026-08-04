@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type FlowStatus = {
 		print_stats?: { state?: string };
@@ -51,14 +54,7 @@
 		}
 	};
 
-	onMount(() => {
-		updateFlow();
-		const interval = window.setInterval(updateFlow, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	pollWhileVisible(pollSource, pollIntervalMs, updateFlow, () => visible);
 </script>
 
 <section class="flow-panel" aria-label="Flow Rate">

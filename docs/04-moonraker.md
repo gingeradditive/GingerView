@@ -533,8 +533,12 @@ connessione cade a metà operazione.
 
 Ogni intervallo è una costante `pollIntervalMs` locale al componente. Nella dashboard sono
 attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al secondo verso
-Moonraker è la somma dei pannelli montati — anche di quelli fuori dalla viewport del carosello,
-che restano montati e continuano a interrogare.
+Moonraker è la somma dei pannelli **in vista**: quelli fuori dalla viewport del carosello
+restano montati ma sospendono il polling, e lo riprendono — con una lettura immediata — quando
+rientrano. Il ciclo è `pollWhileVisible()` in
+[panel-poll.svelte.ts](../src/lib/services/panel-poll.svelte.ts); i caroselli decidono chi si
+vede con `slidesInView()` di Embla. Sul telefono, dove si vede una slide alla volta, la
+dashboard fa quindi una richiesta ogni 1,5–3 s invece di cinque.
 
 ## Dati non aggiornati
 
@@ -558,7 +562,9 @@ e tiene fuori l'`any` che `QA-10` ha tolto dal progetto.
 Alla **seconda** richiesta persa consecutiva di una qualsiasi sorgente lo store `dataStale`
 passa a `true` e `staleSince` registra l'istante. Due e non una perché una richiesta persa
 capita (un riavvio di Moonraker, il wifi che sfarfalla) e l'avviso non deve lampeggiare a ogni
-singhiozzo; il conteggio è per sorgente perché i pannelli montano e smontano con il carosello.
+singhiozzo; il conteggio è per sorgente perché i pannelli vanno e vengono — cambiano pagina, o
+escono dalla viewport del carosello e sospendono il polling, e in entrambi i casi la sorgente
+viene dimenticata.
 
 [StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte), montato nel layout,
 mostra allora una pillola in alto — _"Data not updating — the printer stopped answering, showing
