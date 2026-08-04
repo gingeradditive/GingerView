@@ -6,10 +6,9 @@
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type ToolheadTestWindow = Window & {
@@ -41,8 +40,9 @@
 		stepper_enable?: { steppers?: Record<string, boolean> };
 	};
 
-	const pollSource = 'movement-toolhead';
-	const pollIntervalMs = 1000;
+	const dataSource = 'movement-toolhead';
+	const dataQuery =
+		'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers';
 
 	const clamp = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
 
@@ -85,13 +85,7 @@
 	const pointsToString = (...points: { x: number; y: number }[]): string =>
 		points.map((point) => `${point.x},${point.y}`).join(' ');
 
-	const updateToolheadPosition = async (): Promise<void> => {
-		const status = await queryPrinterObjects<ToolheadStatus>(
-			pollSource,
-			'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers'
-		);
-		if (!status) return;
-
+	const updateToolheadPosition = (status: ToolheadStatus): void => {
 		const toolhead = status.toolhead;
 		if (toolhead && Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
 			maxX = Number(toolhead.axis_maximum[0]) || maxX;
@@ -141,7 +135,12 @@
 		};
 	});
 
-	pollWhileVisible(pollSource, pollIntervalMs, updateToolheadPosition, () => visible);
+	subscribeWhileVisible<ToolheadStatus>(
+		dataSource,
+		() => dataQuery,
+		updateToolheadPosition,
+		() => visible
+	);
 
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {

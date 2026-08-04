@@ -4,16 +4,15 @@
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type JobInfoStatus = { print_stats?: { state?: string; filename?: string } };
 
-	const pollSource = 'dashboard-job-info';
-	const pollIntervalMs = 2000;
+	const dataSource = 'dashboard-job-info';
+	const dataQuery = 'print_stats';
 
 	let jobName = $state('--');
 	let jobMaterial = $state('');
@@ -41,10 +40,7 @@
 		}
 	};
 
-	const updateJobInfo = async (): Promise<void> => {
-		const status = await queryPrinterObjects<JobInfoStatus>(pollSource, 'print_stats');
-		if (!status) return;
-
+	const updateJobInfo = (status: JobInfoStatus): void => {
 		// Kalico keeps `print_stats.filename` after a job ends — `complete`,
 		// `cancelled` and `error` all still carry the name of the last file, and
 		// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
@@ -64,7 +60,12 @@
 		}
 	};
 
-	pollWhileVisible(pollSource, pollIntervalMs, updateJobInfo, () => visible);
+	subscribeWhileVisible<JobInfoStatus>(
+		dataSource,
+		() => dataQuery,
+		updateJobInfo,
+		() => visible
+	);
 </script>
 
 <section class="job-info-card" aria-label="Print Job Info">

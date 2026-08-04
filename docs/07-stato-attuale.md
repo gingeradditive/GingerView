@@ -60,9 +60,9 @@ scambi un segnaposto per un bug.
   [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo). **Non ancora
   provato su hardware reale** (`UI-8`).
 - Avviso di dati non aggiornati
-  ([StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte)): dopo due poll persi
-  di fila da un qualsiasi pannello compare una pillola in alto che dice da quanto i valori a
-  schermo sono fermi, e sparisce da sola alla prima risposta buona. Sta zitta quando Kalico è
+  ([StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte)): quattro secondi dopo
+  che la sottoscrizione allo stato è caduta compare una pillola in alto che dice da quanto i
+  valori a schermo sono fermi, e sparisce da sola al primo aggiornamento. Sta zitta quando Kalico è
   fermo, perché lì parla già `KlipperDownOverlay`. Vedi
   [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). **Non ancora provato su
   hardware reale.**
@@ -148,8 +148,8 @@ Resta la presentazione: le card sono numerate 1..n e non hanno etichette. Su Q27
 di **lasciarla così**, perché senza etichette è già leggibile visivamente.
 
 Finché la macchina non risponde le card non vengono disegnate: il numero di zone non si
-indovina. Il bed viene letto comunque, quindi il pannello non resta vuoto, e il polling
-riprova a ogni giro.
+indovina. Il bed viene letto comunque, quindi il pannello non resta vuoto, e la richiesta viene
+ritentata ogni cinque secondi finché la macchina non risponde.
 
 In dashboard restano **in sola lettura**: non c'è un termostato manuale. Il flusso di
 estrusione fa eccezione (vedi sopra): imposta e attende le temperature, ma solo come passo

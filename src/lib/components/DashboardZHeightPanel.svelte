@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type ZHeightStatus = {
@@ -11,8 +10,8 @@
 		gcode_move?: { gcode_position?: number[] };
 	};
 
-	const pollSource = 'dashboard-z-height';
-	const pollIntervalMs = 1500;
+	const dataSource = 'dashboard-z-height';
+	const dataQuery = 'toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state';
 	const totalSections = 10;
 	const sectionHeight = 100;
 
@@ -34,13 +33,7 @@
 		})
 	);
 
-	const updateZHeight = async (): Promise<void> => {
-		const status = await queryPrinterObjects<ZHeightStatus>(
-			pollSource,
-			'toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state'
-		);
-		if (!status) return;
-
+	const updateZHeight = (status: ZHeightStatus): void => {
 		const printState = status.print_stats?.state ?? 'standby';
 		isIdle = printState !== 'printing' && printState !== 'paused';
 
@@ -63,7 +56,12 @@
 		}
 	};
 
-	pollWhileVisible(pollSource, pollIntervalMs, updateZHeight, () => visible);
+	subscribeWhileVisible<ZHeightStatus>(
+		dataSource,
+		() => dataQuery,
+		updateZHeight,
+		() => visible
+	);
 </script>
 
 <section class="z-height-panel" aria-label="Z Height">

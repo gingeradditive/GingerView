@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type FlowStatus = {
@@ -11,8 +10,8 @@
 		gcode_move?: { speed?: number; extrude_factor?: number };
 	};
 
-	const pollSource = 'dashboard-flow';
-	const pollIntervalMs = 1500;
+	const dataSource = 'dashboard-flow';
+	const dataQuery = 'gcode_move&motion_report&print_stats';
 	const minValue = 0;
 	const maxValue = 800;
 	const radius = 88;
@@ -25,13 +24,7 @@
 	let progress = $derived((clampedValue - minValue) / (maxValue - minValue));
 	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
 
-	const updateFlow = async (): Promise<void> => {
-		const status = await queryPrinterObjects<FlowStatus>(
-			pollSource,
-			'gcode_move&motion_report&print_stats'
-		);
-		if (!status) return;
-
+	const updateFlow = (status: FlowStatus): void => {
 		const printState = status.print_stats?.state ?? 'standby';
 		isIdle = printState !== 'printing' && printState !== 'paused';
 
@@ -54,7 +47,12 @@
 		}
 	};
 
-	pollWhileVisible(pollSource, pollIntervalMs, updateFlow, () => visible);
+	subscribeWhileVisible<FlowStatus>(
+		dataSource,
+		() => dataQuery,
+		updateFlow,
+		() => visible
+	);
 </script>
 
 <section class="flow-panel" aria-label="Flow Rate">

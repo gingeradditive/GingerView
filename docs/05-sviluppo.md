@@ -226,13 +226,13 @@ diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
 
 ## Aggiungere un pannello alla dashboard
 
-1. Crea `src/lib/components/Dashboard<Nome>Panel.svelte` seguendo il pattern di polling
-   descritto in [02 — Architettura](02-architettura.md#pattern-ricorrenti): lo stato si legge
-   con `queryPrinterObjects()`, non con una `fetch` a mano, altrimenti i suoi fallimenti non
-   arrivano all'avviso di dati non aggiornati.
+1. Crea `src/lib/components/Dashboard<Nome>Panel.svelte` seguendo il pattern descritto in
+   [02 — Architettura](02-architettura.md#pattern-ricorrenti): lo stato si riceve con
+   `subscribeWhileVisible()`, non con una `fetch` a mano, altrimenti il pannello non entra
+   nella sottoscrizione condivisa e i suoi dati fermi non arrivano all'avviso.
 2. Aggiungi una `<div class="embla__slide">` in
    [DashboardCarousel.svelte](../src/lib/components/DashboardCarousel.svelte), passando al
-   pannello `visible={isInView(<indice della slide>)}`: è così che il polling si ferma quando
+   pannello `visible={isInView(<indice della slide>)}`: è così che l'iscrizione si ferma quando
    la slide esce dalla viewport.
 3. Aggiorna `pageCount` (usato per i pallini di navigazione) e verifica `startIndex`, che
    determina quale slide è visibile all'apertura.

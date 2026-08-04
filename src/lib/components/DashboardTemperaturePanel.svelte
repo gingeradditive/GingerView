@@ -1,10 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type HeaterStatus = {
@@ -12,8 +12,16 @@
 		target?: number;
 	};
 
-	const pollSource = 'dashboard-temperature';
-	const pollIntervalMs = 1500;
+	const dataSource = 'dashboard-temperature';
+
+	/**
+	 * Ogni quanto richiedere la lista delle zone quando la macchina non l'ha data.
+	 * Succede mentre Klippy si riavvia: prima l'iscrizione chiedeva le zone a ogni
+	 * poll e riprovava da sé, ora che non c'è più un poll il tentativo va rifatto
+	 * qui — a passo lento, perché l'unica cosa che può cambiare la risposta è un
+	 * riavvio di Klippy.
+	 */
+	const zonesRetryMs = 5000;
 
 	// The heated zones of the one nozzle, as the machine declares them: four on
 	// the G2, three on the G1 — see moonraker-zones.ts. Empty until it answers,
@@ -58,18 +66,35 @@
 		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
 	};
 
+	// Il bed c'è sempre: finché le zone non si sanno il pannello è iscritto solo a
+	// quello, e si riscrive da sé — la query cambia e l'iscrizione si rifà —
+	// quando la macchina risponde.
 	const getQuery = (): string => [...zoneKeys, 'heater_bed'].join('&');
 
-	const updateTemperatures = async (): Promise<void> => {
+	onMount(() => {
+		let stopped = false;
+		let retry: ReturnType<typeof setTimeout> | null = null;
+
 		// Cached after the first answer, so this costs one request until the
 		// machine replies and nothing afterwards (see moonraker-zones.ts).
-		if (zoneKeys.length === 0) {
-			zoneKeys = await loadNozzleZones();
-		}
+		const loadZones = async (): Promise<void> => {
+			const zones = await loadNozzleZones();
+			if (stopped) return;
+			if (zones.length > 0) {
+				zoneKeys = zones;
+				return;
+			}
+			retry = setTimeout(loadZones, zonesRetryMs);
+		};
+		loadZones();
 
-		const status = await queryPrinterObjects<Record<string, HeaterStatus>>(pollSource, getQuery());
-		if (!status) return;
+		return () => {
+			stopped = true;
+			if (retry !== null) clearTimeout(retry);
+		};
+	});
 
+	const updateTemperatures = (status: Record<string, HeaterStatus>): void => {
 		extruderTemperatures = zoneKeys.map((key) => {
 			const temperature = status[key]?.temperature;
 			return typeof temperature === 'number' ? temperature : null;
@@ -88,7 +113,12 @@
 		bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
 	};
 
-	pollWhileVisible(pollSource, pollIntervalMs, updateTemperatures, () => visible);
+	subscribeWhileVisible<Record<string, HeaterStatus>>(
+		dataSource,
+		getQuery,
+		updateTemperatures,
+		() => visible
+	);
 </script>
 
 <section class="temperature-panel" aria-label="Klipper temperature panel">

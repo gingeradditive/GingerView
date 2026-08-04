@@ -77,8 +77,8 @@ build/                      output della build — committato nel repo (vedi doc
   una destinazione ma un comando. Rosso pieno mentre la macchina è in marcia, si inverte in un
   pulsante di firmware restart quando Kalico è fermo (vedi
   [04 — Emergency stop](04-moonraker.md#emergency-stop)).
-- **`<StaleDataBanner />`** — pillola fissa in alto che compare quando il polling dei pannelli
-  smette di rispondere: i valori a schermo restano, ma dichiarati vecchi e con da quanto (vedi
+- **`<StaleDataBanner />`** — pillola fissa in alto che compare quando lo stato dei pannelli
+  smette di arrivare: i valori a schermo restano, ma dichiarati vecchi e con da quanto (vedi
   [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati)).
 - **`<KlipperDownOverlay />`** — avviso non chiudibile che copre le pagine operative quando Kalico
   è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
@@ -182,46 +182,53 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 
 ## Pattern ricorrenti
 
-**Polling di un pannello.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
+**Stato di un pannello.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
 
 ```ts
-/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 let { visible = true }: { visible?: boolean } = $props();
 
-const pollSource = 'dashboard-<nome>';
+const dataSource = 'dashboard-<nome>';
+const dataQuery = 'print_stats';
 
-const update = async (): Promise<void> => {
-	const status = await queryPrinterObjects(pollSource, 'print_stats');
-	if (!status) return; // niente di nuovo: resta a schermo l'ultima lettura
+const update = (status: PanelStatus): void => {
 	// …
 };
 
-pollWhileVisible(pollSource, pollIntervalMs, update, () => visible);
+subscribeWhileVisible<PanelStatus>(
+	dataSource,
+	() => dataQuery,
+	update,
+	() => visible
+);
 ```
 
-Gli intervalli sono definiti componente per componente (1000–3000 ms); l'elenco completo è in
-[04 — Integrazione Moonraker](04-moonraker.md#frequenze-di-polling).
+Non c'è un intervallo: `update()` viene chiamata quando Moonraker segnala che qualcosa è
+cambiato, e una volta subito con l'ultimo stato noto. `PanelStatus` è la forma che il pannello
+si aspetta, dichiarata in cima al componente accanto alla query che la chiede: non è
+verificabile a compile time (è JSON di Moonraker) ma dice quali campi quel pannello legge, e
+tiene fuori l'`any` che `QA-10` ha tolto dal progetto.
 
-`queryPrinterObjects()` di [moonraker-poll.ts](../src/lib/services/moonraker-poll.ts) fa la
-richiesta, restituisce lo `status` (o `null`) e **registra l'esito**: è quello che alimenta
-l'avviso di dati non aggiornati descritto in
-[04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). Il `pollSource` è il nome con
-cui il pannello si identifica.
+`subscribeWhileVisible()` di
+[panel-subscription.svelte.ts](../src/lib/services/panel-subscription.svelte.ts) è un `$effect`
+che iscrive il pannello a [moonraker-subscription.ts](../src/lib/services/moonraker-subscription.ts)
+e lo disiscrive quando smonta **o esce dalla viewport**. Embla tiene tutte le slide nel DOM,
+quindi senza questo controllo Moonraker manderebbe aggiornamenti che nessuno disegna; i caroselli
+passano `visible` guardando `slidesInView()`. Rientrando in vista il pannello riceve subito lo
+stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai caroselli
+(`DashboardControlPanel`, `DashboardQuickActionsPanel`, `DashboardPrintJobPanel`) non passano
+`visible` e restano sempre iscritti.
 
-`pollWhileVisible()` di [panel-poll.svelte.ts](../src/lib/services/panel-poll.svelte.ts) è il
-ciclo: un `$effect` che chiama `update()` subito e poi a intervalli, e che si ferma quando il
-pannello smonta **o esce dalla viewport**. Embla tiene tutte le slide nel DOM, quindi senza
-questo controllo i pannelli fuori schermo continuerebbero a interrogare Moonraker; i caroselli
-passano `visible` guardando `slidesInView()`. Rientrando in vista il ciclo riparte con una
-lettura immediata, così non si vedono numeri vecchi. Fermandosi chiama `forgetPollSource()`:
-senza, un pannello sospeso mentre la macchina non rispondeva terrebbe acceso l'avviso per
-sempre. I pannelli fuori dai caroselli (`DashboardControlPanel`, `DashboardQuickActionsPanel`,
-`DashboardPrintJobPanel`) non passano `visible` e restano sempre attivi.
+La query è una **funzione** e non una stringa perché non tutti i pannelli sanno da subito cosa
+chiedere: `DashboardTemperaturePanel` scopre le zone dell'ugello dalla macchina, e quando la
+risposta arriva l'iscrizione si rifà da sé. Il resto — una sola connessione, l'unione di quello
+che i pannelli chiedono, la cache che rende complete le notifiche differenziali — è descritto in
+[04 — Stato in push](04-moonraker.md#stato-in-push).
 
 **Base URL condivisa.** I componenti importano `getMoonrakerApiUrl()` da
-`$lib/services/config` e concatenano il percorso (per le query di stato lo fa già
-`queryPrinterObjects()`, quindi l'import serve solo per gli altri endpoint — l'invio di G-code,
-per esempio):
+`$lib/services/config` e concatenano il percorso (lo stato dei pannelli non passa di qui —
+arriva dal WebSocket — quindi l'import serve per gli altri endpoint, l'invio di G-code per
+esempio):
 
 ```ts
 const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
@@ -239,10 +246,10 @@ non passa dagli store.
 
 **Errori come toast.** I servizi non propagano errori all'interfaccia: chiamano
 `toastActions.error(...)` e poi rilanciano (o restituiscono `null`). I componenti della
-dashboard, al contrario, non fanno nessun rumore per il singolo fallimento di polling — sarebbe
-un toast ogni secondo e mezzo con la stampante offline: l'esito finisce in `moonraker-poll.ts`,
-che dopo due fallimenti consecutivi accende **un solo** avviso di dati fermi per tutta
-l'applicazione.
+dashboard, al contrario, non fanno nessun rumore quando lo stato non arriva — sarebbe un toast
+per pannello a ogni singhiozzo della rete: la salute della connessione la conosce
+`moonraker-subscription.ts`, che quattro secondi dopo averla persa accende **un solo** avviso di
+dati fermi per tutta l'applicazione.
 
 **Modali dentro `MovementCarousel`: `use:portal`.** Embla applica un `transform` inline al
 proprio track per l'animazione dello slide, il che crea un nuovo containing block per qualsiasi

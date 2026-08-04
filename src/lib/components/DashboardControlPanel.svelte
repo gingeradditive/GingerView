@@ -4,7 +4,7 @@
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
 	type ControlStatus = {
@@ -14,8 +14,8 @@
 		'led LED_CAMERA'?: { color_data?: number[][] };
 	};
 
-	const pollSource = 'dashboard-control';
-	const pollIntervalMs = 2000;
+	const dataSource = 'dashboard-control';
+	const dataQuery = 'print_stats&virtual_sdcard&fan&led LED_CAMERA';
 	const circumference = 2 * Math.PI * 16;
 
 	let elapsed = $state('--:--:--');
@@ -71,13 +71,7 @@
 		}
 	};
 
-	const updateStatus = async (): Promise<void> => {
-		const status = await queryPrinterObjects<ControlStatus>(
-			pollSource,
-			'print_stats&virtual_sdcard&fan&led LED_CAMERA'
-		);
-		if (!status) return;
-
+	const updateStatus = (status: ControlStatus): void => {
 		const printStats = status.print_stats;
 		const vsd = status.virtual_sdcard;
 
@@ -178,13 +172,9 @@
 
 	onMount(() => {
 		ensurePrinterTimezone();
-		updateStatus();
-		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
 	});
+
+	subscribeWhileVisible<ControlStatus>(dataSource, () => dataQuery, updateStatus);
 </script>
 
 <section class="control-panel" aria-label="Print Control">

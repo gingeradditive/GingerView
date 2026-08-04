@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { mdiCloudOffOutline } from '@mdi/js';
-	import { dataStale, staleSince } from '$lib/services/moonraker-poll';
+	import { dataStale, staleSince } from '$lib/services/moonraker-subscription';
 	import { isKlippyDown, klippyState } from '$lib/services/moonraker-notifier';
 
 	/**

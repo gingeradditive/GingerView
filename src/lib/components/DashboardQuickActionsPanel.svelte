@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
 	type QuickActionsStatus = {
@@ -10,8 +9,8 @@
 		'led LED_CAMERA'?: { color_data?: number[][] };
 	};
 
-	const pollSource = 'dashboard-quick-actions';
-	const pollIntervalMs = 2000;
+	const dataSource = 'dashboard-quick-actions';
+	const dataQuery = 'fan&led LED_CAMERA';
 	const circumference = 2 * Math.PI * 16;
 
 	let fanSpeed = $state(0);
@@ -35,10 +34,7 @@
 		}
 	};
 
-	const updateStatus = async (): Promise<void> => {
-		const status = await queryPrinterObjects<QuickActionsStatus>(pollSource, 'fan&led LED_CAMERA');
-		if (!status) return;
-
+	const updateStatus = (status: QuickActionsStatus): void => {
 		const fan = status.fan;
 		if (fan) {
 			fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
@@ -89,14 +85,7 @@
 		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`);
 	};
 
-	onMount(() => {
-		updateStatus();
-		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
-	});
+	subscribeWhileVisible<QuickActionsStatus>(dataSource, () => dataQuery, updateStatus);
 </script>
 
 <section class="quick-actions-panel" aria-label="Quick Actions">

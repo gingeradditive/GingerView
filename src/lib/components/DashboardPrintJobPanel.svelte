@@ -8,15 +8,15 @@
 	} from '$lib/services/moonraker-files';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
-	import { forgetPollSource, queryPrinterObjects } from '$lib/services/moonraker-poll';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
 	type PrintJobStatus = {
 		print_stats?: { state?: string; filename?: string; print_duration?: number };
 		virtual_sdcard?: { progress?: number };
 	};
 
-	const pollSource = 'dashboard-print-job';
-	const pollIntervalMs = 2000;
+	const dataSource = 'dashboard-print-job';
+	const dataQuery = 'print_stats&virtual_sdcard';
 
 	let jobName = $state('--');
 	let jobMaterial = $state('');
@@ -70,13 +70,7 @@
 		}
 	};
 
-	const updatePrintJob = async (): Promise<void> => {
-		const status = await queryPrinterObjects<PrintJobStatus>(
-			pollSource,
-			'print_stats&virtual_sdcard'
-		);
-		if (!status) return;
-
+	const updatePrintJob = (status: PrintJobStatus): void => {
 		const printStats = status.print_stats;
 		const vsd = status.virtual_sdcard;
 
@@ -144,13 +138,9 @@
 
 	onMount(() => {
 		ensurePrinterTimezone();
-		updatePrintJob();
-		const interval = window.setInterval(updatePrintJob, pollIntervalMs);
-		return () => {
-			window.clearInterval(interval);
-			forgetPollSource(pollSource);
-		};
 	});
+
+	subscribeWhileVisible<PrintJobStatus>(dataSource, () => dataQuery, updatePrintJob);
 </script>
 
 <section class="print-job-panel" aria-label="Print Job Info">

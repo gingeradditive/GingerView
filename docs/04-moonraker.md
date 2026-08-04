@@ -1,8 +1,9 @@
 # 04 — Integrazione Moonraker
 
 GingerView parla con Moonraker in due modi: **HTTP** per interrogazioni e comandi puntuali,
-**WebSocket** per le notifiche push e per la console. Non usa la sottoscrizione
-`printer.objects.subscribe`: lo stato viene letto in polling.
+**WebSocket** per lo stato della stampante, per le notifiche push e per la console. Lo stato
+degli oggetti Klipper arriva dalla sottoscrizione `printer.objects.subscribe`, non dal polling
+di `/printer/objects/query` (vedi [Stato in push](#stato-in-push)).
 
 In produzione tutti i percorsi elencati qui sotto sono **relativi all'origine della pagina** e
 vengono inoltrati a Moonraker da nginx (vedi [03 — Configurazione](03-configurazione.md)).
@@ -12,28 +13,34 @@ Le tabelle riportano quindi il percorso, non un URL assoluto.
 
 ### Stato della stampante
 
-| Endpoint                         | Usato da                | Scopo                                                    |
-| -------------------------------- | ----------------------- | -------------------------------------------------------- |
-| `GET /printer/objects/query?...` | quasi tutti i pannelli  | Lettura dello stato degli oggetti Klipper                |
-| `GET /printer/objects/list`      | `moonraker-zones.ts`    | Quali oggetti esistono, per ricavare le zone dell'ugello |
-| `GET /printer/info`              | `moonraker-notifier.ts` | Dettaglio dello stato in caso di errore/shutdown         |
-| `GET /server/info`               | `moonraker-notifier.ts` | Warning, componenti falliti, stato di Klippy             |
+| Endpoint                         | Usato da                             | Scopo                                                    |
+| -------------------------------- | ------------------------------------ | -------------------------------------------------------- |
+| `GET /printer/objects/query?...` | `movementStore`, pagine Impostazioni | Letture puntuali, fuori dalla sottoscrizione             |
+| `GET /printer/objects/list`      | `moonraker-zones.ts`                 | Quali oggetti esistono, per ricavare le zone dell'ugello |
+| `GET /printer/info`              | `moonraker-notifier.ts`              | Dettaglio dello stato in caso di errore/shutdown         |
+| `GET /server/info`               | `moonraker-notifier.ts`              | Warning, componenti falliti, stato di Klippy             |
 
-Query per componente:
+I pannelli non compaiono qui: il loro stato arriva dalla sottoscrizione WebSocket. Restano su
+HTTP le letture **una tantum** o di pagine che hanno un ciclo proprio:
 
-| Componente                                    | Oggetti interrogati                                                                                |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `DashboardControlPanel`                       | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                           |
-| `DashboardPrintJobPanel`                      | `print_stats`, `virtual_sdcard`                                                                    |
-| `DashboardJobInfoCard`                        | `print_stats`                                                                                      |
-| `DashboardPelletPanel`                        | `print_stats`                                                                                      |
-| `DashboardTemperaturePanel`                   | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone      |
-| `DashboardFlowPanel`                          | `gcode_move`, `motion_report`, `print_stats`                                                       |
-| `DashboardZHeightPanel`                       | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                 |
-| `DashboardQuickActionsPanel`                  | `fan`, `led LED_CAMERA`                                                                            |
-| `ToolheadPosition`                            | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers` (polling) |
-| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento)            |
-| `/settings/update`                            | `print_stats` (polling, solo per sapere se c'è una stampa in corso)                                |
+| Componente                                    | Oggetti interrogati                                                                     |
+| --------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `movementStore` (sequenza di `ExtrudeDialog`) | `toolhead=axis_maximum` (una tantum, per calcolare il centro X prima dello spostamento) |
+| `/settings/update`                            | `print_stats` (polling, solo per sapere se c'è una stampa in corso)                     |
+
+Oggetti sottoscritti per componente:
+
+| Componente                   | Oggetti sottoscritti                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                      |
+| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                               |
+| `DashboardJobInfoCard`       | `print_stats`                                                                                 |
+| `DashboardPelletPanel`       | `print_stats`                                                                                 |
+| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone |
+| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                  |
+| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`            |
+| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                       |
+| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`      |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -56,7 +63,7 @@ Due conseguenze pratiche:
 
 L'elenco viene chiesto una volta e tenuto in cache, perché cambia solo con `printer.cfg`; un
 errore invece **non** viene messo in cache, così un Klippy irraggiungibile o in avvio viene
-ritentato al giro di polling successivo. `requestRestart()` in
+ritentato dal chiamante. `requestRestart()` in
 [moonraker-printer.ts](../src/lib/services/moonraker-printer.ts) svuota la cache: dopo un
 riavvio Klipper riparte con la configurazione che c'è adesso, che il config editor può avere
 appena cambiato.
@@ -65,7 +72,7 @@ Chi consuma l'elenco:
 
 | Consumatore                                  | Cosa succede se l'elenco non si riesce a leggere                                              |
 | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `DashboardTemperaturePanel`                  | nessuna card estrusore (il bed viene letto lo stesso), riprovato a ogni polling               |
+| `DashboardTemperaturePanel`                  | nessuna card estrusore (il bed viene letto lo stesso), riprovato ogni 5 secondi               |
 | `ExtrudeDialog` (popup "Custom temperature") | il popup non si apre e lo dice con un toast: non saprebbe quanti campi mostrare               |
 | `movementStore` (sequenza di estrusione)     | la sequenza si ferma in fase `heating` con un toast, invece di indovinare quali zone scaldare |
 
@@ -446,7 +453,7 @@ Se entrambe falliscono si usa il placeholder [static/error-thumbnail.png](../sta
 
 ## WebSocket
 
-Ci sono **tre** utilizzi distinti del WebSocket, che non condividono una connessione comune.
+Ci sono **quattro** utilizzi distinti del WebSocket, che non condividono una connessione comune.
 
 ### 1. `moonraker-notifier.ts` — notifiche globali
 
@@ -517,65 +524,92 @@ sottoscrizione, e l'output degli aggiornamenti interessa solo a questa pagina. R
 5 secondi, senza limite di tentativi — serve perché aggiornare Moonraker lo fa riavviare, e la
 connessione cade a metà operazione.
 
-## Frequenze di polling
+### 4. `moonraker-subscription.ts` — stato della stampante
 
-| Componente                                                                 | Intervallo |
+Aperta al primo pannello che si iscrive e viva per tutta la sessione. Si identifica come il
+notifier, poi manda `printer.objects.subscribe` e riceve `notify_status_update`. È l'argomento
+della sezione [Stato in push](#stato-in-push).
+
+Non riusa la connessione del notifier per la stessa ragione della `/settings/update`: la
+sottoscrizione è una proprietà della connessione, e una connessione che serve a due padroni —
+uno che ascolta e basta, uno che sottoscrive e va riallineato a ogni cambio di pannelli — è più
+difficile da tenere corretta di due connessioni che fanno una cosa ciascuna.
+
+## Stato in push
+
+Lo stato degli oggetti Klipper non si interroga: si sottoscrive. `printer.objects.subscribe`
+sul WebSocket dichiara una volta cosa interessa, e da lì in poi Moonraker manda un
+`notify_status_update` **solo quando qualcosa cambia**, con dentro i soli campi cambiati. Con la
+macchina ferma il traffico è quasi nullo; mentre stampa i numeri si muovono al passo di Klipper
+invece che a quello di un timer.
+
+La sottoscrizione è una proprietà della **connessione**: Moonraker ne tiene una sola per
+WebSocket e ogni `subscribe` sostituisce la precedente.
+[moonraker-subscription.ts](../src/lib/services/moonraker-subscription.ts) è quindi il registro
+unico dei pannelli attivi — tiene l'unione di quello che chiedono, la rimanda a ogni cambio di
+scena e ridistribuisce a ciascuno la sua fetta:
+
+| Elemento              | Ruolo                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| registro dei pannelli | un'iscrizione per nome (`dashboard-flow`, `movement-toolhead`, …), con gli oggetti che vuole  |
+| unione                | quello che si chiede davvero a Moonraker; chi vuole un oggetto intero vince sui campi singoli |
+| cache dello stato     | l'ultimo valore noto di ogni oggetto, campo per campo                                         |
+
+La cache è ciò che rende compatibili notifiche **differenziali** e pannelli che vogliono lo
+stato intero: `onStatus` riceve sempre tutti gli oggetti chiesti, così il pannello scrive i suoi
+valori senza distinguere il primo aggiornamento dai successivi. È anche ciò che permette a un
+pannello che monta ora — o che rientra nella viewport — di disegnarsi subito, senza aspettare
+che la macchina si muova.
+
+I pannelli fuori dalla viewport del carosello si disiscrivono e rientrando si riscrivono: Embla
+li tiene montati, ma la sottoscrizione segue quello che si vede. Il ciclo è
+`subscribeWhileVisible()` in
+[panel-subscription.svelte.ts](../src/lib/services/panel-subscription.svelte.ts); i caroselli
+decidono chi si vede con `slidesInView()` di Embla.
+
+La connessione si apre al primo pannello e resta aperta; senza pannelli in ascolto si manda una
+sottoscrizione vuota — che per Moonraker è la disdetta — invece di chiuderla, perché la pagina
+successiva la ritrova pronta. Riconnessione a 1, 2, 5, 10 secondi, senza limite di tentativi. Un
+`subscribe` rifiutato perché Klippy non è pronto (riavvio, shutdown, errore di configurazione)
+viene ritentato ogni 5 secondi, e comunque subito quando `klippyState` torna `ready`.
+
+Restano in polling HTTP le pagine di Impostazioni, che hanno un ciclo proprio:
+
+| Pagina                                                                     | Intervallo |
 | -------------------------------------------------------------------------- | ---------- |
-| `ToolheadPosition`                                                         | 1000 ms    |
-| `DashboardFlowPanel`                                                       | 1500 ms    |
-| `DashboardTemperaturePanel`                                                | 1500 ms    |
-| `DashboardZHeightPanel`                                                    | 1500 ms    |
-| `DashboardControlPanel`                                                    | 2000 ms    |
-| `DashboardPrintJobPanel`                                                   | 2000 ms    |
-| `DashboardJobInfoCard`                                                     | 2000 ms    |
-| `DashboardQuickActionsPanel`                                               | 2000 ms    |
-| `DashboardPelletPanel`                                                     | 3000 ms    |
 | `/settings/network` (stato rete)                                           | 5000 ms    |
 | `/settings/update` (stato stampa, per bloccare gli update)                 | 5000 ms    |
 | `/settings/config-editor` (`/printer/info` + `print_stats`, due richieste) | 5000 ms    |
 
-Ogni intervallo è una costante `pollIntervalMs` locale al componente. Nella dashboard sono
-attivi contemporaneamente più pannelli, quindi il numero di richieste HTTP al secondo verso
-Moonraker è la somma dei pannelli **in vista**: quelli fuori dalla viewport del carosello
-restano montati ma sospendono il polling, e lo riprendono — con una lettura immediata — quando
-rientrano. Il ciclo è `pollWhileVisible()` in
-[panel-poll.svelte.ts](../src/lib/services/panel-poll.svelte.ts); i caroselli decidono chi si
-vede con `slidesInView()` di Embla. Sul telefono, dove si vede una slide alla volta, la
-dashboard fa quindi una richiesta ogni 1,5–3 s invece di cinque.
-
 ## Dati non aggiornati
 
-Quando una query fallisce il pannello non ha niente da scrivere e lascia a schermo l'ultima
-lettura riuscita. È il comportamento giusto — quei numeri sono spesso ancora l'informazione più
-utile disponibile — ma da solo è disonesto: un valore fermo da dieci minuti e uno appena letto
-si assomigliano.
+Quando lo stato smette di arrivare il pannello non ha niente da scrivere e lascia a schermo
+l'ultima lettura riuscita. È il comportamento giusto — quei numeri sono spesso ancora
+l'informazione più utile disponibile — ma da solo è disonesto: un valore fermo da dieci minuti e
+uno appena arrivato si assomigliano.
 
-[moonraker-poll.ts](../src/lib/services/moonraker-poll.ts) tiene il conto. Ogni pannello passa
-per `queryPrinterObjects<T>(pollSource, query)`, che fa `GET /printer/objects/query?<query>`,
-restituisce lo `status` o `null` e registra l'esito sotto il nome della sorgente. `T` è la forma
-che il pannello si aspetta, dichiarata in cima al componente accanto alla query che la chiede:
-non è verificabile a compile time (è JSON di Moonraker) ma dice quali campi quel pannello legge,
-e tiene fuori l'`any` che `QA-10` ha tolto dal progetto.
+Con lo stato in push la freschezza non è più una proprietà del singolo pannello ma **della
+connessione**, che è una sola: [moonraker-subscription.ts](../src/lib/services/moonraker-subscription.ts)
+esporta `dataStale` e `staleSince` accanto alla sottoscrizione che li determina.
 
-| Esito                                                 | Effetto                                |
-| ----------------------------------------------------- | -------------------------------------- |
-| risposta con `result.status`                          | la sorgente riparte da zero fallimenti |
-| HTTP non-2xx, errore di rete, risposta senza `status` | +1 fallimento consecutivo              |
+| Evento                                              | Effetto                                           |
+| --------------------------------------------------- | ------------------------------------------------- |
+| `notify_status_update`, o risposta al `subscribe`   | dati freschi                                      |
+| WebSocket chiuso, o `subscribe` rifiutato da Klippy | dati vecchi dopo **4 secondi**                    |
+| ultimo pannello disiscritto                         | l'avviso si spegne: non c'è più niente da fermare |
 
-Alla **seconda** richiesta persa consecutiva di una qualsiasi sorgente lo store `dataStale`
-passa a `true` e `staleSince` registra l'istante. Due e non una perché una richiesta persa
-capita (un riavvio di Moonraker, il wifi che sfarfalla) e l'avviso non deve lampeggiare a ogni
-singhiozzo; il conteggio è per sorgente perché i pannelli vanno e vengono — cambiano pagina, o
-escono dalla viewport del carosello e sospendono il polling, e in entrambi i casi la sorgente
-viene dimenticata.
+I quattro secondi di grazia esistono perché una riconnessione riuscita al primo tentativo è un
+singhiozzo (un riavvio di Moonraker, il wifi che sfarfalla) e l'avviso non deve lampeggiare.
+`staleSince` registra l'istante in cui la connessione è caduta, non quello in cui l'abbiamo
+dichiarata persa: il contatore dell'avviso conta da quando i numeri hanno smesso di aggiornarsi.
 
 [StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte), montato nel layout,
 mostra allora una pillola in alto — _"Data not updating — the printer stopped answering, showing
 the last reading (1m)"_ — con il tempo trascorso che avanza ogni secondo. Non copre niente, non
-si chiude e non offre un pulsante di ritentativo: il polling ritenta già da sé e la pillola
-sparisce da sola alla prima risposta buona.
+si chiude e non offre un pulsante di ritentativo: la riconnessione ritenta già da sé e la
+pillola sparisce da sola al primo aggiornamento che arriva.
 
-Non compare quando Kalico è `shutdown`/`error`/`disconnected`: lì le query falliscono per un
+Non compare quando Kalico è `shutdown`/`error`/`disconnected`: lì la sottoscrizione fallisce per un
 motivo che [KlipperDownOverlay](#avviso-a-schermo-quando-kalico-è-fermo) spiega già per esteso,
 con la via d'uscita. Due avvisi per lo stesso guasto sono uno di troppo. Resta invece visibile —
 ed è il caso che prima passava sotto silenzio — quando è **Moonraker** a non rispondere: lì il

@@ -1,17 +1,16 @@
 <script lang="ts">
 	import { getFileMetadata } from '$lib/services/moonraker-files';
-	import { queryPrinterObjects } from '$lib/services/moonraker-poll';
-	import { pollWhileVisible } from '$lib/services/panel-poll.svelte';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	/** Falso quando la slide è fuori dalla viewport del carosello: il polling si ferma. */
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type PelletStatus = {
 		print_stats?: { state?: string; filename?: string; filament_used?: number };
 	};
 
-	const pollSource = 'dashboard-pellet';
-	const pollIntervalMs = 3000;
+	const dataSource = 'dashboard-pellet';
+	const dataQuery = 'print_stats';
 	const maxPelletKg = 5;
 
 	let usedKg = $state(0);
@@ -51,10 +50,7 @@
 		}
 	};
 
-	const updatePellet = async (): Promise<void> => {
-		const status = await queryPrinterObjects<PelletStatus>(pollSource, 'print_stats');
-		if (!status) return;
-
+	const updatePellet = (status: PelletStatus): void => {
 		const printStats = status.print_stats;
 		if (!printStats) return;
 
@@ -78,7 +74,12 @@
 		usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
 	};
 
-	pollWhileVisible(pollSource, pollIntervalMs, updatePellet, () => visible);
+	subscribeWhileVisible<PelletStatus>(
+		dataSource,
+		() => dataQuery,
+		updatePellet,
+		() => visible
+	);
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">

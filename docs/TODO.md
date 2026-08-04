@@ -78,7 +78,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## ROB — Robustezza
 
-- `ROB-4` Valutare `printer.objects.subscribe` via WebSocket al posto del polling HTTP — pronto
 - `ROB-6` `uploadFile()` in `moonraker-files.ts` passa il percorso completo nel campo `root` (`root=gcodes/sottocartella`), ma per Moonraker `root` può essere solo `gcodes` o `config` e la sottocartella va nel campo `path`: l'upload in una sottocartella dei G-code dovrebbe quindi fallire. Da verificare su una macchina reale e, se confermato, allineare a `writeConfigFile()` in `moonraker-config.ts`, che separa i due campi — pronto
 
 ## DEP — Build, deploy e G2-OS
