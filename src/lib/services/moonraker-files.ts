@@ -237,21 +237,26 @@ export async function moveFile(source: string, dest: string): Promise<void> {
 	}
 }
 
+// Le sottocartelle di uno stesso livello vengono scaricate in parallelo: la ricorsione costa
+// così una richiesta per cartella ma un'attesa per livello di profondità, non una per cartella.
+// L'ordine del risultato resta quello della visita in profondità, come se fosse sequenziale.
 export async function fetchDirectoriesRecursive(
 	path: string = 'gcodes'
 ): Promise<{ name: string; path: string }[]> {
 	const result = await fetchDirectory(path);
-	const dirs: { name: string; path: string }[] = [];
-	for (const d of result.dirs) {
-		if (d.dirname.startsWith('.')) continue;
-		const dirRelPath =
-			path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
-		const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
-		dirs.push({ name: d.dirname, path: dirRelPath });
-		const subDirs = await fetchDirectoriesRecursive(dirFullPath);
-		dirs.push(...subDirs);
-	}
-	return dirs;
+	const children = result.dirs.filter((d) => !d.dirname.startsWith('.'));
+
+	const branches = await Promise.all(
+		children.map(async (d) => {
+			const dirRelPath =
+				path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
+			const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
+			const subDirs = await fetchDirectoriesRecursive(dirFullPath);
+			return [{ name: d.dirname, path: dirRelPath }, ...subDirs];
+		})
+	);
+
+	return branches.flat();
 }
 
 export async function createDirectory(path: string): Promise<void> {
@@ -266,11 +271,20 @@ export async function createDirectory(path: string): Promise<void> {
 	}
 }
 
+// `path` è il percorso completo con la root davanti (`gcodes/sottocartella`), ma Moonraker
+// vuole i due pezzi separati: `root` può essere solo `gcodes` o `config`, la sottocartella va
+// nel campo `path` (le cartelle mancanti le crea lui). Stessa separazione di
+// `writeConfigFile()` in `moonraker-config.ts`.
 export async function uploadFile(file: File, path: string = 'gcodes'): Promise<void> {
 	const apiUrl = getApiUrl();
+	const slash = path.indexOf('/');
+	const root = slash === -1 ? path : path.slice(0, slash);
+	const subdir = slash === -1 ? '' : path.slice(slash + 1);
+
 	const formData = new FormData();
 	formData.append('file', file);
-	formData.append('root', path);
+	formData.append('root', root);
+	if (subdir) formData.append('path', subdir);
 
 	const res = await fetch(`${apiUrl}/server/files/upload`, {
 		method: 'POST',

@@ -1,9 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	const pollIntervalMs = 3000;
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
+
+	type PelletStatus = {
+		print_stats?: { state?: string; filename?: string; filament_used?: number };
+	};
+
+	const dataSource = 'dashboard-pellet';
+	const dataQuery = 'print_stats';
 	const maxPelletKg = 5;
 
 	let usedKg = $state(0);
@@ -43,46 +50,36 @@
 		}
 	};
 
-	const updatePellet = async (): Promise<void> => {
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
-			if (!response.ok) return;
+	const updatePellet = (status: PelletStatus): void => {
+		const printStats = status.print_stats;
+		if (!printStats) return;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printState = printStats.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const printStats = status.print_stats;
-			if (!printStats) return;
-
-			const printState = printStats.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const filename = printStats.filename ?? '';
-			if (filename) {
-				loadFileWeight(filename);
-			} else {
-				lastFilename = null;
-				filamentWeightTotal = null;
-				totalKg = maxPelletKg;
-			}
-
-			// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
-			// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
-			const filamentUsedMm = printStats.filament_used ?? 0;
-			const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
-			const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
-			usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
-		} catch {
-			return;
+		const filename = printStats.filename ?? '';
+		if (filename) {
+			loadFileWeight(filename);
+		} else {
+			lastFilename = null;
+			filamentWeightTotal = null;
+			totalKg = maxPelletKg;
 		}
+
+		// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
+		// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
+		const filamentUsedMm = printStats.filament_used ?? 0;
+		const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
+		const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
+		usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
 	};
 
-	onMount(() => {
-		updatePellet();
-		const interval = window.setInterval(updatePellet, pollIntervalMs);
-		return () => window.clearInterval(interval);
-	});
+	subscribeWhileVisible<PelletStatus>(
+		dataSource,
+		() => dataQuery,
+		updatePellet,
+		() => visible
+	);
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">
@@ -90,7 +87,8 @@
 		{#if !isIdle}
 			<div class="pellet-fill" style="height: {percentage}%">
 				<svg width="100%" height="48px" style="position: absolute; top: -24px; left: 0;">
-					{#each circles as circle}
+					<!-- Lista statica di 40 bolle, mai riordinata: l'indice è una key corretta. -->
+					{#each circles as circle, i (i)}
 						<circle
 							cx="{circle.cx}%"
 							cy={circle.cy}
@@ -115,7 +113,7 @@
 
 <style>
 	.pellet-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
@@ -126,13 +124,13 @@
 		box-sizing: border-box;
 		overflow: hidden;
 		position: relative;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.pellet-visual {
 		width: 100%;
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		overflow: hidden;
 		position: relative;
@@ -146,7 +144,7 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		background: #d72e28;
+		background: var(--color-red);
 		transition: height 0.3s ease;
 		z-index: 1;
 	}
@@ -177,19 +175,19 @@
 		align-items: center;
 		gap: 4px;
 		z-index: 2;
-		color: #000000;
+		color: var(--color-black-pure);
 		text-align: center;
 	}
 
 	.pellet-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #000000;
+		color: var(--color-black-pure);
 	}
 
 	.pellet-value {
 		font-size: 1.7rem;
-		color: #000000;
+		color: var(--color-black-pure);
 		font-weight: 500;
 	}
 </style>

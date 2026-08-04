@@ -1,10 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
-	const pollIntervalMs = 2000;
+	type QuickActionsStatus = {
+		fan?: { speed?: number };
+		'led LED_CAMERA'?: { color_data?: number[][] };
+	};
+
+	const dataSource = 'dashboard-quick-actions';
+	const dataQuery = 'fan&led LED_CAMERA';
 	const circumference = 2 * Math.PI * 16;
 
 	let fanSpeed = $state(0);
@@ -28,32 +34,19 @@
 		}
 	};
 
-	const updateStatus = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?fan&led LED_CAMERA`
-			);
-			if (!response.ok) return;
+	const updateStatus = (status: QuickActionsStatus): void => {
+		const fan = status.fan;
+		if (fan) {
+			fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
+			fanOn = fanSpeed > 0;
+		}
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
-
-			const fan = status.fan;
-			if (fan) {
-				fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
-				fanOn = fanSpeed > 0;
-			}
-
-			const led = status['led LED_CAMERA'];
-			if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
-				// color_data is [[r, g, b, w]] — white channel is index 3
-				const white = led.color_data[0][3] ?? 0;
-				lightValue = typeof white === 'number' ? white : 0;
-				lightOn = lightValue > 0;
-			}
-		} catch {
-			return;
+		const led = status['led LED_CAMERA'];
+		if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
+			// color_data is [[r, g, b, w]] — white channel is index 3
+			const white = led.color_data[0][3] ?? 0;
+			lightValue = typeof white === 'number' ? white : 0;
+			lightOn = lightValue > 0;
 		}
 	};
 
@@ -92,11 +85,7 @@
 		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`);
 	};
 
-	onMount(() => {
-		updateStatus();
-		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => window.clearInterval(interval);
-	});
+	subscribeWhileVisible<QuickActionsStatus>(dataSource, () => dataQuery, updateStatus);
 </script>
 
 <section class="quick-actions-panel" aria-label="Quick Actions">
@@ -177,7 +166,7 @@
 	}
 
 	.action-subpanel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 12px;
 		padding: 16px;
 		display: flex;
@@ -185,7 +174,7 @@
 		justify-content: center;
 		width: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.action-btn {
@@ -193,8 +182,8 @@
 		height: 56px;
 		border-radius: 12px;
 		border: none;
-		background: #ffffff;
-		color: #d72e28;
+		background: var(--color-white);
+		color: var(--color-red);
 		cursor: pointer;
 		display: flex;
 		align-items: center;
@@ -202,12 +191,12 @@
 	}
 
 	.action-btn:focus-visible {
-		outline: 2px solid #d72e28;
+		outline: 2px solid var(--color-red);
 		outline-offset: 2px;
 	}
 
 	.action-btn svg {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 	}
 
 	.circular-progress {
@@ -217,13 +206,13 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 4;
 		fill: none;
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 4;
 		fill: none;
 		stroke-linecap: round;
@@ -232,14 +221,5 @@
 
 	.fan-spinning {
 		animation: spin 2s linear infinite;
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
 	}
 </style>

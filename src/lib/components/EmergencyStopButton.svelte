@@ -136,8 +136,8 @@
 		padding: 0;
 		border: 3px solid transparent;
 		border-radius: 14.4px;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		cursor: pointer;
 	}
 
@@ -148,11 +148,11 @@
 	}
 
 	.estop:hover:not(:disabled) {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 
 	.estop:focus-visible {
-		outline: 2px solid #d72e28;
+		outline: 2px solid var(--color-red);
 		outline-offset: 2px;
 	}
 
@@ -164,9 +164,9 @@
 	/* Recovery state: inverted, so a stopped machine does not look like a machine
 	   you can still stop. */
 	.estop.halted {
-		background: #ffffff;
-		border-color: #d72e28;
-		color: #d72e28;
+		background: var(--color-white);
+		border-color: var(--color-red);
+		color: var(--color-red);
 	}
 
 	.estop.halted:not(.busy) {
@@ -174,7 +174,7 @@
 	}
 
 	.estop.halted:hover:not(:disabled) {
-		background: #fdecec;
+		background: var(--color-danger-bg);
 	}
 
 	/* Only the restart icon spins — a restart is the one action that takes time. */
@@ -185,10 +185,10 @@
 	@keyframes estop-pulse {
 		0%,
 		100% {
-			box-shadow: 0 0 0 0 rgba(215, 46, 40, 0.45);
+			box-shadow: 0 0 0 0 rgba(var(--rgb-red), 0.45);
 		}
 		50% {
-			box-shadow: 0 0 0 6px rgba(215, 46, 40, 0);
+			box-shadow: 0 0 0 6px rgba(var(--rgb-red), 0);
 		}
 	}
 

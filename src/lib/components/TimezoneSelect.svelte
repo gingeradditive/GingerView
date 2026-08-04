@@ -199,15 +199,15 @@
 		gap: 12px;
 		width: 100%;
 		box-sizing: border-box;
-		border: 1px solid #e2e2e2;
-		background: #ffffff;
+		border: 1px solid var(--color-border-light);
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 16px;
 		text-align: left;
 		cursor: pointer;
 	}
 	.trigger.open {
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 	.trigger:disabled {
 		opacity: 0.55;
@@ -223,14 +223,14 @@
 	.city {
 		font-size: 1rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.detail {
 		font-size: 0.8rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -238,12 +238,12 @@
 	.offset {
 		font-size: 0.85rem;
 		font-weight: 600;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		flex-shrink: 0;
 	}
 	.chevron {
 		display: inline-flex;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		flex-shrink: 0;
 		transition: transform 150ms ease;
 	}
@@ -256,10 +256,10 @@
 		left: 0;
 		right: 0;
 		z-index: 20;
-		background: #ffffff;
-		border: 1px solid #e2e2e2;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+		box-shadow: 0 8px 24px rgba(var(--rgb-black), 0.16);
 		padding: 12px;
 		display: flex;
 		flex-direction: column;
@@ -270,10 +270,10 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 12px;
 		padding: 8px 12px;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		flex-shrink: 0;
 	}
 	.search input {
@@ -283,7 +283,7 @@
 		outline: none;
 		font-family: inherit;
 		font-size: 0.95rem;
-		color: #222222;
+		color: var(--color-text-secondary);
 		background: transparent;
 	}
 	.options {
@@ -308,23 +308,23 @@
 		cursor: pointer;
 	}
 	.option.highlighted {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.check {
 		display: inline-flex;
-		color: #d72e28;
+		color: var(--color-red);
 		flex-shrink: 0;
 	}
 	.empty {
 		padding: 16px 12px;
 		font-size: 0.9rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		text-align: center;
 	}
 	.more {
 		margin: 0;
 		font-size: 0.8rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		text-align: center;
 		flex-shrink: 0;
 	}

@@ -1,58 +1,54 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import { tweened } from 'svelte/motion';
+	import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { mdiCursorMove } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type ToolheadTestWindow = Window & {
 		setToolheadTestPosition?: (x: number, y: number, z: number) => void;
 	};
 
-	let actualX = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
-	let actualY = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
-	let actualZ = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
+	const tweenOptions = { duration: 600, easing: cubicOut };
 
-	let targetX = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
-	let targetY = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
-	let targetZ = tweened(124.6, {
-		duration: 600,
-		easing: cubicOut
-	});
+	const actualX = new Tween(124.6, tweenOptions);
+	const actualY = new Tween(124.6, tweenOptions);
+	const actualZ = new Tween(124.6, tweenOptions);
 
-	let maxX = 1000;
-	let maxY = 1000;
-	let maxZ = 1000;
+	const targetX = new Tween(124.6, tweenOptions);
+	const targetY = new Tween(124.6, tweenOptions);
+	const targetZ = new Tween(124.6, tweenOptions);
+
+	let maxX = $state(1000);
+	let maxY = $state(1000);
+	let maxZ = $state(1000);
 
 	// Optimistic default: when Kalico does not report `stepper_enable` the motor
 	// state is unknown, and an enabled button is the useful fallback.
-	let motorsEnabled = true;
-	let motorsBusy = false;
+	let motorsEnabled = $state(true);
+	let motorsBusy = $state(false);
 
-	const pollIntervalMs = 1000;
+	type ToolheadStatus = {
+		toolhead?: { position?: number[]; axis_maximum?: number[] };
+		gcode_move?: { gcode_position?: number[] };
+		stepper_enable?: { steppers?: Record<string, boolean> };
+	};
+
+	const dataSource = 'movement-toolhead';
+	const dataQuery =
+		'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers';
 
 	const clamp = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
 
-	$: actualXNorm = clamp($actualX / maxX);
-	$: actualYNorm = clamp($actualY / maxY);
-	$: actualZNorm = clamp($actualZ / maxZ);
+	const actualXNorm = $derived(clamp(actualX.current / maxX));
+	const actualYNorm = $derived(clamp(actualY.current / maxY));
+	const actualZNorm = $derived(clamp(actualZ.current / maxZ));
 
 	const isoCenterX = 220;
 	const isoBaseY = 160;
@@ -65,76 +61,65 @@
 		y: isoBaseY + (x + y) * isoScaleY - z * isoScaleZ
 	});
 
-	$: p000 = project(0, 0, 0);
-	$: p100 = project(1, 0, 0);
-	$: p110 = project(1, 1, 0);
-	$: p010 = project(0, 1, 0);
-	$: p001 = project(0, 0, 1);
-	$: p101 = project(1, 0, 1);
-	$: p111 = project(1, 1, 1);
-	$: p011 = project(0, 1, 1);
+	// Gli otto vertici del cubo e il centro della base non dipendono dalla posizione:
+	// sono costanti, non derivati.
+	const p000 = project(0, 0, 0);
+	const p100 = project(1, 0, 0);
+	const p110 = project(1, 1, 0);
+	const p010 = project(0, 1, 0);
+	const p001 = project(0, 0, 1);
+	const p101 = project(1, 0, 1);
+	const p111 = project(1, 1, 1);
+	const p011 = project(0, 1, 1);
 
-	$: pCenterBase = project(0.5, 0.5, 0);
-	$: pCenterAtZ = project(0.5, 0.5, actualZNorm);
+	const pCenterBase = project(0.5, 0.5, 0);
+	const pCenterAtZ = $derived(project(0.5, 0.5, actualZNorm));
 
-	$: planeA = project(0, 0, actualZNorm);
-	$: planeB = project(1, 0, actualZNorm);
-	$: planeC = project(1, 1, actualZNorm);
-	$: planeD = project(0, 1, actualZNorm);
+	const planeA = $derived(project(0, 0, actualZNorm));
+	const planeB = $derived(project(1, 0, actualZNorm));
+	const planeC = $derived(project(1, 1, actualZNorm));
+	const planeD = $derived(project(0, 1, actualZNorm));
 
-	$: actualMarker = project(actualXNorm, actualYNorm, actualZNorm);
+	const actualMarker = $derived(project(actualXNorm, actualYNorm, actualZNorm));
 
 	const pointsToString = (...points: { x: number; y: number }[]): string =>
 		points.map((point) => `${point.x},${point.y}`).join(' ');
 
-	const updateToolheadPosition = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers`
-			);
-			if (!response.ok) return;
+	const updateToolheadPosition = (status: ToolheadStatus): void => {
+		const toolhead = status.toolhead;
+		if (toolhead && Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
+			maxX = Number(toolhead.axis_maximum[0]) || maxX;
+			maxY = Number(toolhead.axis_maximum[1]) || maxY;
+			maxZ = Number(toolhead.axis_maximum[2]) || maxZ;
+		}
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const gcodeMove = status.gcode_move;
+		if (
+			gcodeMove &&
+			Array.isArray(gcodeMove.gcode_position) &&
+			gcodeMove.gcode_position.length > 2
+		) {
+			targetX.set(Number(gcodeMove.gcode_position[0]) || 0);
+			targetY.set(Number(gcodeMove.gcode_position[1]) || 0);
+			targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
+		}
 
-			const toolhead = status.toolhead;
-			if (toolhead && Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
-				maxX = Number(toolhead.axis_maximum[0]) || maxX;
-				maxY = Number(toolhead.axis_maximum[1]) || maxY;
-				maxZ = Number(toolhead.axis_maximum[2]) || maxZ;
-			}
+		if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+			actualX.set(Number(toolhead.position[0]) || 0);
+			actualY.set(Number(toolhead.position[1]) || 0);
+			actualZ.set(Number(toolhead.position[2]) || 0);
+		} else {
+			actualX.set(targetX.current);
+			actualY.set(targetY.current);
+			actualZ.set(targetZ.current);
+		}
 
-			const gcodeMove = status.gcode_move;
-			if (
-				gcodeMove &&
-				Array.isArray(gcodeMove.gcode_position) &&
-				gcodeMove.gcode_position.length > 2
-			) {
-				targetX.set(Number(gcodeMove.gcode_position[0]) || 0);
-				targetY.set(Number(gcodeMove.gcode_position[1]) || 0);
-				targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
-			}
-
-			if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
-				actualX.set(Number(toolhead.position[0]) || 0);
-				actualY.set(Number(toolhead.position[1]) || 0);
-				actualZ.set(Number(toolhead.position[2]) || 0);
-			} else {
-				actualX.set($targetX);
-				actualY.set($targetY);
-				actualZ.set($targetZ);
-			}
-
-			const stepperEnable = status.stepper_enable;
-			const steppers = stepperEnable?.steppers;
-			if (steppers && typeof steppers === 'object') {
-				// M84 disables every stepper at once, so any stepper still enabled
-				// means the motors have not been disabled.
-				motorsEnabled = Object.values(steppers).some((value) => Boolean(value));
-			}
-		} catch {
-			return;
+		const stepperEnable = status.stepper_enable;
+		const steppers = stepperEnable?.steppers;
+		if (steppers && typeof steppers === 'object') {
+			// M84 disables every stepper at once, so any stepper still enabled
+			// means the motors have not been disabled.
+			motorsEnabled = Object.values(steppers).some((value) => Boolean(value));
 		}
 	};
 
@@ -148,14 +133,14 @@
 			targetY.set(y);
 			targetZ.set(z);
 		};
-
-		updateToolheadPosition();
-		const interval = window.setInterval(updateToolheadPosition, pollIntervalMs);
-
-		return () => {
-			window.clearInterval(interval);
-		};
 	});
+
+	subscribeWhileVisible<ToolheadStatus>(
+		dataSource,
+		() => dataQuery,
+		updateToolheadPosition,
+		() => visible
+	);
 
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {
@@ -163,7 +148,7 @@
 		}
 	});
 
-	let showHomingWarning = false;
+	let showHomingWarning = $state(false);
 
 	const handleHome = (): void => {
 		if ($homingBusy) return;
@@ -253,15 +238,15 @@
 	<div class="position-card">
 		<div class="position-row">
 			<span class="position-label position-label-x">X</span>
-			<span class="position-value">{$actualX.toFixed(1)} mm</span>
+			<span class="position-value">{actualX.current.toFixed(1)} mm</span>
 		</div>
 		<div class="position-row">
 			<span class="position-label position-label-y">Y</span>
-			<span class="position-value">{$actualY.toFixed(1)} mm</span>
+			<span class="position-value">{actualY.current.toFixed(1)} mm</span>
 		</div>
 		<div class="position-row">
 			<span class="position-label position-label-z">Z</span>
-			<span class="position-value">{$actualZ.toFixed(1)} mm</span>
+			<span class="position-value">{actualZ.current.toFixed(1)} mm</span>
 		</div>
 	</div>
 
@@ -313,9 +298,9 @@
 	}
 
 	.viz-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex: 1;
 		min-height: 0;
@@ -342,42 +327,42 @@
 	}
 
 	.bed-fill {
-		fill: #d3d3d3;
+		fill: var(--color-divider);
 	}
 
 	.cube-edge {
-		stroke: #bcbcbc;
+		stroke: var(--color-gray-light);
 		stroke-width: 1.8;
 	}
 
 	.z-plane {
-		fill: #d72e284d;
-		stroke: #d72e2899;
+		fill: rgba(var(--rgb-red), 0.3);
+		stroke: rgba(var(--rgb-red), 0.6);
 		stroke-width: 1;
 	}
 
 	.axis-x {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 2.2;
 	}
 
 	.axis-y {
-		stroke: #26b73f;
+		stroke: var(--color-success-vivid);
 		stroke-width: 2.2;
 	}
 
 	.axis-z-inner {
-		stroke: #3d67d899;
+		stroke: rgba(var(--rgb-info), 0.6);
 		stroke-width: 2;
 	}
 
 	.axis-z-outer {
-		stroke: #3d67d8;
+		stroke: var(--color-info);
 		stroke-width: 2.2;
 	}
 
 	.z-guide {
-		stroke: #3d67d855;
+		stroke: rgba(var(--rgb-info), 0.33);
 		stroke-width: 1.4;
 		stroke-dasharray: 4 4;
 	}
@@ -389,30 +374,30 @@
 	}
 
 	.axis-label-x {
-		fill: #d72e28;
+		fill: var(--color-red);
 	}
 
 	.axis-label-y {
-		fill: #26b73f;
+		fill: var(--color-success-vivid);
 	}
 
 	.axis-label-z {
-		fill: #3d67d8;
+		fill: var(--color-info);
 		text-anchor: middle;
 	}
 
 	.toolhead-shadow {
-		fill: #00000033;
+		fill: rgba(var(--rgb-black), 0.2);
 	}
 
 	.toolhead-marker {
-		fill: #d72e28;
+		fill: var(--color-red);
 	}
 
 	.position-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex-shrink: 0;
 		padding: 0 20px;
@@ -423,7 +408,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 14px 0;
-		border-bottom: 1px solid #ececec;
+		border-bottom: 1px solid var(--color-surface-sunken);
 	}
 
 	.position-row:last-child {
@@ -436,27 +421,27 @@
 	}
 
 	.position-label-x {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.position-label-y {
-		color: #26b73f;
+		color: var(--color-success-vivid);
 	}
 
 	.position-label-z {
-		color: #3d67d8;
+		color: var(--color-info);
 	}
 
 	.position-value {
-		color: #9a9a9a;
+		color: var(--color-text-disabled);
 		font-size: 1.4rem;
 		font-weight: 600;
 	}
 
 	.controls-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex-shrink: 0;
 		display: flex;
@@ -470,8 +455,8 @@
 		width: 92px;
 		height: 92px;
 		aspect-ratio: 1 / 1;
-		background: #ffffff;
-		border: 1px solid #e0e0e0;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
 		border-radius: 12px;
 		box-sizing: border-box;
 		display: flex;
@@ -479,12 +464,12 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		color: #4a4a4a;
+		color: var(--color-text-muted);
 		cursor: pointer;
 	}
 
 	.control-btn:hover {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 
 	.control-btn span {
@@ -495,13 +480,13 @@
 	}
 
 	.control-btn.home {
-		background: #d72e28;
-		border-color: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		border-color: var(--color-red);
+		color: var(--color-white);
 	}
 
 	.control-btn.home:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 
 	.control-btn:disabled {

@@ -12,18 +12,24 @@
 		ExternalLink,
 		ChevronRight
 	} from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { CONFIG_EDITOR_ENABLED } from '$lib/services/moonraker-config';
 
-	type Item = {
+	type BaseItem = {
 		id: string;
 		title: string;
 		description: string;
 		icon: typeof Wifi;
-		kind: 'route' | 'external';
-		href?: string;
 		/** Rows that only exist while the machine is in development. */
 		enabled?: boolean;
 	};
+
+	// `href` is a route id on internal rows, so it can go through `resolve()`, and a plain
+	// URL string on external ones, which leave the app entirely.
+	type RouteItem = BaseItem & { kind: 'route'; href: RouteId };
+	type ExternalItem = BaseItem & { kind: 'external'; href: string };
+	type Item = RouteItem | ExternalItem;
 
 	const allItems: Item[] = [
 		{
@@ -103,10 +109,8 @@
 
 	const items = allItems.filter((item) => item.enabled !== false);
 
-	function handleExternalClick(item: Item) {
-		if (item.href) {
-			window.open(item.href, '_blank');
-		}
+	function handleExternalClick(item: ExternalItem) {
+		window.open(item.href, '_blank');
 	}
 </script>
 
@@ -118,7 +122,7 @@
 
 		{#each items as item, index (item.id)}
 			{#if item.kind === 'route'}
-				<a class="settings-row" href={item.href}>
+				<a class="settings-row" href={resolve(item.href)}>
 					<span class="icon"><item.icon /></span>
 					<div class="row-text">
 						<h2>{item.title}</h2>
@@ -160,13 +164,13 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.settings-list {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
 		padding: 0 20px 4px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 	}
 	.settings-row {
 		width: 100%;
@@ -187,7 +191,7 @@
 		justify-content: center;
 		width: 28px;
 		height: 28px;
-		color: #444444;
+		color: var(--color-text-muted);
 		flex-shrink: 0;
 	}
 	.icon :global(svg) {
@@ -206,20 +210,20 @@
 	.row-text p {
 		margin: 2px 0 0;
 		font-size: 0.85rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 	}
 	.chevron {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.divider {
 		height: 1px;
-		background: #ececec;
+		background: var(--color-surface-sunken);
 	}
-	@media (max-width: 560px) {
+	@media (max-width: 767.98px) {
 		.settings-page {
 			padding: 16px 16px 112px;
 		}

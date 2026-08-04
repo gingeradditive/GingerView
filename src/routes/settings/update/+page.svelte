@@ -10,11 +10,14 @@
 		describeItem,
 		fetchUpdateStatus,
 		fetchUpdateStatusQuietly,
+		isSelfUpdate,
 		refreshUpdateStatus,
 		sortItems,
 		startRecover,
 		startUpgrade
 	} from '$lib/services/moonraker-update';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 	import type { UpdateLogState, UpdateStatus } from '$lib/types/update';
 
@@ -22,6 +25,8 @@
 	/** How often the page re-checks `busy` after losing the request, and for how long. */
 	const busyPollMs = 3000;
 	const busyPollTimeoutMs = 30 * 60 * 1000;
+	/** Seconds left on screen before the page reloads itself after a self-update. */
+	const reloadCountdownSeconds = 5;
 
 	let status = $state<UpdateStatus | null>(null);
 	let loadError = $state('');
@@ -37,7 +42,17 @@
 	let logState = $state<UpdateLogState>('running');
 	let logError = $state('');
 	let lastLoggedApp = '';
+	// A plain Set is correct here: completedApps is only written and read from imperative
+	// code inside runOperation(), never from a template or a $derived, so it needs no
+	// reactivity. If it ever ends up in markup, switch it to SvelteSet.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	let completedApps = new Set<string>();
+
+	// Set when the operation updated GingerView itself: the files nginx serves have
+	// changed, but this tab is still running the bundle loaded before the update.
+	let selfUpdated = $state(false);
+	let reloadIn = $state(0);
+	let reloadTimer: ReturnType<typeof setInterval> | null = null;
 
 	let confirmState = $state<{
 		title: string;
@@ -71,6 +86,7 @@
 	);
 
 	onMount(() => {
+		ensurePrinterTimezone();
 		loadStatus();
 		updatePrintState();
 
@@ -88,6 +104,7 @@
 
 		return () => {
 			window.clearInterval(printTimer);
+			if (reloadTimer) clearInterval(reloadTimer);
 			disconnect();
 		};
 	});
@@ -154,6 +171,7 @@
 		logError = '';
 		lastLoggedApp = '';
 		completedApps = new Set();
+		selfUpdated = false;
 		logOpen = true;
 		isOperationRunning = true;
 
@@ -180,8 +198,47 @@
 			}
 		} finally {
 			isOperationRunning = false;
-			await reloadStatusAfterOperation();
+			if (logState === 'success' && [...completedApps].some(isSelfUpdate)) {
+				// GingerView updated itself: re-reading the status would only refresh
+				// numbers inside a bundle that is already obsolete. Reload instead.
+				selfUpdated = true;
+				startReloadCountdown();
+			} else {
+				await reloadStatusAfterOperation();
+			}
 		}
+	}
+
+	/**
+	 * After GingerView updates itself the tab keeps running the old bundle, so the
+	 * page reloads on its own. `index.html` is served with `no-store` (see the nginx
+	 * site written by `script/install.sh`), so a plain reload really does fetch the
+	 * new entry point and, through it, the new hashed assets.
+	 *
+	 * The countdown is there so the reload does not wipe the log out from under
+	 * someone still reading it; closing the modal reloads immediately.
+	 */
+	function startReloadCountdown() {
+		if (reloadTimer) clearInterval(reloadTimer);
+		reloadIn = reloadCountdownSeconds;
+		reloadTimer = setInterval(() => {
+			reloadIn -= 1;
+			if (reloadIn <= 0) reloadNow();
+		}, 1000);
+	}
+
+	function reloadNow() {
+		if (reloadTimer) clearInterval(reloadTimer);
+		reloadTimer = null;
+		window.location.reload();
+	}
+
+	function handleLogClose() {
+		if (selfUpdated) {
+			reloadNow();
+			return;
+		}
+		logOpen = false;
 	}
 
 	/**
@@ -248,9 +305,10 @@
 		pending?.run();
 	}
 
+	/** Nel fuso della stampante, come tutti gli orari dell'interfaccia. */
 	function formatResetTime(unixSeconds: number): string {
 		if (!unixSeconds) return '';
-		return new Date(unixSeconds * 1000).toLocaleTimeString();
+		return formatZoneTime($printerTimezone, new Date(unixSeconds * 1000), true);
 	}
 </script>
 
@@ -338,7 +396,11 @@
 	lines={logLines}
 	{logState}
 	errorMessage={logError}
-	onClose={() => (logOpen = false)}
+	successNote={selfUpdated
+		? `GingerView was updated: reloading the interface in ${reloadIn}s…`
+		: ''}
+	closeLabel={selfUpdated ? 'Reload now' : 'Close'}
+	onClose={handleLogClose}
 />
 
 <ConfirmModal
@@ -359,9 +421,9 @@
 	}
 	.update-card {
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -378,7 +440,7 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.status-pill {
 		margin-left: auto;
@@ -398,19 +460,19 @@
 		background: currentColor;
 	}
 	.status-pill.ok {
-		background: #ddf3df;
-		color: #1a7f37;
+		background: var(--color-success-bg);
+		color: var(--color-success);
 	}
 	.status-pill.pending {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.banner {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 		border-radius: 12px;
 		padding: 12px 14px;
 		font-size: 0.88rem;
@@ -421,18 +483,18 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		padding: 4px 20px;
 		box-sizing: border-box;
 	}
 	.placeholder {
 		margin: 20px 0;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		font-size: 0.9rem;
 	}
 	.placeholder code {
-		background: #f5f5f5;
+		background: var(--color-background);
 		border-radius: 6px;
 		padding: 1px 6px;
 		font-size: 0.85em;
@@ -446,13 +508,13 @@
 	}
 	.load-error p {
 		margin: 0;
-		color: #d72e28;
+		color: var(--color-red);
 		font-size: 0.9rem;
 	}
 	.rate-limit {
 		margin: 0;
 		font-size: 0.78rem;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
 	.actions-row {
@@ -466,9 +528,9 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		border: 1px solid #c8c8c8;
-		background: #ffffff;
-		color: #444444;
+		border: 1px solid var(--color-gray);
+		background: var(--color-white);
+		color: var(--color-text-muted);
 		border-radius: 16px;
 		padding: 12px 20px;
 		font-size: 0.95rem;
@@ -476,7 +538,7 @@
 		cursor: pointer;
 	}
 	.ghost-btn:hover:not(:disabled) {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.ghost-btn:disabled {
 		opacity: 0.55;
@@ -487,8 +549,8 @@
 		align-items: center;
 		gap: 8px;
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 28px;
 		font-size: 1rem;
@@ -499,7 +561,7 @@
 		opacity: 0.55;
 		cursor: default;
 	}
-	@media (max-width: 560px) {
+	@media (max-width: 767.98px) {
 		.update-page {
 			padding: 16px 16px 112px;
 		}

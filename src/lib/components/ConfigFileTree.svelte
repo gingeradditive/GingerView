@@ -126,10 +126,10 @@
 		padding-left: calc(var(--depth) * 14px);
 	}
 	.row:hover {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.row.selected {
-		background: #fdeaea;
+		background: var(--color-danger-bg);
 	}
 	.entry {
 		flex: 1;
@@ -142,12 +142,12 @@
 		padding: 8px 4px;
 		font-size: 0.88rem;
 		font-family: inherit;
-		color: #333333;
+		color: var(--color-text-muted);
 		text-align: left;
 		cursor: pointer;
 	}
 	.row.selected .entry {
-		color: #d72e28;
+		color: var(--color-red);
 		font-weight: 700;
 	}
 	.twisty,
@@ -157,10 +157,10 @@
 		justify-content: center;
 		width: 16px;
 		flex-shrink: 0;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 	}
 	.row.selected .glyph {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.name {
 		flex: 1;
@@ -183,20 +183,20 @@
 		border: none;
 		border-radius: 8px;
 		background: transparent;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 		cursor: pointer;
 	}
 	.icon-btn:hover {
-		background: #ffffff;
-		color: #444444;
+		background: var(--color-white);
+		color: var(--color-text-muted);
 	}
 	.icon-btn.danger:hover {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.empty {
 		margin: 0;
 		padding: 6px 4px 6px calc(var(--depth) * 14px + 26px);
 		font-size: 0.8rem;
-		color: #b5b5b5;
+		color: var(--color-gray-light);
 	}
 </style>

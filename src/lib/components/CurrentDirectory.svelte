@@ -2,12 +2,7 @@
 	import { mdiChevronLeft } from '@mdi/js';
 	import { currentDirPath, navigateUp } from '$lib/stores/directoryStore';
 
-	let dirPath = '';
-	currentDirPath.subscribe((value) => {
-		dirPath = value;
-	});
-
-	$: segments = dirPath ? dirPath.split('/') : [];
+	$: segments = $currentDirPath ? $currentDirPath.split('/') : [];
 	$: currentFolder = segments.length > 0 ? segments[segments.length - 1] : 'Home';
 	$: hasParent = segments.length > 0;
 </script>
@@ -37,12 +32,12 @@
 		gap: 12px;
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		font-family: 'Montserrat', sans-serif;
 	}
 
 	.back-button {
-		color: #d72e28;
+		color: var(--color-red);
 		padding: 4px;
 		background: transparent;
 		border: none;

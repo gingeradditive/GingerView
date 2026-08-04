@@ -1,8 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	const pollIntervalMs = 1500;
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
+
+	type ZHeightStatus = {
+		print_stats?: { state?: string };
+		toolhead?: { position?: number[]; axis_maximum?: number[] };
+		gcode_move?: { gcode_position?: number[] };
+	};
+
+	const dataSource = 'dashboard-z-height';
+	const dataQuery = 'toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state';
 	const totalSections = 10;
 	const sectionHeight = 100;
 
@@ -24,47 +33,35 @@
 		})
 	);
 
-	const updateZHeight = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state`
-			);
-			if (!response.ok) return;
+	const updateZHeight = (status: ZHeightStatus): void => {
+		const printState = status.print_stats?.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
-
-			const printState = status.print_stats?.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const toolhead = status.toolhead;
-			if (toolhead) {
-				if (Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
-					maxHeight = toolhead.axis_maximum[2];
-				}
+		const toolhead = status.toolhead;
+		if (toolhead) {
+			if (Array.isArray(toolhead.axis_maximum) && toolhead.axis_maximum.length > 2) {
+				maxHeight = toolhead.axis_maximum[2];
 			}
+		}
 
-			const gcodeMove = status.gcode_move;
-			if (
-				gcodeMove &&
-				Array.isArray(gcodeMove.gcode_position) &&
-				gcodeMove.gcode_position.length > 2
-			) {
-				currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
-			} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
-				currentHeight = Math.max(0, toolhead.position[2]);
-			}
-		} catch {
-			return;
+		const gcodeMove = status.gcode_move;
+		if (
+			gcodeMove &&
+			Array.isArray(gcodeMove.gcode_position) &&
+			gcodeMove.gcode_position.length > 2
+		) {
+			currentHeight = Math.max(0, gcodeMove.gcode_position[2]);
+		} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+			currentHeight = Math.max(0, toolhead.position[2]);
 		}
 	};
 
-	onMount(() => {
-		updateZHeight();
-		const interval = window.setInterval(updateZHeight, pollIntervalMs);
-		return () => window.clearInterval(interval);
-	});
+	subscribeWhileVisible<ZHeightStatus>(
+		dataSource,
+		() => dataQuery,
+		updateZHeight,
+		() => visible
+	);
 </script>
 
 <section class="z-height-panel" aria-label="Z Height">
@@ -73,12 +70,13 @@
 			<div class="z-progress-fill" style="height: {fillPercentage}%"></div>
 			<!-- Section marks and labels -->
 			<div class="z-marks">
-				{#each sections as _section, i}
+				<!-- Tacche posizionali: l'indice è la loro identità, non c'è riordino. -->
+				{#each sections as _section, i (i)}
 					<div class="z-mark" style="bottom: {(i + 1) * 10}%"></div>
 				{/each}
 			</div>
 			<div class="z-labels">
-				{#each sections as section, i}
+				{#each sections as section, i (i)}
 					<div class="z-label-mark" style="bottom: {(i + 1) * 10}%">
 						{section.label}
 					</div>
@@ -99,14 +97,14 @@
 
 <style>
 	.z-height-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 0;
 		display: flex;
 		align-items: stretch;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		overflow: hidden;
 	}
 
@@ -121,10 +119,10 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 0;
 		overflow: hidden;
-		border-right: 1px solid #000000;
+		border-right: 1px solid var(--color-black-pure);
 	}
 
 	.z-progress-fill {
@@ -132,7 +130,7 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: #d72e28;
+		background: var(--color-red);
 		border-radius: 0;
 		transition: height 0.3s ease;
 	}
@@ -151,7 +149,7 @@
 		left: 0;
 		right: 50%;
 		height: 1px;
-		background: #000000;
+		background: var(--color-black-pure);
 	}
 
 	.z-labels {
@@ -166,7 +164,7 @@
 		position: absolute;
 		right: 0;
 		font-size: 0.7rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		transform: translateY(50%);
 		white-space: nowrap;
 	}
@@ -185,18 +183,18 @@
 	.z-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 	}
 
 	.z-value {
 		font-size: 1.7rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 
 	.z-value-sub {
 		font-size: 1.5rem;
-		color: #999999;
+		color: var(--color-text-disabled);
 		font-weight: 400;
 	}
 </style>

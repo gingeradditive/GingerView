@@ -1,13 +1,18 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import {
 		extractThumbnailFromGcode,
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	const pollIntervalMs = 2000;
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
+
+	type JobInfoStatus = { print_stats?: { state?: string; filename?: string } };
+
+	const dataSource = 'dashboard-job-info';
+	const dataQuery = 'print_stats';
 
 	let jobName = $state('--');
 	let jobMaterial = $state('');
@@ -35,42 +40,32 @@
 		}
 	};
 
-	const updateJobInfo = async (): Promise<void> => {
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
-			if (!response.ok) return;
+	const updateJobInfo = (status: JobInfoStatus): void => {
+		// Kalico keeps `print_stats.filename` after a job ends — `complete`,
+		// `cancelled` and `error` all still carry the name of the last file, and
+		// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
+		// what empties the card when the print is over.
+		const printState = status.print_stats?.state ?? 'standby';
+		const isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
-
-			// Kalico keeps `print_stats.filename` after a job ends — `complete`,
-			// `cancelled` and `error` all still carry the name of the last file, and
-			// only a new print or SDCARD_RESET_FILE clears it. Going by the state is
-			// what empties the card when the print is over.
-			const printState = status.print_stats?.state ?? 'standby';
-			const isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
-			if (filename) {
-				jobName = stripExtension(filename);
-				loadFileMetadata(filename);
-			} else {
-				jobName = '--';
-				jobMaterial = '';
-				thumbnailUrl = '/error-thumbnail.png';
-				lastFilename = null;
-			}
-		} catch {
-			return;
+		const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
+		if (filename) {
+			jobName = stripExtension(filename);
+			loadFileMetadata(filename);
+		} else {
+			jobName = '--';
+			jobMaterial = '';
+			thumbnailUrl = '/error-thumbnail.png';
+			lastFilename = null;
 		}
 	};
 
-	onMount(() => {
-		updateJobInfo();
-		const interval = window.setInterval(updateJobInfo, pollIntervalMs);
-		return () => window.clearInterval(interval);
-	});
+	subscribeWhileVisible<JobInfoStatus>(
+		dataSource,
+		() => dataQuery,
+		updateJobInfo,
+		() => visible
+	);
 </script>
 
 <section class="job-info-card" aria-label="Print Job Info">
@@ -83,7 +78,7 @@
 
 <style>
 	.job-info-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
@@ -94,14 +89,14 @@
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		text-align: center;
 	}
 
 	.job-name {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 
 	.job-preview {
@@ -120,7 +115,7 @@
 
 	.job-material {
 		font-size: 0.85rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 </style>

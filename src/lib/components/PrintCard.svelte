@@ -194,55 +194,51 @@
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
 	>
-		<button class="context-menu-item" role="menuitem" onclick={handleRename}> Rinomina </button>
-		<button class="context-menu-item" role="menuitem" onclick={handleMove}> Sposta </button>
+		<button class="context-menu-item" role="menuitem" onclick={handleRename}> Rename </button>
+		<button class="context-menu-item" role="menuitem" onclick={handleMove}> Move </button>
 		<button class="context-menu-item delete" role="menuitem" onclick={handleDelete}>
-			{item.isDirectory ? 'Elimina cartella' : 'Elimina stampa'}
+			{item.isDirectory ? 'Delete folder' : 'Delete print'}
 		</button>
 	</div>
 {/if}
 
 {#if showRenameModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
-		onclick={() => (showRenameModal = false)}
+		onclick={(e) => e.target === e.currentTarget && (showRenameModal = false)}
 		onkeydown={(e) => e.key === 'Escape' && (showRenameModal = false)}
 	>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-			<h3>Rinomina</h3>
+		<div class="modal-content">
+			<h3>Rename</h3>
 			<input
 				type="text"
 				bind:value={newName}
-				placeholder="Nuovo nome"
+				placeholder="New name"
 				class="rename-input"
 				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
 			/>
 			<div class="modal-actions">
-				<button class="modal-confirm" onclick={confirmRename}>Rinomina</button>
-				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Annulla</button>
+				<button class="modal-confirm" onclick={confirmRename}>Rename</button>
+				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Cancel</button>
 			</div>
 		</div>
 	</div>
 {/if}
 
 {#if showMoveModal}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
-		onclick={() => (showMoveModal = false)}
+		onclick={(e) => e.target === e.currentTarget && (showMoveModal = false)}
 		onkeydown={(e) => e.key === 'Escape' && (showMoveModal = false)}
 	>
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-			<h3>Sposta "{item.name}"</h3>
+		<div class="modal-content">
+			<h3>Move "{item.name}"</h3>
 			{#if loadingDirs}
-				<p class="modal-loading">Caricamento cartelle...</p>
+				<p class="modal-loading">Loading folders...</p>
 			{:else}
 				<div class="folder-list">
 					<button class="folder-option" onclick={() => confirmMove('')}>
@@ -251,7 +247,7 @@
 						>
 						/ (Root)
 					</button>
-					{#each availableDirs as dir}
+					{#each availableDirs as dir (dir.path)}
 						<button class="folder-option" onclick={() => confirmMove(dir.path)}>
 							<svg viewBox="0 0 24 24" width="20" height="20"
 								><path d={mdiFolder} fill="#D72E28" /></svg
@@ -261,7 +257,7 @@
 					{/each}
 				</div>
 			{/if}
-			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Annulla</button>
+			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Cancel</button>
 		</div>
 	</div>
 {/if}
@@ -278,9 +274,9 @@
 	}
 
 	.card-inner {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		width: 100%;
 		box-sizing: border-box;
 	}
@@ -294,7 +290,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: #fff;
+		background: var(--color-white);
 	}
 
 	.image-wrapper img {
@@ -317,7 +313,7 @@
 		left: 0;
 		width: 100%;
 		height: 60px;
-		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), transparent);
+		background: linear-gradient(to bottom, rgba(var(--rgb-white), 0.95), transparent);
 		pointer-events: none;
 	}
 
@@ -327,7 +323,7 @@
 		left: 0;
 		width: 100%;
 		height: 60px;
-		background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent);
+		background: linear-gradient(to top, rgba(var(--rgb-white), 0.95), transparent);
 		pointer-events: none;
 	}
 
@@ -337,7 +333,7 @@
 		left: 12px;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		background: transparent;
 		padding: 0;
 		border-radius: 0;
@@ -349,7 +345,7 @@
 		right: 12px;
 		font-size: 1.05rem;
 		font-weight: 600;
-		color: #111111;
+		color: var(--color-black);
 		background: transparent;
 		padding: 0;
 		border-radius: 0;
@@ -358,7 +354,7 @@
 	.name-label {
 		font-size: 1.25rem;
 		font-weight: 600;
-		color: #111111;
+		color: var(--color-black);
 		text-align: center;
 		max-width: var(--card-size);
 		overflow: hidden;
@@ -370,7 +366,7 @@
 		display: inline-block;
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: 767.98px) {
 		.print-card {
 			--card-size: 162.5px;
 		}
@@ -390,10 +386,10 @@
 
 	.context-menu {
 		position: fixed;
-		background: #ffffff;
+		background: var(--color-white);
 		border: none;
 		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px rgba(var(--rgb-black), 0.15);
 		z-index: 1000;
 		min-width: 150px;
 		padding: 4px 0;
@@ -407,16 +403,16 @@
 		text-align: left;
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #111111;
+		color: var(--color-black);
 		transition: background-color 0.2s;
 	}
 
 	.context-menu-item:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 
 	.context-menu-item.delete {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.modal-overlay {
@@ -425,7 +421,11 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2000;
@@ -435,7 +435,7 @@
 	}
 
 	.modal-content {
-		background: #fff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
@@ -443,18 +443,18 @@
 		max-height: 60vh;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.modal-content h3 {
 		margin: 0 0 16px 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111;
+		color: var(--color-black);
 	}
 
 	.modal-loading {
-		color: #666;
+		color: var(--color-text-soft);
 		font-size: 0.9rem;
 	}
 
@@ -476,36 +476,36 @@
 		background: none;
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #111;
+		color: var(--color-black);
 		border-radius: 8px;
 		text-align: left;
 		transition: background-color 0.15s;
 	}
 
 	.folder-option:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 
 	.modal-cancel {
 		align-self: flex-end;
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #fff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666;
+		color: var(--color-text-soft);
 		transition: background-color 0.15s;
 	}
 
 	.modal-cancel:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 
 	.rename-input {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
 		font-size: 0.9rem;
 		margin-bottom: 16px;
@@ -514,7 +514,7 @@
 
 	.rename-input:focus {
 		outline: none;
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.modal-actions {
@@ -527,7 +527,7 @@
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
+		background: var(--color-red);
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -535,6 +535,6 @@
 	}
 
 	.modal-confirm:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 </style>

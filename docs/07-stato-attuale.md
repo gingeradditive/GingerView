@@ -24,13 +24,19 @@ scambi un segnaposto per un bug.
 - Pagina Update (`/settings/update`): elenco dei componenti registrati nell'update manager di
   Moonraker (compreso `system`, cioè i pacchetti del sistema operativo) con versione e stato,
   check update, **Update all**, soft/hard recovery sui repo che Moonraker segnala come rotti, e
-  log live dell'operazione in una modale a terminale. Volutamente **non** ci sono aggiornamenti
+  log live dell'operazione in una modale a terminale. Se l'aggiornamento tocca GingerView stesso
+  la pagina si ricarica da sola a fine operazione, dopo un countdown di 5 secondi, altrimenti la
+  scheda continuerebbe a eseguire il bundle vecchio. Volutamente **non** ci sono aggiornamenti
   per singolo componente, rollback, né un pannello espandibile coi dettagli: vedi
   [04 — Update manager](04-moonraker.md#update-manager).
 - Pagina Timezone (`/settings/timezone`): mappa del mondo con la fascia oraria selezionata
   evidenziata e un segnaposto sulla città, orologio e data della zona aggiornati al secondo, e
   tendina con ricerca sulle 419 zone IANA (le 418 di `zone.tab` più `UTC`). Lettura e
-  salvataggio passano da `GET`/`POST /service/timezone` di G2-Service.
+  salvataggio passano da `GET`/`POST /service/timezone` di G2-Service. Il fuso scelto **decide
+  come si leggono tutti gli orari dell'interfaccia** (ETA in dashboard, timestamp della console,
+  ora di reset del rate limit GitHub): sono istanti assoluti scritti nell'ora della macchina, non
+  in quella del telefono che guarda — vedi
+  [02 — Store](02-architettura.md#store-srclibstores).
 - Pagina Config editor (`/settings/config-editor`): equivalente dell'editor dei config di
   Mainsail — albero della root `config` con cartelle e sottocartelle espandibili a richiesta,
   apertura in modifica, salvataggio, crea file, crea cartella, upload, rinomina, elimina,
@@ -53,6 +59,13 @@ scambi un segnaposto per un bug.
   `/settings`, quindi né la navigazione né le pagine diagnostiche vengono bloccate. Vedi
   [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo). **Non ancora
   provato su hardware reale** (`UI-8`).
+- Avviso di dati non aggiornati
+  ([StaleDataBanner.svelte](../src/lib/components/StaleDataBanner.svelte)): quattro secondi dopo
+  che la sottoscrizione allo stato è caduta compare una pillola in alto che dice da quanto i
+  valori a schermo sono fermi, e sparisce da sola al primo aggiornamento. Sta zitta quando Kalico è
+  fermo, perché lì parla già `KlipperDownOverlay`. Vedi
+  [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati). **Non ancora provato su
+  hardware reale.**
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
   (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
@@ -73,18 +86,6 @@ Indicazioni già raccolte:
 
 - **History** e **Statistics** restano da progettare.
 
-### Gli orari mostrati non seguono il fuso della stampante
-
-Il fuso orario ora si salva davvero (`POST /service/timezone`), ma va tenuto presente quando se
-ne valuta l'utilità: **gli orari mostrati in GingerView non dipendono dal fuso della
-stampante.** L'ETA in dashboard è calcolato nel
-browser (`new Date(Date.now() + rimanente)` in
-[DashboardControlPanel.svelte](../src/lib/components/DashboardControlPanel.svelte)) e reso con
-`getHours()`, quindi segue il fuso del telefono che sta guardando. Il fuso dell'host conta per
-i timestamp scritti nei log e per tutto ciò che la macchina calcola in ora locale — non per
-quello che si legge nell'interfaccia. Se si vuole che l'interfaccia segua l'ora della
-stampante, è un lavoro a parte (`UI-7`).
-
 ### Webcam assente
 
 Le macchine hanno una camera e G2-OS include già **Crowsnest**, quindi lo stream esiste lato
@@ -104,13 +105,14 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   condiviso in [movementStore.ts](../src/lib/stores/movementStore.ts).
 - [ExtrudeDialog.svelte](../src/lib/components/ExtrudeDialog.svelte) ha tre selettori: quantità
   (Low/Mid/High → 1000/10000/20000 mm³), velocità (Slow/Standard/Boost → 50/150/250 mm³/s) e
-  temperatura (PETG/PLA/Custom). I preset temperatura coprono le 4 zone dell'ugello
-  (`extruder`..`extruder3`, vedi nota sotto) e portano anche un `rotation_distance` non
-  mostrato in interfaccia (PETG 450, PLA e Custom 330); "Custom" apre un popup con un campo
-  °C per ciascuna delle quattro zone. Il pulsante **Extrude** ora esegue davvero una sequenza,
+  temperatura (PETG/PLA/Custom). I preset temperatura coprono tutte le zone dell'ugello
+  (vedi nota sotto) e portano anche un `rotation_distance` non mostrato in interfaccia
+  (PETG 450, PLA e Custom 330); PETG tiene la prima zona più fredda delle altre (200 contro
+  220), PLA è piatto. "Custom" apre un popup con un campo °C **per ciascuna zona che la
+  macchina dichiara**. Il pulsante **Extrude** ora esegue davvero una sequenza,
   mostrando la fase in corso come testo del pulsante (disabled nel frattempo): stesso popup di
   avvertimento homing → `G28` → spostamento al centro X, Y0, Z250 → `SET_HEATER_TEMPERATURE` +
-  `TEMPERATURE_WAIT` sulle 4 zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
+  `TEMPERATURE_WAIT` su tutte le zone → `SET_EXTRUDER_ROTATION_DISTANCE` + `G1 E<volume>` relativo.
   L'ultimo passaggio è **non verificato su hardware reale** (Q32 in [Q&A.md](Q&A.md)): presuppone
   che il `rotation_distance` dell'estrusore reale sia calibrato in mm³/rotazione per materiale.
   Parametri selezionati e fase in corso stanno in [movementStore.ts](../src/lib/stores/movementStore.ts),
@@ -133,12 +135,21 @@ le grandezze in filamento virtuale e serve una formula di riconversione, ancora 
 Anche `maxPelletKg = 5` è hardcoded: è la capienza della G2, ma va parametrizzata per modello,
 il che presuppone che l'applicazione sappia su quale macchina gira (Q26).
 
-### Le 4 zone dell'ugello sono presentate come 4 estrusori
+### Le zone dell'ugello sono presentate come estrusori
 
-`DashboardTemperaturePanel` interroga un elenco fisso `extruder`, `extruder1`, `extruder2`,
-`extruder3`. Non sono quattro utensili: sono le **zone riscaldate dell'unico ugello** (tre
-sulla G1). L'etichettatura andrebbe rivista di conseguenza, e l'elenco ricavato da
-`/printer/objects/list` invece che fissato nel codice (Q27).
+`extruder`, `extruder1`, … non sono utensili distinti: sono le **zone riscaldate dell'unico
+ugello** (quattro sulla G2, tre sulla G1). Quante siano non è più scritto nel codice —
+`DashboardTemperaturePanel`, il popup "Custom temperature" e la sequenza di estrusione partono
+tutti dall'elenco che [moonraker-zones.ts](../src/lib/services/moonraker-zones.ts) ricava da
+`/printer/objects/list`, quindi una G1 mostra tre zone senza toccare niente (vedi
+[04 — Gli "estrusori" sono zone di un solo ugello](04-moonraker.md#gli-estrusori-sono-zone-di-un-solo-ugello)).
+
+Resta la presentazione: le card sono numerate 1..n e non hanno etichette. Su Q27 la risposta è
+di **lasciarla così**, perché senza etichette è già leggibile visivamente.
+
+Finché la macchina non risponde le card non vengono disegnate: il numero di zone non si
+indovina. Il bed viene letto comunque, quindi il pannello non resta vuoto, e la richiesta viene
+ritentata ogni cinque secondi finché la macchina non risponde.
 
 In dashboard restano **in sola lettura**: non c'è un termostato manuale. Il flusso di
 estrusione fa eccezione (vedi sopra): imposta e attende le temperature, ma solo come passo
@@ -148,19 +159,6 @@ automatico della sua sequenza, non come controllo libero.
 
 Queste non sono più questioni aperte: la scelta è fatta, manca l'esecuzione. I task
 corrispondenti sono in [TODO.md](TODO.md).
-
-### Codice morto da rimuovere
-
-[DemoComponent.svelte](../src/lib/components/DemoComponent.svelte) non è referenziato da
-nessuna rotta ed è l'unico consumatore di `klipper-websocket.ts`: i due si tengono in vita a
-vicenda senza che nulla li usi. Le connessioni WebSocket realmente attive sono quelle aperte
-da `moonraker-notifier.ts` e dalla pagina console. **Entrambi vanno eliminati.**
-
-### Dipendenze React da rimuovere
-
-`@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` e `@mdi/react`
-sono librerie React, presenti in `package.json` ma non importate da alcun file Svelte.
-**Da disinstallare**; se in futuro servissero, si reinstallano.
 
 ### Il config editor va disattivato in produzione
 
@@ -182,31 +180,21 @@ resto: **nessuna gestione del conflitto** se due client salvano lo stesso file (
 che scrive), e nessuna validazione del config prima del salvataggio — l'errore si scopre al
 riavvio, quando Klippy torna in stato `error`.
 
-### Interfaccia da riportare tutta in inglese
-
-Oggi è mista: etichette in inglese, `aria-label` e alcuni dialoghi in italiano ("Crea",
-"Annulla", "Rinomina", "Torna a Settings"). **La lingua dell'interfaccia è l'inglese**; la
-documentazione resta in italiano. Non serve i18n: le stringhe sono letterali nei componenti.
-
 ## Incoerenze aperte
 
-### `validateConfig()` mai chiamato
+### Restano 4 vulnerabilità `low` senza fix disponibile
 
-`configService.validateConfig()` è implementato e testabile, ma non viene invocato all'avvio:
-una configurazione errata si manifesta come richieste fallite invece che come messaggio chiaro.
+`npm audit fix` è stato eseguito e ha risolto 11 delle 15 vulnerabilità aggiornando il solo
+`package-lock.json`, dentro i range di `package.json` (svelte, vite, postcss, rollup, esbuild,
+`@sveltejs/kit` e le loro transitive). Le 4 rimaste sono la stessa segnalazione ripetuta lungo
+la catena: `cookie < 0.7.0`, dipendenza diretta di `@sveltejs/kit`, che la richiede come
+`^0.6.0` anche nell'ultima versione pubblicata (2.70.2). Non c'è quindi una versione di kit che
+la risolva: `npm audit fix --force` "risolve" proponendo `@sveltejs/kit@0.0.30`, cioè un
+downgrade di sette anni, e va rifiutato.
 
-### `npm run lint` non è eseguibile
-
-Due problemi indipendenti, entrambi preesistenti:
-
-- `prettier --check .` segnala **93 file** non formattati. Il repository non è mai stato
-  passato con `npm run format`.
-- `eslint .` va in **crash** su `ToolheadPosition.svelte` con
-  `TypeError: Cannot read properties of undefined (reading 'type')` nella regola
-  `@typescript-eslint/no-unused-vars`. Il crash si riproduce sul file non modificato, ed è
-  verosimilmente legato alla sintassi reattiva legacy `$:` presente in quel componente.
-
-Poiché lo script è `prettier --check . && eslint .`, oggi eslint non viene nemmeno raggiunto.
+Sono `low` e non riguardano il browser: `cookie` è usato da kit lato server, mentre la build è
+statica (`adapter-static`) e non esegue codice Node in produzione. Vanno rivalutate quando kit
+aggiornerà la dipendenza.
 
 ### Il modello di macchina non è noto all'applicazione
 
@@ -223,7 +211,9 @@ Trattato per esteso in [06 — Build e deploy](06-deploy.md):
 - se qualcuno compila in locale con un `.env` e committa `build/`, l'IP della sua stampante
   finisce nel bundle distribuito. `build.sh` ora avvisa prima e dopo la build, ed elenca cosa è
   stato compilato dentro, ma **nulla impedisce materialmente quel commit**: manca un controllo
-  in CI o un hook.
+  in CI o un hook. Non è un rischio teorico: il `build/` committato conteneva davvero
+  `192.168.1.20`, finito lì da una build locale. La ricompilazione fatta per `QA-7` l'ha
+  rimosso, ma senza il controllo può ricapitare.
 
 Il repository [gingeradditive/g2-os](https://github.com/gingeradditive/g2-os) esiste ma è
 ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modulo GingerView**.
@@ -231,16 +221,10 @@ ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modul
 
 ## Robustezza
 
-- **Fallimenti di polling silenziosi.** I pannelli della dashboard usano `catch {}`: se la
-  stampante non risponde, i valori restano fermi all'ultima lettura senza indicazione visiva.
-  È voluto per non riempire lo schermo di toast, ma significa che un dato "vecchio" e uno
-  "attuale" sono indistinguibili.
 - **Pannelli non visibili continuano a interrogare.** Le slide fuori dalla viewport del
   carosello restano montate e mantengono attivo il proprio `setInterval`.
 - **Nessun test sul frontend.** L'unico test del progetto è
   [script/test-install.sh](../script/test-install.sh), che copre l'installer in un container.
-  Non esistono unit test né test end-to-end sull'applicazione, e nessun hook git impone
-  `lint`/`check` prima del commit.
-- **`fetchDirectoriesRecursive` scarica tutto l'albero.** Viene invocata all'apertura del
-  dialogo "sposta" e visita ricorsivamente ogni sottocartella di `gcodes`: su una struttura
-  profonda genera molte richieste sequenziali.
+  Non esistono unit test né test end-to-end sull'applicazione. `check` e `lint` sono imposti
+  dalla CI a ogni push (vedi [05 — CI](05-sviluppo.md#ci)), ma nessun hook git li esegue prima
+  del commit: l'errore si scopre a push fatto.

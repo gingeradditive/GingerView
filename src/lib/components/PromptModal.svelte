@@ -92,7 +92,11 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 3000;
@@ -103,7 +107,7 @@
 		box-sizing: border-box;
 	}
 	.modal-content {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
@@ -111,14 +115,14 @@
 		width: 100%;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 	}
 	.modal-content h3 {
 		margin: 0 0 16px;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 	}
 	.field {
 		display: flex;
@@ -128,24 +132,24 @@
 	.field span {
 		font-size: 0.85rem;
 		font-weight: 600;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 	}
 	.field input {
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 10px;
 		padding: 10px 12px;
 		font-size: 0.95rem;
 		font-family: inherit;
-		color: #111111;
+		color: var(--color-black);
 	}
 	.field input:focus {
 		outline: none;
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 	.error {
 		margin: 8px 0 0;
 		font-size: 0.82rem;
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.modal-actions {
 		display: flex;
@@ -155,27 +159,27 @@
 	}
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #ffffff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666666;
+		color: var(--color-text-soft);
 	}
 	.modal-cancel:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 	.modal-confirm {
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
 		transition: background-color 0.15s;
 	}
 	.modal-confirm:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 </style>

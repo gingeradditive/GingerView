@@ -1,10 +1,14 @@
 # Pulizia lint
 
-Piano di lavoro per i **27 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. I task corrispondenti in [TODO.md](TODO.md) sono `QA-8`…`QA-11` e `CLN-4`.
+Storia della pulizia del lint e — soprattutto — le **trappole da conoscere** prima di rimetterci
+mano. Non ci sono più task aperti in [TODO.md](TODO.md) su questo fronte.
 
-Fotografia al 2026-08-03: `prettier --check .` passa, `eslint .` riporta 27 errori,
-`svelte-check` 0 errori e 16 warning (quelli sono `QA-6`, non riguardano questo file).
+Fotografia al 2026-08-04, dopo `CLN-4`, `QA-9`, `CLN-9`, `QA-10`, `QA-11` e `QA-8`:
+`prettier --check .` passa, `eslint .` riporta **0 errori**, `svelte-check` è pulito con 0 errori
+e 0 warning (da quando `QA-6` ha sistemato `PrintCard.svelte` e `PrintList.svelte`).
+
+Da `QA-4` questo stato è **imposto dalla CI** a ogni push e pull request, quindi non può
+regredire in silenzio: vedi [05 — CI](05-sviluppo.md#ci).
 
 ---
 
@@ -49,8 +53,9 @@ Per capire se un domani si può togliere: elimina il wrapper, lascia almeno un `
 utilizzato nel codice e lancia `eslint`. Se non crasha, upstream ha aggiunto il ramo mancante e
 il workaround (con la sua dipendenza diretta `svelte-eslint-parser` in `package.json`) va via.
 
-Nota: `CLN-4` converte `ToolheadPosition.svelte` alle rune, ma **non** rende il workaround
-inutile — serve finché esiste anche un solo `$:` nel repo, e oggi ce ne sono in vari componenti.
+Nota: `CLN-4` ha convertito `ToolheadPosition.svelte` alle rune, ma il workaround **non** è
+diventato inutile: serve finché esiste anche un solo `$:` nel repo, e oggi ne resta uno in
+[`CurrentDirectory.svelte`](../src/lib/components/CurrentDirectory.svelte).
 
 ### 3. Non impostare `destructuredArrayIgnorePattern`
 
@@ -65,120 +70,161 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 27 errori residui
+## Gli errori chiusi
 
-### `CLN-4` — `svelte/no-immutable-reactive-statements` (9)
+I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
+conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
+vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
+`svelte/require-each-key` sono spariti con `QA-9` (vedi in fondo), due dei tre
+`no-explicit-any` con `CLN-9` (vedi sotto) e il terzo con `QA-10`. L'unico
+`svelte/prefer-svelte-reactivity` è sparito con `QA-11` (vedi sotto).
 
-Tutti e nove in [`ToolheadPosition.svelte`](../src/lib/components/ToolheadPosition.svelte),
-righe 68–77. Sono i `$: pNNN = project(...)` con argomenti costanti: gli otto vertici del
-cubo e il centro base, che non dipendono da nulla di mutabile e quindi non sono reattivi.
-
-Non vanno corretti uno per uno: **rientrano interamente in `CLN-4`**, la conversione del
-componente alle rune Svelte 5. In rune, i valori costanti diventano semplici `const` e i
-derivati veri `$derived`, e i nove errori spariscono insieme. Farlo prima a mano sarebbe lavoro
-buttato.
-
-### `QA-8` — `svelte/no-navigation-without-resolve` (7)
-
-| File                                                                       | Righe          |
-| -------------------------------------------------------------------------- | -------------- |
-| [`+layout.svelte`](../src/routes/+layout.svelte)                           | 29, 36, 47, 58 |
-| [`settings/+page.svelte`](../src/routes/settings/+page.svelte)             | 121            |
-| [`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte)   | 9              |
-| [`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte) | 82 (`goto()`)  |
+### `svelte/no-navigation-without-resolve` (7) — fatto (`QA-8`)
 
 La regola vuole che gli URL interni passino da `resolve()` di `$app/paths`, così restano
-corretti se l'app viene servita sotto un percorso base.
+corretti se l'app viene servita sotto un percorso base. I sette punti erano i quattro link del
+dock in [`+layout.svelte`](../src/routes/+layout.svelte), la riga di
+[`settings/+page.svelte`](../src/routes/settings/+page.svelte), il "indietro" di
+[`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte) e il `goto('/')` di
+[`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte).
 
-**Oggi non è un bug**: `svelte.config.js` non imposta `kit.paths.base`, quindi la base è `''` e
-i link funzionano. È lavoro di robustezza, da fare se e quando GingerView potrà essere servita
-sotto un sottopercorso. Se si decide che non succederà mai, l'alternativa onesta è spegnere la
-regola in `eslint.config.js` con un commento che spiega il perché, invece di lasciare sette
-errori permanenti che rendono `npm run lint` rumoroso.
+Delle due strade possibili — passare per `resolve()` oppure spegnere la regola dichiarando che
+l'app non sarà mai servita sotto un sottopercorso — **è stata scelta la prima**. Non era un bug
+(`svelte.config.js` non imposta `kit.paths.base`, quindi la base è `''`), ma era il lavoro di
+robustezza che tiene aperta la porta.
 
-**Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
+Sei punti sono stati una sostituzione diretta. Il settimo, `settings/+page.svelte`, ha richiesto
+un cambio di tipo: `resolve()` accetta un **route id tipizzato**, non una stringa qualsiasi,
+mentre il tipo `Item` aveva un solo `href?: string` condiviso tra righe interne e link esterni
+(il wiki). È diventato un'unione discriminata su `kind`:
 
-### `QA-9` — `svelte/require-each-key` (6)
+```ts
+type RouteItem = BaseItem & { kind: 'route'; href: RouteId };
+type ExternalItem = BaseItem & { kind: 'external'; href: string };
+```
 
-| File                                                                                         | Riga   |
-| -------------------------------------------------------------------------------------------- | ------ |
-| [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte)           | 93     |
-| [`DashboardTemperaturePanel.svelte`](../src/lib/components/DashboardTemperaturePanel.svelte) | 101    |
-| [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte)         | 76, 81 |
-| [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte)                                 | 254    |
-| [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte)               | 237    |
+`RouteId` viene da `$app/types` ed è generato da `svelte-kit sync`: aggiungere una sottopagina
+senza crearne la rotta ora è un errore di compilazione invece di un 404 a runtime. In più
+`href` non è più opzionale, quindi `handleExternalClick` ha perso il suo `if (item.href)`.
 
-Aggiungere una key a un `{#each}` **cambia come Svelte riconcilia il DOM**: non è una modifica
-cosmetica. Vale la pena distinguere due casi:
+Restano fuori i confronti `class:active={$page.url.pathname.startsWith('/settings')}` del dock,
+che eslint non guarda: se un domani `kit.paths.base` venisse impostata, quelli andrebbero
+rifatti su `$page.route.id`.
 
-- liste **statiche** (tacche e etichette dei pannelli dashboard): l'indice come key è corretto
-  e innocuo, perché gli elementi non vengono mai riordinati;
-- liste **dinamiche** (le righe della console, che crescono nel tempo): serve una key
-  realmente identificante, non l'indice, altrimenti si sposta il problema invece di risolverlo.
-  La console ha già un `timestamp` per riga.
-
-**Da verificare dopo**: che la console non perda righe né sfarfalli durante uno stream lungo.
-
-### `QA-10` — `@typescript-eslint/no-explicit-any` (4)
-
-| File                                                                 | Riga | Nota                                          |
-| -------------------------------------------------------------------- | ---- | --------------------------------------------- |
-| [`DemoComponent.svelte`](../src/lib/components/DemoComponent.svelte) | 8    | **coperto da `CLN-1`**: il file va cancellato |
-| [`klipper.ts`](../src/lib/types/klipper.ts)                          | 4, 5 | `params` e `result` di `KlipperMessage`       |
-| [`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts) | 177  | parametro `data` di `handleNotification`      |
-
-Uno dei quattro sparisce gratis con `CLN-1`. Restano i tre sul confine JSON-RPC con Moonraker,
-dove `any` è la scorciatoia tipica: la sostituzione corretta è `unknown` più un narrowing
-esplicito dove il valore viene consumato, non un'interfaccia inventata che dichiara più di
-quanto sappiamo davvero della risposta.
-
-Attenzione all'effetto a cascata: `KlipperMessage` è un tipo condiviso, quindi passare a
-`unknown` fa emergere errori di tipo in tutti i punti che oggi accedono ai campi senza
-controllarli. È il motivo per cui va fatto in un passaggio dedicato e non in mezzo ad altro.
-
-### `QA-11` — `svelte/prefer-svelte-reactivity` (1)
-
-[`settings/update/+page.svelte:40`](../src/routes/settings/update/+page.svelte#L40) —
-`let completedApps = new Set<string>()`.
-
-**Qui la regola ha torto.** Suggerisce `SvelteSet` perché le mutazioni di un `Set` normale non
-sono reattive, ma `completedApps` non viene mai letto da un template né da un `$derived`: è
-scritto alla riga 80 e riletto alla 166 dentro il `catch` di `runOperation`, in codice
-puramente imperativo. Convertirlo a `SvelteSet` aggiungerebbe overhead di reattività per un
-valore che nessuno osserva.
-
-La correzione giusta è un `eslint-disable-next-line` mirato con una riga di commento che spiega
-perché lì il `Set` semplice è corretto. Se invece un domani quel valore finisse in un template,
-allora `SvelteSet` diventerebbe la risposta vera — vale la pena scriverlo nel commento.
+**Da verificare su macchina**: navigazione del dock, ingresso/uscita da ogni sottopagina
+Impostazioni, il link esterno al wiki e il ritorno alla dashboard dopo l'avvio di una stampa.
 
 ---
 
-## Due cose emerse durante la pulizia, non ancora sistemate
+## Il `Set` non reattivo di `settings/update` — fatto (`QA-11`)
+
+L'unico `svelte/prefer-svelte-reactivity` era su
+[`settings/update/+page.svelte`](../src/routes/settings/update/+page.svelte) —
+`let completedApps = new Set<string>()`.
+
+**Lì la regola aveva torto.** Suggerisce `SvelteSet` perché le mutazioni di un `Set` normale non
+sono reattive, ma `completedApps` non viene mai letto da un template né da un `$derived`: è
+scritto e riletto solo dentro `runOperation`, in codice puramente imperativo. Convertirlo a
+`SvelteSet` avrebbe aggiunto overhead di reattività per un valore che nessuno osserva.
+
+La correzione applicata è un `eslint-disable-next-line svelte/prefer-svelte-reactivity` mirato,
+preceduto da un commento che spiega perché lì il `Set` semplice è corretto e dice che se un
+domani quel valore finisse in un template allora `SvelteSet` diventerebbe la risposta giusta.
+
+## Le key degli `{#each}` — fatto (`QA-9`)
+
+I 5 `{#each}` senza key sono stati sistemati distinguendo due casi, perché aggiungere una key
+**cambia come Svelte riconcilia il DOM** e non è una modifica cosmetica:
+
+- liste **statiche**, dove l'indice _è_ l'identità dell'elemento e non c'è riordino: le 40 bolle
+  di [`DashboardPelletPanel.svelte`](../src/lib/components/DashboardPelletPanel.svelte) e le
+  tacche/etichette di [`DashboardZHeightPanel.svelte`](../src/lib/components/DashboardZHeightPanel.svelte)
+  usano `(i)`, con un commento accanto che dice perché lì va bene;
+- liste **dinamiche**: le cartelle di destinazione in
+  [`PrintCard.svelte`](../src/lib/components/PrintCard.svelte) sono ricaricate e filtrate, quindi
+  la key è `dir.path`; le righe della console in
+  [`settings/console/+page.svelte`](../src/routes/settings/console/+page.svelte) hanno ora un
+  campo `id` progressivo.
+
+Sulla console il `timestamp` sembrava una key pronta all'uso, ma non lo è: è un `Date` preso dal
+browser all'arrivo della riga e più righe possono cadere nello stesso millisecondo (una risposta
+multilinea di Klipper), quindi le key si duplicherebbero. Il contatore `nextEntryId` è unico per
+costruzione e costa una riga.
+
+**Da verificare su macchina**: che la console non perda righe né sfarfalli durante uno stream
+lungo, e che il modal "Move" di `PrintCard` mostri la lista giusta dopo un cambio di cartella.
+
+## L'`any` sul confine JSON-RPC — fatto (`QA-10`)
+
+L'ultimo `no-explicit-any` era il parametro `data` di `handleNotification` in
+[`moonraker-notifier.ts`](../src/lib/services/moonraker-notifier.ts): la funzione riceve i
+messaggi grezzi della WebSocket di Moonraker, appena passati da `JSON.parse`.
+
+La correzione applicata è quella già indicata come giusta qui sopra: `unknown` più narrowing
+esplicito nel punto di consumo, **non** un'interfaccia del protocollo scritta a priori. In
+concreto sono comparse tre funzioni piccole sopra `handleNotification`:
+
+- `isJsonObject(value)` — il predicato di base, un oggetto che non è `null` né un array;
+- `isNotification(data)` — il type guard in cima alla funzione, che pretende solo quello su cui
+  il codice si appoggia davvero: `method` stringa e, se c'è, `params` array. Se non passa, la
+  notifica viene ignorata invece di far esplodere l'handler;
+- `readProcStatWarnings(params)` — scende in `params[0].moonraker_stats.warnings` un livello
+  alla volta e restituisce `[]` appena qualcosa non ha la forma attesa, filtrando poi le sole
+  stringhe. Il chiamante fa un `for` su un `string[]`, senza `?.` a catena.
+
+Il guadagno non è solo il lint: il vecchio `data.params?.[0]` su un `any` non aveva alcuna
+garanzia che `warnings` fosse iterabile, e un payload malformato sarebbe finito in un `TypeError`
+dentro `onmessage`. Ora ogni accesso è verificato e il caso strano degrada a "nessun warning".
+
+Il confine resta volutamente sottotipizzato: se un domani servirà il protocollo Moonraker
+tipizzato per intero, si riparte dalla sua documentazione (vedi la nota su `klipper.ts` qui
+sotto), non da questi tre guard, che coprono solo ciò che questo modulo legge.
+
+## `src/lib/types/klipper.ts` — deciso: cancellato (`CLN-9`)
+
+Il file dichiarava `KlipperMessage`, `KlipperStatus` e `WebSocketConnectionStatus`. L'unico
+consumatore era `klipper-websocket.ts`, che non esiste più: dopo `CLN-1` nessun file del repo
+importava più niente da lì, verificato con una ricerca sui tre nomi in tutto `src/`.
+
+La decisione è **cancellarlo**. Non serviva tenerlo in attesa di `QA-10`: la strada giusta per
+il confine JSON-RPC è `unknown` più narrowing esplicito nel punto di consumo, non un'interfaccia
+scritta a priori — e quella interfaccia, con `params: Record<string, any>` e `result: any`,
+dichiarava di sapere quello che non sapeva. Se un domani si vorrà tipizzare davvero il
+protocollo, si riparte dalla documentazione di Moonraker, non da questo file; il contenuto
+vecchio resta comunque recuperabile da git.
+
+Effetto collaterale: due dei tre `no-explicit-any` sono spariti insieme al file, e `QA-10` si è
+ridotto a una funzione sola in `moonraker-notifier.ts`.
+
+## Due cose emerse durante la pulizia
 
 Non sono errori di lint (`eslint` non le vede), ma sono venute fuori rimuovendo il codice morto
-e vanno decise da una persona.
+e vanno decise da una persona. Entrambe sono ora decise.
 
-### Subscribe mai disiscritta in `CurrentDirectory.svelte`
+### Subscribe mai disiscritta in `CurrentDirectory.svelte` — risolta (`CLN-8`)
 
-[Riga 11](../src/lib/components/CurrentDirectory.svelte#L11): `currentDirPath.subscribe(...)`
-non viene mai annullata. Prima c'era `const unsubscribe = ...`, ma la variabile non era usata da
-nessuna parte — quindi il valore di ritorno veniva scartato e la sottoscrizione restava viva per
-sempre. Nella pulizia è stato tolto solo il binding inutilizzato, **lasciando il comportamento
-identico**, perché sistemarlo davvero è un cambiamento funzionale.
+Il componente faceva `currentDirPath.subscribe(...)` senza mai annullare la sottoscrizione: prima
+c'era `const unsubscribe = ...`, ma la variabile non era usata da nessuna parte, quindi il valore
+di ritorno veniva scartato e la sottoscrizione restava viva per sempre. Nella pulizia era stato
+tolto solo il binding inutilizzato, lasciando il comportamento identico, perché sistemarlo
+davvero era un cambiamento funzionale. Il componente è montato dentro `PrintList`, quindi il leak
+si accumulava a ogni entrata/uscita dalla lista di stampa.
 
-La correzione è `onDestroy(unsubscribe)`, oppure `$derived`/`$state` se il componente viene
-convertito alle rune. Il componente è montato dentro `PrintList`, quindi il leak si accumula a
-ogni entrata/uscita dalla lista di stampa.
+La correzione applicata è l'auto-subscription: la variabile locale `dirPath` e la `subscribe`
+manuale sono sparite, e `segments` deriva direttamente da `$currentDirPath`. È Svelte a
+disiscrivere quando il componente viene distrutto, quindi non serve né `onDestroy` né la
+conversione alle rune.
 
-### Il marker di target in `ToolheadPosition.svelte` non è mai stato disegnato
+### Il marker di target in `ToolheadPosition.svelte` — deciso: rimozione definitiva
 
 Il componente calcolava `targetMarker` (e le tre normalizzazioni `targetXNorm/YNorm/ZNorm` che
 lo alimentavano) senza mai renderizzarlo: veniva proiettata la posizione di target del toolhead
 e poi buttata via. Nella pulizia è stato rimosso come codice morto.
 
-Se era una feature lasciata a metà — mostrare dove _sta andando_ la testa, oltre a dov'è — il
-codice si recupera da git prima di quel commit, ma va comunque scritta la parte SVG che lo
-disegna, che non è mai esistita. Da decidere: feature da completare o rimozione definitiva.
+La decisione presa (`UI-9`) è **non disegnarlo**: la rimozione è definitiva e la parte SVG, che
+non è mai esistita, non va scritta. Mostrare dove _sta andando_ la testa oltre a dov'è non è una
+feature che serve. Se un giorno la si volesse, si riparte da zero sulla parte SVG; il calcolo
+vecchio si recupera da git, ma è la porzione banale del lavoro.
 
 Nota: gli store `targetX/targetY/targetZ` **sono ancora usati** (alimentano `actualX/Y/Z` alle
 righe 118–130), non sono stati toccati.
@@ -191,11 +237,11 @@ Da `GingerView/`, nell'ordine:
 
 ```sh
 npm run lint     # prettier --check . && eslint .
-npm run check    # svelte-check: atteso 0 errori, 16 warning (QA-6)
+npm run check    # svelte-check: atteso 0 errori, 0 warning
 ```
 
-Il conteggio dei warning di `svelte-check` è il controllo più utile: **deve restare 16**, tutti
-in `PrintCard.svelte` e `PrintList.svelte`. Se sale, la modifica ha introdotto qualcosa.
+Il conteggio dei warning di `svelte-check` è il controllo più utile: **deve restare 0**. Se
+sale, la modifica ha introdotto qualcosa.
 
 Per confrontare con lo stato precedente senza fidarsi della memoria:
 

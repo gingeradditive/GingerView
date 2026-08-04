@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { ArrowLeft } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
 
 	let { title, children }: { title: string; children?: import('svelte').Snippet } = $props();
 </script>
 
 <section class="subpage">
 	<header class="subpage-header">
-		<a href="/settings" class="back-btn" aria-label="Torna a Settings" title="Torna a Settings">
+		<a
+			href={resolve('/settings')}
+			class="back-btn"
+			aria-label="Back to Settings"
+			title="Back to Settings"
+		>
 			<ArrowLeft />
 		</a>
 		<h1>{title}</h1>
@@ -39,9 +45,9 @@
 		width: 40px;
 		height: 40px;
 		border-radius: 14px;
-		background: #ffffff;
-		color: #111111;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		background: var(--color-white);
+		color: var(--color-black);
+		box-shadow: var(--shadow-float);
 		flex-shrink: 0;
 	}
 	.subpage-header h1 {
@@ -49,15 +55,15 @@
 		font-size: 1.6rem;
 	}
 	.subpage-body {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
 		padding: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		min-height: 200px;
 	}
 	.placeholder {
 		margin: 0;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		font-size: 0.95rem;
 	}
 </style>

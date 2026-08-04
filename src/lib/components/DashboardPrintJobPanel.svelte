@@ -6,14 +6,29 @@
 		getFileMetadata,
 		getFilamentType
 	} from '$lib/services/moonraker-files';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	const pollIntervalMs = 2000;
+	type PrintJobStatus = {
+		print_stats?: { state?: string; filename?: string; print_duration?: number };
+		virtual_sdcard?: { progress?: number };
+	};
+
+	const dataSource = 'dashboard-print-job';
+	const dataQuery = 'print_stats&virtual_sdcard';
 
 	let jobName = $state('--');
 	let jobMaterial = $state('');
 	let elapsed = $state('--:--:--');
 	let remaining = $state('--:--:--');
-	let eta = $state('--:--');
+	/*
+		L'istante di fine, non la stringa: l'ETA va riscritta anche quando cambia
+		il fuso della stampante (arrivo del primo valore, o salvataggio da
+		`/settings/timezone`), non solo al polling successivo.
+	*/
+	let etaAt = $state<Date | null>(null);
+	let eta = $derived(etaAt ? formatZoneTime($printerTimezone, etaAt) : '--:--');
 	let progress = $state(0);
 	let printState = $state<string>('standby');
 	let thumbnailUrl = $state<string>('/error-thumbnail.png');
@@ -30,10 +45,6 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.floor(seconds % 60);
 		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
-
-	const formatTime = (date: Date): string => {
-		return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 	};
 
 	const stripExtension = (filename: string): string => {
@@ -59,59 +70,44 @@
 		}
 	};
 
-	const updatePrintJob = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard`
-			);
-			if (!response.ok) return;
+	const updatePrintJob = (status: PrintJobStatus): void => {
+		const printStats = status.print_stats;
+		const vsd = status.virtual_sdcard;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		printState = printStats?.state ?? 'standby';
+		isPrinting = printState === 'printing';
+		isPaused = printState === 'paused';
 
-			const printStats = status.print_stats;
-			const vsd = status.virtual_sdcard;
+		const filename = printStats?.filename ?? '';
+		if (filename) {
+			jobName = stripExtension(filename);
+			loadFileMetadata(filename);
+		} else {
+			jobName = '--';
+			jobMaterial = '';
+			thumbnailUrl = '/error-thumbnail.png';
+			lastFilename = null;
+			estimatedTotalSeconds = null;
+		}
 
-			printState = printStats?.state ?? 'standby';
-			isPrinting = printState === 'printing';
-			isPaused = printState === 'paused';
+		const printDuration = printStats?.print_duration ?? 0;
+		elapsed = formatDuration(printDuration);
 
-			const filename = printStats?.filename ?? '';
-			if (filename) {
-				jobName = stripExtension(filename);
-				loadFileMetadata(filename);
-			} else {
-				jobName = '--';
-				jobMaterial = '';
-				thumbnailUrl = '/error-thumbnail.png';
-				lastFilename = null;
-				estimatedTotalSeconds = null;
-			}
+		const prog = vsd?.progress ?? 0;
+		progress = Math.round(prog * 100);
 
-			const printDuration = printStats?.print_duration ?? 0;
-			elapsed = formatDuration(printDuration);
-
-			const prog = vsd?.progress ?? 0;
-			progress = Math.round(prog * 100);
-
-			if (prog > 0.001 && printDuration > 0) {
-				const totalEstimated = printDuration / prog;
-				const remainingSeconds = totalEstimated - printDuration;
-				remaining = formatDuration(remainingSeconds);
-				const etaDate = new Date(Date.now() + remainingSeconds * 1000);
-				eta = formatTime(etaDate);
-			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
-				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
-				remaining = formatDuration(remainingSeconds);
-				const etaDate = new Date(Date.now() + remainingSeconds * 1000);
-				eta = formatTime(etaDate);
-			} else {
-				remaining = '--:--:--';
-				eta = '--:--';
-			}
-		} catch {
-			return;
+		if (prog > 0.001 && printDuration > 0) {
+			const totalEstimated = printDuration / prog;
+			const remainingSeconds = totalEstimated - printDuration;
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
+			const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else {
+			remaining = '--:--:--';
+			etaAt = null;
 		}
 	};
 
@@ -141,10 +137,10 @@
 	};
 
 	onMount(() => {
-		updatePrintJob();
-		const interval = window.setInterval(updatePrintJob, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		ensurePrinterTimezone();
 	});
+
+	subscribeWhileVisible<PrintJobStatus>(dataSource, () => dataQuery, updatePrintJob);
 </script>
 
 <section class="print-job-panel" aria-label="Print Job Info">
@@ -206,7 +202,7 @@
 
 <style>
 	.print-job-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 16px 0 0 0;
 		display: flex;
@@ -214,7 +210,7 @@
 		gap: 12px;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.idle-header {
@@ -233,7 +229,7 @@
 	.idle-title {
 		font-size: 2rem;
 		font-weight: 600;
-		color: #222222;
+		color: var(--color-text-secondary);
 		line-height: 1.1;
 	}
 
@@ -250,7 +246,7 @@
 		position: absolute;
 		left: 16px;
 		bottom: -0.9rem;
-		color: #222222;
+		color: var(--color-text-secondary);
 		font-size: 2.5rem;
 		font-weight: 600;
 		white-space: nowrap;
@@ -266,13 +262,13 @@
 	.job-name {
 		font-size: 1.6rem;
 		font-weight: 600;
-		color: #222222;
+		color: var(--color-text-secondary);
 		line-height: 1.1;
 	}
 
 	.job-material {
 		font-size: 0.8rem;
-		color: #666666;
+		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 
@@ -300,7 +296,7 @@
 		width: 58px;
 		height: 58px;
 		border-radius: 14px;
-		border: 3px solid #d72e28;
+		border: 3px solid var(--color-red);
 		background: transparent;
 		cursor: pointer;
 		display: flex;
@@ -310,7 +306,7 @@
 	}
 
 	.control-btn:hover {
-		background: #fde8e7;
+		background: var(--color-danger-bg);
 	}
 
 	.progress-bar {
@@ -328,7 +324,7 @@
 	}
 
 	.progress-elapsed {
-		background: #d72e28;
+		background: var(--color-red);
 	}
 
 	.elapsed-time {
@@ -338,14 +334,14 @@
 		height: 36px;
 		display: flex;
 		align-items: center;
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 0.95rem;
 		font-weight: 700;
 		white-space: nowrap;
 	}
 
 	.progress-remaining {
-		background: #b0b0b0;
+		background: var(--color-gray-light);
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
@@ -354,7 +350,7 @@
 	}
 
 	.eta-time {
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 0.8rem;
 		font-weight: 600;
 		white-space: nowrap;

@@ -114,6 +114,19 @@ export async function fetchUpdateStatusQuietly(): Promise<UpdateStatus | null> {
 	}
 }
 
+/**
+ * Name of GingerView's own entry in Moonraker's `update_manager` (see
+ * `script/install.sh`). Updating it replaces the files nginx serves while the
+ * browser is still running the old bundle, so the page has to reload itself:
+ * everything else on the printer can be updated without touching the client.
+ */
+export const SELF_UPDATE_NAME = 'GingerView';
+
+/** Matches case-insensitively: Moonraker echoes the section name as configured. */
+export function isSelfUpdate(application: string): boolean {
+	return application.toLowerCase() === SELF_UPDATE_NAME.toLowerCase();
+}
+
 // --- derived state -----------------------------------------------------------
 
 /** Moonraker uses `"?"` for a version it could not determine. */

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { portal } from '$lib/actions/portal';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
+	import { loadNozzleZones } from '$lib/services/moonraker-zones';
+	import { toastActions } from '$lib/stores/toastStore';
 	import {
 		amountOptions,
 		customTemperaturePreset,
@@ -8,10 +10,10 @@
 		extrudePhase,
 		extrudeSpeed,
 		extrudeTemperature,
+		fillZoneTemperatures,
 		speedOptions,
 		startExtrudeSequence,
 		temperatureOptions,
-		zoneKeys,
 		type Amount,
 		type ExtrudePhase,
 		type Speed,
@@ -31,13 +33,12 @@
 		extruding: 'Extruding...'
 	};
 
+	// One field per heated zone of the nozzle, so both are filled when the popup
+	// opens: how many zones there are is known only once the machine has been
+	// asked (see moonraker-zones.ts).
 	let showCustomTemperatureModal = $state(false);
-	let customTemperatureInputs = $state<TemperatureZones>({
-		extruder: 200,
-		extruder1: 200,
-		extruder2: 200,
-		extruder3: 200
-	});
+	let customTemperatureZones = $state<string[]>([]);
+	let customTemperatureInputs = $state<TemperatureZones>({});
 
 	const selectAmount = (value: Amount): void => {
 		extrudeAmount.set(value);
@@ -47,13 +48,28 @@
 		extrudeSpeed.set(value);
 	};
 
-	const selectTemperature = (value: Temperature): void => {
-		if (value === 'custom') {
-			customTemperatureInputs = { ...$customTemperaturePreset.zones };
-			showCustomTemperatureModal = true;
+	const selectTemperature = async (value: Temperature): Promise<void> => {
+		if (value !== 'custom') {
+			extrudeTemperature.set(value);
 			return;
 		}
-		extrudeTemperature.set(value);
+
+		const zones = await loadNozzleZones();
+		if (zones.length === 0) {
+			// Without the zone list there is no way to know how many fields to show,
+			// and the sequence would refuse to heat anyway. Say so instead of opening
+			// an empty popup.
+			toastActions.error(
+				'klipper',
+				'Custom temperature unavailable',
+				'Could not read the nozzle zones from the printer'
+			);
+			return;
+		}
+
+		customTemperatureZones = zones;
+		customTemperatureInputs = fillZoneTemperatures(zones, $customTemperaturePreset.zones);
+		showCustomTemperatureModal = true;
 	};
 
 	const cancelCustomTemperature = (): void => {
@@ -61,8 +77,8 @@
 	};
 
 	const confirmCustomTemperature = (): void => {
-		const isValid = zoneKeys.every(
-			(key) => Number.isFinite(customTemperatureInputs[key]) && customTemperatureInputs[key] > 0
+		const isValid = customTemperatureZones.every(
+			(zone) => Number.isFinite(customTemperatureInputs[zone]) && customTemperatureInputs[zone] > 0
 		);
 		if (isValid) {
 			customTemperaturePreset.set({
@@ -224,46 +240,18 @@
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
 			<h3>Custom temperature</h3>
 			<div class="modal-field-grid">
-				<label class="modal-field">
-					<span>Zone 1 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 2 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder1}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 3 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder2}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
-				<label class="modal-field">
-					<span>Zone 4 (°C)</span>
-					<input
-						type="number"
-						min="0"
-						max="300"
-						bind:value={customTemperatureInputs.extruder3}
-						onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-					/>
-				</label>
+				{#each customTemperatureZones as zone, index (zone)}
+					<label class="modal-field">
+						<span>Zone {index + 1} (°C)</span>
+						<input
+							type="number"
+							min="0"
+							max="300"
+							bind:value={customTemperatureInputs[zone]}
+							onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
+						/>
+					</label>
+				{/each}
 			</div>
 			<div class="modal-actions">
 				<button class="modal-cancel" onclick={cancelCustomTemperature}>Cancel</button>
@@ -284,9 +272,9 @@
 	}
 
 	.viz-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex: 1;
 		min-height: 0;
@@ -303,9 +291,9 @@
 	}
 
 	.settings-card {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		box-sizing: border-box;
 		flex-shrink: 0;
 		padding: 20px;
@@ -324,7 +312,7 @@
 		font-size: 0.85rem;
 		font-weight: 700;
 		letter-spacing: 0.05em;
-		color: #111111;
+		color: var(--color-black);
 	}
 
 	.option-row {
@@ -334,39 +322,39 @@
 
 	.option-btn {
 		flex: 1;
-		background: #ffffff;
-		border: 1px solid #e0e0e0;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
 		border-radius: 10px;
 		box-sizing: border-box;
 		padding: 12px 8px;
 		font-size: 0.95rem;
 		font-weight: 600;
-		color: #4a4a4a;
+		color: var(--color-text-muted);
 		cursor: pointer;
 	}
 
 	.option-btn:hover {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 
 	.option-btn.selected {
-		border: 2px solid #d72e28;
-		color: #d72e28;
+		border: 2px solid var(--color-red);
+		color: var(--color-red);
 		padding: 11px 7px;
 	}
 
 	.divider {
 		height: 1px;
-		background: #ececec;
+		background: var(--color-surface-sunken);
 	}
 
 	.extrude-btn {
-		background: #d72e28;
+		background: var(--color-red);
 		border: none;
 		border-radius: 16px;
 		box-sizing: border-box;
 		padding: 18px;
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 1.2rem;
 		font-weight: 700;
 		letter-spacing: 0.05em;
@@ -374,7 +362,7 @@
 	}
 
 	.extrude-btn:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 
 	.extrude-btn:disabled {
@@ -386,7 +374,11 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2000;
@@ -396,21 +388,21 @@
 	}
 
 	.modal-content {
-		background: #fff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
 		max-width: 400px;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.modal-content h3 {
 		margin: 0 0 16px 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111;
+		color: var(--color-black);
 	}
 
 	.modal-field-grid {
@@ -425,14 +417,14 @@
 		flex-direction: column;
 		gap: 6px;
 		font-size: 0.9rem;
-		color: #4a4a4a;
+		color: var(--color-text-muted);
 	}
 
 	.modal-field input {
 		width: 100%;
 		box-sizing: border-box;
 		padding: 10px 12px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
 		font-size: 1rem;
 	}
@@ -445,23 +437,23 @@
 
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #fff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666;
+		color: var(--color-text-soft);
 	}
 
 	.modal-cancel:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 
 	.modal-confirm {
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
+		background: var(--color-red);
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -469,6 +461,6 @@
 	}
 
 	.modal-confirm:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 </style>

@@ -199,17 +199,29 @@ export function formatOffset(minutes: number): string {
 	return `UTC${sign}${hours}:${rest}`;
 }
 
-/** Ora corrente nella zona, in formato 24 ore. */
-export function formatZoneTime(id: string, at: Date = new Date()): string {
+/**
+ * Ora nella zona indicata, in formato 24 ore.
+ *
+ * `id` nullo significa fuso del browser: è il ripiego di chi mostra un orario
+ * prima che il fuso della stampante sia arrivato, o quando non è leggibile —
+ * vedi `stores/timezoneStore.ts`. Un identificatore che `Intl` rifiuta dà
+ * `--:--` e non l'ora sbagliata.
+ */
+export function formatZoneTime(
+	id: string | null,
+	at: Date = new Date(),
+	withSeconds = false
+): string {
 	try {
 		return new Intl.DateTimeFormat('en-GB', {
-			timeZone: id,
+			timeZone: id ?? undefined,
 			hourCycle: 'h23',
 			hour: '2-digit',
-			minute: '2-digit'
+			minute: '2-digit',
+			...(withSeconds ? { second: '2-digit' } : {})
 		}).format(at);
 	} catch {
-		return '--:--';
+		return withSeconds ? '--:--:--' : '--:--';
 	}
 }
 

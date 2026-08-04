@@ -14,6 +14,7 @@
 		getOffsetMinutes,
 		setSystemTimezone
 	} from '$lib/services/timezone';
+	import { setPrinterTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 
 	/** L'orologio mostra ore e minuti: al secondo si accorge dello scatto di minuto. */
@@ -48,6 +49,7 @@
 			appliedTimezone = status.timezone;
 			selectedTimezone = status.timezone;
 			ntpSynchronized = status.ntpSynchronized;
+			setPrinterTimezone(status.timezone);
 		} catch (e) {
 			loadError = describeTimezoneError(e, 'Failed to read the current timezone.');
 		} finally {
@@ -65,6 +67,9 @@
 			appliedTimezone = status.timezone;
 			selectedTimezone = status.timezone;
 			ntpSynchronized = status.ntpSynchronized;
+			// Gli orari già a schermo (ETA in primis) seguono questo fuso: si
+			// aggiorna lo store subito, senza aspettare un ricaricamento.
+			setPrinterTimezone(status.timezone);
 			toastActions.success(
 				'network',
 				'Timezone saved',
@@ -151,9 +156,9 @@
 	}
 	.timezone-card {
 		flex: 1;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -170,7 +175,7 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.state {
 		display: flex;
@@ -178,11 +183,11 @@
 		justify-content: center;
 		gap: 10px;
 		padding: 40px 0;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		font-size: 0.95rem;
 	}
 	.state.error {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.clock {
 		display: flex;
@@ -195,16 +200,16 @@
 		font-size: 2.6rem;
 		font-weight: 800;
 		line-height: 1;
-		color: #222222;
+		color: var(--color-text-secondary);
 		font-variant-numeric: tabular-nums;
 	}
 	.date {
 		font-size: 0.95rem;
-		color: #444444;
+		color: var(--color-text-muted);
 	}
 	.zone-id {
 		font-size: 0.8rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		overflow-wrap: anywhere;
 	}
 	.warning {
@@ -213,7 +218,7 @@
 		gap: 10px;
 		margin: 0;
 		font-size: 0.85rem;
-		color: #d72e28;
+		color: var(--color-red);
 		font-weight: 600;
 	}
 	.actions-row {
@@ -227,8 +232,8 @@
 		align-items: center;
 		gap: 10px;
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 32px;
 		font-size: 1rem;
@@ -236,16 +241,5 @@
 	}
 	.save-btn:disabled {
 		opacity: 0.55;
-	}
-	:global(.spin) {
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
 	}
 </style>

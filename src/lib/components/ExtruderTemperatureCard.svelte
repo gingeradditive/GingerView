@@ -35,7 +35,7 @@
 
 <div
 	class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
-	aria-label={`Temperatura estrusore ${index}`}
+	aria-label={`Extruder ${index} temperature`}
 >
 	<span class="index">{index}</span>
 	<div class={`temperature-stack ${showSet ? 'with-set' : ''}`}>
@@ -54,8 +54,8 @@
 		align-items: center;
 		justify-content: flex-start;
 		position: relative;
-		background: #b9b9bc;
-		border: 1px solid #8f8f93;
+		background: var(--color-gray-light);
+		border: 1px solid var(--color-text-subtle);
 		border-radius: 5px;
 		width: 100px;
 		height: 53px;
@@ -67,18 +67,18 @@
 	}
 
 	.extruder-card.heating {
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.extruder-card.ready {
-		border-color: #d72e28;
-		background: #d72e28;
+		border-color: var(--color-red);
+		background: var(--color-red);
 	}
 
 	.index {
 		font-size: 0.8rem;
 		font-weight: 500;
-		color: #ececec;
+		color: var(--color-surface-sunken);
 		line-height: 1;
 	}
 
@@ -101,7 +101,7 @@
 	.temperature {
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #7a7a7e;
+		color: var(--color-text-subtle);
 		line-height: 1;
 		position: relative;
 	}
@@ -114,22 +114,22 @@
 	}
 
 	.temperature.heating {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.temperature.ready {
-		color: #ffffff;
+		color: var(--color-white);
 	}
 
 	.set-temperature {
 		font-size: 0.8rem;
 		font-weight: 500;
 		line-height: 1;
-		color: #ffffff;
+		color: var(--color-white);
 		opacity: 1;
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: 767.98px) {
 		.extruder-card {
 			width: 88px;
 			height: 49px;

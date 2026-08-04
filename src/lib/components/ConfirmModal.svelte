@@ -65,7 +65,11 @@
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 3000;
@@ -76,7 +80,7 @@
 		box-sizing: border-box;
 	}
 	.modal-content {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
@@ -84,7 +88,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 	.warning-icon {
 		margin-bottom: 8px;
@@ -93,21 +97,21 @@
 		margin: 0 0 12px;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		text-align: center;
 	}
 	.message {
 		margin: 0 0 12px;
 		font-size: 0.95rem;
-		color: #333333;
+		color: var(--color-text-muted);
 		text-align: center;
 	}
 	.details {
 		margin: 0 0 20px;
 		font-size: 0.85rem;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		text-align: center;
-		background: #f5f5f5;
+		background: var(--color-background);
 		border-radius: 8px;
 		padding: 10px 14px;
 		width: 100%;
@@ -122,27 +126,27 @@
 	}
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #ffffff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666666;
+		color: var(--color-text-soft);
 	}
 	.modal-cancel:hover {
-		background-color: #f5f5f5;
+		background-color: var(--color-background);
 	}
 	.modal-confirm {
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
 		transition: background-color 0.15s;
 	}
 	.modal-confirm:hover {
-		background: #b82520;
+		background: var(--color-red-dark);
 	}
 </style>

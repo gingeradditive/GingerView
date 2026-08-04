@@ -11,6 +11,10 @@
 	let selectedIndex = $state(0);
 	let visibleCount = $state(1);
 
+	// Le slide che si vedono adesso: come nella dashboard, il pannello fuori schermo
+	// resta montato e va sospeso a mano (vedi DashboardCarousel.svelte).
+	let slidesInView = $state<number[]>([]);
+
 	const options: EmblaOptionsType = {
 		axis: 'x',
 		loop: true,
@@ -20,10 +24,19 @@
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
 		emblaApi = event.detail;
 		selectedIndex = emblaApi.selectedScrollSnap();
+		slidesInView = emblaApi.slidesInView();
 		emblaApi.on('select', () => {
 			selectedIndex = emblaApi!.selectedScrollSnap();
 		});
+		emblaApi.on('slidesInView', () => {
+			slidesInView = emblaApi!.slidesInView();
+		});
+		emblaApi.on('reInit', () => {
+			slidesInView = emblaApi!.slidesInView();
+		});
 	};
+
+	const isInView = (index: number): boolean => slidesInView.includes(index);
 
 	const scrollTo = (index: number): void => {
 		emblaApi?.scrollTo(index);
@@ -35,7 +48,8 @@
 	};
 
 	const updateVisibleCount = (): void => {
-		if (window.matchMedia('(min-width: 768px)').matches) visibleCount = 2;
+		// Stessa condizione della media query in fondo al file (vedi i breakpoint in app.css).
+		if (window.matchMedia('(min-width: 768px) and (min-height: 600px)').matches) visibleCount = 2;
 		else visibleCount = 1;
 	};
 
@@ -50,7 +64,7 @@
 	<div class="embla" use:emblaCarouselSvelte={{ options, plugins: [] }} onemblaInit={onInit}>
 		<div class="embla__container">
 			<div class="embla__slide">
-				<ToolheadPosition />
+				<ToolheadPosition visible={isInView(0)} />
 			</div>
 			<div class="embla__slide">
 				<ExtrudeDialog />
@@ -62,7 +76,7 @@
 			<button
 				class="dot"
 				class:active={isDotActive(index)}
-				aria-label={`Pagina ${index + 1}`}
+				aria-label={`Page ${index + 1}`}
 				onclick={() => scrollTo(index)}
 			></button>
 		{/each}
@@ -103,7 +117,7 @@
 		box-sizing: border-box;
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 768px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 50%;
 		}
@@ -124,12 +138,12 @@
 		height: 8px;
 		border-radius: 50%;
 		border: none;
-		background: #d9d9d9;
+		background: var(--color-divider);
 		padding: 0;
 		cursor: pointer;
 	}
 
 	.dot.active {
-		background: #828282;
+		background: var(--color-text-subtle);
 	}
 </style>

@@ -2,14 +2,27 @@
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { formatZoneTime } from '$lib/services/timezone';
+	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 
-	const pollIntervalMs = 2000;
+	type ControlStatus = {
+		print_stats?: { state?: string; filename?: string; print_duration?: number };
+		virtual_sdcard?: { progress?: number };
+		fan?: { speed?: number };
+		'led LED_CAMERA'?: { color_data?: number[][] };
+	};
+
+	const dataSource = 'dashboard-control';
+	const dataQuery = 'print_stats&virtual_sdcard&fan&led LED_CAMERA';
 	const circumference = 2 * Math.PI * 16;
 
 	let elapsed = $state('--:--:--');
 	let remaining = $state('--:--:--');
-	let eta = $state('--:--');
+	/* L'istante di fine, non la stringa: vedi `DashboardPrintJobPanel`. */
+	let etaAt = $state<Date | null>(null);
+	let eta = $derived(etaAt ? formatZoneTime($printerTimezone, etaAt) : '--:--');
 	let progress = $state(0);
 	let isPrinting = $state(false);
 	let isPaused = $state(false);
@@ -35,10 +48,6 @@
 		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 	};
 
-	const formatTime = (date: Date): string => {
-		return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-	};
-
 	const sendGcode = async (gcode: string): Promise<void> => {
 		try {
 			await fetch(
@@ -62,66 +71,53 @@
 		}
 	};
 
-	const updateStatus = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?print_stats&virtual_sdcard&fan&led LED_CAMERA`
-			);
-			if (!response.ok) return;
+	const updateStatus = (status: ControlStatus): void => {
+		const printStats = status.print_stats;
+		const vsd = status.virtual_sdcard;
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
+		const printState = printStats?.state ?? 'standby';
+		isPrinting = printState === 'printing';
+		isPaused = printState === 'paused';
 
-			const printStats = status.print_stats;
-			const vsd = status.virtual_sdcard;
+		const filename = printStats?.filename ?? '';
+		if (filename) {
+			loadEstimatedTime(filename);
+		} else {
+			lastFilename = null;
+			estimatedTotalSeconds = null;
+		}
 
-			const printState = printStats?.state ?? 'standby';
-			isPrinting = printState === 'printing';
-			isPaused = printState === 'paused';
+		const printDuration = printStats?.print_duration ?? 0;
+		elapsed = formatDuration(printDuration);
 
-			const filename = printStats?.filename ?? '';
-			if (filename) {
-				loadEstimatedTime(filename);
-			} else {
-				lastFilename = null;
-				estimatedTotalSeconds = null;
-			}
+		const prog = vsd?.progress ?? 0;
+		progress = Math.round(prog * 100);
 
-			const printDuration = printStats?.print_duration ?? 0;
-			elapsed = formatDuration(printDuration);
+		if (prog > 0.001 && printDuration > 0) {
+			const totalEstimated = printDuration / prog;
+			const remainingSeconds = totalEstimated - printDuration;
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
+			const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
+			remaining = formatDuration(remainingSeconds);
+			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+		} else {
+			remaining = '--:--:--';
+			etaAt = null;
+		}
 
-			const prog = vsd?.progress ?? 0;
-			progress = Math.round(prog * 100);
+		const fan = status.fan;
+		if (fan) {
+			fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
+			fanOn = fanSpeed > 0;
+		}
 
-			if (prog > 0.001 && printDuration > 0) {
-				const totalEstimated = printDuration / prog;
-				const remainingSeconds = totalEstimated - printDuration;
-				remaining = formatDuration(remainingSeconds);
-				eta = formatTime(new Date(Date.now() + remainingSeconds * 1000));
-			} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
-				const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
-				remaining = formatDuration(remainingSeconds);
-				eta = formatTime(new Date(Date.now() + remainingSeconds * 1000));
-			} else {
-				remaining = '--:--:--';
-				eta = '--:--';
-			}
-
-			const fan = status.fan;
-			if (fan) {
-				fanSpeed = typeof fan.speed === 'number' ? fan.speed : 0;
-				fanOn = fanSpeed > 0;
-			}
-
-			const led = status['led LED_CAMERA'];
-			if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
-				const white = led.color_data[0][3] ?? 0;
-				lightValue = typeof white === 'number' ? white : 0;
-				lightOn = lightValue > 0;
-			}
-		} catch {
-			return;
+		const led = status['led LED_CAMERA'];
+		if (led && Array.isArray(led.color_data) && led.color_data.length > 0) {
+			const white = led.color_data[0][3] ?? 0;
+			lightValue = typeof white === 'number' ? white : 0;
+			lightOn = lightValue > 0;
 		}
 	};
 
@@ -175,10 +171,10 @@
 	};
 
 	onMount(() => {
-		updateStatus();
-		const interval = window.setInterval(updateStatus, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		ensurePrinterTimezone();
 	});
+
+	subscribeWhileVisible<ControlStatus>(dataSource, () => dataQuery, updateStatus);
 </script>
 
 <section class="control-panel" aria-label="Print Control">
@@ -273,7 +269,7 @@
 
 <style>
 	.control-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 20px;
 		display: flex;
@@ -281,7 +277,7 @@
 		gap: 12px;
 		width: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.progress-bar {
@@ -293,14 +289,14 @@
 		width: 100%;
 		height: 36px;
 		border-radius: 18px;
-		background: #d9d9d9;
+		background: var(--color-divider);
 		overflow: hidden;
 	}
 
 	.progress-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
-		background: #d72e28;
+		background: var(--color-red);
 		border-radius: 18px;
 		transition: width 0.3s ease;
 		display: flex;
@@ -310,7 +306,7 @@
 
 	.progress-percentage {
 		padding-right: 12px;
-		color: #ffffff;
+		color: var(--color-white);
 		font-size: 1.1rem;
 		font-weight: 700;
 		white-space: nowrap;
@@ -320,7 +316,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		color: #222222;
+		color: var(--color-text-secondary);
 		font-size: 0.95rem;
 		font-weight: 600;
 	}
@@ -353,13 +349,13 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 4;
 		fill: none;
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 4;
 		fill: none;
 		stroke-linecap: round;
@@ -378,20 +374,11 @@
 		animation: spin 2s linear infinite;
 	}
 
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
 	.square-btn {
 		width: 56px;
 		height: 56px;
 		border-radius: 12px;
-		border: 3px solid #d72e28;
+		border: 3px solid var(--color-red);
 		background: transparent;
 		cursor: pointer;
 		display: flex;
@@ -401,6 +388,6 @@
 	}
 
 	.square-btn:hover {
-		background: #fde8e7;
+		background: var(--color-danger-bg);
 	}
 </style>

@@ -175,7 +175,7 @@
 				alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
 			}
 		} else if (file) {
-			alert('Per favore seleziona un file .gcode');
+			alert('Please select a .gcode file');
 		}
 		// Reset input so re-selecting same file triggers change
 		if (target) target.value = '';
@@ -213,8 +213,7 @@
 	const visiblePrints = $derived(() => allItems.slice(0, visibleCount));
 	const hasMore = $derived(() => visibleCount < allItems.length);
 
-	let sentinel: HTMLElement;
-	let observer: IntersectionObserver;
+	let sentinel = $state<HTMLElement | undefined>();
 
 	function loadMore() {
 		if (hasMore()) {
@@ -222,19 +221,32 @@
 		}
 	}
 
-	function handleFileDeleted() {
-		loadDirectory();
-	}
+	// Il sentinel esiste solo quando ci sono altri elementi da caricare: va osservato
+	// ogni volta che compare, non una sola volta al mount.
+	$effect(() => {
+		const node = sentinel;
+		if (!node) return;
 
-	onMount(() => {
-		observer = new IntersectionObserver(
+		const observer = new IntersectionObserver(
 			(entries) => {
 				if (entries[0].isIntersecting) loadMore();
 			},
 			{ rootMargin: '200px' }
 		);
-		if (sentinel) observer.observe(sentinel);
+		observer.observe(node);
 
+		return () => observer.disconnect();
+	});
+
+	function focusOnMount(node: HTMLInputElement) {
+		node.focus();
+	}
+
+	function handleFileDeleted() {
+		loadDirectory();
+	}
+
+	onMount(() => {
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
@@ -242,7 +254,6 @@
 	});
 
 	onDestroy(() => {
-		observer?.disconnect();
 		unsubscribe();
 
 		// Only remove window event listeners in browser environment
@@ -259,7 +270,7 @@
 			<button
 				class="action-button"
 				onclick={() => (showCreateFolderModal = true)}
-				aria-label="Crea cartella"
+				aria-label="Create folder"
 			>
 				<svg viewBox="0 0 24 24" width="40" height="40"
 					><path d={mdiFolderPlus} fill="#D72E28" /></svg
@@ -279,29 +290,27 @@
 	</div>
 
 	{#if showCreateFolderModal}
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<div
 			class="modal-overlay"
 			role="dialog"
 			tabindex="0"
-			onclick={() => (showCreateFolderModal = false)}
+			onclick={(e) => e.target === e.currentTarget && (showCreateFolderModal = false)}
 			onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}
 		>
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div class="modal-content" role="document" tabindex="0" onclick={(e) => e.stopPropagation()}>
-				<h3>Crea nuova cartella</h3>
+			<div class="modal-content">
+				<h3>Create new folder</h3>
 				<input
 					type="text"
 					bind:value={folderName}
-					placeholder="Nome cartella"
+					placeholder="Folder name"
 					class="folder-input"
 					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
-					autofocus
+					use:focusOnMount
 				/>
 				<div class="modal-actions">
-					<button class="modal-confirm" onclick={handleCreateFolder}>Crea</button>
+					<button class="modal-confirm" onclick={handleCreateFolder}>Create</button>
 					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}
-						>Annulla</button
+						>Cancel</button
 					>
 				</div>
 			</div>
@@ -317,8 +326,13 @@
 	{:else}
 		<div class="grid">
 			{#each visiblePrints() as item (item.id)}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<div onclick={() => handleItemClick(item)} role="button" tabindex="0">
+				<div
+					onclick={() => handleItemClick(item)}
+					onkeydown={(e) =>
+						(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), handleItemClick(item))}
+					role="button"
+					tabindex="0"
+				>
 					<PrintCard {item} />
 				</div>
 			{/each}
@@ -378,12 +392,12 @@
 		text-align: center;
 		padding: 48px 16px;
 		font-size: 1.1rem;
-		color: #888;
+		color: var(--color-text-subtle);
 		font-family: 'Montserrat', sans-serif;
 	}
 
 	.status-message.error {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.modal-overlay {
@@ -392,7 +406,11 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(135deg, rgba(100, 100, 100, 0.3), rgba(100, 100, 100, 0.22));
+		background: linear-gradient(
+			135deg,
+			rgba(var(--rgb-gray-mid), 0.3),
+			rgba(var(--rgb-gray-mid), 0.22)
+		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 		z-index: 2000;
@@ -402,25 +420,25 @@
 	}
 
 	.modal-content {
-		background: #fff;
+		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
 		min-width: 300px;
 		max-width: 400px;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.modal-content h3 {
 		margin: 0 0 16px 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111;
+		color: var(--color-black);
 	}
 
 	.folder-input {
 		width: 100%;
 		padding: 12px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
 		font-size: 0.9rem;
 		margin-bottom: 16px;
@@ -429,7 +447,7 @@
 
 	.folder-input:focus {
 		outline: none;
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.modal-actions {
@@ -442,7 +460,7 @@
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
-		background: #d72e28;
+		background: var(--color-red);
 		color: white;
 		cursor: pointer;
 		font-size: 0.9rem;
@@ -450,11 +468,11 @@
 
 	.modal-cancel {
 		padding: 8px 20px;
-		border: 1px solid #c8c8c8;
+		border: 1px solid var(--color-gray);
 		border-radius: 8px;
-		background: #fff;
+		background: var(--color-white);
 		cursor: pointer;
 		font-size: 0.9rem;
-		color: #666;
+		color: var(--color-text-soft);
 	}
 </style>

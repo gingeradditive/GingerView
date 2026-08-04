@@ -83,9 +83,9 @@
 	}
 	.logs-card {
 		height: 100%;
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 20px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-float);
 		padding: 24px;
 		display: flex;
 		flex-direction: column;
@@ -101,7 +101,7 @@
 		margin: 0;
 		font-size: 2rem;
 		font-weight: 700;
-		color: #222222;
+		color: var(--color-text-secondary);
 	}
 	.log-list {
 		display: flex;
@@ -112,7 +112,7 @@
 		align-items: center;
 		gap: 16px;
 		padding: 14px 4px;
-		border-bottom: 1px solid #ececec;
+		border-bottom: 1px solid var(--color-surface-sunken);
 	}
 	.log-row:last-child {
 		border-bottom: none;
@@ -123,7 +123,7 @@
 		justify-content: center;
 		width: 28px;
 		height: 28px;
-		color: #444444;
+		color: var(--color-text-muted);
 		flex-shrink: 0;
 	}
 	.row-text {
@@ -138,7 +138,7 @@
 	.row-text p {
 		margin: 2px 0 0;
 		font-size: 0.85rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 	}
 	.download-btn {
 		display: inline-flex;
@@ -148,11 +148,11 @@
 		height: 44px;
 		border-radius: 14px;
 		background: transparent;
-		color: #6e6e6e;
+		color: var(--color-text-soft);
 		flex-shrink: 0;
 	}
 	.download-btn:hover:not(:disabled) {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 	.download-btn:disabled {
 		opacity: 0.6;
@@ -168,8 +168,8 @@
 		align-items: center;
 		gap: 10px;
 		border: none;
-		background: #d72e28;
-		color: #ffffff;
+		background: var(--color-red);
+		color: var(--color-white);
 		border-radius: 16px;
 		padding: 12px 24px;
 		font-size: 1rem;
@@ -177,16 +177,5 @@
 	}
 	.clear-btn:disabled {
 		opacity: 0.55;
-	}
-	:global(.spin) {
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
 	}
 </style>

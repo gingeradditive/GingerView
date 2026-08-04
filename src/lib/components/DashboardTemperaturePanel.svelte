@@ -1,18 +1,35 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { loadNozzleZones } from '$lib/services/moonraker-zones';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
+
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
 
 	type HeaterStatus = {
 		temperature?: number;
 		target?: number;
 	};
 
-	const extruderKeys = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
-	const pollIntervalMs = 1500;
+	const dataSource = 'dashboard-temperature';
 
-	let extruderTemperatures = $state<(number | null)[]>([null, null, null, null]);
-	let extruderTargets = $state<(number | null)[]>([null, null, null, null]);
+	/**
+	 * Ogni quanto richiedere la lista delle zone quando la macchina non l'ha data.
+	 * Succede mentre Klippy si riavvia: prima l'iscrizione chiedeva le zone a ogni
+	 * poll e riprovava da sé, ora che non c'è più un poll il tentativo va rifatto
+	 * qui — a passo lento, perché l'unica cosa che può cambiare la risposta è un
+	 * riavvio di Klippy.
+	 */
+	const zonesRetryMs = 5000;
+
+	// The heated zones of the one nozzle, as the machine declares them: four on
+	// the G2, three on the G1 — see moonraker-zones.ts. Empty until it answers,
+	// which is the only honest thing to draw when the count is unknown; the bed
+	// is read either way, so the panel is never blank.
+	let zoneKeys = $state<string[]>([]);
+	let extruderTemperatures = $state<(number | null)[]>([]);
+	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
 
@@ -49,65 +66,73 @@
 		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
 	};
 
-	const getQueryPath = (): string => {
-		const objects = [...extruderKeys, 'heater_bed'];
-		return `/printer/objects/query?${objects.join('&')}`;
-	};
-
-	const updateTemperatures = async (): Promise<void> => {
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}${getQueryPath()}`);
-			if (!response.ok) {
-				return;
-			}
-
-			const payload = await response.json();
-			const status = payload?.result?.status as Record<string, HeaterStatus> | undefined;
-			if (!status) {
-				return;
-			}
-
-			extruderTemperatures = extruderKeys.map((key) => {
-				const temperature = status[key]?.temperature;
-				return typeof temperature === 'number' ? temperature : null;
-			});
-
-			extruderTargets = extruderKeys.map((key) => {
-				const target = status[key]?.target;
-				if (typeof target !== 'number' || Number.isNaN(target)) return null;
-				return target > 0 ? target : null;
-			});
-
-			const heaterBed = status.heater_bed?.temperature;
-			bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
-
-			const heaterBedTarget = status.heater_bed?.target;
-			bedTarget =
-				typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
-		} catch {
-			return;
-		}
-	};
+	// Il bed c'è sempre: finché le zone non si sanno il pannello è iscritto solo a
+	// quello, e si riscrive da sé — la query cambia e l'iscrizione si rifà —
+	// quando la macchina risponde.
+	const getQuery = (): string => [...zoneKeys, 'heater_bed'].join('&');
 
 	onMount(() => {
-		updateTemperatures();
-		const interval = window.setInterval(updateTemperatures, pollIntervalMs);
-		return () => window.clearInterval(interval);
+		let stopped = false;
+		let retry: ReturnType<typeof setTimeout> | null = null;
+
+		// Cached after the first answer, so this costs one request until the
+		// machine replies and nothing afterwards (see moonraker-zones.ts).
+		const loadZones = async (): Promise<void> => {
+			const zones = await loadNozzleZones();
+			if (stopped) return;
+			if (zones.length > 0) {
+				zoneKeys = zones;
+				return;
+			}
+			retry = setTimeout(loadZones, zonesRetryMs);
+		};
+		loadZones();
+
+		return () => {
+			stopped = true;
+			if (retry !== null) clearTimeout(retry);
+		};
 	});
+
+	const updateTemperatures = (status: Record<string, HeaterStatus>): void => {
+		extruderTemperatures = zoneKeys.map((key) => {
+			const temperature = status[key]?.temperature;
+			return typeof temperature === 'number' ? temperature : null;
+		});
+
+		extruderTargets = zoneKeys.map((key) => {
+			const target = status[key]?.target;
+			if (typeof target !== 'number' || Number.isNaN(target)) return null;
+			return target > 0 ? target : null;
+		});
+
+		const heaterBed = status.heater_bed?.temperature;
+		bedTemperature = typeof heaterBed === 'number' ? heaterBed : null;
+
+		const heaterBedTarget = status.heater_bed?.target;
+		bedTarget = typeof heaterBedTarget === 'number' && heaterBedTarget > 0 ? heaterBedTarget : null;
+	};
+
+	subscribeWhileVisible<Record<string, HeaterStatus>>(
+		dataSource,
+		getQuery,
+		updateTemperatures,
+		() => visible
+	);
 </script>
 
-<section class="temperature-panel" aria-label="Pannello temperature Klipper">
+<section class="temperature-panel" aria-label="Klipper temperature panel">
 	<div class="extruders">
-		{#each extruderTemperatures as temperature, index}
+		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
 				index={index + 1}
-				{temperature}
+				temperature={extruderTemperatures[index] ?? null}
 				target={extruderTargets[index] ?? null}
 			/>
 		{/each}
 	</div>
 
-	<div class="bed-section" aria-label="Temperatura bed">
+	<div class="bed-section" aria-label="Bed temperature">
 		<div class="bed-triangle">
 			<img src="/NozzleHead.svg" alt="Nozzle" class="bed-triangle-icon" />
 		</div>
@@ -127,7 +152,7 @@
 
 <style>
 	.temperature-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		display: flex;
@@ -138,7 +163,7 @@
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 	}
 
 	.extruders {
@@ -179,8 +204,8 @@
 		height: 81px;
 		padding: 7px 8px;
 		border-radius: 7px;
-		border: 1px solid #8f8f93;
-		background: #b9b9bc;
+		border: 1px solid var(--color-text-subtle);
+		background: var(--color-gray-light);
 		box-sizing: border-box;
 		transition:
 			background-color 220ms ease,
@@ -188,18 +213,18 @@
 	}
 
 	.bed-card.heating {
-		border-color: #d72e28;
+		border-color: var(--color-red);
 	}
 
 	.bed-card.ready {
-		border-color: #d72e28;
-		background: #d72e28;
+		border-color: var(--color-red);
+		background: var(--color-red);
 	}
 
 	.bed-label {
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: #ececec;
+		color: var(--color-surface-sunken);
 		line-height: 1;
 	}
 
@@ -217,7 +242,7 @@
 	.bed-value {
 		font-size: 1.5rem;
 		font-weight: 600;
-		color: #7a7a7e;
+		color: var(--color-text-subtle);
 		line-height: 1;
 		position: relative;
 	}
@@ -230,18 +255,18 @@
 	}
 
 	.bed-value.heating {
-		color: #d72e28;
+		color: var(--color-red);
 	}
 
 	.bed-value.ready {
-		color: #ffffff;
+		color: var(--color-white);
 	}
 
 	.bed-set-temperature {
 		font-size: 0.8rem;
 		font-weight: 500;
 		line-height: 1;
-		color: #ffffff;
+		color: var(--color-white);
 		opacity: 1;
 	}
 </style>

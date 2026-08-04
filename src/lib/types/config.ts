@@ -11,8 +11,6 @@ export interface KlipperConfig {
 	moonrakerHost: string;
 	/** Set only when an explicit host override is configured, otherwise 0. */
 	moonrakerPort: number;
-	printerName?: string;
-	connectionTimeout?: number;
 }
 
 export interface ServiceConfig {

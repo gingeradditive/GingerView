@@ -14,9 +14,6 @@
 | Editor di codice | CodeMirror 6 — **solo** nel chunk di `/settings/config-editor`, pagina di sviluppo |
 | Font             | Montserrat (importato da Google Fonts in `src/app.css`)                            |
 
-Sono presenti anche `@mui/material` ed `@emotion/*` tra le dipendenze, ma **non sono usati**
-dal codice Svelte: vedi [07 — Stato attuale](07-stato-attuale.md#dipendenze-react-da-rimuovere).
-
 ## Modalità di rendering
 
 In [svelte.config.js](../svelte.config.js) l'adapter statico è configurato con
@@ -80,6 +77,9 @@ build/                      output della build — committato nel repo (vedi doc
   una destinazione ma un comando. Rosso pieno mentre la macchina è in marcia, si inverte in un
   pulsante di firmware restart quando Kalico è fermo (vedi
   [04 — Emergency stop](04-moonraker.md#emergency-stop)).
+- **`<StaleDataBanner />`** — pillola fissa in alto che compare quando lo stato dei pannelli
+  smette di arrivare: i valori a schermo restano, ma dichiarati vecchi e con da quanto (vedi
+  [04 — Dati non aggiornati](04-moonraker.md#dati-non-aggiornati)).
 - **`<KlipperDownOverlay />`** — avviso non chiudibile che copre le pagine operative quando Kalico
   è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
   `/settings`, così il pulsante che fa ripartire la macchina e le pagine diagnostiche restano
@@ -103,30 +103,49 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 | `/settings/config-editor`        | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
 | `/settings/{history,statistics}` | `SettingsSubpage`                             | Solo intestazione + "Coming soon"                                                                                                                                                                               |
 
-I caroselli sono responsive: la dashboard mostra 1 slide sotto 768px, 3 fino a 1199px e
-tutte e 5 sopra i 1200px, nascondendo i pallini di navigazione in quest'ultimo caso.
+### Breakpoint
 
-Il bersaglio primario è però **lo schermo di un telefono**: la macchina non ha display e
-l'utente si collega dal proprio cellulare (vedi [01 — Panoramica](01-panoramica.md)). Il
-ramo sotto 768px è quindi quello che conta davvero; i breakpoint superiori servono al tecnico
-che si collega dal portatile. In `src/app.css` sotto 768px viene applicato `zoom: 0.8`, che è
-un residuo dell'impostazione precedente da rivedere.
+Il bersaglio primario è **lo schermo di un telefono**: la macchina non ha display e l'utente si
+collega dal proprio cellulare (vedi [01 — Panoramica](01-panoramica.md)). I breakpoint superiori
+servono al tecnico che si collega dal portatile. Le soglie sono queste, elencate in testa a
+[app.css](../src/app.css), e sono le uniche da usare nei componenti:
+
+| Condizione                                | Significato                                                                   |
+| ----------------------------------------- | ----------------------------------------------------------------------------- |
+| `max-width: 767.98px`                     | Telefono in verticale: il caso reale                                          |
+| `max-width: 1023.98px`                    | Due colonne affiancate non ci stanno più (config editor, dettagli di un file) |
+| `min-width: 768px` e `min-height: 600px`  | Schermo grande: 3 slide in dashboard, 2 in movimento                          |
+| `min-width: 1200px` e `min-height: 600px` | Schermo largo: 5 slide in dashboard, pallini di navigazione nascosti          |
+
+Le soglie che decidono **quante slide** mostrare chiedono anche l'altezza perché la larghezza da
+sola non distingue un telefono in orizzontale (~850×390) da un portatile: senza `min-height` un
+telefono ruotato finiva sul layout a 3 o 5 pannelli su 390px di altezza. Le soglie `max` usano
+`.98px` perché con il viewport a larghezza frazionaria (zoom del browser) `767`/`768` secchi
+lascerebbero scoperta la fascia intermedia.
+
+I valori intermedi che c'erano prima (480, 560, 640, 900, 980, 1199) erano arbitrari e su un
+telefono erano tutti sempre veri, cioè non distinguevano niente.
+
+Sotto i 768px non viene applicata nessuna scalatura globale: il
+`zoom: 0.8` su `html` che c'era in `src/app.css` era un residuo dell'impostazione precedente,
+pensata per un display fisso, ed è stato rimosso — su telefono rimpiccioliva testi e tocchi
+senza motivo.
 
 ## Servizi (`src/lib/services/`)
 
-| File                                                               | Ruolo                                                                                                                                                                                                                      |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [config.ts](../src/lib/services/config.ts)                         | Singleton `configService` e helper `getMoonrakerApiUrl()`: risolve gli endpoint, con same-origin come default e le variabili `VITE_*` come override di sviluppo                                                            |
-| [klipper-websocket.ts](../src/lib/services/klipper-websocket.ts)   | Classe `KlipperWebSocketService` con store `connectionStatus` e `klipperStatus`, riconnessione con backoff lineare (max 5 tentativi). Codice morto, da rimuovere: vedi [07](07-stato-attuale.md#codice-morto-da-rimuovere) |
-| [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) | Avvisi all'avvio da `/server/info` + WebSocket persistente per `notify_klippy_*` e warning runtime; espone gli store `klippyState` e `klippyMessage`                                                                       |
-| [moonraker-printer.ts](../src/lib/services/moonraker-printer.ts)   | Comandi della stampante non legati a una pagina: emergency stop e i tre riavvii (firmware/host/Moonraker), più `fetchPrinterInfo`, `fetchPrintState`, `waitForKlipperReady`                                                |
-| [moonraker-files.ts](../src/lib/services/moonraker-files.ts)       | Tutte le operazioni sui file: elenco, metadati, thumbnail, upload, sposta, elimina, crea cartella                                                                                                                          |
-| [moonraker-config.ts](../src/lib/services/moonraker-config.ts)     | Config editor: albero della root `config`, lettura/scrittura/download dei file, `CONFIG_EDITOR_ENABLED`                                                                                                                    |
-| [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts)         | Download dei log e rollover                                                                                                                                                                                                |
-| [moonraker-update.ts](../src/lib/services/moonraker-update.ts)     | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente                                                                                       |
-| [g2-service.ts](../src/lib/services/g2-service.ts)                 | Trasporto comune a tutte le API di G2-Service: prefisso `/service`, modello degli errori (`ServiceError`) e attesa dei job asincroni (`waitForJob`)                                                                        |
-| [network-api.ts](../src/lib/services/network-api.ts)               | Endpoint di rete di G2-Service: stato unificato WiFi/Ethernet, elenco reti, rescan e connessione (che è un job)                                                                                                            |
-| [timezone.ts](../src/lib/services/timezone.ts)                     | Fuso orario di sistema via `GET`/`POST /service/timezone`, più tutto il calcolo locale — offset via `Intl`, formattazione, ricerca sull'elenco IANA                                                                        |
+| File                                                               | Ruolo                                                                                                                                                                                                             |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [config.ts](../src/lib/services/config.ts)                         | Singleton `configService` e helper `getMoonrakerApiUrl()`: risolve gli endpoint, con same-origin come default e le variabili `VITE_*` come override di sviluppo                                                   |
+| [moonraker-notifier.ts](../src/lib/services/moonraker-notifier.ts) | Avvisi all'avvio da `/server/info` + WebSocket persistente per `notify_klippy_*` e warning runtime; espone gli store `klippyState` e `klippyMessage`                                                              |
+| [moonraker-printer.ts](../src/lib/services/moonraker-printer.ts)   | Comandi della stampante non legati a una pagina: emergency stop e i tre riavvii (firmware/host/Moonraker), più `fetchPrinterInfo`, `fetchPrintState`, `waitForKlipperReady`                                       |
+| [moonraker-zones.ts](../src/lib/services/moonraker-zones.ts)       | `loadNozzleZones()`: le zone riscaldate dell'ugello ricavate da `/printer/objects/list`, in cache finché non si chiede un riavvio                                                                                 |
+| [moonraker-files.ts](../src/lib/services/moonraker-files.ts)       | Tutte le operazioni sui file: elenco, metadati, thumbnail, upload, sposta, elimina, crea cartella                                                                                                                 |
+| [moonraker-config.ts](../src/lib/services/moonraker-config.ts)     | Config editor: albero della root `config`, lettura/scrittura/download dei file, `CONFIG_EDITOR_ENABLED`                                                                                                           |
+| [moonraker-logs.ts](../src/lib/services/moonraker-logs.ts)         | Download dei log e rollover                                                                                                                                                                                       |
+| [moonraker-update.ts](../src/lib/services/moonraker-update.ts)     | Update manager: stato, refresh, upgrade, recovery, rollback, WebSocket dell'output e helper per derivare lo stato di ogni componente                                                                              |
+| [g2-service.ts](../src/lib/services/g2-service.ts)                 | Trasporto comune a tutte le API di G2-Service: prefisso `/service`, modello degli errori (`ServiceError`) e attesa dei job asincroni (`waitForJob`)                                                               |
+| [network-api.ts](../src/lib/services/network-api.ts)               | Endpoint di rete di G2-Service: stato unificato WiFi/Ethernet, elenco reti, rescan e connessione (che è un job)                                                                                                   |
+| [timezone.ts](../src/lib/services/timezone.ts)                     | Fuso orario di sistema via `GET`/`POST /service/timezone`, più tutto il calcolo locale — offset via `Intl`, formattazione (`formatZoneTime`, usata da tutti gli orari dell'interfaccia), ricerca sull'elenco IANA |
 
 ### Dati generati (`src/lib/data/`)
 
@@ -144,6 +163,14 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 - **`directoryStore.ts`** — percorso corrente relativo alla root `gcodes`, con helper
   `navigateToDir`, `navigateUp`, `navigateToRoot`, `navigateToSegment`.
 - **`contextMenuStore.ts`** — id del menu contestuale aperto, così che aprirne uno chiuda gli altri.
+- **`timezoneStore.ts`** — fuso orario della **stampante**, letto una volta sola per sessione
+  (`ensurePrinterTimezone()`, che condivide la stessa promise fra tutti i componenti che lo
+  chiedono) e riscritto da `/settings/timezone` a ogni lettura o salvataggio
+  (`setPrinterTimezone()`). Ogni orario dell'interfaccia — ETA della dashboard, timestamp della
+  console, ora di reset del rate limit GitHub nella pagina Update — si formatta in questo fuso
+  con `formatZoneTime()`. Finché il valore è `null` (non ancora arrivato, o G2-Service muto) si
+  ripiega sul fuso del browser, che sul kiosk della macchina coincide. Le **durate** (tempo
+  trascorso, tempo residuo) non passano di qui: sono differenze, e un fuso non le cambia.
 - **`movementStore.ts`** — stato della pagina Movement che deve **sopravvivere alla pagina**:
   parametri di estrusione selezionati (`extrudeAmount`, `extrudeSpeed`, `extrudeTemperature`,
   `customTemperaturePreset`), fase corrente (`extrudePhase`) e flag `homingBusy`. Le due sequenze
@@ -155,21 +182,53 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
 
 ## Pattern ricorrenti
 
-**Polling con `onMount`.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
+**Stato di un pannello.** Quasi tutti i pannelli della dashboard seguono lo stesso schema:
 
 ```ts
-onMount(() => {
-	update();
-	const interval = window.setInterval(update, pollIntervalMs);
-	return () => window.clearInterval(interval);
-});
+/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+let { visible = true }: { visible?: boolean } = $props();
+
+const dataSource = 'dashboard-<nome>';
+const dataQuery = 'print_stats';
+
+const update = (status: PanelStatus): void => {
+	// …
+};
+
+subscribeWhileVisible<PanelStatus>(
+	dataSource,
+	() => dataQuery,
+	update,
+	() => visible
+);
 ```
 
-Gli intervalli sono definiti componente per componente (1000–3000 ms); l'elenco completo è in
-[04 — Integrazione Moonraker](04-moonraker.md#frequenze-di-polling).
+Non c'è un intervallo: `update()` viene chiamata quando Moonraker segnala che qualcosa è
+cambiato, e una volta subito con l'ultimo stato noto. `PanelStatus` è la forma che il pannello
+si aspetta, dichiarata in cima al componente accanto alla query che la chiede: non è
+verificabile a compile time (è JSON di Moonraker) ma dice quali campi quel pannello legge, e
+tiene fuori l'`any` che `QA-10` ha tolto dal progetto.
+
+`subscribeWhileVisible()` di
+[panel-subscription.svelte.ts](../src/lib/services/panel-subscription.svelte.ts) è un `$effect`
+che iscrive il pannello a [moonraker-subscription.ts](../src/lib/services/moonraker-subscription.ts)
+e lo disiscrive quando smonta **o esce dalla viewport**. Embla tiene tutte le slide nel DOM,
+quindi senza questo controllo Moonraker manderebbe aggiornamenti che nessuno disegna; i caroselli
+passano `visible` guardando `slidesInView()`. Rientrando in vista il pannello riceve subito lo
+stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai caroselli
+(`DashboardControlPanel`, `DashboardQuickActionsPanel`, `DashboardPrintJobPanel`) non passano
+`visible` e restano sempre iscritti.
+
+La query è una **funzione** e non una stringa perché non tutti i pannelli sanno da subito cosa
+chiedere: `DashboardTemperaturePanel` scopre le zone dell'ugello dalla macchina, e quando la
+risposta arriva l'iscrizione si rifà da sé. Il resto — una sola connessione, l'unione di quello
+che i pannelli chiedono, la cache che rende complete le notifiche differenziali — è descritto in
+[04 — Stato in push](04-moonraker.md#stato-in-push).
 
 **Base URL condivisa.** I componenti importano `getMoonrakerApiUrl()` da
-`$lib/services/config` e concatenano il percorso:
+`$lib/services/config` e concatenano il percorso (lo stato dei pannelli non passa di qui —
+arriva dal WebSocket — quindi l'import serve per gli altri endpoint, l'invio di G-code per
+esempio):
 
 ```ts
 const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?print_stats`);
@@ -187,8 +246,10 @@ non passa dagli store.
 
 **Errori come toast.** I servizi non propagano errori all'interfaccia: chiamano
 `toastActions.error(...)` e poi rilanciano (o restituiscono `null`). I componenti della
-dashboard, al contrario, ignorano silenziosamente i fallimenti di polling con `catch {}`, per
-non riempire lo schermo di toast quando la stampante è offline.
+dashboard, al contrario, non fanno nessun rumore quando lo stato non arriva — sarebbe un toast
+per pannello a ogni singhiozzo della rete: la salute della connessione la conosce
+`moonraker-subscription.ts`, che quattro secondi dopo averla persa accende **un solo** avviso di
+dati fermi per tutta l'applicazione.
 
 **Modali dentro `MovementCarousel`: `use:portal`.** Embla applica un `transform` inline al
 proprio track per l'animazione dello slide, il che crea un nuovo containing block per qualsiasi

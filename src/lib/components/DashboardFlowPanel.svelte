@@ -1,8 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
-	const pollIntervalMs = 1500;
+	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
+	let { visible = true }: { visible?: boolean } = $props();
+
+	type FlowStatus = {
+		print_stats?: { state?: string };
+		motion_report?: { live_extruder_velocity?: number };
+		gcode_move?: { speed?: number; extrude_factor?: number };
+	};
+
+	const dataSource = 'dashboard-flow';
+	const dataQuery = 'gcode_move&motion_report&print_stats';
 	const minValue = 0;
 	const maxValue = 800;
 	const radius = 88;
@@ -15,47 +24,35 @@
 	let progress = $derived((clampedValue - minValue) / (maxValue - minValue));
 	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
 
-	const updateFlow = async (): Promise<void> => {
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/objects/query?gcode_move&motion_report&print_stats`
-			);
-			if (!response.ok) return;
+	const updateFlow = (status: FlowStatus): void => {
+		const printState = status.print_stats?.state ?? 'standby';
+		isIdle = printState !== 'printing' && printState !== 'paused';
 
-			const payload = await response.json();
-			const status = payload?.result?.status;
-			if (!status) return;
-
-			const printState = status.print_stats?.state ?? 'standby';
-			isIdle = printState !== 'printing' && printState !== 'paused';
-
-			const motionReport = status.motion_report;
-			if (motionReport && typeof motionReport.live_extruder_velocity === 'number') {
-				// live_extruder_velocity is in mm/s of filament; convert to volumetric
-				// Assume 1.75mm filament diameter -> cross-section area = π * (0.875)² ≈ 2.405 mm²
-				const filamentArea = Math.PI * Math.pow(0.875, 2);
-				flowValue = Math.abs(motionReport.live_extruder_velocity) * filamentArea;
-				return;
-			}
-
-			const gcodeMove = status.gcode_move;
-			if (gcodeMove) {
-				// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
-				const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
-				const extrudeFactor =
-					typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
-				flowValue = speed * extrudeFactor;
-			}
-		} catch {
+		const motionReport = status.motion_report;
+		if (motionReport && typeof motionReport.live_extruder_velocity === 'number') {
+			// live_extruder_velocity is in mm/s of filament; convert to volumetric
+			// Assume 1.75mm filament diameter -> cross-section area = π * (0.875)² ≈ 2.405 mm²
+			const filamentArea = Math.PI * Math.pow(0.875, 2);
+			flowValue = Math.abs(motionReport.live_extruder_velocity) * filamentArea;
 			return;
+		}
+
+		const gcodeMove = status.gcode_move;
+		if (gcodeMove) {
+			// Fallback: use speed (mm/s) * extrude_factor as approximate flow indicator
+			const speed = typeof gcodeMove.speed === 'number' ? gcodeMove.speed / 60 : 0; // speed is in mm/min
+			const extrudeFactor =
+				typeof gcodeMove.extrude_factor === 'number' ? gcodeMove.extrude_factor : 1;
+			flowValue = speed * extrudeFactor;
 		}
 	};
 
-	onMount(() => {
-		updateFlow();
-		const interval = window.setInterval(updateFlow, pollIntervalMs);
-		return () => window.clearInterval(interval);
-	});
+	subscribeWhileVisible<FlowStatus>(
+		dataSource,
+		() => dataQuery,
+		updateFlow,
+		() => visible
+	);
 </script>
 
 <section class="flow-panel" aria-label="Flow Rate">
@@ -84,13 +81,13 @@
 
 <style>
 	.flow-panel {
-		background: #ffffff;
+		background: var(--color-white);
 		border-radius: 19.2px;
 		padding: 16px;
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		box-shadow: 0px 4px 3px 0px #00000040;
+		box-shadow: var(--shadow-panel);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -113,7 +110,7 @@
 	}
 
 	.circle-bg {
-		stroke: #828282;
+		stroke: var(--color-text-subtle);
 		stroke-width: 10;
 		fill: none;
 		stroke-dasharray: none;
@@ -121,7 +118,7 @@
 	}
 
 	.circle {
-		stroke: #d72e28;
+		stroke: var(--color-red);
 		stroke-width: 14;
 		fill: none;
 		stroke-linecap: round;
@@ -143,7 +140,7 @@
 	.flow-label {
 		font-size: 2rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;
 	}
@@ -151,7 +148,7 @@
 	.flow-value {
 		font-size: 1.7rem;
 		font-weight: 500;
-		color: #666666;
+		color: var(--color-text-soft);
 		line-height: 1.3;
 	}
 </style>

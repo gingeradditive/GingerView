@@ -1,29 +1,119 @@
 @import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
+/*
+ * Breakpoint della responsività.
+ *
+ * Il bersaglio reale è lo schermo di un telefono: la macchina non ha display e l'utente si
+ * collega dal proprio cellulare. Le soglie qui sotto sono le uniche da usare nei componenti;
+ * i valori intermedi (480, 560, 640, 900, 980) che c'erano prima erano arbitrari e su un
+ * telefono si comportavano tutti allo stesso modo, cioè erano sempre veri.
+ *
+ * - Telefono in verticale        @media (max-width: 767.98px)
+ * - Due colonne che non stanno   @media (max-width: 1023.98px)
+ * - Schermo grande (3 slide)     @media (min-width: 768px) and (min-height: 600px)
+ * - Schermo grande (5 slide)     @media (min-width: 1200px) and (min-height: 600px)
+ *
+ * La larghezza da sola non distingue un telefono in orizzontale (~850x390) da un portatile:
+ * per questo le soglie che decidono *quante* slide mostrare chiedono anche l'altezza. Sotto i
+ * 600px di altezza si resta sul layout da telefono, dove ogni pannello è a pieno schermo.
+ *
+ * Le soglie "max" usano .98px perché il viewport può avere larghezza frazionaria (zoom del
+ * browser): con 767/768 secchi una finestra da 767.5px non ricadrebbe in nessuno dei due rami.
+ */
+
+/*
+ * Token della palette.
+ *
+ * Questi custom properties sono l'unica sorgente dei colori dell'interfaccia: nei CSS dei
+ * componenti si scrive `var(--color-…)`, mai un valore esadecimale. I nomi in `--color-*`
+ * sono per i colori pieni; i `--rgb-*` esistono solo per i casi con trasparenza, dove serve
+ * `rgba(var(--rgb-black), 0.4)` perché `rgba()` non accetta un colore già composto.
+ *
+ * La palette di prodotto sono i cinque colori Ginger. Tutto il resto è la scala di neutri e
+ * i colori di stato che l'interfaccia usava già, qui raccolti e ridotti a un valore solo per
+ * ogni gradino: prima esistevano #333/#444/#4a4a4a, #666/#6e6e6e, #828282/#888/#8a8a8a e
+ * mezza dozzina di rossi pallidi indistinguibili tra loro.
+ */
+:root {
+	/* Palette Ginger */
+	--color-white: #ffffff;
+	--color-background: #f5f5f5;
+	--color-gray: #c8c8c8;
+	--color-red: #d72e28;
+	--color-black: #111111;
+
+	/* Rosso premuto: hover e stato attivo delle azioni primarie */
+	--color-red-dark: #b82520;
+
+	/* Neutri scuri, dal testo principale al testo disabilitato */
+	--color-text-secondary: #222222;
+	--color-text-muted: #444444;
+	--color-text-soft: #6e6e6e;
+	--color-text-subtle: #8a8a8a;
+	--color-text-disabled: #9a9a9a;
+
+	/* Neutri chiari: bordi, separatori, sfondi incassati */
+	--color-gray-light: #b5b5b5;
+	--color-divider: #d9d9d9;
+	--color-border-light: #e2e2e2;
+	--color-surface-sunken: #ececec;
+
+	/* Nero pieno: solo dove serve davvero (console, ombre, contrasto massimo) */
+	--color-black-pure: #000000;
+
+	/* Stati. `bg`/`border` sono le tinte di sfondo e bordo della stessa famiglia,
+	   `vivid` è la variante satura usata per icone e indicatori. Lo stato negativo non ha un
+	   colore di testo proprio: è `--color-red`, che è già il rosso degli errori. */
+	--color-success: #1a7f37;
+	--color-success-bg: #ddf3df;
+	--color-success-border: #86efac;
+	--color-success-vivid: #26b73f;
+	--color-warning: #9a6700;
+	--color-warning-bg: #fdf0d5;
+	--color-warning-border: #fde68a;
+	--color-warning-vivid: #e6a817;
+	--color-danger-bg: #f7d9d8;
+	--color-danger-border: #f5c2c2;
+	--color-info: #3d67d8;
+	--color-info-bg: #eef2f7;
+	--color-info-border: #93c5fd;
+	--color-info-soft: #ccd5e0;
+
+	/* Canali RGB per le trasparenze */
+	--rgb-white: 255, 255, 255;
+	--rgb-black: 0, 0, 0;
+	--rgb-red: 215, 46, 40;
+	--rgb-info: 61, 103, 216;
+	--rgb-background: 245, 245, 245;
+	--rgb-text-secondary: 34, 34, 34;
+	--rgb-gray-mid: 100, 100, 100;
+	--rgb-gray-dark: 60, 60, 60;
+	--rgb-success: 26, 127, 55;
+	--rgb-warning-vivid: 230, 168, 23;
+
+	/* Ombre ricorrenti: erano ripetute identiche in decine di componenti */
+	--shadow-panel: 0px 4px 3px 0px rgba(var(--rgb-black), 0.25);
+	--shadow-float: 0 2px 12px rgba(var(--rgb-black), 0.1);
+}
+
 /* GingerView Light Theme */
 html,
 body {
 	margin: 0;
 	width: 100%;
 	height: 100%;
-	background-color: #c8c8c8;
-	color: #111111;
+	background-color: var(--color-gray);
+	color: var(--color-black);
 	font-family: 'Montserrat', sans-serif;
 	overflow-x: hidden;
 }
 
-@media (max-width: 768px) {
-	html {
-		zoom: 0.8;
-	}
-}
-
 .card {
-	background-color: #ffffff;
+	background-color: var(--color-white);
 	border-radius: 0.5rem;
-	border: 1px solid #c8c8c8;
-	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	border: 1px solid var(--color-gray);
+	box-shadow: 0 1px 2px 0 rgba(var(--rgb-black), 0.05);
 }
 
 /* Global button styles */
@@ -46,11 +136,11 @@ button {
 		background-color 0.2s,
 		box-shadow 0.15s;
 	outline: none;
-	box-shadow: 0 2px 8px rgba(215, 46, 40, 0.3);
+	box-shadow: 0 2px 8px rgba(var(--rgb-red), 0.3);
 }
 
 .btn:focus-visible {
-	outline: 2px solid #d72e28;
+	outline: 2px solid var(--color-red);
 	outline-offset: 2px;
 }
 
@@ -60,19 +150,40 @@ button {
 }
 
 .btn-primary {
-	background-color: #d72e28;
-	color: #ffffff;
+	background-color: var(--color-red);
+	color: var(--color-white);
 }
 
 .btn-primary:hover {
-	background-color: #b82520;
+	background-color: var(--color-red-dark);
 }
 
 .btn-secondary {
-	background-color: #f5f5f5;
-	color: #111111;
+	background-color: var(--color-background);
+	color: var(--color-black);
 }
 
 .btn-secondary:hover {
-	background-color: #e5e5e5;
+	background-color: var(--color-border-light);
+}
+
+/*
+ * Spinner.
+ *
+ * `class="spin"` fa ruotare qualsiasi icona (di solito `LoaderCircle`), e `@keyframes spin` è
+ * disponibile anche per le animazioni scritte a mano nei componenti (`animation: spin …`).
+ * Stanno qui perché prima ogni pagina che mostrava uno spinner si portava dietro la propria
+ * copia: chi scriveva `class="spin"` senza ridichiararla otteneva un'icona immobile.
+ */
+.spin {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }

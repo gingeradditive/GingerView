@@ -86,7 +86,7 @@
 
 <style>
 	.item {
-		border-bottom: 1px solid #ececec;
+		border-bottom: 1px solid var(--color-surface-sunken);
 		padding-bottom: 4px;
 	}
 	.item:last-child {
@@ -105,7 +105,7 @@
 		justify-content: center;
 		width: 28px;
 		height: 28px;
-		color: #444444;
+		color: var(--color-text-muted);
 		flex-shrink: 0;
 	}
 	.item-text {
@@ -117,11 +117,11 @@
 	.item-name {
 		font-size: 1.05rem;
 		font-weight: 700;
-		color: #111111;
+		color: var(--color-black);
 	}
 	.item-version {
 		font-size: 0.82rem;
-		color: #8a8a8a;
+		color: var(--color-text-subtle);
 		overflow-wrap: anywhere;
 	}
 	.badge {
@@ -133,19 +133,19 @@
 		flex-shrink: 0;
 	}
 	.badge.ok {
-		background: #ddf3df;
-		color: #1a7f37;
+		background: var(--color-success-bg);
+		color: var(--color-success);
 	}
 	.badge.pending {
-		background: #fdf0d5;
-		color: #9a6700;
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
 	}
 	.badge.problem {
-		background: #f7d9d8;
-		color: #d72e28;
+		background: var(--color-danger-bg);
+		color: var(--color-red);
 	}
 	.recovery {
-		background: #f5f5f5;
+		background: var(--color-background);
 		border-radius: 12px;
 		padding: 14px;
 		margin: 0 4px 14px 46px;
@@ -159,13 +159,13 @@
 		align-items: flex-start;
 		gap: 8px;
 		font-size: 0.85rem;
-		color: #444444;
+		color: var(--color-text-muted);
 		line-height: 1.45;
 	}
 	.recovery-text :global(svg) {
 		flex-shrink: 0;
 		margin-top: 2px;
-		color: #9a6700;
+		color: var(--color-warning);
 	}
 	.recovery-actions {
 		display: flex;
@@ -173,9 +173,9 @@
 		gap: 8px;
 	}
 	.ghost-btn {
-		border: 1px solid #c8c8c8;
-		background: #ffffff;
-		color: #444444;
+		border: 1px solid var(--color-gray);
+		background: var(--color-white);
+		color: var(--color-text-muted);
 		border-radius: 12px;
 		padding: 10px 18px;
 		font-size: 0.88rem;
@@ -183,11 +183,11 @@
 		cursor: pointer;
 	}
 	.ghost-btn:hover:not(:disabled) {
-		background: #f5f5f5;
+		background: var(--color-background);
 	}
 	.ghost-btn.danger {
-		border-color: #d72e28;
-		color: #d72e28;
+		border-color: var(--color-red);
+		color: var(--color-red);
 	}
 	.ghost-btn:disabled {
 		opacity: 0.55;
