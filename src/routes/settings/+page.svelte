@@ -12,18 +12,24 @@
 		ExternalLink,
 		ChevronRight
 	} from 'lucide-svelte';
+	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { CONFIG_EDITOR_ENABLED } from '$lib/services/moonraker-config';
 
-	type Item = {
+	type BaseItem = {
 		id: string;
 		title: string;
 		description: string;
 		icon: typeof Wifi;
-		kind: 'route' | 'external';
-		href?: string;
 		/** Rows that only exist while the machine is in development. */
 		enabled?: boolean;
 	};
+
+	// `href` is a route id on internal rows, so it can go through `resolve()`, and a plain
+	// URL string on external ones, which leave the app entirely.
+	type RouteItem = BaseItem & { kind: 'route'; href: RouteId };
+	type ExternalItem = BaseItem & { kind: 'external'; href: string };
+	type Item = RouteItem | ExternalItem;
 
 	const allItems: Item[] = [
 		{
@@ -103,10 +109,8 @@
 
 	const items = allItems.filter((item) => item.enabled !== false);
 
-	function handleExternalClick(item: Item) {
-		if (item.href) {
-			window.open(item.href, '_blank');
-		}
+	function handleExternalClick(item: ExternalItem) {
+		window.open(item.href, '_blank');
 	}
 </script>
 
@@ -118,7 +122,7 @@
 
 		{#each items as item, index (item.id)}
 			{#if item.kind === 'route'}
-				<a class="settings-row" href={item.href}>
+				<a class="settings-row" href={resolve(item.href)}>
 					<span class="icon"><item.icon /></span>
 					<div class="row-text">
 						<h2>{item.title}</h2>

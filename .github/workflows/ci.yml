@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Un push che ne supera un altro sullo stesso ref annulla la corsa precedente: il
+# risultato vecchio non interessa più e la coda resta corta.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check e lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # `npm ci` esegue anche lo script `prepare`, cioè `svelte-kit sync`: senza i tipi
+      # generati in `.svelte-kit/` né `check` né `lint` avrebbero i tipi delle rotte.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      # `!cancelled()` invece di saltare: se il type check fallisce vogliamo comunque
+      # sapere se anche il lint è rotto, senza dover fare un secondo push.
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: npm run lint

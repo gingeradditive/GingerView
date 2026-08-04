@@ -71,11 +71,6 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 - `CFG-1` Dare all'applicazione un modo per sapere su quale modello di macchina gira → Q26
 
-## QA — Qualità e strumenti
-
-- `QA-4` Aggiungere un hook pre-commit o un job CI che esegua `check` e `lint` — pronto
-- `QA-8` Passare i link e i `goto()` interni per `resolve()`, 7 punti (`svelte/no-navigation-without-resolve`), oppure spegnere la regola motivandolo: oggi non è un bug perché `kit.paths.base` non è impostata — vedi [PULIZIA-LINT.md](PULIZIA-LINT.md) — pronto
-
 ## DEP — Build, deploy e G2-OS
 
 - `DEP-7` Aggiungere un controllo in CI o un hook che impedisca di committare un `build/` con indirizzi compilati dentro — pronto

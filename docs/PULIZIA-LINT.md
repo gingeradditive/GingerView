@@ -1,11 +1,14 @@
 # Pulizia lint
 
-Piano di lavoro per i **7 errori `eslint` residui**, più le trappole da conoscere prima di
-metterci mano. Il task corrispondente in [TODO.md](TODO.md) è `QA-8`.
+Storia della pulizia del lint e — soprattutto — le **trappole da conoscere** prima di rimetterci
+mano. Non ci sono più task aperti in [TODO.md](TODO.md) su questo fronte.
 
-Fotografia al 2026-08-03, dopo `CLN-4`, `QA-9`, `CLN-9`, `QA-10` e `QA-11`: `prettier --check .`
-passa, `eslint .` riporta 7 errori. `svelte-check` è pulito: 0 errori e 0 warning, da quando
-`QA-6` ha sistemato `PrintCard.svelte` e `PrintList.svelte`.
+Fotografia al 2026-08-04, dopo `CLN-4`, `QA-9`, `CLN-9`, `QA-10`, `QA-11` e `QA-8`:
+`prettier --check .` passa, `eslint .` riporta **0 errori**, `svelte-check` è pulito con 0 errori
+e 0 warning (da quando `QA-6` ha sistemato `PrintCard.svelte` e `PrintList.svelte`).
+
+Da `QA-4` questo stato è **imposto dalla CI** a ogni push e pull request, quindi non può
+regredire in silenzio: vedi [05 — CI](05-sviluppo.md#ci).
 
 ---
 
@@ -67,7 +70,7 @@ dell'elemento è posizionale e va tenuto per poter arrivare all'indice.
 
 ---
 
-## I 7 errori residui
+## Gli errori chiusi
 
 I 9 `svelte/no-immutable-reactive-statements` che stavano qui sono spariti con `CLN-4`: la
 conversione alle rune di `ToolheadPosition.svelte` ha reso `const` i valori costanti (gli otto
@@ -76,25 +79,40 @@ vertici del cubo e il centro base) e `$derived` i derivati veri. I 5
 `no-explicit-any` con `CLN-9` (vedi sotto) e il terzo con `QA-10`. L'unico
 `svelte/prefer-svelte-reactivity` è sparito con `QA-11` (vedi sotto).
 
-### `QA-8` — `svelte/no-navigation-without-resolve` (7)
-
-| File                                                                       | Righe          |
-| -------------------------------------------------------------------------- | -------------- |
-| [`+layout.svelte`](../src/routes/+layout.svelte)                           | 45, 52, 63, 74 |
-| [`settings/+page.svelte`](../src/routes/settings/+page.svelte)             | 121            |
-| [`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte)   | 9              |
-| [`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte) | 82 (`goto()`)  |
+### `svelte/no-navigation-without-resolve` (7) — fatto (`QA-8`)
 
 La regola vuole che gli URL interni passino da `resolve()` di `$app/paths`, così restano
-corretti se l'app viene servita sotto un percorso base.
+corretti se l'app viene servita sotto un percorso base. I sette punti erano i quattro link del
+dock in [`+layout.svelte`](../src/routes/+layout.svelte), la riga di
+[`settings/+page.svelte`](../src/routes/settings/+page.svelte), il "indietro" di
+[`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte) e il `goto('/')` di
+[`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte).
 
-**Oggi non è un bug**: `svelte.config.js` non imposta `kit.paths.base`, quindi la base è `''` e
-i link funzionano. È lavoro di robustezza, da fare se e quando GingerView potrà essere servita
-sotto un sottopercorso. Se si decide che non succederà mai, l'alternativa onesta è spegnere la
-regola in `eslint.config.js` con un commento che spiega il perché, invece di lasciare sette
-errori permanenti che rendono `npm run lint` rumoroso.
+Delle due strade possibili — passare per `resolve()` oppure spegnere la regola dichiarando che
+l'app non sarà mai servita sotto un sottopercorso — **è stata scelta la prima**. Non era un bug
+(`svelte.config.js` non imposta `kit.paths.base`, quindi la base è `''`), ma era il lavoro di
+robustezza che tiene aperta la porta.
 
-**Da verificare dopo**: navigazione del dock e ingresso/uscita da ogni sottopagina Impostazioni.
+Sei punti sono stati una sostituzione diretta. Il settimo, `settings/+page.svelte`, ha richiesto
+un cambio di tipo: `resolve()` accetta un **route id tipizzato**, non una stringa qualsiasi,
+mentre il tipo `Item` aveva un solo `href?: string` condiviso tra righe interne e link esterni
+(il wiki). È diventato un'unione discriminata su `kind`:
+
+```ts
+type RouteItem = BaseItem & { kind: 'route'; href: RouteId };
+type ExternalItem = BaseItem & { kind: 'external'; href: string };
+```
+
+`RouteId` viene da `$app/types` ed è generato da `svelte-kit sync`: aggiungere una sottopagina
+senza crearne la rotta ora è un errore di compilazione invece di un 404 a runtime. In più
+`href` non è più opzionale, quindi `handleExternalClick` ha perso il suo `if (item.href)`.
+
+Restano fuori i confronti `class:active={$page.url.pathname.startsWith('/settings')}` del dock,
+che eslint non guarda: se un domani `kit.paths.base` venisse impostata, quelli andrebbero
+rifatti su `$page.route.id`.
+
+**Da verificare su macchina**: navigazione del dock, ingresso/uscita da ogni sottopagina
+Impostazioni, il link esterno al wiki e il ritorno alla dashboard dopo l'avvio di una stampa.
 
 ---
 

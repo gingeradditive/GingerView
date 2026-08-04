@@ -200,16 +200,16 @@ all'ultimo step del wizard aperto dal pulsante **Print** nel popup dettagli file
 
 Tutto in [moonraker-files.ts](../src/lib/services/moonraker-files.ts):
 
-| Operazione           | Chiamata                                                |
-| -------------------- | ------------------------------------------------------- |
-| Elenco directory     | `GET /server/files/directory?path=<path>`               |
-| Metadati file        | `GET /server/files/metadata?filename=<path>`            |
-| Download / thumbnail | `GET /server/files/<path>`                              |
+| Operazione           | Chiamata                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| Elenco directory     | `GET /server/files/directory?path=<path>`                                              |
+| Metadati file        | `GET /server/files/metadata?filename=<path>`                                           |
+| Download / thumbnail | `GET /server/files/<path>`                                                             |
 | Upload               | `POST /server/files/upload` (multipart: `file`, `root=gcodes`, `path=<sottocartella>`) |
-| Sposta / rinomina    | `POST /server/files/move` (JSON: `source`, `dest`)      |
-| Elimina file         | `DELETE /server/files/<path>`                           |
-| Elimina cartella     | `DELETE /server/files/directory?path=<path>&force=true` |
-| Crea cartella        | `POST /server/files/directory?path=<path>`              |
+| Sposta / rinomina    | `POST /server/files/move` (JSON: `source`, `dest`)                                     |
+| Elimina file         | `DELETE /server/files/<path>`                                                          |
+| Elimina cartella     | `DELETE /server/files/directory?path=<path>&force=true`                                |
+| Crea cartella        | `POST /server/files/directory?path=<path>`                                             |
 
 Nota su rinomina e spostamento: usano entrambi `/server/files/move`, perché per Moonraker
 rinominare è spostare verso un nome diverso nella stessa cartella.

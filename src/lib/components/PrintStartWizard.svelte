@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { mdiAlertCircleOutline } from '@mdi/js';
 	import { portal } from '$lib/actions/portal';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
@@ -79,7 +80,7 @@
 			// Close the wizard/details popup before navigating away, so we're not
 			// invoking callbacks on components SvelteKit is already tearing down.
 			onStarted();
-			await goto('/');
+			await goto(resolve('/'));
 		} catch (error) {
 			console.error('Print start failed', error);
 		} finally {

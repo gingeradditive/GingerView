@@ -182,19 +182,6 @@ riavvio, quando Klippy torna in stato `error`.
 
 ## Incoerenze aperte
 
-### `npm run lint` non è eseguibile
-
-Due problemi indipendenti, entrambi preesistenti:
-
-- `prettier --check .` segnala **93 file** non formattati. Il repository non è mai stato
-  passato con `npm run format`.
-- `eslint .` va in **crash** su `ToolheadPosition.svelte` con
-  `TypeError: Cannot read properties of undefined (reading 'type')` nella regola
-  `@typescript-eslint/no-unused-vars`. Il crash si riproduce sul file non modificato, ed è
-  verosimilmente legato alla sintassi reattiva legacy `$:` presente in quel componente.
-
-Poiché lo script è `prettier --check . && eslint .`, oggi eslint non viene nemmeno raggiunto.
-
 ### Restano 4 vulnerabilità `low` senza fix disponibile
 
 `npm audit fix` è stato eseguito e ha risolto 11 delle 15 vulnerabilità aggiornando il solo
@@ -238,5 +225,6 @@ ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modul
   carosello restano montate e mantengono attivo il proprio `setInterval`.
 - **Nessun test sul frontend.** L'unico test del progetto è
   [script/test-install.sh](../script/test-install.sh), che copre l'installer in un container.
-  Non esistono unit test né test end-to-end sull'applicazione, e nessun hook git impone
-  `lint`/`check` prima del commit.
+  Non esistono unit test né test end-to-end sull'applicazione. `check` e `lint` sono imposti
+  dalla CI a ogni push (vedi [05 — CI](05-sviluppo.md#ci)), ma nessun hook git li esegue prima
+  del commit: l'errore si scopre a push fatto.

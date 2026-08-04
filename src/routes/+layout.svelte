@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { resolve } from '$app/paths';
 	import favicon from '$lib/assets/favicon.svg';
 	import { configService } from '$lib/services/config';
 	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
@@ -44,14 +45,19 @@
 	<div class="logo-container">
 		<img src={logoImage} alt="Logo" class="logo-image" />
 	</div>
-	<a href="/" class:active={$page.url.pathname === '/'} aria-label="Dashboard" title="Dashboard">
+	<a
+		href={resolve('/')}
+		class:active={$page.url.pathname === '/'}
+		aria-label="Dashboard"
+		title="Dashboard"
+	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
 			<path d={mdiTabletDashboard} />
 		</svg>
 	</a>
 
 	<a
-		href="/movement"
+		href={resolve('/movement')}
 		class:active={$page.url.pathname.startsWith('/movement')}
 		aria-label="Movement"
 		title="Movement"
@@ -62,7 +68,7 @@
 	</a>
 
 	<a
-		href="/filelist"
+		href={resolve('/filelist')}
 		class:active={$page.url.pathname.startsWith('/filelist')}
 		aria-label="FileList"
 		title="FileList"
@@ -73,7 +79,7 @@
 	</a>
 
 	<a
-		href="/settings"
+		href={resolve('/settings')}
 		class:active={$page.url.pathname.startsWith('/settings')}
 		aria-label="Settings"
 		title="Settings"

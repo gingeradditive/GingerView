@@ -39,12 +39,30 @@ funzionino, quell'origine deve essere tra le `cors_domains` di `moonraker.conf`
 | `npm run lint`        | `prettier --check` + `eslint`           |
 | `npm run format`      | `prettier --write` su tutto il progetto |
 
-Prima di aprire una PR conviene eseguire `npm run check`: non ci sono hook git configurati,
-quindi nulla lo impone automaticamente.
+`npm run check` e `npm run lint` **passano entrambi puliti** e devono restare tali: sono il
+contenuto del gate di CI descritto qui sotto. Conviene comunque eseguirli in locale prima di
+pushare, perché non ci sono hook git configurati e l'errore altrimenti si scopre solo a
+push fatto.
 
-`npm run lint` **oggi non è eseguibile**: prettier segnala 93 file non formattati e eslint va
-in crash su `ToolheadPosition.svelte`. Dettagli in
-[07 — Stato attuale](07-stato-attuale.md#npm-run-lint-non-è-eseguibile).
+## CI
+
+[.github/workflows/ci.yml](../.github/workflows/ci.yml) esegue `npm run check` e poi
+`npm run lint` **a ogni push e a ogni pull request**, su tutti i branch. È il gate che impedisce
+di far regredire il type check o il lint, che oggi sono a zero errori.
+
+Tre dettagli non ovvi:
+
+- lo step di lint ha `if: ${{ !cancelled() }}`, quindi gira anche se il type check è appena
+  fallito: un solo push dice se è rotto uno o tutti e due;
+- `npm ci` esegue lo script `prepare` (`svelte-kit sync`), che genera i tipi delle rotte in
+  `.svelte-kit/`. Senza, né `check` né `lint` avrebbero i tipi e fallirebbero per il motivo
+  sbagliato;
+- la `concurrency` con `cancel-in-progress` annulla la corsa precedente sullo stesso ref.
+
+Il workflow **non** compila: il build resta a
+[build-commit-push.yml](../.github/workflows/build-commit-push.yml), che è manuale
+(`workflow_dispatch`) e committa `build/` con `[skip ci]` — perciò i suoi commit non
+riaccendono questo gate.
 
 Se modifichi [script/install.sh](../script/install.sh), verificalo con
 [script/test-install.sh](../script/test-install.sh), che lo esegue in un container Debian

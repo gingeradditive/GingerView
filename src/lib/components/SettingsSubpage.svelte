@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { ArrowLeft } from 'lucide-svelte';
+	import { resolve } from '$app/paths';
 
 	let { title, children }: { title: string; children?: import('svelte').Snippet } = $props();
 </script>
 
 <section class="subpage">
 	<header class="subpage-header">
-		<a href="/settings" class="back-btn" aria-label="Back to Settings" title="Back to Settings">
+		<a
+			href={resolve('/settings')}
+			class="back-btn"
+			aria-label="Back to Settings"
+			title="Back to Settings"
+		>
 			<ArrowLeft />
 		</a>
 		<h1>{title}</h1>
