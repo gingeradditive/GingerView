@@ -205,7 +205,7 @@ Tutto in [moonraker-files.ts](../src/lib/services/moonraker-files.ts):
 | Elenco directory     | `GET /server/files/directory?path=<path>`               |
 | Metadati file        | `GET /server/files/metadata?filename=<path>`            |
 | Download / thumbnail | `GET /server/files/<path>`                              |
-| Upload               | `POST /server/files/upload` (multipart: `file`, `root`) |
+| Upload               | `POST /server/files/upload` (multipart: `file`, `root=gcodes`, `path=<sottocartella>`) |
 | Sposta / rinomina    | `POST /server/files/move` (JSON: `source`, `dest`)      |
 | Elimina file         | `DELETE /server/files/<path>`                           |
 | Elimina cartella     | `DELETE /server/files/directory?path=<path>&force=true` |

@@ -271,11 +271,20 @@ export async function createDirectory(path: string): Promise<void> {
 	}
 }
 
+// `path` è il percorso completo con la root davanti (`gcodes/sottocartella`), ma Moonraker
+// vuole i due pezzi separati: `root` può essere solo `gcodes` o `config`, la sottocartella va
+// nel campo `path` (le cartelle mancanti le crea lui). Stessa separazione di
+// `writeConfigFile()` in `moonraker-config.ts`.
 export async function uploadFile(file: File, path: string = 'gcodes'): Promise<void> {
 	const apiUrl = getApiUrl();
+	const slash = path.indexOf('/');
+	const root = slash === -1 ? path : path.slice(0, slash);
+	const subdir = slash === -1 ? '' : path.slice(slash + 1);
+
 	const formData = new FormData();
 	formData.append('file', file);
-	formData.append('root', path);
+	formData.append('root', root);
+	if (subdir) formData.append('path', subdir);
 
 	const res = await fetch(`${apiUrl}/server/files/upload`, {
 		method: 'POST',
