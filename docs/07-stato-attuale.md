@@ -240,6 +240,3 @@ ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modul
   [script/test-install.sh](../script/test-install.sh), che copre l'installer in un container.
   Non esistono unit test né test end-to-end sull'applicazione, e nessun hook git impone
   `lint`/`check` prima del commit.
-- **`fetchDirectoriesRecursive` scarica tutto l'albero.** Viene invocata all'apertura del
-  dialogo "sposta" e visita ricorsivamente ogni sottocartella di `gcodes`: su una struttura
-  profonda genera molte richieste sequenziali.

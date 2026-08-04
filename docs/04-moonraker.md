@@ -353,8 +353,11 @@ senza cache-buster una riapertura subito dopo il salvataggio può legittimamente
 dalla cache restituendo la versione appena sostituita.
 
 **L'albero è pigro.** `fetchConfigDirectory()` elenca **una cartella per volta**: una cartella
-mai aperta non costa niente. È il contrario di `fetchDirectoriesRecursive()` per i G-code
-(vedi `ROB-3` in [TODO.md](TODO.md)). Le voci che iniziano con `.` (i backup `.moonraker_backup`,
+mai aperta non costa niente. È il contrario di `fetchDirectoriesRecursive()` per i G-code, che
+all'apertura del dialogo "sposta" scarica l'albero intero perché la tendina delle destinazioni
+le deve elencare tutte: lì la ricorsione visita **i figli di ogni livello in parallelo**, quindi
+il costo in attesa è la profondità dell'albero, non il numero di cartelle. Le voci che iniziano
+con `.` (i backup `.moonraker_backup`,
 `.git`) vengono nascoste: sono bookkeeping di Moonraker, non file da modificare a mano.
 
 **L'editor è CodeMirror 6**, come in Mainsail e Fluidd, incapsulato in

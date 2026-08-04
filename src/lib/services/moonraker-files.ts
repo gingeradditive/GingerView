@@ -237,21 +237,26 @@ export async function moveFile(source: string, dest: string): Promise<void> {
 	}
 }
 
+// Le sottocartelle di uno stesso livello vengono scaricate in parallelo: la ricorsione costa
+// così una richiesta per cartella ma un'attesa per livello di profondità, non una per cartella.
+// L'ordine del risultato resta quello della visita in profondità, come se fosse sequenziale.
 export async function fetchDirectoriesRecursive(
 	path: string = 'gcodes'
 ): Promise<{ name: string; path: string }[]> {
 	const result = await fetchDirectory(path);
-	const dirs: { name: string; path: string }[] = [];
-	for (const d of result.dirs) {
-		if (d.dirname.startsWith('.')) continue;
-		const dirRelPath =
-			path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
-		const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
-		dirs.push({ name: d.dirname, path: dirRelPath });
-		const subDirs = await fetchDirectoriesRecursive(dirFullPath);
-		dirs.push(...subDirs);
-	}
-	return dirs;
+	const children = result.dirs.filter((d) => !d.dirname.startsWith('.'));
+
+	const branches = await Promise.all(
+		children.map(async (d) => {
+			const dirRelPath =
+				path === 'gcodes' ? d.dirname : `${path.replace(/^gcodes\/?/, '')}/${d.dirname}`;
+			const dirFullPath = path === 'gcodes' ? `gcodes/${d.dirname}` : `${path}/${d.dirname}`;
+			const subDirs = await fetchDirectoriesRecursive(dirFullPath);
+			return [{ name: d.dirname, path: dirRelPath }, ...subDirs];
+		})
+	);
+
+	return branches.flat();
 }
 
 export async function createDirectory(path: string): Promise<void> {
