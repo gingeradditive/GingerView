@@ -17,6 +17,11 @@ offrono; GingerView espone solo ciò che serve a usare una stampante Ginger.
 raggiungendo la stampante tramite un **NFC/QR** applicato alla macchina, che punta
 all'indirizzo mDNS **`g2.local`** (vedi [06 — Build e deploy](06-deploy.md#come-si-raggiunge-la-macchina)).
 
+Lato GingerView questo **non richiede niente** (Q31): il tag porta direttamente all'interfaccia,
+e non servono pagina di benvenuto, onboarding al primo accesso né un generatore di QR
+nell'applicazione. Cosa contenga esattamente il tag e chi lo produce è fuori dal perimetro di
+questo repository.
+
 È il vincolo di progetto più importante e va tenuto presente in ogni scelta di layout:
 il bersaglio primario è uno schermo di telefono tenuto in mano accanto a una stampante, non
 un pannello touch fisso né un desktop. Il supporto a schermi larghi resta utile (un tecnico

@@ -42,45 +42,6 @@ lato macchina e va solo proxato (`/webcam/`) e mostrato. Da definire: se diventa
 carosello dashboard, una pagina dedicata, o un riquadro sempre visibile durante la stampa.
 A:
 
-**Q26: Come fa GingerView a sapere su quale modello di macchina sta girando?**
-Contesto: serve per parametrizzare la capienza tramoggia (G2 = 5 kg, ma cambierà) e il numero
-di zone dell'ugello. Già oggi c'è un asset per modello, `static/Printers/G2/Logo.svg`,
-referenziato con un percorso fisso nel layout. Le opzioni: leggerlo da un oggetto Klipper o da
-una variabile in `printer.cfg`, da un file scritto da G2-OS, o da una `VITE_*` compilata per
-modello (che però romperebbe il "una build per tutte le macchine").
-A: vorrei ci fosse un file (per ora fisso) gingerview.conf che contiene tutti i parametri della stampante, in futuro per deployare diverse macchine basterà cambiare quello, per ora lo versioniamo visto che inizialmente supporteremo solo la G2 in futuro diventerà un template e G2-OS si occuperà di popolarlo correttamente, ma per ora non preoccupiamocene implementa gingerview.conf e tienilo versionato e usalo.
-
-**Q27: Le 4 zone dell'ugello vanno presentate come "zone" invece che come 4 estrusori?**
-Contesto: hai spiegato che è **un solo ugello a 4 zone** e che gli estrusori multipli di
-Kalico sono un espediente. Oggi il pannello temperature li mostra come `extruder`,
-`extruder1`, `extruder2`, `extruder3`, cioè come se fossero quattro utensili distinti.
-Se la lettura corretta è "una temperatura per zona dello stesso ugello", l'etichettatura va
-cambiata (Zona 1..4? nomi funzionali tipo Ingresso/Centro/Punta?). E per la G1 a 3 zone serve
-adattarsi al numero effettivo.
-A:lascia così com'è l'interfaccia non ha etichette ed è comprensibile visivamente
-
-**Q28: Le pagine Impostazioni vecchie vanno riprogettate o solo riempite?**
-Contesto: per Update, Log, History, Statistics e Timezone hai detto "è roba vecchia, da
-rifare". Non è chiaro se intendi che manca solo l'implementazione dietro un layout già
-concordato, o se anche la struttura della sezione Impostazioni va ripensata. Esiste un
-mockup/Figma di riferimento a cui allinearmi?
-A: va implementata da 0, i link sono ok ma il contenuto (se presente) è da rifare da capo... ce ne occuperemo in futuro per ora non preoccupartene
-
-**Q30: Chi si occupa di sostituire il modulo Mainsail in G2-OS?**
-Contesto: ho guardato https://github.com/gingeradditive/g2-os — è ancora il fork MainsailOS non
-adattato: il README parla di "Kalico Firmware e **Mainsail**" e la distribuzione preinstalla
-Mainsail. Il modulo che installa GingerView al posto suo non esiste ancora. Lo scrivo io in
-quel repo, o lo fate voi e io mi limito a mantenere `install.sh` pronto per essere invocato?
-A: me ne occuperò io in futuro in un altro repository è fuori dal tuo contesto te devi fare solo gingerview e disporre l'install in maniera che funzioni.
-
-**Q31: L'accesso da telefono richiede qualcosa lato GingerView?**
-Contesto: hai detto che la macchina è senza schermo e che si accede dal proprio cellulare
-tramite NFC/QR. Se il QR contiene solo l'indirizzo della stampante non serve nulla. Ma se
-serve una pagina di benvenuto, un onboarding al primo accesso, o un modo per generare/mostrare
-il QR dall'interfaccia stessa, va messo in conto. Inoltre: chi genera il QR/NFC, e cosa
-contiene esattamente (IP? hostname `.local`? un dominio)?
-A: l'nfc contiene "g2.local" che porterà su gingerview, rimani nel contesto non sono problemi tuoi cosa contiene il qr, non serve nessuna pagina di benvenuto o altro se servirà te la chiederò io
-
 **Q32: La sequenza reale di `handleExtrude()` è corretta, in particolare l'ipotesi sul "rotation volume"?**
 Contesto: `handleExtrude()` ora esegue davvero, in sequenza: popup di avvertimento homing (`HomingWarningModal`, riusato) → `G28` → `G1 X<centro> Y0 Z250` → per le 4 zone `SET_HEATER_TEMPERATURE` + `TEMPERATURE_WAIT` (comandi Klipper standard, confidenza alta) → infine
 
@@ -100,4 +61,14 @@ meccanismo giusto per applicare il "rotation volume" che mi hai dato per materia
 verificato su hardware reale: puoi confermare che questa è la calibrazione giusta prima che
 qualcuno lo provi sulla macchina? Se sbagliata, un valore enorme di `E` potrebbe far girare lo
 stepper molto più a lungo del previsto.
+A:
+
+**Q33: Cosa deve contenere `gingerview.conf` oltre al modello?**
+Contesto: su Q26 hai deciso che i parametri della stampante stanno in un file
+`gingerview.conf` versionato nel repository (per ora fisso sulla G2, in futuro un template
+popolato da G2-OS). Le voci che l'interfaccia userebbe **subito** sono: identificativo del
+modello (`G2`), nome mostrato, capienza tramoggia in kg (oggi `maxPelletKg = 5` hardcoded) e
+percorso del logo (oggi `/Printers/G2/Logo.svg` fisso in due componenti). Confermi questo
+elenco iniziale, e vuoi che ci finiscano anche i preset materiale dell'estrusione
+(temperature per zona e rotation volume di PETG/PLA), oggi scritti dentro `ExtrudeDialog`?
 A:
