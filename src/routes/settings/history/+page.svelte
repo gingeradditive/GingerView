@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsSubpage from '$lib/components/SettingsSubpage.svelte';
+	import HistoryList from '$lib/components/HistoryList.svelte';
 </script>
 
-<SettingsSubpage title="History" />
+<HistoryList />
