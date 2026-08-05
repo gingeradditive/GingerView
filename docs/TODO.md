@@ -45,9 +45,16 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## SET — Sottopagine Impostazioni
 
-- `SET-4` Rifare da zero `/settings/history` su `GET /server/history/list` — rimandato (nessun lavoro ora)
-- `SET-5` Rifare da zero `/settings/statistics` su `GET /server/history/totals` — rimandato (nessun lavoro ora)
 - `SET-10` Decidere quando disattivare il config editor (`CONFIG_EDITOR_ENABLED = false`) e se la rotta va rimossa del tutto: oggi resta raggiungibile scrivendo l'URL a mano. Se la rotta sparisce vanno disinstallate anche le dipendenze CodeMirror (`codemirror`, `@codemirror/*`, `@lezer/highlight`) e cancellato `src/lib/editor/`, usati solo lì — pronto
+
+## CLN — Pulizia del codice
+
+- `CLN-1` [SettingsSubpage.svelte](../src/lib/components/SettingsSubpage.svelte) non è più
+  importato da nessuna rotta: Statistics e History, le ultime due che lo usavano come
+  segnaposto, sono ora pagine complete con intestazione propria (vedi
+  [07 — Stato attuale](07-stato-attuale.md)). Valutare se toglierlo insieme alla sezione
+  "Aggiungere una sottopagina di impostazioni" in [05 — Sviluppo](05-sviluppo.md#aggiungere-una-sottopagina-di-impostazioni),
+  o tenerlo per la prossima sottopagina segnaposto — pronto
 
 ## NET — Rete e G2-Service
 

@@ -1,10 +1,10 @@
 # 07 — Stato attuale e limiti noti
 
-Fotografia del progetto al **3 agosto 2026**, branch `graphics-fixes`, dopo la riscrittura
+Fotografia del progetto al **5 agosto 2026**, branch `graphics-fixes`, dopo la riscrittura
 dell'installer, il passaggio a same-origin, l'implementazione di homing/estrusione/avvio
-stampa guidati, delle pagine Log, Update, Timezone e Config editor, e il passaggio di rete e
-fuso orario alle API di G2-Service. Serve a evitare che si perda tempo su cose già note o si
-scambi un segnaposto per un bug.
+stampa guidati, delle pagine Log, Update, Timezone, Config editor, Statistics e History, e il
+passaggio di rete e fuso orario alle API di G2-Service. Serve a evitare che si perda tempo su
+cose già note o si scambi un segnaposto per un bug.
 
 ## Funzionalità complete
 
@@ -71,20 +71,27 @@ scambi un segnaposto per un bug.
   (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
   dryer — e solo all'ultimo step invia `POST /printer/print/start?filename=...`, poi torna
   sulla dashboard (`goto('/')`).
+- Pagina History (`/settings/history`): stesso layout a card di Console/Log — intestazione con
+  titolo e pulsante **Clear history**, senza tasto indietro (la navigazione torna a
+  Impostazioni dalla dock). Tab **All / Completed / Cancelled / Error** e tabella con
+  thumbnail, nome file, stato, data/ora di inizio (nel fuso della stampante), durata e
+  filamento usato, a scorrimento infinito su `GET /server/history/list`. Click sulla riga apre
+  un popup di dettaglio (stessa struttura di quello del browser file) con **Reprint** — via
+  `PrintStartWizard`, disabilitato se il file è stato cancellato — ed **Elimina**; ogni riga ha
+  anche un'eliminazione diretta. Volutamente **senza** i totali aggregati, che restano nella
+  pagina Statistics: vedi [04 — History](04-moonraker.md#history).
+- Pagina Statistics (`/settings/statistics`): stesso layout a card di Console — intestazione con
+  titolo e pillola **Refresh**, corpo scorrevole a sezioni. Totali dei job stampati (job totali,
+  tempo totale, tempo di stampa, filamento usato, job più lungo, stampa più lunga) da
+  `GET /server/history/totals`, con un pulsante **Reset** dietro conferma. Risorse in tempo
+  reale (CPU, memoria, temperatura, connessioni WebSocket, banda di rete) da
+  `GET /machine/proc_stats`, ripetuta ogni 3 secondi mentre la pagina resta aperta. Informazioni
+  hardware (CPU, memoria totale, SD, sistema operativo, interfacce di rete) da
+  `GET /machine/system_info` e stato del server (versione Moonraker, stato Klippy, componenti
+  caricati, eventuali avvisi) da `GET /server/info`. Vedi
+  [04 — Statistics](04-moonraker.md#statistics).
 
 ## Segnaposto
-
-### Sottopagine "Coming soon"
-
-`/settings/history` e `/settings/statistics` sono due righe che istanziano `SettingsSubpage`
-senza contenuto. La voce è nel menu, la rotta esiste, la funzionalità no. `/settings/log`,
-`/settings/update`, `/settings/timezone` e `/settings/config-editor` sono usciti da questo
-elenco: vedi "Funzionalità complete" sopra.
-
-Su Q28 la risposta è che **i link vanno bene, il contenuto va rifatto da zero**: non manca solo
-l'implementazione dietro un layout concordato, e non esiste un mockup di riferimento. Ma è
-lavoro **esplicitamente rimandato**, non da affrontare ora: `SET-4` e `SET-5` restano in
-[TODO.md](TODO.md) marcati come rimandati e non vanno iniziati senza una richiesta esplicita.
 
 ### Webcam assente
 
