@@ -41,6 +41,11 @@ PRINT_CONFIG=0
 SITE_NAME="gingerview"
 COMMON_CONF="/etc/nginx/conf.d/gingerview-common.conf"
 
+# On-link IPv6 prefixes, kept current by lan-prefixes.sh. Outside conf.d on
+# purpose: it is a fragment for `geo`, not a file nginx may load on its own.
+LAN_PREFIXES_CONF="/etc/nginx/gingerview/lan-prefixes.conf"
+LAN_PREFIXES_UNIT="/etc/systemd/system/gingerview-lan-prefixes.service"
+
 # Every other G2 service drops its own `location` here instead of having it
 # wired into this file: G2-Service installs `/service/` from its own repository.
 LOCATIONS_DIR="/etc/nginx/g2-locations.d"
@@ -106,8 +111,8 @@ render_site_config() {
 # same origin so that neither the browser nor GingerSlicer has to name a port,
 # and so that no CORS configuration is required.
 #
-# Requires the companion map in /etc/nginx/conf.d/gingerview-common.conf, which
-# defines \$gingerview_connection_upgrade.
+# Requires the companion maps in /etc/nginx/conf.d/gingerview-common.conf, which
+# define \$gingerview_connection_upgrade and \$gingerview_client_ip.
 
 server {
 ${listen}
@@ -139,7 +144,7 @@ ${listen}
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$gingerview_connection_upgrade;
         proxy_set_header Host \$http_host;
-        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Real-IP \$gingerview_client_ip;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Scheme \$scheme;
         proxy_read_timeout 86400;
@@ -164,7 +169,7 @@ ${listen}
     location ~ ^/(printer|api|access|machine|server)/ {
         proxy_pass http://${MOONRAKER_HOST}:${MOONRAKER_PORT}\$request_uri;
         proxy_set_header Host \$http_host;
-        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Real-IP \$gingerview_client_ip;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Scheme \$scheme;
         proxy_read_timeout 3600;
@@ -331,13 +336,33 @@ mkdir -p "$LOCATIONS_DIR"
 # `map` lives in the http context. The variable is namespaced because MainsailOS
 # images may already define $connection_upgrade in conf.d/common_vars.conf.
 mkdir -p "$(dirname "$COMMON_CONF")"
-cat > "$COMMON_CONF" <<'EOF'
+cat > "$COMMON_CONF" <<EOF
 # Managed by GingerView install.sh — do not edit.
-map $http_upgrade $gingerview_connection_upgrade {
+map \$http_upgrade \$gingerview_connection_upgrade {
     default upgrade;
     ''      close;
 }
+
+# Moonraker trusts private IPv4 ranges only. A client on the printer's own IPv6
+# prefix is just as local, so Moonraker is told it is loopback; anyone else is
+# passed through as is. X-Forwarded-For still carries the real address.
+geo \$gingerview_on_link {
+    default 0;
+    include ${LAN_PREFIXES_CONF};
+}
+
+map \$gingerview_on_link \$gingerview_client_ip {
+    1       127.0.0.1;
+    default \$remote_addr;
+}
 EOF
+
+# The prefixes are only known on the running machine. In an image-build chroot
+# \`ip route\` would describe the build host, so start empty and let the service
+# fill the file at boot.
+mkdir -p "$(dirname "$LAN_PREFIXES_CONF")"
+[ -f "$LAN_PREFIXES_CONF" ] \
+	|| echo "# Managed by GingerView lan-prefixes.sh — do not edit." > "$LAN_PREFIXES_CONF"
 
 render_site_config > "$SITE_AVAILABLE"
 [ -n "$SITE_ENABLED" ] && ln -sfn "$SITE_AVAILABLE" "$SITE_ENABLED"
@@ -394,15 +419,43 @@ if ! nginx -t; then
 fi
 ok "nginx configuration is valid"
 
+# --------------------------------------------------------------------------
+# On-link IPv6 prefixes
+# --------------------------------------------------------------------------
+
+chmod 755 "$GINGERVIEW_SRC/script/lan-prefixes.sh"
+if [ -d "$(dirname "$LAN_PREFIXES_UNIT")" ]; then
+	cat > "$LAN_PREFIXES_UNIT" <<EOF
+# Managed by GingerView install.sh — do not edit.
+[Unit]
+Description=GingerView: let Moonraker trust clients on the printer's IPv6 prefixes
+After=network.target nginx.service
+
+[Service]
+ExecStart=$GINGERVIEW_SRC/script/lan-prefixes.sh $LAN_PREFIXES_CONF
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+	ok "wrote $LAN_PREFIXES_UNIT"
+fi
+
 if [ "$NO_RELOAD" -eq 1 ]; then
+	systemctl enable gingerview-lan-prefixes >/dev/null 2>&1 || true
 	info "skipping reload (--no-reload)"
 elif [ -d /run/systemd/system ]; then
 	systemctl enable nginx >/dev/null 2>&1 || true
 	systemctl reload nginx 2>/dev/null || systemctl restart nginx
 	ok "nginx reloaded"
+	systemctl daemon-reload
+	systemctl enable gingerview-lan-prefixes >/dev/null 2>&1 || true
+	systemctl restart gingerview-lan-prefixes
+	ok "gingerview-lan-prefixes started"
 else
 	# Image build chroot: systemd is not running, so leave it to first boot.
-	systemctl enable nginx >/dev/null 2>&1 || true
+	systemctl enable nginx gingerview-lan-prefixes >/dev/null 2>&1 || true
 	info "systemd is not running (chroot?), nginx will start on first boot"
 fi
 
@@ -459,6 +512,6 @@ echo "  Interface:  http://${IP}${SUFFIX}"
 echo "  Moonraker:  http://${IP}${SUFFIX}/server/info   (same origin, no port)"
 echo "  WebSocket:  ws://${IP}${SUFFIX}/websocket"
 echo
-echo "  In GingerSlicer, add the printer as Klipper/Moonraker with host"
-echo "  http://${IP}${SUFFIX} and leave the port empty."
+echo "  In GingerSlicer, set the print host to http://g2.local${SUFFIX}"
+echo "  (or http://${IP}${SUFFIX}) and leave the API key empty."
 echo
