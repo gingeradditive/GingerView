@@ -7,6 +7,10 @@
 
 	const pageCount = 2;
 
+	// Stessa condizione della media query in fondo al file (vedi i breakpoint in app.css):
+	// lì le due colonne stanno entrambe a schermo e non c'è niente da far scorrere.
+	const allVisibleQuery = '(min-width: 768px) and (min-height: 600px)';
+
 	let emblaApi: EmblaCarouselType | undefined = $state();
 	let selectedIndex = $state(0);
 	let visibleCount = $state(1);
@@ -18,7 +22,9 @@
 	const options: EmblaOptionsType = {
 		axis: 'x',
 		loop: true,
-		align: 'start'
+		align: 'start',
+		// Con tutto a schermo il carosello si spegne: niente trascinamento a vuoto.
+		breakpoints: { [allVisibleQuery]: { active: false } }
 	};
 
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
@@ -36,7 +42,9 @@
 		});
 	};
 
-	const isInView = (index: number): boolean => slidesInView.includes(index);
+	// Da spento Embla non tiene più il conto delle slide visibili: lì sono tutte.
+	const isInView = (index: number): boolean =>
+		visibleCount >= pageCount || slidesInView.includes(index);
 
 	const scrollTo = (index: number): void => {
 		emblaApi?.scrollTo(index);
@@ -48,8 +56,7 @@
 	};
 
 	const updateVisibleCount = (): void => {
-		// Stessa condizione della media query in fondo al file (vedi i breakpoint in app.css).
-		if (window.matchMedia('(min-width: 768px) and (min-height: 600px)').matches) visibleCount = 2;
+		if (window.matchMedia(allVisibleQuery).matches) visibleCount = 2;
 		else visibleCount = 1;
 	};
 
@@ -121,16 +128,20 @@
 		.embla__slide {
 			flex: 0 0 50%;
 		}
-
-		.dots {
-			display: none;
-		}
 	}
 
 	.dots {
 		display: flex;
 		gap: 6px;
 		flex-shrink: 0;
+	}
+
+	/* Dopo la regola base: prima, a parità di specificità, vinceva `display: flex`
+	   e i pallini restavano anche con entrambe le colonne a schermo. */
+	@media (min-width: 768px) and (min-height: 600px) {
+		.dots {
+			display: none;
+		}
 	}
 
 	.dot {

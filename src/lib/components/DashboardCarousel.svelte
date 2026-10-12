@@ -10,6 +10,10 @@
 
 	const pageCount = 5;
 
+	// Stessa condizione dell'ultima media query in fondo al file: i cinque pannelli
+	// sono tutti a schermo e non c'è niente da far scorrere.
+	const allVisibleQuery = '(min-width: 1200px) and (min-height: 600px)';
+
 	let emblaApi: EmblaCarouselType | undefined = $state();
 	let selectedIndex = $state(0);
 	let visibleCount = $state(1);
@@ -23,7 +27,9 @@
 		axis: 'x',
 		loop: true,
 		align: 'start',
-		startIndex: 2
+		startIndex: 2,
+		// Con tutto a schermo il carosello si spegne: niente trascinamento a vuoto.
+		breakpoints: { [allVisibleQuery]: { active: false } }
 	};
 
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
@@ -41,7 +47,9 @@
 		});
 	};
 
-	const isInView = (index: number): boolean => slidesInView.includes(index);
+	// Da spento Embla non tiene più il conto delle slide visibili: lì sono tutte.
+	const isInView = (index: number): boolean =>
+		visibleCount >= pageCount || slidesInView.includes(index);
 
 	const scrollTo = (index: number): void => {
 		emblaApi?.scrollTo(index);
@@ -55,7 +63,7 @@
 	const updateVisibleCount = (): void => {
 		// Stesse condizioni delle media query in fondo al file: l'altezza serve a tenere il
 		// telefono in orizzontale sul layout a una slide (vedi i breakpoint in app.css).
-		if (window.matchMedia('(min-width: 1200px) and (min-height: 600px)').matches) visibleCount = 5;
+		if (window.matchMedia(allVisibleQuery).matches) visibleCount = 5;
 		else if (window.matchMedia('(min-width: 768px) and (min-height: 600px)').matches)
 			visibleCount = 3;
 		else visibleCount = 1;

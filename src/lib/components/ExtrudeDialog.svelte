@@ -269,6 +269,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
+		container-type: size;
 	}
 
 	.viz-card {
@@ -462,5 +463,22 @@
 
 	.modal-confirm:hover {
 		background: var(--color-red-dark);
+	}
+
+	/*
+	 * The drawing gets whatever height the settings leave (~424px + the 24px gap).
+	 * Under ~160px it is a sliver nobody can read, and on the shortest screens it
+	 * pushed the settings out of the column: below that it goes, and the settings
+	 * take the whole column. Last in the file, so it wins over the base rules.
+	 */
+	@container (max-height: 607px) {
+		.viz-card {
+			display: none;
+		}
+
+		.settings-card {
+			flex: 1;
+			justify-content: center;
+		}
 	}
 </style>
