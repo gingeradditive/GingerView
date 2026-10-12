@@ -159,29 +159,37 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 9px;
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
 		box-shadow: var(--shadow-panel);
+		/*
+		 * Everything inside is drawn in `--u`, a pixel that shrinks when the panel
+		 * is too short (13" laptops, small screens) and is a plain pixel otherwise.
+		 * The stack is ~362u tall (four zones, the nozzle, the bed) and the bed
+		 * ~150u wide. Resolved by the children, so `cq*` refers to this panel.
+		 */
+		container-type: size;
+		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
 	}
 
 	.extruders {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: calc(var(--u) * 6);
 	}
 
 	.bed-section {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 7px;
+		gap: calc(var(--u) * 7);
+		margin-top: calc(var(--u) * 9);
 	}
 
 	.bed-triangle {
-		width: 62px;
-		height: 33px;
+		width: calc(var(--u) * 62);
+		height: calc(var(--u) * 33);
 		position: relative;
 		display: flex;
 		align-items: center;
@@ -200,10 +208,10 @@
 		align-items: baseline;
 		justify-content: flex-start;
 		position: relative;
-		width: 144px;
-		height: 81px;
-		padding: 7px 8px;
-		border-radius: 7px;
+		width: calc(var(--u) * 144);
+		height: calc(var(--u) * 81);
+		padding: calc(var(--u) * 7) calc(var(--u) * 8);
+		border-radius: calc(var(--u) * 7);
 		border: 1px solid var(--color-text-subtle);
 		background: var(--color-gray-light);
 		box-sizing: border-box;
@@ -222,7 +230,7 @@
 	}
 
 	.bed-label {
-		font-size: 0.8rem;
+		font-size: calc(var(--u) * 12.8);
 		font-weight: 600;
 		color: var(--color-surface-sunken);
 		line-height: 1;
@@ -230,8 +238,8 @@
 
 	.bed-temperature-stack {
 		position: absolute;
-		bottom: 7px;
-		right: 18px;
+		bottom: calc(var(--u) * 7);
+		right: calc(var(--u) * 18);
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
@@ -240,7 +248,7 @@
 	}
 
 	.bed-value {
-		font-size: 1.5rem;
+		font-size: calc(var(--u) * 24);
 		font-weight: 600;
 		color: var(--color-text-subtle);
 		line-height: 1;
@@ -263,7 +271,7 @@
 	}
 
 	.bed-set-temperature {
-		font-size: 0.8rem;
+		font-size: calc(var(--u) * 12.8);
 		font-weight: 500;
 		line-height: 1;
 		color: var(--color-white);

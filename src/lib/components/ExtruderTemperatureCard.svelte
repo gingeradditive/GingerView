@@ -56,10 +56,11 @@
 		position: relative;
 		background: var(--color-gray-light);
 		border: 1px solid var(--color-text-subtle);
-		border-radius: 5px;
-		width: 100px;
-		height: 53px;
-		padding: 0 7px;
+		/* `--u` comes from DashboardTemperaturePanel: 1px unless the panel is short. */
+		border-radius: calc(var(--u, 1px) * 5);
+		width: calc(var(--u, 1px) * 100);
+		height: calc(var(--u, 1px) * 53);
+		padding: 0 calc(var(--u, 1px) * 7);
 		box-sizing: border-box;
 		transition:
 			background-color 220ms ease,
@@ -76,7 +77,7 @@
 	}
 
 	.index {
-		font-size: 0.8rem;
+		font-size: calc(var(--u, 1px) * 12.8);
 		font-weight: 500;
 		color: var(--color-surface-sunken);
 		line-height: 1;
@@ -99,7 +100,7 @@
 	}
 
 	.temperature {
-		font-size: 1.5rem;
+		font-size: calc(var(--u, 1px) * 24);
 		font-weight: 600;
 		color: var(--color-text-subtle);
 		line-height: 1;
@@ -122,7 +123,7 @@
 	}
 
 	.set-temperature {
-		font-size: 0.8rem;
+		font-size: calc(var(--u, 1px) * 12.8);
 		font-weight: 500;
 		line-height: 1;
 		color: var(--color-white);
@@ -131,12 +132,12 @@
 
 	@media (max-width: 767.98px) {
 		.extruder-card {
-			width: 88px;
-			height: 49px;
+			width: calc(var(--u, 1px) * 88);
+			height: calc(var(--u, 1px) * 49);
 		}
 
 		.temperature {
-			font-size: 1.25rem;
+			font-size: calc(var(--u, 1px) * 20);
 		}
 	}
 </style>

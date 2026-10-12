@@ -91,13 +91,18 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		/* The gauge and its text are sized off the panel, not the viewport: the
+		   card's height depends on the screen, and fixed text overflowed the circle
+		   on short ones (13" laptops). */
+		container-type: size;
 	}
 
 	.flow-gauge {
+		/* Side of the gauge: the largest square that fits the panel. */
+		--gauge: min(100cqw, 100cqh);
 		position: relative;
-		height: 100%;
-		aspect-ratio: 1 / 1;
-		max-width: 100%;
+		width: var(--gauge);
+		height: var(--gauge);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -132,13 +137,16 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 10px;
+		gap: calc(var(--gauge) * 0.03);
+		/* Keeps the text inside the ring (inner diameter ≈ 74% of the gauge). */
+		padding: 0 calc(var(--gauge) * 0.2);
 		text-align: center;
 		pointer-events: none;
 	}
 
+	/* Scale with the gauge, never above the original size. */
 	.flow-label {
-		font-size: 2rem;
+		font-size: min(2rem, calc(var(--gauge) * 0.12));
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
@@ -146,7 +154,7 @@
 	}
 
 	.flow-value {
-		font-size: 1.7rem;
+		font-size: min(1.7rem, calc(var(--gauge) * 0.09));
 		font-weight: 500;
 		color: var(--color-text-soft);
 		line-height: 1.3;
