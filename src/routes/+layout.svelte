@@ -99,6 +99,9 @@
 	}
 
 	.dock {
+		/* Misure condivise con EmergencyStopButton, che sta nel dock. */
+		--dock-btn: 52.8px;
+		--dock-sep: 19.2px;
 		position: fixed;
 		left: 50%;
 		bottom: 16px;
@@ -118,8 +121,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 52.8px;
-		height: 52.8px;
+		width: var(--dock-btn);
+		height: var(--dock-btn);
 		color: var(--color-text-subtle);
 		border-radius: 14.4px;
 		text-decoration: none;
@@ -144,14 +147,14 @@
 	}
 
 	.dock svg {
-		width: 32px;
-		height: 32px;
+		width: calc(var(--dock-btn) * 0.6);
+		height: calc(var(--dock-btn) * 0.6);
 		fill: currentColor;
 	}
 
 	.settings-icon {
 		background: var(--color-white) !important;
-		margin-left: 19.2px;
+		margin-left: var(--dock-sep);
 		color: var(--color-text-subtle) !important;
 		border: 3px solid transparent !important;
 	}
@@ -178,7 +181,7 @@
 		align-items: center;
 		justify-content: center;
 		width: 68px;
-		height: 52.8px;
+		height: var(--dock-btn);
 		margin-right: 16px;
 	}
 
@@ -186,5 +189,29 @@
 		width: 48px;
 		height: 48px;
 		object-fit: contain;
+	}
+
+	/* Telefono: a misura piena il dock è largo ~440px e su uno schermo da 360-414 usciva dai
+	   bordi (logo ed emergenza tagliati). Pulsanti in proporzione alla larghezza, mai sotto i
+	   40px; sui telefoni più larghi torna alle misure piene. */
+	@media (max-width: 767.98px) {
+		.dock {
+			--dock-btn: clamp(40px, 11.5vw, 52.8px);
+			--dock-sep: 8px;
+			bottom: 12px;
+			gap: 4px;
+			padding: 8px;
+			border-radius: 16px;
+		}
+
+		.logo-container {
+			width: calc(var(--dock-btn) * 0.9);
+			margin-right: 4px;
+		}
+
+		.logo-image {
+			width: 100%;
+			height: auto;
+		}
 	}
 </style>

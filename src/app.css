@@ -13,6 +13,7 @@
  * - Due colonne che non stanno   @media (max-width: 1023.98px)
  * - Schermo grande (3 slide)     @media (min-width: 768px) and (min-height: 600px)
  * - Schermo grande (5 slide)     @media (min-width: 1200px) and (min-height: 600px)
+ * - Monitor 2K/4K a scala 100%   @media (min-width: 2400px) and (min-height: 1300px), qui sotto
  *
  * La larghezza da sola non distingue un telefono in orizzontale (~850x390) da un portatile:
  * per questo le soglie che decidono *quante* slide mostrare chiedono anche l'altezza. Sotto i
@@ -95,6 +96,40 @@
 	/* Ombre ricorrenti: erano ripetute identiche in decine di componenti */
 	--shadow-panel: 0px 4px 3px 0px rgba(var(--rgb-black), 0.25);
 	--shadow-float: 0 2px 12px rgba(var(--rgb-black), 0.1);
+
+	/* Lo spazio che le pagine lasciano in fondo per il dock, che è fixed e non ne occupa. */
+	--dock-clearance: 112px;
+}
+
+@media (max-width: 767.98px) {
+	:root {
+		/* Il dock da telefono è più basso (vedi +layout.svelte). */
+		--dock-clearance: 96px;
+	}
+}
+
+/*
+ * Monitor grandi a scala 100% (2560x1440, 4K).
+ *
+ * L'interfaccia è disegnata in px per un portatile o un 1080p: su un 4K i pannelli si
+ * allargano ma testi, pulsanti e dock restano minuscoli in mezzo al bianco. Lo zoom
+ * ingrandisce tutto in proporzione, così un 4K si comporta come un 1920x1080 e un 1440p come
+ * un 1920x1080 anche lui. Le media query continuano a vedere il viewport reale (le soglie qui
+ * sopra restano vere). Due cose però non tornano da sole: i `vh`/`vw` vengono moltiplicati
+ * anche loro (con zoom 2 un `100vh` è alto due schermi), quindi nelle pagine si usa il 100%
+ * del contenitore; e `clientX`/`clientY` restano in pixel dello schermo, quindi una posizione
+ * `fixed` presa dal mouse va divisa per `currentCSSZoom` (vedi PrintCard).
+ */
+@media (min-width: 2400px) and (min-height: 1300px) {
+	html {
+		zoom: 1.333;
+	}
+}
+
+@media (min-width: 3400px) and (min-height: 1900px) {
+	html {
+		zoom: 2;
+	}
 }
 
 /* GingerView Light Theme */

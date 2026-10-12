@@ -10,7 +10,7 @@
 	.movement-page {
 		width: 100%;
 		height: 100%;
-		padding: 16px 16px 112px;
+		padding: 16px 16px var(--dock-clearance);
 		box-sizing: border-box;
 	}
 </style>
