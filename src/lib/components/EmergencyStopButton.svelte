@@ -128,11 +128,11 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 52.8px;
-		height: 52.8px;
+		width: var(--dock-btn, 52.8px);
+		height: var(--dock-btn, 52.8px);
 		/* Separated from Settings the same way Settings is separated from the
 		   navigation group: this is not one more place to go. */
-		margin-left: 19.2px;
+		margin-left: var(--dock-sep, 19.2px);
 		padding: 0;
 		border: 3px solid transparent;
 		border-radius: 14.4px;
@@ -142,8 +142,8 @@
 	}
 
 	.estop svg {
-		width: 32px;
-		height: 32px;
+		width: calc(var(--dock-btn, 52.8px) * 0.6);
+		height: calc(var(--dock-btn, 52.8px) * 0.6);
 		fill: currentColor;
 	}
 

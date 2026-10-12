@@ -110,7 +110,8 @@
 
 	.z-progress-container {
 		position: relative;
-		width: 80px;
+		/* Nelle colonne strette (5 pannelli su un portatile) l'asta cede spazio al testo. */
+		width: min(80px, 30%);
 		height: 100%;
 		flex-shrink: 0;
 	}
@@ -174,26 +175,29 @@
 		flex-direction: column;
 		gap: 8px;
 		flex: 1;
-		padding: 20px;
+		min-width: 0;
+		padding: 20px 12px;
 		justify-content: center;
 		align-items: center;
 		text-align: center;
+		/* I testi scalano con la colonna: a 2rem "HEIGHT" esce da una colonna di 230px. */
+		container-type: inline-size;
 	}
 
 	.z-label {
-		font-size: 2rem;
+		font-size: min(2rem, 22cqw);
 		font-weight: 700;
 		color: var(--color-black);
 	}
 
 	.z-value {
-		font-size: 1.7rem;
+		font-size: min(1.7rem, 17cqw);
 		color: var(--color-text-soft);
 		font-weight: 500;
 	}
 
 	.z-value-sub {
-		font-size: 1.5rem;
+		font-size: min(1.5rem, 14cqw);
 		color: var(--color-text-disabled);
 		font-weight: 400;
 	}

@@ -295,6 +295,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
+		/* Le regole @container in fondo guardano la sua altezza. */
+		container-type: size;
 	}
 
 	.viz-card {
@@ -320,8 +322,8 @@
 	}
 
 	.toolhead-svg {
-		width: 55%;
-		height: 55%;
+		width: 85%;
+		height: 85%;
 		display: block;
 		margin: 0 auto;
 	}
@@ -493,5 +495,21 @@
 		cursor: default;
 		opacity: 0.55;
 		pointer-events: none;
+	}
+
+	/* Colonna bassa (portatili e tablet da 600px): il disegno sotto i ~150px non si legge più.
+	   Al suo posto si allarga la card delle coordinate, così la colonna resta piena come quella
+	   di Extrude accanto. In fondo: a parità di specificità vince l'ultima regola. */
+	@container (max-height: 499px) {
+		.viz-card {
+			display: none;
+		}
+
+		.position-card {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-evenly;
+		}
 	}
 </style>

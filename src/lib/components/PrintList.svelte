@@ -381,11 +381,20 @@
 		cursor: pointer;
 	}
 
+	/* Colonne quante ne stanno, card che si allargano a riempire la riga e ultima riga allineata
+	   alle altre. Due colonne anche sul telefono più stretto (360px). */
 	.grid {
-		display: flex;
-		flex-wrap: wrap;
+		--card-min: 260px;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr));
 		gap: 24px;
-		justify-content: center;
+	}
+
+	@media (max-width: 767.98px) {
+		.grid {
+			--card-min: 140px;
+			gap: 16px 12px;
+		}
 	}
 
 	.status-message {
@@ -423,8 +432,8 @@
 		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
-		min-width: 300px;
-		max-width: 400px;
+		width: min(400px, calc(100% - 32px));
+		box-sizing: border-box;
 		box-shadow: var(--shadow-panel);
 	}
 
@@ -457,6 +466,7 @@
 	}
 
 	.modal-confirm {
+		min-height: 44px;
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
@@ -467,6 +477,7 @@
 	}
 
 	.modal-cancel {
+		min-height: 44px;
 		padding: 8px 20px;
 		border: 1px solid var(--color-gray);
 		border-radius: 8px;

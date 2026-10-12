@@ -476,9 +476,11 @@
 			display: none;
 		}
 
+		/* La card occupa tutta la colonna: AMOUNT in cima, il pulsante ancorato in fondo e lo
+		   spazio in più diviso tra le righe (i divisori restano a metà tra due sezioni). */
 		.settings-card {
 			flex: 1;
-			justify-content: center;
+			justify-content: space-between;
 		}
 	}
 </style>

@@ -8,7 +8,7 @@
 		moveFile,
 		fetchDirectoriesRecursive
 	} from '$lib/services/moonraker-files';
-	import { mdiFolder } from '@mdi/js';
+	import { mdiDotsVertical, mdiFolder } from '@mdi/js';
 
 	let { item }: { item: PrintItem } = $props();
 
@@ -33,14 +33,40 @@
 		return unsubscribe;
 	});
 
-	function handleContextMenu(event: MouseEvent) {
-		event.preventDefault();
+	// Ingombro del menu, per non aprirlo oltre il bordo dello schermo: tre voci da 44px.
+	const MENU_WIDTH = 180;
+	const MENU_HEIGHT = 148;
 
-		contextMenuX = event.clientX;
-		contextMenuY = event.clientY;
+	/** `x`/`y` in pixel dello schermo, come `clientX` o `getBoundingClientRect()`. */
+	function openContextMenu(x: number, y: number) {
+		// Sui monitor grandi la pagina è zoomata (app.css) e un `left` in CSS px viene
+		// moltiplicato: le coordinate dello schermo vanno riportate in CSS px.
+		const zoom =
+			(document.documentElement as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1;
+		const maxX = window.innerWidth / zoom - MENU_WIDTH - 8;
+		const maxY = window.innerHeight / zoom - MENU_HEIGHT - 8;
+		contextMenuX = Math.max(8, Math.min(x / zoom, maxX));
+		contextMenuY = Math.max(8, Math.min(y / zoom, maxY));
 		showContextMenu = true;
 		// Set this card as the active context menu globally
 		activeContextMenuId.set(item.id);
+	}
+
+	function handleContextMenu(event: MouseEvent) {
+		event.preventDefault();
+		openContextMenu(event.clientX, event.clientY);
+	}
+
+	/** Il pulsante ⋮: su touch il click destro non esiste (iOS non manda `contextmenu`). */
+	function handleMenuButton(event: MouseEvent) {
+		// Né la card (aprirebbe il dettaglio) né la window (chiuderebbe il menu) devono vederlo.
+		event.stopPropagation();
+		if (showContextMenu) {
+			closeContextMenu();
+			return;
+		}
+		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		openContextMenu(rect.left, rect.bottom);
 	}
 
 	async function handleDelete() {
@@ -160,6 +186,16 @@
 <svelte:window onclick={handleClickOutside} />
 
 <div class="print-card" role="button" tabindex="0" oncontextmenu={handleContextMenu}>
+	<button
+		class="menu-button"
+		aria-label="Actions for {item.name}"
+		aria-haspopup="menu"
+		aria-expanded={showContextMenu}
+		onclick={handleMenuButton}
+		onkeydown={(e) => e.stopPropagation()}
+	>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiDotsVertical} /></svg>
+	</button>
 	{#if item.isDirectory}
 		<img class="folder-image" src="/Folder.svg" alt={item.name} width="250" height="250" />
 	{:else}
@@ -178,11 +214,7 @@
 			</div>
 		</div>
 	{/if}
-	<div class="name-label">
-		<span class="name-text"
-			>{item.name.length > 20 ? item.name.slice(0, 20) + '...' : item.name}</span
-		>
-	</div>
+	<div class="name-label" title={item.name}>{item.name}</div>
 </div>
 
 {#if showContextMenu}
@@ -263,14 +295,57 @@
 {/if}
 
 <style>
+	/* La larghezza la decide la griglia di PrintList; tutto il resto è in proporzione alla card
+	   (cqw), così la stessa card sta bene a 150px su un telefono e a 300px su un monitor. */
 	.print-card {
-		--card-size: 325px;
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 8px;
-		width: var(--card-size);
+		width: 100%;
 		cursor: pointer;
+		container-type: inline-size;
+	}
+
+	.menu-button {
+		position: absolute;
+		top: 6px;
+		right: 6px;
+		z-index: 1;
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: none;
+		border-radius: 50%;
+		background: rgba(var(--rgb-white), 0.9);
+		box-shadow: var(--shadow-float);
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+
+	.menu-button svg {
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
+	}
+
+	/* Col mouse c'è il click destro: il pulsante compare solo passandoci sopra. Su touch resta
+	   sempre visibile, perché è l'unica strada per rinominare, spostare o cancellare. */
+	@media (hover: hover) {
+		.menu-button {
+			opacity: 0;
+			transition: opacity 0.15s;
+		}
+
+		.print-card:hover .menu-button,
+		.menu-button:focus-visible,
+		.menu-button[aria-expanded='true'] {
+			opacity: 1;
+		}
 	}
 
 	.card-inner {
@@ -282,8 +357,8 @@
 	}
 
 	.image-wrapper {
-		width: var(--card-size);
-		height: var(--card-size);
+		width: 100%;
+		aspect-ratio: 1;
 		border-radius: 20px;
 		overflow: hidden;
 		position: relative;
@@ -301,9 +376,10 @@
 	}
 
 	.folder-image {
-		width: var(--card-size);
-		height: var(--card-size);
-		padding: 32px;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+		padding: 10%;
 		object-fit: contain;
 	}
 
@@ -312,7 +388,7 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 60px;
+		height: 18cqw;
 		background: linear-gradient(to bottom, rgba(var(--rgb-white), 0.95), transparent);
 		pointer-events: none;
 	}
@@ -322,16 +398,16 @@
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		height: 60px;
+		height: 18cqw;
 		background: linear-gradient(to top, rgba(var(--rgb-white), 0.95), transparent);
 		pointer-events: none;
 	}
 
 	.material-label {
 		position: absolute;
-		top: 12px;
-		left: 12px;
-		font-size: 1.1rem;
+		top: 4cqw;
+		left: 4cqw;
+		font-size: clamp(0.75rem, 5.5cqw, 1.1rem);
 		font-weight: 700;
 		color: var(--color-black);
 		background: transparent;
@@ -341,9 +417,9 @@
 
 	.duration-label {
 		position: absolute;
-		bottom: 12px;
-		right: 12px;
-		font-size: 1.05rem;
+		bottom: 4cqw;
+		right: 4cqw;
+		font-size: clamp(0.7rem, 5cqw, 1.05rem);
 		font-weight: 600;
 		color: var(--color-black);
 		background: transparent;
@@ -351,37 +427,16 @@
 		border-radius: 0;
 	}
 
+	/* Il nome si taglia dove finisce la card, non a 20 caratteri fissi; intero nel tooltip. */
 	.name-label {
-		font-size: 1.25rem;
+		width: 100%;
+		font-size: clamp(0.85rem, 6cqw, 1.25rem);
 		font-weight: 600;
 		color: var(--color-black);
 		text-align: center;
-		max-width: var(--card-size);
 		overflow: hidden;
-		position: relative;
 		white-space: nowrap;
-	}
-
-	.name-text {
-		display: inline-block;
-	}
-
-	@media (max-width: 767.98px) {
-		.print-card {
-			--card-size: 162.5px;
-		}
-
-		.material-label {
-			font-size: 0.8rem;
-		}
-
-		.duration-label {
-			font-size: 0.75rem;
-		}
-
-		.name-label {
-			font-size: 0.9rem;
-		}
+		text-overflow: ellipsis;
 	}
 
 	.context-menu {
@@ -392,11 +447,13 @@
 		box-shadow: 0 4px 12px rgba(var(--rgb-black), 0.15);
 		z-index: 1000;
 		min-width: 150px;
+		max-width: 180px;
 		padding: 4px 0;
 	}
 
 	.context-menu-item {
 		width: 100%;
+		min-height: 44px;
 		padding: 8px 16px;
 		background: none;
 		border: none;
@@ -438,9 +495,10 @@
 		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
-		min-width: 300px;
-		max-width: 400px;
-		max-height: 60vh;
+		/* Percentuali dell'overlay, non vw/vh: vedi lo zoom in app.css. */
+		width: min(400px, calc(100% - 32px));
+		box-sizing: border-box;
+		max-height: 80%;
 		display: flex;
 		flex-direction: column;
 		box-shadow: var(--shadow-panel);
@@ -463,13 +521,15 @@
 		flex-direction: column;
 		gap: 2px;
 		overflow-y: auto;
-		max-height: 40vh;
+		flex: 1;
+		min-height: 0;
 		margin-bottom: 16px;
 	}
 
 	.folder-option {
 		display: flex;
 		align-items: center;
+		min-height: 44px;
 		gap: 10px;
 		padding: 10px 12px;
 		border: none;
@@ -488,6 +548,7 @@
 
 	.modal-cancel {
 		align-self: flex-end;
+		min-height: 44px;
 		padding: 8px 20px;
 		border: 1px solid var(--color-gray);
 		border-radius: 8px;
@@ -524,6 +585,7 @@
 	}
 
 	.modal-confirm {
+		min-height: 44px;
 		padding: 8px 20px;
 		border: none;
 		border-radius: 8px;
