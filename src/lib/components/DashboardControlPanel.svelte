@@ -334,6 +334,7 @@
 	}
 
 	.round-btn {
+		flex-shrink: 0;
 		width: 48px;
 		height: 48px;
 		border-radius: 50%;
@@ -379,6 +380,7 @@
 	}
 
 	.square-btn {
+		flex-shrink: 0;
 		width: 56px;
 		height: 56px;
 		border-radius: 12px;
@@ -398,5 +400,43 @@
 	.square-btn:disabled {
 		cursor: default;
 		opacity: 0.5;
+	}
+
+	/* Sotto i ~380px i quattro pulsanti con 2rem di spazio non ci stanno e si schiacciavano. */
+	@media (max-width: 767.98px) {
+		.controls-row {
+			gap: clamp(12px, 6vw, 2rem);
+			padding: 0;
+		}
+	}
+
+	/* Da tablet in su c'è larghezza da vendere e poca altezza: tempi e barra a sinistra, pulsanti
+	   a destra, su una riga sola. Restituisce ai pannelli sopra ~70px, che su un portatile sono
+	   un quinto dell'altezza utile. In fondo: vince sulle regole base a parità di specificità. */
+	@media (min-width: 768px) {
+		.control-panel {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				'time controls'
+				'bar controls';
+			column-gap: 24px;
+			row-gap: 10px;
+			padding: 16px 20px;
+		}
+
+		.time-row {
+			grid-area: time;
+		}
+
+		.progress-bar {
+			grid-area: bar;
+		}
+
+		.controls-row {
+			grid-area: controls;
+			gap: 1.25rem;
+			padding: 0;
+		}
 	}
 </style>

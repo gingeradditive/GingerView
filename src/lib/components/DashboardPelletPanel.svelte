@@ -125,6 +125,7 @@
 		overflow: hidden;
 		position: relative;
 		box-shadow: var(--shadow-panel);
+		container-type: inline-size;
 	}
 
 	.pellet-visual {
@@ -165,14 +166,16 @@
 		}
 	}
 
+	/* Tutta la larghezza del pannello: con left: 50% il testo ne aveva solo metà e andava a capo
+	   a ogni parola. */
 	.pellet-text {
 		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
+		inset: 0;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: 4px;
 		z-index: 2;
 		color: var(--color-black-pure);
@@ -180,13 +183,13 @@
 	}
 
 	.pellet-label {
-		font-size: 2rem;
+		font-size: min(2rem, 18cqw);
 		font-weight: 700;
 		color: var(--color-black-pure);
 	}
 
 	.pellet-value {
-		font-size: 1.7rem;
+		font-size: min(1.7rem, 13cqw);
 		color: var(--color-black-pure);
 		font-weight: 500;
 	}

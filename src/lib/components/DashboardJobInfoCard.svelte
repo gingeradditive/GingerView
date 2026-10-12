@@ -69,7 +69,7 @@
 </script>
 
 <section class="job-info-card" aria-label="Print Job Info">
-	<span class="job-name">{jobName}</span>
+	<span class="job-name" title={jobName}>{jobName}</span>
 	<div class="job-preview">
 		<img src={thumbnailUrl} alt="Print preview" />
 	</div>
@@ -91,12 +91,22 @@
 		box-sizing: border-box;
 		box-shadow: var(--shadow-panel);
 		text-align: center;
+		container-type: inline-size;
 	}
 
+	/* Un nome file lungo non deve spingere via l'anteprima: due righe al massimo. */
 	.job-name {
-		font-size: 2rem;
+		flex-shrink: 0;
+		max-width: 100%;
+		font-size: min(2rem, 12cqw);
 		font-weight: 700;
 		color: var(--color-text-secondary);
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		overflow: hidden;
 	}
 
 	.job-preview {
@@ -114,6 +124,7 @@
 	}
 
 	.job-material {
+		flex-shrink: 0;
 		font-size: 0.85rem;
 		color: var(--color-text-soft);
 		font-weight: 500;
