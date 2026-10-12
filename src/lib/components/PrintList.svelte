@@ -3,8 +3,9 @@
 	import PrintCard from './PrintCard.svelte';
 	import PrintDetailsPopup from './PrintDetailsPopup.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
+	import UsbImportModal from './UsbImportModal.svelte';
 	import type { PrintItem } from '$lib/types/print';
-	import { mdiFolderPlus, mdiUpload } from '@mdi/js';
+	import { mdiFolderPlus, mdiUpload, mdiUsbFlashDrive } from '@mdi/js';
 	import {
 		fetchDirectory,
 		getThumbnailUrl,
@@ -17,19 +18,25 @@
 		createDirectory
 	} from '$lib/services/moonraker-files';
 	import { currentDirPath, navigateToDir } from '$lib/stores/directoryStore';
+	import { fetchUsbStatus } from '$lib/services/usb-api';
 
 	const PAGE_SIZE = 20;
+	// G2-Service non ha un canale push: la presenza della chiavetta si chiede a intervalli.
+	const USB_POLL_MS = 3000;
 
 	let fileInput: HTMLInputElement;
 	let allItems: PrintItem[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let dirPath = '';
+	let dirPath = $state('');
 	let showCreateFolderModal = $state(false);
 	let folderName = $state('');
 	let visibleCount = PAGE_SIZE;
 	let showPrintDetailsModal = $state(false);
 	let selectedPrint = $state<PrintItem | null>(null);
+	let usbMounted = $state(false);
+	let showUsbModal = $state(false);
+	let usbPollTimer: ReturnType<typeof setInterval> | undefined;
 
 	const unsubscribe = currentDirPath.subscribe((value) => {
 		dirPath = value;
@@ -47,7 +54,9 @@
 			const result = await fetchDirectory(moonrakerPath);
 
 			const dirItems: PrintItem[] = result.dirs
-				.filter((d) => !d.dirname.startsWith('.'))
+				// `media` è il vecchio symlink alla chiavetta delle immagini G2-OS precedenti: la
+				// chiavetta ora si usa dal pulsante USB, non come cartella.
+				.filter((d) => !d.dirname.startsWith('.') && !(dirPath === '' && d.dirname === 'media'))
 				.map((d) => ({
 					id: `dir-${d.dirname}`,
 					name: d.dirname,
@@ -246,7 +255,19 @@
 		loadDirectory();
 	}
 
+	async function pollUsb() {
+		try {
+			usbMounted = (await fetchUsbStatus()).mounted;
+		} catch {
+			// Servizio giù o immagine senza l'endpoint: niente pulsante, e niente toast a ogni giro.
+			usbMounted = false;
+		}
+	}
+
 	onMount(() => {
+		pollUsb();
+		usbPollTimer = setInterval(pollUsb, USB_POLL_MS);
+
 		// Only add window event listeners in browser environment
 		if (typeof window !== 'undefined') {
 			window.addEventListener('moonraker-file-deleted', handleFileDeleted);
@@ -255,6 +276,7 @@
 
 	onDestroy(() => {
 		unsubscribe();
+		clearInterval(usbPollTimer);
 
 		// Only remove window event listeners in browser environment
 		if (typeof window !== 'undefined') {
@@ -267,6 +289,17 @@
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="actions">
+			{#if usbMounted}
+				<button
+					class="action-button usb-button"
+					onclick={() => (showUsbModal = true)}
+					aria-label="Import from USB stick"
+				>
+					<svg viewBox="0 0 24 24" width="40" height="40"
+						><path d={mdiUsbFlashDrive} fill="#D72E28" /></svg
+					>
+				</button>
+			{/if}
 			<button
 				class="action-button"
 				onclick={() => (showCreateFolderModal = true)}
@@ -322,7 +355,19 @@
 	{:else if error}
 		<div class="status-message error">{error}</div>
 	{:else if allItems.length === 0}
-		<div class="status-message">No files found</div>
+		<div class="empty-state">
+			{#if !dirPath}
+				<span class="empty-title">Nothing to print… yet!</span>
+				<span class="empty-sub">
+					{usbMounted
+						? 'Upload a G-code or import one from your USB stick'
+						: 'Upload a G-code to get started'}
+				</span>
+			{:else}
+				<span class="empty-title">This folder is empty</span>
+				<span class="empty-sub">Feed me some G-code!</span>
+			{/if}
+		</div>
 	{:else}
 		<div class="grid">
 			{#each visiblePrints() as item (item.id)}
@@ -342,6 +387,14 @@
 			<div bind:this={sentinel} class="sentinel"></div>
 		{/if}
 	{/if}
+
+	<UsbImportModal
+		isOpen={showUsbModal}
+		destDir={dirPath}
+		mounted={usbMounted}
+		onImported={() => loadDirectory()}
+		onClose={() => (showUsbModal = false)}
+	/>
 
 	<PrintDetailsPopup
 		item={selectedPrint}
@@ -407,6 +460,43 @@
 
 	.status-message.error {
 		color: var(--color-red);
+	}
+
+	/* Stesso tono dei pannelli della dashboard a riposo ("Ready to Print!", "Let me extrude!"). */
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		/* Lo spazio sotto l'intestazione, così le scritte stanno a metà schermo. */
+		min-height: 60vh;
+		padding: 0 16px;
+		text-align: center;
+		font-family: 'Montserrat', sans-serif;
+	}
+
+	.empty-title {
+		font-size: min(2rem, 8vw);
+		font-weight: 600;
+		line-height: 1.1;
+		color: var(--color-text-secondary);
+	}
+
+	.empty-sub {
+		font-size: min(1.2rem, 5vw);
+		color: var(--color-white);
+	}
+
+	.usb-button {
+		animation: usb-in 0.25s ease-out;
+	}
+
+	@keyframes usb-in {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
 	}
 
 	.modal-overlay {
