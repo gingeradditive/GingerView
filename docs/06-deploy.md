@@ -71,7 +71,7 @@ location ~ ^/(printer|api|access|machine|server)/ → 127.0.0.1:7125$request_uri
 location /                                     → try_files … /index.html
 ```
 
-Tre dettagli non ovvi:
+Quattro dettagli non ovvi:
 
 - **Le altre location arrivano da una `include`.** Ogni servizio G2 deposita la propria in
   `/etc/nginx/g2-locations.d/`: G2-Service ci mette `location ^~ /service/ → 127.0.0.1:8000`
@@ -81,6 +81,19 @@ Tre dettagli non ovvi:
   funziona anche su una macchina dove G2-Service non è installato.
 - **`/api/` va a Moonraker** perché è il suo livello di compatibilità OctoPrint, che gli
   slicer interrogano (`/api/version`).
+- **`X-Real-IP` non è sempre l'indirizzo del client.** Moonraker si fida solo dei range nei
+  `trusted_clients` e valuta l'indirizzo che nginx gli inoltra. Su reti con prefisso IPv6
+  globale i client arrivano da un indirizzo pubblico e prenderebbero **401** su tutto (vedi
+  [04 — Autenticazione](04-moonraker.md#autenticazione)). Una `geo` in
+  `conf.d/gingerview-common.conf` riconosce i client sui prefissi a cui la stampante è
+  collegata direttamente e li inoltra come `127.0.0.1`; gli altri passano col loro indirizzo,
+  e `X-Forwarded-For` porta comunque quello vero. I prefissi stanno in
+  `/etc/nginx/gingerview/lan-prefixes.conf`, scritto da
+  [script/lan-prefixes.sh](../script/lan-prefixes.sh): gira come
+  `gingerview-lan-prefixes.service`, segue la tabella di routing (`ip -6 monitor route`) e
+  ricarica nginx quando il provider cambia prefisso. È la stessa fiducia dei range IPv4
+  privati: stare sulla LAN della stampante. Disattivare IPv6 in avahi non è un'alternativa:
+  macOS aspetta 5 secondi un AAAA che non arriva a **ogni** risoluzione di `g2.local`.
 - **La location di Moonraker imposta `proxy_read_timeout`/`proxy_send_timeout` a 3600s.**
   Il default di nginx è **60 secondi**, ma alcune chiamate rispondono solo a lavoro finito e
   lo superano regolarmente: `/machine/update/*` (un `apt upgrade` dura minuti, vedi
@@ -298,10 +311,38 @@ all'interfaccia.
 
 ## GingerSlicer
 
-Con il proxy attivo, in GingerSlicer si aggiunge la stampante come **Klipper/Moonraker**
-indicando solo `http://g2.local`, lasciando vuoto il campo della porta. Lo slicer
-raggiunge `/server/files/upload` per l'invio dei file e `/printer/...` per lo stato, tutto
-sulla porta 80.
+GingerSlicer (fork di OrcaSlicer) ha un solo tipo di print host, **OctoPrint**, e parla col
+livello di compatibilità OctoPrint di Moonraker (`[octoprint_compat]` in `moonraker.conf`).
+Nel profilo stampante:
+
+- **host**: `http://g2.local` (o l'IP), **senza porta**: lo slicer non ne aggiunge una di
+  default, quindi va sulla 80 e passa dal proxy;
+- **API key**: vuota. Lo slicer manda comunque l'header `X-Api-Key`, Moonraker lo ignora
+  per i client fidati.
+
+Le chiamate sono due:
+
+| Azione                      | Richiesta                                                  | Note                                                                                         |
+| --------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Test / prima di ogni upload | `GET /api/version`                                         | Il campo `text` deve iniziare con "OctoPrint": Moonraker risponde `OctoPrint (Moonraker vX)` |
+| Upload                      | `POST /api/files/local`, multipart `file`, `path`, `print` | `path` è la sottocartella di `gcodes`, creata se manca                                       |
+
+**"Upload and Print" avvia la stampa subito** (`print=true`), senza la checklist di
+`PrintStartWizard` sul touch: nessuna conferma a bordo macchina. GingerView mostra la stampa
+in corso dalla sottoscrizione a `print_stats` e aggiorna la lista file da sola
+(`notify_filelist_changed`). Copiare la checklist nello slicer è `PRN-3` in
+[TODO.md](TODO.md).
+
+Due comportamenti da conoscere, verificati su macchina:
+
+- **Stampante già occupata**: l'upload riesce (201) ma la stampa non parte
+  (`print_started: false`). Lo slicer non legge quel campo e mostra comunque successo.
+- **Sovrascrivere il file in stampa** viene rifiutato con 403.
+
+Il profilo G2 di GingerSlicer non esiste ancora (il bundle ha solo la G1, con
+`print_host: G1OS.local`). Quando verrà scritto, lo start G-code deve chiamare `START_PRINT`
+con `ZONE_1_TEMPERATURE` … `ZONE_4_TEMPERATURE`: la G2 ha quattro zone e ogni parametro
+mancante vale **200 °C**.
 
 ## G2-OS
 
@@ -309,10 +350,8 @@ sulla porta 80.
 [MainsailOS](https://github.com/mainsail-crew/MainsailOS), che al posto di Mainsail installa
 GingerView. Il repository esiste: [gingeradditive/g2-os](https://github.com/gingeradditive/g2-os).
 
-> **Stato attuale**: è ancora il fork non adattato. Il README descrive la distribuzione come
-> basata su "Kalico Firmware e **Mainsail**", e i moduli preinstallano Mainsail insieme a
-> Moonraker, Crowsnest, Sonar e nginx. **Il modulo che installa GingerView al posto di Mainsail
-> non è ancora stato scritto**: è il pezzo mancante fra questo repository e l'immagine.
+Il modulo `modules/generic/52-gingerview` clona GingerView ed esegue `install.sh`; Mainsail
+resta solo nell'immagine di sviluppo, sulla porta 81 (`modules/special/58-mainsail-debug`).
 
 Nota utile: G2-OS include già **Crowsnest**, quindi lo stream webcam è disponibile lato
 macchina e serve solo proxarlo e mostrarlo nell'interfaccia.
@@ -326,11 +365,9 @@ non a mano su una macchina già avviata:
 - **nessuna dipendenza da systemd attivo**: se `/run/systemd/system` non esiste, lo script
   scrive la configurazione, tenta `systemctl enable` ignorando l'esito e lascia l'avvio al
   primo boot;
-- **niente `sudo`/`runuser`**, che possono mancare in un'immagine minimale.
-
-Il modulo va scritto seguendo le convenzioni di MainsailOS — in g2-os la struttura è
-`modules/`, `patches/` e `config.yml` — sostituendo il modulo `mainsail` con uno che clona
-GingerView ed esegue `install.sh`.
+- **niente `sudo`/`runuser`**, che possono mancare in un'immagine minimale;
+- **nessun prefisso IPv6 scritto in build**: nel chroot `ip route` descriverebbe la macchina
+  di build, quindi `lan-prefixes.conf` nasce vuoto e lo riempie il servizio al primo boot.
 
 ## Test dell'installer
 
@@ -342,6 +379,9 @@ Debian usa e getta, con finti Moonraker e G2-Service, e verifica che:
   query string inclusa;
 - una `location` depositata in `g2-locations.d/` venga inclusa e vinca sulla regex di
   Moonraker, e che il site resti valido quando quella cartella è vuota;
+- un client su un prefisso on-link arrivi a Moonraker come `127.0.0.1` (HTTP e WebSocket),
+  uno sconosciuto col suo indirizzo, e che `lan-prefixes.sh` tenga solo le rotte senza
+  gateway e non link-local;
 - un site Mainsail preesistente venga rimosso e la porta 80 resti a GingerView;
 - `index.html` non sia cacheato e `/_app/immutable/` lo sia;
 - l'`update_manager` venga registrato una sola volta anche rieseguendo lo script;

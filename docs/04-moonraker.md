@@ -770,8 +770,18 @@ il proprio (vedi [05 — Dati generati](05-sviluppo.md#dati-generati-fusi-orari-
 ## Autenticazione
 
 **Non c'è.** Moonraker su G2-OS è configurato senza autenticazione, e GingerView non invia mai
-credenziali né usa gli endpoint `/access/*`. Con il proxy nginx le richieste raggiungono
-Moonraker da `127.0.0.1`, quindi rientrano nei `trusted_clients` standard.
+credenziali né usa gli endpoint `/access/*`. Moonraker però non si fida di chiunque: accetta
+solo i client nei `trusted_clients` di `moonraker.conf` (range IPv4 privati, link-local,
+loopback) e risponde **401** agli altri.
+
+Il proxy nginx inoltra l'indirizzo del client in `X-Real-IP`, ed è **quello** che Moonraker
+valuta, non `127.0.0.1` da cui arriva la connessione. Su IPv4 non è un problema; su una rete
+con prefisso IPv6 globale (la maggior parte dei provider) `g2.local` risolve anche in AAAA, e
+browser e GingerSlicer arrivano da un indirizzo pubblico che nessun range fisso può coprire,
+perché il prefisso lo assegna il provider e cambia. Per questo `install.sh` installa
+`gingerview-lan-prefixes.service` (vedi [06 — nginx](06-deploy.md#installazione)): i client
+sul prefisso della stampante vengono presentati a Moonraker come `127.0.0.1`, tutti gli altri
+con il loro indirizzo.
 
 Se in futuro l'autenticazione venisse abilitata, andrebbero toccati tutti i punti che fanno
 `fetch` — non esiste oggi un layer centralizzato che possa aggiungere un header in un colpo solo.

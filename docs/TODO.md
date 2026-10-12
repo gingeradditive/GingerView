@@ -39,6 +39,10 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 - `MAT-1` Parametrizzare la capienza tramoggia leggendola da `gingerview.conf`, oggi `maxPelletKg = 5` fisso in `DashboardPelletPanel` — dipende da `CFG-1`
 - `MAT-2` Definire la formula filamento → pellet e correggere `DashboardPelletPanel` → Q1
 
+## PRN — Avvio e gestione stampa
+
+- `PRN-3` Portare in GingerSlicer una copia della checklist di `PrintStartWizard` (materiale, tubi vuoti, ugello e piatto, spray, aspiratore fumi, valvola essiccatore) come conferma prima di "Upload and Print", che oggi avvia la stampa senza passare dal touch — rimandato
+
 ## CAM — Webcam
 
 - `CAM-1` Mostrare lo stream Crowsnest nell'interfaccia e aggiungere il proxy `/webcam/` all'installer → Q11
