@@ -244,7 +244,10 @@ export async function fetchDirectoriesRecursive(
 	path: string = 'gcodes'
 ): Promise<{ name: string; path: string }[]> {
 	const result = await fetchDirectory(path);
-	const children = result.dirs.filter((d) => !d.dirname.startsWith('.'));
+	// `media` alla radice è il vecchio symlink alla chiavetta (sola lettura): non è una destinazione.
+	const children = result.dirs.filter(
+		(d) => !d.dirname.startsWith('.') && !(path === 'gcodes' && d.dirname === 'media')
+	);
 
 	const branches = await Promise.all(
 		children.map(async (d) => {
