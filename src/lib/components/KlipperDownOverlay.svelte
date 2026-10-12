@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { mdiAlertOctagon } from '@mdi/js';
+	import { mdiAlertOctagon, mdiRestart } from '@mdi/js';
 	import {
 		isKlippyDown,
 		klippyMessage,
@@ -29,6 +29,13 @@
 		title: string;
 		message: string;
 		hint: string;
+		/**
+		 * Set when the way out is the dock button: the hint then opens with a
+		 * drawing of it. In this state it is white with a red border and a restart
+		 * arrow — "the red button" described the emergency stop, not what is on
+		 * screen now.
+		 */
+		restart?: boolean;
 	}
 
 	function copyFor(state: KlippyState): Copy {
@@ -45,14 +52,16 @@
 				title: 'Kalico stopped with an error',
 				message:
 					'The printer firmware is halted. Nothing moves, nothing heats and no job can start until it is restarted.',
-				hint: 'Press the red button in the dock to run a firmware restart, or open Settings → Log for the full error.'
+				hint: 'in the dock to run a firmware restart, or open Settings → Log for the full error.',
+				restart: true
 			};
 		}
 		return {
 			title: 'Kalico is shut down',
 			message:
 				'The printer firmware has stopped. Nothing moves, nothing heats and no job can start until it is restarted.',
-			hint: 'Press the red button in the dock to run a firmware restart, once the machine is safe.'
+			hint: 'in the dock to run a firmware restart, once the machine is safe.',
+			restart: true
 		};
 	}
 
@@ -73,7 +82,15 @@
 			{#if $klippyMessage}
 				<pre class="reason">{$klippyMessage}</pre>
 			{/if}
-			<p class="hint">{copy.hint}</p>
+			<p class="hint">
+				{#if copy.restart}
+					Press
+					<span class="dock-restart" role="img" aria-label="the restart button">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiRestart} /></svg>
+					</span>
+				{/if}
+				{copy.hint}
+			</p>
 		</div>
 	</div>
 {/if}
@@ -157,7 +174,30 @@
 	.hint {
 		margin: 0;
 		font-size: 0.85rem;
+		line-height: 1.8;
 		color: var(--color-text-soft);
 		text-align: center;
+	}
+
+	/* A miniature of the dock button in its halted look (EmergencyStopButton). */
+	.dock-restart {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		margin: 0 2px;
+		vertical-align: middle;
+		border: 2px solid var(--color-red);
+		border-radius: 6px;
+		background: var(--color-white);
+		color: var(--color-red);
+		box-sizing: border-box;
+	}
+
+	.dock-restart svg {
+		width: 15px;
+		height: 15px;
+		fill: currentColor;
 	}
 </style>
