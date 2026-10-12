@@ -138,11 +138,17 @@ risultato è una SPA: qualunque percorso deve essere servito da `index.html`.
 
 ## Build artifacts committati nel repo
 
-La pipeline [.github/workflows](../.github/workflows) si attiva a ogni push su `main`:
+La pipeline [build-commit-push.yml](../.github/workflows/build-commit-push.yml) si attiva a ogni
+push su `main` (e a mano, da Actions):
 
 1. checkout, Node dalla versione in `.nvmrc`, `npm ci`;
 2. `npm run build`;
-3. commit e push della cartella `build/` con messaggio `chore: update build artifacts [skip ci]`.
+3. [script/check-build.sh](../script/check-build.sh): fallisce se nel bundle c'è un indirizzo;
+4. commit e push della cartella `build/` con messaggio `chore: update build artifacts [skip ci]`.
+
+Fino al 12/10/2026 partiva solo a mano: dopo il merge di `dev-2` è rimasto su `main` il
+`build/` compilato in locale con `VITE_MOONRAKER_HOST=192.168.1.107`, e le stampanti cercavano
+Moonraker su quell'host.
 
 `build/` è quindi **committato nel repository**. È una scelta deliberata e confermata: permette
 all'installazione sulla stampante di non richiedere Node né una toolchain di build — basta
@@ -157,8 +163,15 @@ Poiché `.env` è gitignorato, la CI compila **sempre** senza variabili, e il bu
 non contiene alcun indirizzo. È esattamente ciò che serve perché la stessa build funzioni su
 tutte le macchine.
 
-> Attenzione: se compili in locale **con** un `.env` e committi `build/`, ci finisce dentro
-> l'IP della tua stampante. Lascia che sia la CI a produrre gli artefatti.
+Tre controlli impediscono che un indirizzo finisca nel bundle distribuito:
+
+- le variabili di sviluppo stanno in `.env.development.local`, che `vite build` non legge;
+- [vite.config.ts](../vite.config.ts) rifiuta una build di produzione con `VITE_MOONRAKER_*` o
+  `VITE_G2_SERVICE_*` impostate, a meno di `GINGERVIEW_PINNED_BUILD=1`;
+- la CI esegue `script/check-build.sh` su ogni push fuori da `main` e prima di committare la
+  build su `main`.
+
+Resta valido il consiglio: lascia che sia la CI a produrre gli artefatti.
 
 ## Altri script
 
@@ -171,6 +184,7 @@ lontano dai suoi fratelli.
 | [script/build.sh](../script/build.sh)               | Build di produzione locale. Normalmente non serve: ci pensa la CI    |
 | [script/update.sh](../script/update.sh)             | Aggiorna un'installazione esistente. Niente Node, niente root        |
 | [script/rundev.sh](../script/rundev.sh)             | Server di sviluppo. `./rundev.sh` nella root è un forwarder a questo |
+| [script/check-build.sh](../script/check-build.sh)   | Fallisce se `build/` contiene un indirizzo compilato dentro (CI)     |
 | [script/test-install.sh](../script/test-install.sh) | Test di integrazione dell'installer in container                     |
 
 ### build.sh

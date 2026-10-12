@@ -78,11 +78,14 @@ fi
 # Dev server
 # --------------------------------------------------------------------------
 
-if [ -f .env ]; then
+if [ -f .env.development.local ]; then
+	info "Using .env.development.local overrides for Moonraker endpoints"
+elif [ -f .env ]; then
 	info "Using .env overrides for Moonraker endpoints"
+	warn "Prefer .env.development.local: \`vite build\` ignores it, while a .env ends up in the bundle."
 else
-	warn "No .env: the app will talk to its own origin, which in dev is the Vite server."
-	warn "Copy .env.example to .env and set your printer's address, or pass --host and serve"
+	warn "No .env.development.local: the app will talk to its own origin, which in dev is the Vite server."
+	warn "Copy .env.example to .env.development.local and set your printer's address, or pass --host and serve"
 	warn "through a proxy. See docs/03-configurazione.md."
 fi
 

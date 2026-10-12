@@ -58,6 +58,9 @@ if [ -f .env ]; then
 	else
 		warn ".env is present: its VITE_* values will be compiled into the bundle."
 		warn "Do not commit a build/ produced this way — use --no-env for a distributable build."
+		# vite.config.ts refuses a pinned production build unless asked: running
+		# this script without --no-env is the asking. CI still rejects the commit.
+		export GINGERVIEW_PINNED_BUILD=1
 	fi
 fi
 

@@ -13,7 +13,7 @@
 
 ```bash
 npm install
-cp .env.example .env      # e imposta l'IP della tua stampante
+cp .env.example .env.development.local   # e imposta l'IP della tua stampante
 npm run dev
 ```
 

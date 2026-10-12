@@ -1,7 +1,18 @@
 name: Build, Commit and Push
 
+# A ogni push su `main`, così `build/` corrisponde sempre ai sorgenti che le
+# stampanti scaricano. Il commit del bot non riattiva il workflow: i push fatti con
+# GITHUB_TOKEN non generano eventi, e `paths-ignore` copre comunque `build/`.
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'build/**'
   workflow_dispatch:
+
+concurrency:
+  group: build-main
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -25,6 +36,9 @@ jobs:
 
       - name: Build project
         run: npm run build
+
+      - name: Check bundle has no addresses compiled in
+        run: script/check-build.sh
 
       - name: Commit and push build artifacts
         run: |

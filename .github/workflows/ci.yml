@@ -37,3 +37,12 @@ jobs:
       - name: Lint
         if: ${{ !cancelled() }}
         run: npm run lint
+
+      # `build/` è committato e le stampanti lo scaricano così com'è: se dentro c'è un
+      # indirizzo, l'interfaccia cerca Moonraker su quell'host invece che sulla
+      # macchina che la serve. È già successo (docs/06-deploy.md). Su `main` il controllo
+      # lo fa "Build, Commit and Push" prima di committare la build che ricompila lui:
+      # qui fallirebbe sul `build/` vecchio che sta per essere sostituito.
+      - name: Bundle senza indirizzi
+        if: ${{ !cancelled() && github.ref != 'refs/heads/main' }}
+        run: script/check-build.sh

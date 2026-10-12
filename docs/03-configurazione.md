@@ -35,6 +35,10 @@ dentro i file JavaScript, quindi:
    inserire nulla di segreto in `.env`.
 3. `.env` è **gitignorato**, quindi la CI compila sempre senza: il risultato è la
    configurazione same-origin.
+4. In locale le variabili vanno in **`.env.development.local`**, non in `.env`: Vite lo legge
+   solo con `npm run dev`, quindi `npm run build` resta same-origin. Se un `.env` (o l'ambiente)
+   imposta una `VITE_MOONRAKER_*` o `VITE_G2_SERVICE_*`, [vite.config.ts](../vite.config.ts)
+   **rifiuta la build di produzione**, a meno di `GINGERVIEW_PINNED_BUILD=1`.
 
 ### Moonraker
 

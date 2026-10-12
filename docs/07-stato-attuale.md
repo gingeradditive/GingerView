@@ -228,12 +228,11 @@ Trattato per esteso in [06 — Build e deploy](06-deploy.md):
 
 - `build/` committato nel repository produce diff binari a ogni push su `main`. È mitigato dal
   fatto che la CI ricompila solo su `main`, quindi i diff si concentrano sulle release;
-- se qualcuno compila in locale con un `.env` e committa `build/`, l'IP della sua stampante
-  finisce nel bundle distribuito. `build.sh` ora avvisa prima e dopo la build, ed elenca cosa è
-  stato compilato dentro, ma **nulla impedisce materialmente quel commit**: manca un controllo
-  in CI o un hook. Non è un rischio teorico: il `build/` committato conteneva davvero
-  `192.168.1.20`, finito lì da una build locale. La ricompilazione fatta per `QA-7` l'ha
-  rimosso, ma senza il controllo può ricapitare.
+- un `build/` compilato in locale con un `.env` porta l'IP di una stampante nel bundle
+  distribuito. È successo due volte (`192.168.1.20`, poi `192.168.1.107` col merge di `dev-2`
+  il 12/10/2026). Ora è bloccato: variabili di sviluppo in `.env.development.local`,
+  `vite.config.ts` che rifiuta la build "puntata", `script/check-build.sh` in CI, e la build
+  di `main` rigenerata a ogni push (vedi [06 — Build e deploy](06-deploy.md)).
 
 Il repository [gingeradditive/g2-os](https://github.com/gingeradditive/g2-os) esiste ma è
 ancora il fork MainsailOS non adattato: preinstalla Mainsail e **non ha un modulo GingerView**.
