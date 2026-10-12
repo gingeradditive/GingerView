@@ -119,7 +119,12 @@ console. Le due restrizioni sono volute:
 
 ## Configurazione tipica in sviluppo
 
-Il browser gira sul portatile e deve raggiungere la stampante per IP:
+Il modo normale è **`GINGERVIEW_PRINTER=<ip>`** in `.env.development.local`: il dev server
+inoltra le API alla stampante come fa nginx, e nessuna variabile `VITE_*` è necessaria
+(vedi [05 — Sviluppo](05-sviluppo.md#avvio)).
+
+L'alternativa è l'override diretto: il browser gira sul portatile e raggiunge la stampante per
+IP:
 
 ```env
 VITE_MOONRAKER_HOST=192.168.1.147
@@ -138,8 +143,8 @@ cors_domains:
     http://localhost:5173
 ```
 
-In alternativa si può sviluppare **senza `.env`** e far servire il dev server da un proxy che
-riproduce il comportamento di nginx, ma la via più semplice resta l'override esplicito.
+Per questo il proxy di `GINGERVIEW_PRINTER` è la via consigliata: non tocca la configurazione
+delle stampanti.
 
 ## Versione di Node
 

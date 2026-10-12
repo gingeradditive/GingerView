@@ -13,7 +13,7 @@
 
 ```bash
 npm install
-cp .env.example .env.development.local   # e imposta l'IP della tua stampante
+cp .env.example .env.development.local   # e imposta GINGERVIEW_PRINTER
 npm run dev
 ```
 
@@ -23,9 +23,16 @@ forwarder allo stesso script. Gli argomenti in più passano a Vite, quindi `./ru
 espone il dev server sulla rete locale, comodo per aprirlo dal telefono. Vedi
 [06 — rundev.sh](06-deploy.md#rundevsh).
 
-Il server di sviluppo Vite parte su `http://localhost:5173`. Perché le chiamate a Moonraker
-funzionino, quell'origine deve essere tra le `cors_domains` di `moonraker.conf`
-(vedi [04 — CORS](04-moonraker.md#cors)).
+Il server di sviluppo Vite parte su `http://localhost:5173` e, con `GINGERVIEW_PRINTER`
+impostato, **fa da nginx**: inoltra `/printer`, `/server`, `/machine`, `/access`, `/api`,
+`/service` e `/websocket` alla porta 80 della stampante, riscrivendo l'`Origin` (Moonraker
+rifiuta il websocket da `localhost`). L'app resta same-origin come in produzione: niente
+`cors_domains` da toccare sulle stampanti, e Moonraker e G2-Service passano entrambi dal
+loro nginx. Il proxy è in [vite.config.ts](../vite.config.ts) e non finisce mai nel bundle.
+
+Le variabili `VITE_*` restano come alternativa per chiamare un host direttamente, ma in quel
+caso il browser va cross-origin e `localhost:5173` deve essere tra le `cors_domains` di
+`moonraker.conf` (vedi [04 — CORS](04-moonraker.md#cors)).
 
 ## Comandi
 

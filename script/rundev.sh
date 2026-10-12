@@ -78,15 +78,29 @@ fi
 # Dev server
 # --------------------------------------------------------------------------
 
-if [ -f .env.development.local ]; then
-	info "Using .env.development.local overrides for Moonraker endpoints"
-elif [ -f .env ]; then
-	info "Using .env overrides for Moonraker endpoints"
-	warn "Prefer .env.development.local: \`vite build\` ignores it, while a .env ends up in the bundle."
+# Which printer the dev server talks to. GINGERVIEW_PRINTER is the normal way
+# (vite.config.ts proxies the API to it, same-origin like nginx); VITE_* overrides
+# are the cross-origin alternative.
+env_value() {
+	# `|| true`: a missing key is an empty answer, not a reason for `set -e` to quit.
+	{ grep -hsE "^[[:space:]]*$1=" .env.development.local .env 2>/dev/null || true; } |
+		tail -n 1 | cut -d= -f2-
+}
+
+PRINTER="${GINGERVIEW_PRINTER:-$(env_value GINGERVIEW_PRINTER)}"
+DIRECT_HOST="$(env_value VITE_MOONRAKER_HOST)"
+
+if [ -f .env ]; then
+	warn "A .env is read by \`vite build\` too: move its settings to .env.development.local."
+fi
+
+if [ -n "$PRINTER" ]; then
+	info "Proxying the printer API to $PRINTER (same-origin, like nginx)"
+elif [ -n "$DIRECT_HOST" ]; then
+	info "Calling Moonraker directly at $DIRECT_HOST (needs cors_domains on the printer)"
 else
-	warn "No .env.development.local: the app will talk to its own origin, which in dev is the Vite server."
-	warn "Copy .env.example to .env.development.local and set your printer's address, or pass --host and serve"
-	warn "through a proxy. See docs/03-configurazione.md."
+	warn "No printer configured: the app will talk to the Vite server and get no data."
+	warn "Copy .env.example to .env.development.local and set GINGERVIEW_PRINTER."
 fi
 
 info "Starting Vite..."
