@@ -13,7 +13,7 @@
 <style>
 	.app-shell {
 		display: flex;
-		min-height: 100vh;
+		min-height: 100%;
 		width: 100%;
 		background: var(--color-gray);
 		font-family: 'Montserrat', sans-serif;
@@ -23,7 +23,7 @@
 	.content-area {
 		flex: 1;
 		overflow-y: auto;
-		padding: 24px 24px 92px;
+		padding: 16px 16px var(--dock-clearance);
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
