@@ -110,6 +110,29 @@ export const extrudePhase = writable<ExtrudePhase>('idle');
  */
 export const homingBusy = writable(false);
 
+// --- Move panel --------------------------------------------------------------
+
+export type Axis = 'x' | 'y' | 'z';
+export type AxisPosition = Record<Axis, number>;
+
+/**
+ * Jog steps of the Move panel. On a machine of about a metre per side the range
+ * goes from a nudge to half the bed; anything longer is what the coordinate
+ * fields are for.
+ */
+export const jogStepOptions: { mm: number; label: string }[] = [
+	{ mm: 1, label: '1 mm' },
+	{ mm: 10, label: '1 cm' },
+	{ mm: 100, label: '10 cm' },
+	{ mm: 500, label: '50 cm' }
+];
+
+// Kept here rather than in the panel, so reopening it keeps the last step.
+export const jogStepMm = writable(10);
+
+/** Commands of the Move panel still waiting for Kalico's answer. */
+export const moveRequestsInFlight = writable(0);
+
 /**
  * Moonraker reports a refused command as `{"error": {"message": ...}}` with a
  * non-2xx status. That message is the one worth showing ("Must home axis first",
@@ -297,5 +320,46 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		toastActions.error('klipper', phaseFailureTitles[failedPhase], describeError(error));
 	} finally {
 		extrudePhase.set('idle');
+	}
+};
+
+// XY at 100 mm/s: brisk on a metre of travel, still easy to follow by eye. Z at
+// 7 mm/s, the machine's max_z_velocity — Kalico would clamp anything higher.
+const MOVE_FEED_XY = 6000;
+const MOVE_FEED_Z = 420;
+
+const formatCoordinate = (value: number): string => String(Number(value.toFixed(3)));
+
+/**
+ * Moves the toolhead from `from` to `to` in absolute coordinates.
+ *
+ * Z and XY go as two separate moves, ordered so the nozzle never travels across
+ * the bed lower than it has to: going up, Z first; going down, XY first. On a
+ * metre-wide bed a diagonal that lowers Z while crossing it can hit a part.
+ *
+ * Returns false when Kalico refused the move (out of range, not homed, ...), so
+ * the caller can drop the position it was counting on; the reason is toasted.
+ */
+export const moveToolhead = async (from: AxisPosition, to: AxisPosition): Promise<boolean> => {
+	const xyMove =
+		to.x !== from.x || to.y !== from.y
+			? `G1 X${formatCoordinate(to.x)} Y${formatCoordinate(to.y)} F${MOVE_FEED_XY}`
+			: null;
+	const zMove = to.z !== from.z ? `G1 Z${formatCoordinate(to.z)} F${MOVE_FEED_Z}` : null;
+	const moves = (to.z > from.z ? [zMove, xyMove] : [xyMove, zMove]).filter(
+		(line): line is string => line !== null
+	);
+	if (moves.length === 0) return true;
+
+	moveRequestsInFlight.update((count) => count + 1);
+	try {
+		await runGcode(['G90', ...moves].join('\n'));
+		return true;
+	} catch (error) {
+		console.error('Move failed', error);
+		toastActions.error('klipper', 'Move failed', describeError(error));
+		return false;
+	} finally {
+		moveRequestsInFlight.update((count) => count - 1);
 	}
 };

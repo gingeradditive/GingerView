@@ -5,6 +5,7 @@
 	import { mdiCursorMove } from '@mdi/js';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
+	import MovePanel from '$lib/components/MovePanel.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -183,8 +184,10 @@
 		}
 	};
 
+	let showMovePanel = $state(false);
+
 	const handleMove = (): void => {
-		console.log('Move');
+		showMovePanel = true;
 	};
 </script>
 
@@ -286,6 +289,10 @@
 </div>
 
 <HomingWarningModal isOpen={showHomingWarning} onConfirm={confirmHoming} onCancel={cancelHoming} />
+
+{#if showMovePanel}
+	<MovePanel onClose={() => (showMovePanel = false)} />
+{/if}
 
 <style>
 	.toolhead-position-card {

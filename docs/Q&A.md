@@ -34,7 +34,8 @@ esattamente tre pulsanti: **Move**, **Home**, **Disable Motors**. Per gli ultimi
 con `G28` e `M84`. "Move" invece non ha un bersaglio: non ci sono frecce per asse né selettore
 di step. Deve aprire un pannello di jog (che quindi va disegnato), oppure muovere verso una
 posizione fissa tipo parcheggio/manutenzione?
-A:
+A: Pannello di jog, con passi grossolani (fino a 50 cm) e posizionamento preciso a coordinate
+XYZ. Implementato in `MovePanel.svelte` (vedi [07 — Stato attuale](07-stato-attuale.md)).
 
 **Q11: Dove va inserita la webcam nell'interfaccia?**
 Contesto: hai confermato che serve. G2-OS include già **crowsnest**, quindi lo stream esiste
