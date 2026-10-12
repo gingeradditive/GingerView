@@ -53,6 +53,20 @@ export const klippyState = writable<KlippyState>('');
  */
 export const klippyMessage = writable<string>('');
 
+/**
+ * A change under `gcodes`, as `notify_filelist_changed` reports it: the folders
+ * (relative to `gcodes`, `''` for the root) whose listing is now different, or
+ * `null` when Moonraker re-read the whole root.
+ */
+export type GcodesChange = { dirs: string[] | null };
+
+/**
+ * Set every time a G-code file or folder changes, whoever changed it — mostly
+ * GingerSlicer uploading, which the file list would otherwise only notice on the
+ * next visit. A fresh object each time, so equal changes still notify.
+ */
+export const gcodesChanged = writable<GcodesChange | null>(null);
+
 /** Keeps the two stores in step: a healthy Klippy has no message. */
 function setKlippyState(state: KlippyState, message = ''): void {
 	klippyState.set(state);
@@ -203,8 +217,38 @@ function readProcStatWarnings(params: unknown[] | undefined): string[] {
 	return warnings.filter((w): w is string => typeof w === 'string');
 }
 
+/** The folder holding `path`, `''` when it sits at the root. */
+function parentDir(path: string): string {
+	const slash = path.lastIndexOf('/');
+	return slash === -1 ? '' : path.slice(0, slash);
+}
+
+/**
+ * The `gcodes` folders a `notify_filelist_changed` touches: where the item is
+ * now and, for a move, where it was. `undefined` when the change is elsewhere.
+ */
+function readGcodesChange(params: unknown[] | undefined): GcodesChange | undefined {
+	const first = params?.[0];
+	if (!isJsonObject(first) || !isJsonObject(first.item)) return undefined;
+	if (first.item.root !== 'gcodes') return undefined;
+	if (first.action === 'root_update') return { dirs: null };
+
+	const dirs = new Set<string>();
+	for (const entry of [first.item, first.source_item]) {
+		if (isJsonObject(entry) && entry.root === 'gcodes' && typeof entry.path === 'string') {
+			dirs.add(parentDir(entry.path));
+		}
+	}
+	return { dirs: [...dirs] };
+}
+
 function handleNotification(data: unknown): void {
 	if (!isNotification(data)) return;
+
+	if (data.method === 'notify_filelist_changed') {
+		const change = readGcodesChange(data.params);
+		if (change) gcodesChanged.set(change);
+	}
 
 	// Moonraker notify_proc_stat_update can contain warnings
 	if (data.method === 'notify_proc_stat_update') {

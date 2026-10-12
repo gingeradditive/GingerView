@@ -19,6 +19,7 @@
 	} from '$lib/services/moonraker-files';
 	import { currentDirPath, navigateToDir } from '$lib/stores/directoryStore';
 	import { fetchUsbStatus } from '$lib/services/usb-api';
+	import { gcodesChanged } from '$lib/services/moonraker-notifier';
 
 	const PAGE_SIZE = 20;
 	// G2-Service non ha un canale push: la presenza della chiavetta si chiede a intervalli.
@@ -43,11 +44,20 @@
 		loadDirectory();
 	});
 
-	async function loadDirectory() {
-		loading = true;
-		error = null;
-		allItems = [];
-		visibleCount = PAGE_SIZE;
+	// Ogni caricamento prende un numero: se nel frattempo ne è partito un altro
+	// (cambio cartella, refresh da notifica) il suo risultato è vecchio e si scarta.
+	let loadSeq = 0;
+
+	// `quiet`: aggiorna la lista senza svuotarla né mostrare il caricamento, per i
+	// refresh in background (file arrivato da GingerSlicer) mentre la si guarda.
+	async function loadDirectory({ quiet = false }: { quiet?: boolean } = {}) {
+		const seq = ++loadSeq;
+		if (!quiet) {
+			loading = true;
+			error = null;
+			allItems = [];
+			visibleCount = PAGE_SIZE;
+		}
 
 		try {
 			const moonrakerPath = dirPath ? `gcodes/${dirPath}` : 'gcodes';
@@ -162,12 +172,16 @@
 
 			const fileItems = await Promise.all(fileMetadataPromises);
 
+			if (seq !== loadSeq) return;
 			allItems = [...dirItems, ...fileItems];
+			error = null;
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to load files';
+			if (seq !== loadSeq) return;
+			// Un refresh silenzioso fallito lascia la lista che c'era.
+			if (!quiet) error = e instanceof Error ? e.message : 'Failed to load files';
 			console.error('Error loading directory:', e);
 		} finally {
-			loading = false;
+			if (seq === loadSeq) loading = false;
 		}
 	}
 
@@ -255,6 +269,22 @@
 		loadDirectory();
 	}
 
+	// Moonraker avvisa a ogni modifica in gcodes, anche quelle fatte da qui (che
+	// ricaricano già da sole): si ricarica solo se tocca la cartella aperta, e una
+	// volta sola per raffica (l'upload di GingerSlicer ne manda più d'una).
+	const GCODES_REFRESH_DEBOUNCE_MS = 500;
+	let gcodesRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const unsubscribeGcodes = gcodesChanged.subscribe((change) => {
+		if (!change) return;
+		if (change.dirs && !change.dirs.includes(dirPath)) return;
+		clearTimeout(gcodesRefreshTimer);
+		gcodesRefreshTimer = setTimeout(
+			() => loadDirectory({ quiet: true }),
+			GCODES_REFRESH_DEBOUNCE_MS
+		);
+	});
+
 	async function pollUsb() {
 		try {
 			usbMounted = (await fetchUsbStatus()).mounted;
@@ -276,6 +306,8 @@
 
 	onDestroy(() => {
 		unsubscribe();
+		unsubscribeGcodes();
+		clearTimeout(gcodesRefreshTimer);
 		clearInterval(usbPollTimer);
 
 		// Only remove window event listeners in browser environment
