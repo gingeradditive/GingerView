@@ -167,6 +167,28 @@ const getPurgePositionX = async (): Promise<number> => {
 	return axisMaximum[0] / 2;
 };
 
+/**
+ * True when Klipper already knows where X, Y and Z are, so the extrude sequence
+ * can go straight to the purge position. Any doubt — query refused, field
+ * missing — answers false: an extra `G28` costs time, a skipped one would move
+ * from an unknown position.
+ */
+const isHomed = async (): Promise<boolean> => {
+	try {
+		const response = await fetch(
+			`${getMoonrakerApiUrl()}/printer/objects/query?toolhead=homed_axes`
+		);
+		if (!response.ok) return false;
+		const payload = await response.json();
+		const homedAxes = payload?.result?.status?.toolhead?.homed_axes;
+		return (
+			typeof homedAxes === 'string' && ['x', 'y', 'z'].every((axis) => homedAxes.includes(axis))
+		);
+	} catch {
+		return false;
+	}
+};
+
 const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 	const selected = get(extrudeTemperature);
 	if (selected === 'custom') {
@@ -217,15 +239,20 @@ export const startHoming = async (): Promise<void> => {
 export const startExtrudeSequence = async (): Promise<void> => {
 	if (get(extrudePhase) !== 'idle') return;
 	try {
-		extrudePhase.set('homing');
-		homingBusy.set(true);
-		try {
-			await runGcode('G28');
-		} finally {
-			homingBusy.set(false);
+		// Leave `idle` before the first await, or a second tap during the homed
+		// check would start a second sequence.
+		extrudePhase.set('moving');
+		if (!(await isHomed())) {
+			extrudePhase.set('homing');
+			homingBusy.set(true);
+			try {
+				await runGcode('G28');
+			} finally {
+				homingBusy.set(false);
+			}
+			extrudePhase.set('moving');
 		}
 
-		extrudePhase.set('moving');
 		const centerX = await getPurgePositionX();
 		await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
 
