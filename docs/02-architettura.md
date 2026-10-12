@@ -179,7 +179,9 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
   le slide vengono smontate appena si cambia pagina e un'estrusione passa la maggior parte del
   tempo a scaldare: tenerle nel componente faceva ritrovare il pulsante "EXTRUDE" inattivo e i
   parametri di default al ritorno. `homingBusy` è unico per entrambe le origini del `G28`, così il
-  pulsante Home segnala qualsiasi homing in corso.
+  pulsante Home segnala qualsiasi homing in corso. Qui stanno anche `moveToolhead()` e il passo di
+  jog (`jogStepMm`) del pannello Move, per lo stesso motivo: il passo scelto sopravvive alla
+  chiusura del popup.
 
 ## Pattern ricorrenti
 

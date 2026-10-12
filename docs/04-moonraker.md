@@ -30,17 +30,18 @@ HTTP le letture **una tantum** o di pagine che hanno un ciclo proprio:
 
 Oggetti sottoscritti per componente:
 
-| Componente                   | Oggetti sottoscritti                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------------------------- |
-| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                      |
-| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                               |
-| `DashboardJobInfoCard`       | `print_stats`                                                                                 |
-| `DashboardPelletPanel`       | `print_stats`                                                                                 |
-| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone |
-| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                  |
-| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`            |
-| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                       |
-| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`      |
+| Componente                   | Oggetti sottoscritti                                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                                   |
+| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                                            |
+| `DashboardJobInfoCard`       | `print_stats`                                                                                              |
+| `DashboardPelletPanel`       | `print_stats`                                                                                              |
+| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone              |
+| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                               |
+| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                         |
+| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                                    |
+| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`                   |
+| `MovePanel` (solo se aperto) | `toolhead=position,homed_axes,axis_minimum,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -112,6 +113,7 @@ Comandi effettivamente inviati dall'interfaccia:
 | `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                              | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                                                                     |
 | `G28`                                                                                                                                   | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()`, saltato se `homed_axes` contiene già xyz |
 | `M84`                                                                                                                                   | `ToolheadPosition` — pulsante Disable Motors                                                                                                                                                      |
+| `G90` + `G1 Z<z> F420` / `G1 X<x> Y<y> F6000`                                                                                           | `movementStore` — `moveToolhead()` del pannello Move; salendo prima Z, scendendo prima XY                                                                                                         |
 | `G90` + `G1 X<centro> Y0 Z250 F3000`                                                                                                    | `movementStore` — spostamento in posizione di purge dopo l'homing                                                                                                                                 |
 | `SET_HEATER_TEMPERATURE HEATER=<zona> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stessa> MINIMUM=<°C>`                                    | `movementStore` — una coppia per zona dell'ugello, sulle zone lette da `/printer/objects/list`, preset PETG/PLA/Custom                                                                            |
 | `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=<prima zona> DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `movementStore` — ultimo passo, estrusione vera e propria: la prima zona (`extruder`) è l'unica con uno stepper. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md)               |

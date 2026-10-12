@@ -129,7 +129,22 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   [04 — Comandi G-code](04-moonraker.md#comandi-g-code)); i riscaldatori già impostati restano
   però al target, e a spegnerli è solo l'`idle_timeout` di Kalico.
 
-Il pulsante **Move** non ha ancora un bersaglio (Q6).
+Il pulsante **Move** apre [MovePanel.svelte](../src/lib/components/MovePanel.svelte), un popup
+con due modi di spostare la testina:
+
+- **Jog**: pad XY a croce e colonna Z, con passo 1 mm / 1 cm / 10 cm / 50 cm (il passo scelto
+  resta per la sessione). I tocchi ripetuti si sommano senza aspettare la fine del movimento, e
+  il bersaglio è limitato a `axis_minimum`/`axis_maximum`: il pulsante di un asse a fine corsa
+  si disattiva. Da tastiera: frecce per X/Y, PagSu/PagGiù per Z.
+- **Go to**: campi X/Y/Z in mm, validati sui limiti della macchina, con le scorciatoie
+  "Center XY" e "Current".
+
+Entrambi passano da `moveToolhead()` in `movementStore`, che separa Z e XY in due mosse e le
+ordina in modo che l'ugello non attraversi il piano più basso del necessario: salendo prima Z,
+scendendo prima XY. Senza homing completo (`homed_axes` senza xyz) i comandi sono spenti e il
+banner propone Home; durante una stampa (`printing`/`paused`) il pannello è solo lettura. Ha un
+proprio pulsante di emergenza, perché copre il dock e Kalico non annulla mosse già in coda: con
+Z a 7 mm/s una corsa di 50 cm dura più di un minuto.
 
 ### Il calcolo del pellet non ha fondamento fisico
 
