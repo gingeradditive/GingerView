@@ -26,6 +26,9 @@
 	let progress = $state(0);
 	let isPrinting = $state(false);
 	let isPaused = $state(false);
+	/* Stop e pausa hanno senso solo con un job attivo: fuori sono spenti, non
+	   premibili a vuoto. Finché lo stato non arriva valgono come "fermo". */
+	let hasActiveJob = $derived(isPrinting || isPaused);
 
 	let fanSpeed = $state(0);
 	let lightValue = $state(0);
@@ -204,7 +207,7 @@
 				</foreignObject>
 			</svg>
 		</button>
-		<button class="square-btn" aria-label="Stop" onclick={handleCancel}>
+		<button class="square-btn" aria-label="Stop" onclick={handleCancel} disabled={!hasActiveJob}>
 			<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 				<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 			</svg>
@@ -213,6 +216,7 @@
 			class="square-btn"
 			aria-label={isPaused ? 'Resume' : 'Pause'}
 			onclick={handlePauseResume}
+			disabled={!hasActiveJob}
 		>
 			{#if isPaused}
 				<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
@@ -387,7 +391,12 @@
 		padding: 0;
 	}
 
-	.square-btn:hover {
+	.square-btn:hover:not(:disabled) {
 		background: var(--color-danger-bg);
+	}
+
+	.square-btn:disabled {
+		cursor: default;
+		opacity: 0.5;
 	}
 </style>
