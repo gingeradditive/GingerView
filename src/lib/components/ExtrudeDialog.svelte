@@ -26,7 +26,7 @@
 	let showHomingWarning = $state(false);
 
 	const phaseLabels: Record<ExtrudePhase, string> = {
-		idle: 'EXTRUDE',
+		idle: 'HEAT & EXTRUDE',
 		homing: 'Homing...',
 		moving: 'Moving...',
 		heating: 'Heating...',
