@@ -49,7 +49,7 @@ src/
 │   ├── services/           accesso a Moonraker e a G2-Service
 │   ├── stores/             stato condiviso (toast, directory corrente, context menu, movement)
 │   └── types/              tipi TypeScript (config, klipper, print, network, service,
-│                            update, timezone)
+│                            update, timezone, statistics, history)
 └── routes/                 rotte SvelteKit
     ├── +layout.svelte      shell applicativa: dock di navigazione, toast, notifier
     ├── +page.svelte        dashboard
@@ -89,19 +89,20 @@ Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la d
 
 ## Rotte
 
-| Rotta                            | Componente principale                         | Note                                                                                                                                                                                                            |
-| -------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                              | `DashboardCarousel` + `DashboardControlPanel` | 5 slide, parte dall'indice 2 (Job Info)                                                                                                                                                                         |
-| `/movement`                      | `MovementCarousel`                            | 2 slide: `ToolheadPosition`, `ExtrudeDialog`                                                                                                                                                                    |
-| `/filelist`                      | `PageContainer` → `PrintList`                 | Browser dei file G-code                                                                                                                                                                                         |
-| `/settings`                      | elenco di voci                                | Alcune voci sono link esterni                                                                                                                                                                                   |
-| `/settings/network`              | pagina completa                               | Unica sottopagina con logica propria oltre a console                                                                                                                                                            |
-| `/settings/console`              | terminale G-code                              | WebSocket diretto verso Moonraker                                                                                                                                                                               |
-| `/settings/log`                  | pagina completa                               | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log))                                                                                                                  |
-| `/settings/update`               | pagina completa                               | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager))                                                                               |
-| `/settings/timezone`             | pagina completa                               | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
-| `/settings/config-editor`        | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
-| `/settings/{history,statistics}` | `SettingsSubpage`                             | Solo intestazione + "Coming soon"                                                                                                                                                                               |
+| Rotta                     | Componente principale                         | Note                                                                                                                                                                                                            |
+| ------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                       | `DashboardCarousel` + `DashboardControlPanel` | 5 slide, parte dall'indice 2 (Job Info)                                                                                                                                                                         |
+| `/movement`               | `MovementCarousel`                            | 2 slide: `ToolheadPosition`, `ExtrudeDialog`                                                                                                                                                                    |
+| `/filelist`               | `PageContainer` → `PrintList`                 | Browser dei file G-code                                                                                                                                                                                         |
+| `/settings`               | elenco di voci                                | Alcune voci sono link esterni                                                                                                                                                                                   |
+| `/settings/network`       | pagina completa                               | Unica sottopagina con logica propria oltre a console                                                                                                                                                            |
+| `/settings/console`       | terminale G-code                              | WebSocket diretto verso Moonraker                                                                                                                                                                               |
+| `/settings/log`           | pagina completa                               | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log))                                                                                                                  |
+| `/settings/update`        | pagina completa                               | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager))                                                                               |
+| `/settings/timezone`      | pagina completa                               | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
+| `/settings/config-editor` | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
+| `/settings/history`       | pagina completa                               | Elenco job stampati, non usa `SettingsSubpage` (vedi [04 — History](04-moonraker.md#history))                                                                                                                   |
+| `/settings/statistics`    | pagina completa                               | Totali dei job, risorse in tempo reale, hardware, stato del server (vedi [04 — Statistics](04-moonraker.md#statistics))                                                                                         |
 
 ### Breakpoint
 

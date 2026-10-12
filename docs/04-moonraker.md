@@ -254,6 +254,81 @@ servizio systemd di Kalico per rilasciare l'handle sul file di log, quindi duran
 compare per un istante un toast "Kalico disconnected" — non è un errore. Moonraker rifiuta
 comunque il rollover se una stampa è in corso.
 
+### History
+
+Tutto in [moonraker-history.ts](../src/lib/services/moonraker-history.ts), usato da
+[`/settings/history`](../src/routes/settings/history/+page.svelte):
+
+| Operazione                  | Chiamata                                            |
+| --------------------------- | --------------------------------------------------- |
+| Elenco job (paginato)       | `GET /server/history/list?limit=&start=&order=desc` |
+| Elimina un job              | `DELETE /server/history/job?uid=<job_id>`           |
+| Elimina tutta la cronologia | `DELETE /server/history/job?all=true`               |
+
+Elenco a scorrimento infinito, pagine da 20 job più recenti prima (`order=desc`), stesso
+pattern dell'`IntersectionObserver` già usato dal browser file
+([PrintList.svelte](../src/lib/components/PrintList.svelte)): il sentinel in fondo alla lista
+carica la pagina successiva quando entra in viewport. Il filtro per stato (**All / Completed /
+Cancelled / Error**) è lato client sui job già scaricati, non un parametro della chiamata —
+Moonraker non offre un filtro server-side su `status`, quindi cambiare tab non rifà la
+richiesta, allarga solo l'elenco già in mano se l'utente scorre oltre.
+
+Lo stato di ogni job (`status`) è uno fra `completed`, `cancelled`, `error`,
+`klippy_shutdown`, `klippy_disconnect`, `interrupted`, `server_exit`, `in_progress`. La
+sottopagina raggruppa tutto ciò che non è `completed` o `cancelled` sotto **Error**;
+`in_progress` non appartiene a nessuna tab (compare solo nella tab **All**, se una stampa è a
+metà mentre la pagina è aperta) perché una stampa in corso non è ancora storia.
+
+**Thumbnail.** Ogni job porta il proprio `metadata` (stessa forma di
+`GET /server/files/metadata`, vedi [Thumbnail: due strategie](#thumbnail-due-strategie)), quindi
+il thumbnail si costruisce con lo stesso `getThumbnailUrl()` di
+[moonraker-files.ts](../src/lib/services/moonraker-files.ts), usando come directory quella del
+file del job (`gcodes/<cartella-del-file>`). Se il job non ha metadati (file mai scansionato o
+già cancellato) o non ha thumbnail, si ricade sull'immagine d'errore generica, senza tentare
+l'estrazione dal G-code come fa invece il browser file — qui il file spesso non esiste più.
+
+**Reprint.** Il popup dettaglio riusa lo stesso
+[PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte) del browser file, sul
+`filename` del job. Il pulsante è disabilitato se `job.exists` è `false`, cioè se il file
+sorgente è stato cancellato dopo la stampa.
+
+**Cronologia e totali sono due cose separate in Moonraker.** Cancellare job da qui non tocca i
+totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
+[Statistics](#statistics), e viceversa il **Reset** di quella pagina non svuota questo elenco.
+
+### Statistics
+
+Tutto in [moonraker-statistics.ts](../src/lib/services/moonraker-statistics.ts), usato da
+[`/settings/statistics`](../src/routes/settings/statistics/+page.svelte):
+
+| Operazione                      | Chiamata                            |
+| ------------------------------- | ----------------------------------- |
+| Totali dei job stampati         | `GET /server/history/totals`        |
+| Reset dei totali                | `POST /server/history/totals/reset` |
+| Informazioni hardware/sistema   | `GET /machine/system_info`          |
+| Utilizzo risorse in tempo reale | `GET /machine/proc_stats`           |
+| Stato del server                | `GET /server/info`                  |
+
+Quattro chiamate indipendenti, lette in `Promise.all` e mai fallite insieme: ogni sezione della
+pagina mostra `--` sui propri campi se la sua chiamata va storta, senza bloccare le altre. Il
+pulsante **Refresh** in testata rilancia tutte e quattro; `/machine/proc_stats` viene inoltre
+ripetuta da sola ogni 3 secondi mentre la pagina resta aperta, perché è l'unica sezione
+realmente "live" (uso CPU, memoria, temperatura, banda di rete) — le altre tre (totali job,
+hardware, stato server) cambiano solo su eventi che l'utente stesso innesca (una stampa finita,
+un riavvio), quindi non serve pollarle.
+
+`total_memory`, `system_memory` e le cifre di memoria dei processi Moonraker arrivano in **kB**
+(non KiB nonostante il nome, è la convenzione di Moonraker), formattate da `formatKib()`. Le
+cifre di banda di rete (`rx_bytes`/`tx_bytes`) sono invece byte veri, formattate da
+`formatBytes()`. I tipi in [types/statistics.ts](../src/lib/types/statistics.ts) hanno quasi
+tutti i campi opzionali perché `system_info` e `proc_stats` cambiano struttura fra piattaforme
+(un host non-Raspberry Pi non ha `throttled_state` né `cpu_temp`, per dire).
+
+Il pulsante **Reset** (sopra la sezione "Print jobs") chiama `history/totals/reset` dietro
+conferma: azzera `total_jobs`, `total_time`, `total_print_time`, `total_filament_used`,
+`longest_job` e `longest_print`, senza toccare la cronologia dei singoli job in
+`/settings/history`, che restano due cose separate in Moonraker.
+
 ### Update manager
 
 Tutto in [moonraker-update.ts](../src/lib/services/moonraker-update.ts), usato da
