@@ -745,14 +745,17 @@ Il contratto completo è in
 [G2-Service `docs/03`](https://github.com/gingeradditive/G2-Service/blob/main/docs/03-proposta-api-rete-timezone.md).
 Qui interessa quello che GingerView usa davvero:
 
-| Endpoint                         | Metodo   | Uso                                                          | Client           |
-| -------------------------------- | -------- | ------------------------------------------------------------ | ---------------- |
-| `/service/network/status`        | GET      | Stato unificato: `adapter`, `ip`, `signalInfo`, `interfaces` | `network-api.ts` |
-| `/service/network/wifi/networks` | GET      | Ultima scansione nota, risponde subito                       | `network-api.ts` |
-| `/service/network/wifi/rescan`   | POST     | Forza una scansione e aspetta i risultati                    | `network-api.ts` |
-| `/service/network/wifi/connect`  | POST     | `{ ssid, password? }` → `202` + job                          | `network-api.ts` |
-| `/service/jobs/{jobId}`          | GET      | Avanzamento ed esito di un'operazione asincrona              | `g2-service.ts`  |
-| `/service/timezone`              | GET/POST | `{ timezone, ntpSynchronized }`                              | `timezone.ts`    |
+| Endpoint                         | Metodo   | Uso                                                                                      | Client           |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------------- | ---------------- |
+| `/service/network/status`        | GET      | Stato unificato: `adapter`, `ip`, `signalInfo`, `interfaces`                             | `network-api.ts` |
+| `/service/network/wifi/networks` | GET      | Ultima scansione nota, risponde subito                                                   | `network-api.ts` |
+| `/service/network/wifi/rescan`   | POST     | Forza una scansione e aspetta i risultati                                                | `network-api.ts` |
+| `/service/network/wifi/connect`  | POST     | `{ ssid, password? }` → `202` + job                                                      | `network-api.ts` |
+| `/service/jobs/{jobId}`          | GET      | Avanzamento ed esito di un'operazione asincrona                                          | `g2-service.ts`  |
+| `/service/timezone`              | GET/POST | `{ timezone, ntpSynchronized }`                                                          | `timezone.ts`    |
+| `/service/usb`                   | GET      | `{ mounted }`: c'è una chiavetta montata su `/media`                                     | `usb-api.ts`     |
+| `/service/usb/files?path=`       | GET      | Cartelle e `.gcode` della chiavetta                                                      | `usb-api.ts`     |
+| `/service/usb/import`            | POST     | `{ source, destDir, onConflict }` → `202` + job; `409` `FILE_EXISTS` / `USB_NOT_MOUNTED` | `usb-api.ts`     |
 
 Tre cose valgono per tutti e stanno in
 [g2-service.ts](../src/lib/services/g2-service.ts), non nei singoli client:

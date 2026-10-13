@@ -94,7 +94,7 @@
 		</header>
 
 		{#if isLoading}
-			<div class="state"><LoaderCircle class="spin" /> Reading the current timezone...</div>
+			<div class="state"><LoaderCircle class="spin" /> Reading the current timezone…</div>
 		{:else if loadError}
 			<div class="state error">
 				<TriangleAlert />
@@ -137,7 +137,7 @@
 					{#if isSaving}
 						<LoaderCircle class="spin" />
 					{/if}
-					{isSaving ? 'Saving...' : 'Save timezone'}
+					{isSaving ? 'Saving…' : 'Save timezone'}
 				</button>
 			</div>
 		{/if}

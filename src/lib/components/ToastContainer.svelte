@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
+	import { modal } from '$lib/actions/modal';
 	import { toasts, toastActions } from '$lib/stores/toastStore';
 	import type { Toast, ToastType, ToastSource } from '$lib/stores/toastStore';
 	import { X, AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-svelte';
@@ -61,6 +63,7 @@
 						class="toast-info-btn"
 						onclick={() => openDetails(toast)}
 						aria-label="Show details"
+						use:tooltip
 					>
 						<Info size={14} />
 					</button>
@@ -71,6 +74,7 @@
 						class="toast-close"
 						onclick={() => toastActions.dismiss(toast.id)}
 						aria-label="Dismiss notification"
+						use:tooltip
 					>
 						<X size={14} />
 					</button>
@@ -81,13 +85,14 @@
 </div>
 
 {#if detailToast}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="detail-overlay"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="toast-detail-title"
 		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closeDetails()}
+		use:modal={{ onClose: closeDetails }}
 		onclick={(e) => e.target === e.currentTarget && closeDetails()}
 	>
 		<div class="detail-modal" role="document">
@@ -107,7 +112,13 @@
 						<h4 id="toast-detail-title">{detailToast.title}</h4>
 					</div>
 				</div>
-				<button type="button" class="toast-close" onclick={closeDetails} aria-label="Close">
+				<button
+					type="button"
+					class="toast-close"
+					onclick={closeDetails}
+					aria-label="Close"
+					use:tooltip
+				>
 					<X size={16} />
 				</button>
 			</div>
@@ -144,7 +155,7 @@
 		box-shadow: var(--shadow-float);
 		pointer-events: auto;
 		animation: toast-slide-in 0.28s ease-out;
-		font-family: 'Montserrat', sans-serif;
+		font-family: var(--font-sans);
 		transition: box-shadow 0.2s;
 	}
 
@@ -237,6 +248,7 @@
 	}
 
 	.toast-close {
+		position: relative;
 		flex-shrink: 0;
 		display: flex;
 		align-items: center;
@@ -254,6 +266,15 @@
 			color 0.15s;
 	}
 
+	/* Icone da 24px, area di tocco più larga: 44px in orizzontale; in verticale si ferma
+	   a metà dello spazio fra "dettagli" e "chiudi", che stanno uno sopra l'altro. */
+	.toast-close::before,
+	.toast-info-btn::before {
+		content: '';
+		position: absolute;
+		inset: -2px -10px;
+	}
+
 	.toast-close:hover {
 		background: rgba(var(--rgb-black), 0.06);
 		color: var(--color-text-muted);
@@ -267,6 +288,7 @@
 	}
 
 	.toast-info-btn {
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;

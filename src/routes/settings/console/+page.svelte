@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
@@ -270,7 +271,7 @@
 				type="text"
 				bind:value={currentCommand}
 				onkeydown={handleKeydown}
-				placeholder="Enter Klipper command..."
+				placeholder="Enter Klipper command…"
 			/>
 		</div>
 
@@ -280,6 +281,7 @@
 				class="clear-btn"
 				onclick={clearTerminal}
 				aria-label="Clear console"
+				use:tooltip
 				title="Clear console"
 			>
 				<Trash2 />

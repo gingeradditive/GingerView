@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatClock as formatDuration } from '$lib/utils/format';
 	import { onMount } from 'svelte';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import {
@@ -38,14 +39,6 @@
 
 	let estimatedTotalSeconds: number | null = null;
 	let lastFilename: string | null = null;
-
-	const formatDuration = (seconds: number): string => {
-		if (!seconds || seconds < 0) return '--:--:--';
-		const h = Math.floor(seconds / 3600);
-		const m = Math.floor((seconds % 3600) / 60);
-		const s = Math.floor(seconds % 60);
-		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
 
 	const stripExtension = (filename: string): string => {
 		const base = filename.split('/').pop() ?? filename;

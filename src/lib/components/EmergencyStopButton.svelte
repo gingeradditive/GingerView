@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { mdiHandBackRight, mdiRestart } from '@mdi/js';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { klippyState, type KlippyState } from '$lib/services/moonraker-notifier';
@@ -105,7 +106,7 @@
 	disabled={busy}
 	aria-label={label}
 	aria-busy={busy}
-	title={label}
+	use:tooltip={{ longPress: false }}
 	onclick={handleClick}
 >
 	<svg viewBox="0 0 24 24" aria-hidden="true">

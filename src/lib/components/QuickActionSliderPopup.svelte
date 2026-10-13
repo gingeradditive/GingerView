@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import ModalCloseButton from '$lib/components/ModalCloseButton.svelte';
+	import { tooltip } from '$lib/actions/tooltip';
 	let {
 		isOpen,
 		title,
@@ -42,10 +45,12 @@
 		aria-modal="true"
 		aria-label={ariaLabel}
 		tabindex="-1"
+		use:modal={{ onClose }}
 		onclick={onClose}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="popup-modal" role="document" onclick={(e) => e.stopPropagation()}>
+			<ModalCloseButton {onClose} />
 			<h3>{title}</h3>
 			<div class="popup-slider-row">
 				<svg
@@ -56,6 +61,7 @@
 					role="button"
 					tabindex="0"
 					aria-label="Set to 0%"
+					use:tooltip
 					onclick={() => commit(0)}
 					onkeydown={(e) => e.key === 'Enter' && commit(0)}
 				>
@@ -79,6 +85,7 @@
 					role="button"
 					tabindex="0"
 					aria-label="Set to 100%"
+					use:tooltip
 					onclick={() => commit(100)}
 					onkeydown={(e) => e.key === 'Enter' && commit(100)}
 				>
@@ -109,6 +116,7 @@
 	}
 
 	.popup-modal {
+		position: relative;
 		width: min(520px, 100%);
 		background: var(--color-white);
 		border-radius: 27px;

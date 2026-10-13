@@ -157,6 +157,9 @@
 		role="switch"
 		ariaLabel="Feeder"
 		ariaChecked={feederOn}
+		hint={feederOn
+			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
+			: 'Feeder off: no pellet is loaded. Tap to switch on'}
 		disabled={feederBusy}
 		onclick={toggleFeeder}
 	>

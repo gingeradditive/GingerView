@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
 	import { onMount } from 'svelte';
 	import {
 		ChevronRight,
@@ -125,8 +126,8 @@
 	 * situations that ask different things of whoever is reading.
 	 */
 	function describeDisconnected(state: NetworkStatus | null): string {
-		if (!state) return 'Reading the network status...';
-		if (state.adapter.state === 'connecting') return 'Connecting...';
+		if (!state) return 'Reading the network status…';
+		if (state.adapter.state === 'connecting') return 'Connecting…';
 
 		const ethernet = state.interfaces.find((iface) => iface.type === 'ethernet');
 		if (!ethernet || ethernet.state === 'unavailable') {
@@ -308,7 +309,7 @@
 		<div class="card-footer">
 			<div class="scan-row">
 				<button type="button" class="scan-btn" onclick={scanNetworks} disabled={isScanning}>
-					{isScanning ? 'Scanning...' : 'Scan'}
+					{isScanning ? 'Scanning…' : 'Scan'}
 				</button>
 			</div>
 
@@ -326,13 +327,14 @@
 
 {#if showPasswordDialog && selectedNetwork}
 	{@const network = selectedNetwork}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="overlay"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="connect-dialog-title"
 		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closeDialogs()}
+		use:modal={{ onClose: closeDialogs }}
 		onclick={(e) => e.target === e.currentTarget && closeDialogs()}
 	>
 		<div class="dialog" role="document">
@@ -368,7 +370,7 @@
 					disabled={!networkPassword || connecting}
 					onclick={() => connectToNetwork(network.ssid, networkPassword)}
 				>
-					{connecting ? 'Connecting...' : 'Connect'}
+					{connecting ? 'Connecting…' : 'Connect'}
 				</button>
 			</div>
 		</div>
@@ -376,13 +378,14 @@
 {/if}
 
 {#if showHiddenDialog}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="overlay"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="hidden-dialog-title"
 		tabindex="0"
-		onkeydown={(e) => e.key === 'Escape' && closeDialogs()}
+		use:modal={{ onClose: closeDialogs }}
 		onclick={(e) => e.target === e.currentTarget && closeDialogs()}
 	>
 		<div class="dialog" role="document">
@@ -420,7 +423,7 @@
 					disabled={!hiddenSSID || !hiddenPassword || connecting}
 					onclick={() => connectToNetwork(hiddenSSID, hiddenPassword)}
 				>
-					{connecting ? 'Connecting...' : 'Connect'}
+					{connecting ? 'Connecting…' : 'Connect'}
 				</button>
 			</div>
 		</div>

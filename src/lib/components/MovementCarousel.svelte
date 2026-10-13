@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import emblaCarouselSvelte from 'embla-carousel-svelte';
 	import type { EmblaCarouselType, EmblaOptionsType } from 'embla-carousel';
@@ -6,6 +7,8 @@
 	import ExtrudeDialog from '$lib/components/ExtrudeDialog.svelte';
 
 	const pageCount = 2;
+	// Nomi delle slide, nello stesso ordine: etichetta dei puntini.
+	const pageNames = ['Position', 'Heat & extrude'];
 
 	// Stessa condizione della media query in fondo al file (vedi i breakpoint in app.css):
 	// lì le due colonne stanno entrambe a schermo e non c'è niente da far scorrere.
@@ -83,7 +86,8 @@
 			<button
 				class="dot"
 				class:active={isDotActive(index)}
-				aria-label={`Page ${index + 1}`}
+				aria-label={pageNames[index]}
+				use:tooltip
 				onclick={() => scrollTo(index)}
 			></button>
 		{/each}
@@ -132,7 +136,7 @@
 
 	.dots {
 		display: flex;
-		gap: 6px;
+		gap: 12px;
 		flex-shrink: 0;
 	}
 
@@ -145,6 +149,7 @@
 	}
 
 	.dot {
+		position: relative;
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
@@ -152,6 +157,14 @@
 		background: var(--color-divider);
 		padding: 0;
 		cursor: pointer;
+	}
+
+	/* Il puntino resta di 8px, ma si tocca un'area di 20x44: a 8x8 col dito non lo si
+	   prendeva. In larghezza arriva a metà dello spazio fra due puntini, senza sovrapporsi. */
+	.dot::before {
+		content: '';
+		position: absolute;
+		inset: -18px -6px;
 	}
 
 	.dot.active {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onDestroy, onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
@@ -244,7 +245,12 @@
 	</div>
 
 	<div class="controls-card">
-		<button class="control-btn" aria-label="Move" onclick={handleMove}>
+		<button
+			class="control-btn"
+			aria-label="Move"
+			use:tooltip={'Open the jog panel to move X, Y and Z'}
+			onclick={handleMove}
+		>
 			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d={mdiCursorMove} fill="currentColor" />
 			</svg>
@@ -253,18 +259,22 @@
 		<button
 			class="control-btn home"
 			aria-label={$homingBusy ? 'Homing' : 'Home'}
+			use:tooltip={'Home all axes (G28): find the zero of X, Y and Z'}
 			disabled={$homingBusy}
 			onclick={handleHome}
 		>
 			<svg width="32" height="32" viewBox="0 0 24 24">
 				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor" />
 			</svg>
-			<span>{$homingBusy ? 'Homing...' : 'Home'}</span>
+			<span>{$homingBusy ? 'Homing…' : 'Home'}</span>
 		</button>
 		<button
 			class="control-btn"
 			aria-label={motorsEnabled ? 'Disable Motors' : 'Motors Disabled'}
-			disabled={!motorsEnabled || motorsBusy}
+			use:tooltip={motorsEnabled
+				? 'Switch the stepper motors off (M84) so the axes move by hand. Homing is needed again afterwards'
+				: 'Motors are off: Home or a move switches them back on'}
+			aria-disabled={!motorsEnabled || motorsBusy}
 			onclick={handleMotorOff}
 		>
 			<svg width="32" height="32" viewBox="0 0 24 24">
@@ -369,7 +379,7 @@
 	.axis-label {
 		font-size: 18px;
 		font-weight: 700;
-		font-family: 'Segoe UI', sans-serif;
+		font-family: var(--font-sans);
 	}
 
 	.axis-label-x {
@@ -492,6 +502,18 @@
 		cursor: default;
 		opacity: 0.55;
 		pointer-events: none;
+	}
+
+	/* Disable Motors usa aria-disabled invece di disabled: un pulsante disabled non riceve
+	   il mouse né il tocco, e l'etichetta che spiega perché è spento non comparirebbe mai.
+	   Il clic lo ignora già handleMotorOff. */
+	.control-btn[aria-disabled='true'] {
+		cursor: default;
+		opacity: 0.55;
+	}
+
+	.control-btn[aria-disabled='true']:hover {
+		background: var(--color-white);
 	}
 
 	/* Colonna bassa (portatili e tablet da 600px): il disegno sotto i ~150px non si legge più.

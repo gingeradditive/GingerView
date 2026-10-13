@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
@@ -10,6 +11,7 @@
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
 	import { ensureUiMode } from '$lib/stores/uiModeStore';
+	import '@fontsource-variable/montserrat';
 	import '../app.css';
 
 	const logoImage = '/Printers/G2/Logo.svg';
@@ -51,6 +53,7 @@
 		href={resolve('/')}
 		class:active={$page.url.pathname === '/'}
 		aria-label="Dashboard"
+		use:tooltip
 		title="Dashboard"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -62,6 +65,7 @@
 		href={resolve('/movement')}
 		class:active={$page.url.pathname.startsWith('/movement')}
 		aria-label="Movement"
+		use:tooltip
 		title="Movement"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -73,6 +77,7 @@
 		href={resolve('/filelist')}
 		class:active={$page.url.pathname.startsWith('/filelist')}
 		aria-label="Files"
+		use:tooltip
 		title="Files"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -84,6 +89,7 @@
 		href={resolve('/settings')}
 		class:active={$page.url.pathname.startsWith('/settings')}
 		aria-label="Settings"
+		use:tooltip
 		title="Settings"
 		class="settings-icon"
 	>

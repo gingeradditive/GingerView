@@ -166,6 +166,7 @@
 			label="EXTRUDER"
 			active={anyZoneHeating}
 			ariaLabel="Set extruder temperatures"
+			hint="Set a target temperature for each nozzle zone"
 			onclick={() => (showTemperatureModal = true)}
 		>
 			SET

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import { tooltip } from '$lib/actions/tooltip';
 	import {
 		mdiChevronLeft,
 		mdiChevronRight,
@@ -167,7 +169,7 @@
 		tabindex="-1"
 		use:portal
 		onclick={close}
-		onkeydown={(e) => e.key === 'Escape' && close()}
+		use:modal={{ onClose: close }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
@@ -179,6 +181,7 @@
 						onclick={goUp}
 						disabled={!!importing}
 						aria-label="Back"
+						use:tooltip
 					>
 						<svg viewBox="0 0 24 24" width="28" height="28"><path d={mdiChevronLeft} /></svg>
 					</button>
@@ -197,6 +200,7 @@
 					onclick={close}
 					disabled={!!importing}
 					aria-label="Close"
+					use:tooltip
 				>
 					<svg viewBox="0 0 24 24" width="28" height="28"><path d={mdiClose} /></svg>
 				</button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { Download, FileText, Trash2, LoaderCircle } from 'lucide-svelte';
 	import { LOG_FILES, downloadLog, clearLogs, type LogFile } from '$lib/services/moonraker-logs';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
@@ -63,6 +64,7 @@
 						onclick={() => handleDownload(file)}
 						disabled={downloadingId === file.id}
 						aria-label="Download {file.label} log"
+						use:tooltip
 						title="Download {file.label} log"
 					>
 						{#if downloadingId === file.id}

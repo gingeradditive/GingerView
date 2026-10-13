@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
 	import { CheckCircle2, XCircle, Ban, RefreshCw } from 'lucide-svelte';
 	import type { MoonrakerHistoryJob, HistoryStatus } from '$lib/types/history';
 	import {
@@ -60,7 +61,14 @@
 {#if isOpen && job}
 	{@const meta = statusMeta(job.status)}
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div class="details-overlay" role="dialog" aria-modal="true" tabindex="-1" onclick={onClose}>
+	<div
+		class="details-overlay"
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+		use:modal={{ onClose }}
+		onclick={onClose}
+	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="details-modal" role="document" onclick={(e) => e.stopPropagation()}>
 			<div class="preview-pane">

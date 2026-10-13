@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount, onDestroy } from 'svelte';
 	import PrintCard from './PrintCard.svelte';
 	import PrintDetailsPopup from './PrintDetailsPopup.svelte';
@@ -21,6 +23,7 @@
 	import { fetchUsbStatus } from '$lib/services/usb-api';
 	import { gcodesChanged } from '$lib/services/moonraker-notifier';
 	import { toastActions } from '$lib/stores/toastStore';
+	import { activeContextMenuId } from '$lib/stores/contextMenuStore';
 
 	const PAGE_SIZE = 20;
 	// G2-Service non ha un canale push: la presenza della chiavetta si chiede a intervalli.
@@ -311,6 +314,49 @@
 		}
 	}
 
+	// Tasto destro su un punto vuoto della pagina: le stesse azioni dei pulsanti in alto
+	// (upload, nuova cartella, USB), come in un file manager. Sulle card c'è già il loro
+	// menu, sui pulsanti e sui campi resta quello del browser.
+	const BACKGROUND_MENU_ID = 'filelist-background';
+	const BG_MENU_WIDTH = 200;
+	const BG_MENU_ITEM_HEIGHT = 44;
+	let backgroundMenu = $state<{ x: number; y: number } | null>(null);
+
+	function handleBackgroundContextMenu(event: MouseEvent) {
+		if (event.defaultPrevented) return; // una card ha già aperto il suo menu
+		const target = event.target as HTMLElement | null;
+		if (target?.closest('button, a, input, textarea, select, [role="menu"]')) return;
+		event.preventDefault();
+		// Sui monitor grandi la pagina è zoomata (app.css), come in PrintCard.
+		const zoom =
+			(document.documentElement as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1;
+		const items = usbMounted ? 3 : 2;
+		const maxX = window.innerWidth / zoom - BG_MENU_WIDTH - 8;
+		const maxY = window.innerHeight / zoom - items * BG_MENU_ITEM_HEIGHT - 16;
+		backgroundMenu = {
+			x: Math.max(8, Math.min(event.clientX / zoom, maxX)),
+			y: Math.max(8, Math.min(event.clientY / zoom, maxY))
+		};
+		// Chiude il menu di una card eventualmente aperto.
+		activeContextMenuId.set(BACKGROUND_MENU_ID);
+	}
+
+	function closeBackgroundMenu() {
+		if (!backgroundMenu) return;
+		backgroundMenu = null;
+		if ($activeContextMenuId === BACKGROUND_MENU_ID) activeContextMenuId.set(null);
+	}
+
+	// Un'altra card apre il suo menu: questo si chiude.
+	$effect(() => {
+		if ($activeContextMenuId !== BACKGROUND_MENU_ID) backgroundMenu = null;
+	});
+
+	function backgroundAction(action: () => void) {
+		closeBackgroundMenu();
+		action();
+	}
+
 	onMount(() => {
 		pollUsb();
 		usbPollTimer = setInterval(pollUsb, USB_POLL_MS);
@@ -334,7 +380,13 @@
 	});
 </script>
 
-<div class="print-list-page">
+<svelte:window
+	onclick={closeBackgroundMenu}
+	onkeydown={(e) => e.key === 'Escape' && closeBackgroundMenu()}
+	onscroll={closeBackgroundMenu}
+/>
+
+<div class="print-list-page" oncontextmenu={handleBackgroundContextMenu} role="presentation">
 	<div class="page-header">
 		<CurrentDirectory />
 		<div class="actions">
@@ -343,6 +395,7 @@
 					class="action-button usb-button"
 					onclick={() => (showUsbModal = true)}
 					aria-label="Import from USB stick"
+					use:tooltip
 				>
 					<svg viewBox="0 0 24 24" width="40" height="40"
 						><path d={mdiUsbFlashDrive} fill="#D72E28" /></svg
@@ -353,6 +406,7 @@
 				class="action-button"
 				onclick={() => (showCreateFolderModal = true)}
 				aria-label="Create folder"
+				use:tooltip
 			>
 				<svg viewBox="0 0 24 24" width="40" height="40"
 					><path d={mdiFolderPlus} fill="#D72E28" /></svg
@@ -363,6 +417,7 @@
 				class:busy={uploading}
 				onclick={() => fileInput.click()}
 				aria-label={uploading ? 'Uploading…' : 'Upload file'}
+				use:tooltip
 				aria-busy={uploading}
 				disabled={uploading}
 			>
@@ -379,12 +434,13 @@
 	</div>
 
 	{#if showCreateFolderModal}
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div
 			class="modal-overlay"
 			role="dialog"
 			tabindex="0"
 			onclick={(e) => e.target === e.currentTarget && (showCreateFolderModal = false)}
-			onkeydown={(e) => e.key === 'Escape' && (showCreateFolderModal = false)}
+			use:modal={{ onClose: () => (showCreateFolderModal = false) }}
 		>
 			<div class="modal-content">
 				<h3>Create new folder</h3>
@@ -409,7 +465,7 @@
 	{/if}
 
 	{#if loading}
-		<div class="status-message">Loading...</div>
+		<div class="status-message">Loading…</div>
 	{:else if error}
 		<div class="status-message error">{error}</div>
 	{:else if allItems.length === 0}
@@ -461,11 +517,95 @@
 	/>
 </div>
 
+{#if backgroundMenu}
+	<div
+		class="context-menu"
+		role="menu"
+		aria-label="Files"
+		style="left: {backgroundMenu.x}px; top: {backgroundMenu.y}px;"
+	>
+		<button
+			class="context-menu-item"
+			role="menuitem"
+			disabled={uploading}
+			onclick={() => backgroundAction(() => fileInput.click())}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiUpload} /></svg>
+			Upload file
+		</button>
+		<button
+			class="context-menu-item"
+			role="menuitem"
+			onclick={() => backgroundAction(() => (showCreateFolderModal = true))}
+		>
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiFolderPlus} /></svg>
+			New folder
+		</button>
+		{#if usbMounted}
+			<button
+				class="context-menu-item"
+				role="menuitem"
+				onclick={() => backgroundAction(() => (showUsbModal = true))}
+			>
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiUsbFlashDrive} /></svg>
+				Import from USB
+			</button>
+		{/if}
+	</div>
+{/if}
+
 <style>
+	/* Riempie tutta l'area della pagina, così il tasto destro funziona anche sotto
+	   all'ultima card, non solo dove c'è contenuto. */
 	.print-list-page {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 24px;
+	}
+
+	/* Menu del tasto destro sullo sfondo: stessa forma di quello delle card (PrintCard). */
+	.context-menu {
+		position: fixed;
+		z-index: 1000;
+		min-width: 180px;
+		max-width: 220px;
+		padding: 4px 0;
+		background: var(--color-white);
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(var(--rgb-black), 0.15);
+	}
+
+	.context-menu-item {
+		width: 100%;
+		min-height: 44px;
+		padding: 8px 16px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		background: none;
+		border: none;
+		text-align: left;
+		cursor: pointer;
+		font-size: 0.9rem;
+		color: var(--color-black);
+		transition: background-color 0.2s;
+	}
+
+	.context-menu-item:hover:not(:disabled) {
+		background-color: var(--color-background);
+	}
+
+	.context-menu-item:disabled {
+		cursor: default;
+		opacity: 0.5;
+	}
+
+	.context-menu-item svg {
+		width: 20px;
+		height: 20px;
+		fill: var(--color-red);
+		flex-shrink: 0;
 	}
 
 	.page-header {
@@ -539,7 +679,7 @@
 		padding: 48px 16px;
 		font-size: 1.1rem;
 		color: var(--color-text-subtle);
-		font-family: 'Montserrat', sans-serif;
+		font-family: var(--font-sans);
 	}
 
 	.status-message.error {
@@ -557,7 +697,7 @@
 		min-height: 60vh;
 		padding: 0 16px;
 		text-align: center;
-		font-family: 'Montserrat', sans-serif;
+		font-family: var(--font-sans);
 	}
 
 	.empty-title {

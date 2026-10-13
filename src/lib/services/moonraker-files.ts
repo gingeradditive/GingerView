@@ -1,3 +1,4 @@
+import { formatDuration } from '$lib/utils/format';
 import { configService } from './config';
 import { toastActions } from '$lib/stores/toastStore';
 
@@ -171,13 +172,8 @@ export async function extractThumbnailFromGcode(
 	}
 }
 
-export function formatEstimatedTime(seconds?: number): string {
-	if (seconds == null || seconds <= 0) return '--';
-	const h = Math.floor(seconds / 3600);
-	const m = Math.floor((seconds % 3600) / 60);
-	if (h > 0) return `${h}h ${m.toString().padStart(2, '0')} min`;
-	return `${m} min`;
-}
+/** Durata stimata o effettiva di un lavoro: vedi `formatDuration` in utils/format. */
+export const formatEstimatedTime = formatDuration;
 
 export function getFilamentType(metadata: MoonrakerFileMetadata): string {
 	// Try filament_type first, then filament_name, then slicer as fallback

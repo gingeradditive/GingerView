@@ -16,7 +16,7 @@
 		min-height: 100%;
 		width: 100%;
 		background: var(--color-gray);
-		font-family: 'Montserrat', sans-serif;
+		font-family: var(--font-sans);
 		overflow-x: hidden;
 	}
 
@@ -37,6 +37,8 @@
 		border: none;
 		box-shadow: none;
 		flex: 1;
+		display: flex;
+		flex-direction: column;
 		overflow-x: hidden;
 		overflow-y: visible;
 		min-height: 0;

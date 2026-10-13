@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import {
 		ChevronDown,
 		ChevronRight,
@@ -74,6 +75,7 @@
 							class="icon-btn"
 							onclick={() => onRename(node)}
 							aria-label="Rename {node.entry.name}"
+							use:tooltip={'Rename'}
 							title="Rename"
 						>
 							<Pencil size={15} />
@@ -83,6 +85,7 @@
 							class="icon-btn danger"
 							onclick={() => onDelete(node)}
 							aria-label="Delete {node.entry.name}"
+							use:tooltip={'Delete'}
 							title="Delete"
 						>
 							<Trash2 size={15} />

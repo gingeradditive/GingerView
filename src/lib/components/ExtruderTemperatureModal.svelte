@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { Minus, Plus } from 'lucide-svelte';
 	import { portal } from '$lib/actions/portal';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
@@ -97,7 +99,7 @@
 		tabindex="-1"
 		use:portal
 		onclick={onClose}
-		onkeydown={(e) => e.key === 'Escape' && onClose()}
+		use:modal={{ onClose: onClose }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
@@ -116,6 +118,7 @@
 								type="button"
 								class="step-btn"
 								aria-label={`Lower zone ${index + 1}`}
+								use:tooltip={'−5 °C'}
 								disabled={busy || (inputs[index] ?? 0) <= 0}
 								onclick={() => step(index, -1)}><Minus size={20} /></button
 							>
@@ -135,6 +138,7 @@
 								type="button"
 								class="step-btn"
 								aria-label={`Raise zone ${index + 1}`}
+								use:tooltip={'+5 °C'}
 								disabled={busy || (inputs[index] ?? 0) >= MAX_TEMPERATURE}
 								onclick={() => step(index, 1)}><Plus size={20} /></button
 							>

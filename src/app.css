@@ -1,5 +1,7 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+/* Montserrat è servito dalla macchina (@fontsource-variable/montserrat, importato in
+   +layout.svelte): sulla LAN senza internet Google Fonts non arriva, e il suo @import
+   bloccava il primo disegno della pagina. */
 
 /*
  * Breakpoint della responsività.
@@ -103,6 +105,8 @@
 
 	/* Lo spazio che le pagine lasciano in fondo per il dock, che è fixed e non ne occupa. */
 	--dock-clearance: calc(112px + var(--safe-bottom));
+
+	--font-sans: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
 }
 
 @media (max-width: 767.98px) {
@@ -144,7 +148,7 @@ body {
 	height: 100%;
 	background-color: var(--color-gray);
 	color: var(--color-black);
-	font-family: 'Montserrat', sans-serif;
+	font-family: var(--font-sans);
 	overflow-x: hidden;
 }
 
@@ -224,5 +228,92 @@ button {
 	}
 	to {
 		transform: rotate(360deg);
+	}
+}
+
+/*
+ * Etichetta dei pulsanti solo-icona (`use:tooltip`, src/lib/actions/tooltip.ts).
+ *
+ * Un solo elemento in <body>, riusato da tutti i pulsanti: sopra le modali (3000),
+ * mai cliccabile, così non ruba il tocco al pulsante sotto.
+ */
+.gv-tooltip {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 4000;
+	max-width: min(240px, calc(100vw - 16px));
+	padding: 6px 10px;
+	border-radius: 8px;
+	background: rgba(var(--rgb-black), 0.88);
+	color: var(--color-white);
+	font-size: 0.8rem;
+	font-weight: 600;
+	line-height: 1.3;
+	text-align: center;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(2px);
+	transition:
+		opacity 0.12s ease,
+		transform 0.12s ease;
+}
+
+.gv-tooltip[data-visible='true'] {
+	opacity: 1;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.gv-tooltip {
+		transition: none;
+	}
+}
+
+/*
+ * Focus da tastiera (computer).
+ *
+ * Un anello rosso su tutto ciò che si raggiunge col Tab, solo quando ci si arriva con la
+ * tastiera (`:focus-visible`: al tocco e al clic non compare). `:where` lo tiene a
+ * specificità zero, così ogni componente può ancora disegnare il proprio focus — i campi
+ * di testo, per esempio, colorano il bordo.
+ */
+:where(
+	a[href],
+	button,
+	input,
+	select,
+	textarea,
+	summary,
+	[role='button'],
+	[role='switch'],
+	[role='radio'],
+	[role='menuitem'],
+	[tabindex]:not([tabindex='-1'])
+):focus-visible {
+	outline: 2px solid var(--color-red);
+	outline-offset: 2px;
+}
+
+/*
+ * Movimento ridotto, per chi l'ha chiesto al sistema operativo.
+ *
+ * Ferma animazioni decorative e transizioni ovunque (ventola che gira, pellet che vibra,
+ * scorrimento del titolo, cursori che scivolano) senza doverlo ripetere in ogni componente.
+ * Lo spinner resta: è l'unico segno che qualcosa è in corso, e girare piano non disturba.
+ */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.spin {
+		animation-duration: 1.5s !important;
+		animation-iteration-count: infinite !important;
 	}
 }

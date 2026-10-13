@@ -2,17 +2,17 @@
 
 ## Stack
 
-| Livello          | Tecnologia                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------- |
-| Framework        | SvelteKit 2 con **Svelte 5** (runes: `$state`, `$derived`, `$props`)               |
-| Build            | Vite 7                                                                             |
-| Adapter          | `@sveltejs/adapter-static` — output SPA in `build/`                                |
-| Linguaggio       | TypeScript (`strict`)                                                              |
-| Stili            | CSS scoped nei componenti + Tailwind CSS 4 per le utility                          |
-| Icone            | `@mdi/js` (path SVG inline) e `lucide-svelte`                                      |
-| Caroselli        | `embla-carousel-svelte`                                                            |
-| Editor di codice | CodeMirror 6 — **solo** nel chunk di `/settings/config-editor`, pagina di sviluppo |
-| Font             | Montserrat (importato da Google Fonts in `src/app.css`)                            |
+| Livello          | Tecnologia                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework        | SvelteKit 2 con **Svelte 5** (runes: `$state`, `$derived`, `$props`)                                                                                                                              |
+| Build            | Vite 7                                                                                                                                                                                            |
+| Adapter          | `@sveltejs/adapter-static` — output SPA in `build/`                                                                                                                                               |
+| Linguaggio       | TypeScript (`strict`)                                                                                                                                                                             |
+| Stili            | CSS scoped nei componenti + Tailwind CSS 4 per le utility                                                                                                                                         |
+| Icone            | `@mdi/js` (path SVG inline) e `lucide-svelte`                                                                                                                                                     |
+| Caroselli        | `embla-carousel-svelte`                                                                                                                                                                           |
+| Editor di codice | CodeMirror 6 — **solo** nel chunk di `/settings/config-editor`, pagina di sviluppo                                                                                                                |
+| Font             | Montserrat variabile, servito dalla macchina (`@fontsource-variable/montserrat`, importato in `+layout.svelte`; variabile CSS `--font-sans`) — niente Google Fonts, la LAN può non avere internet |
 
 ## Modalità di rendering
 

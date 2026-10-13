@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { mdiAlertCircleOutline } from '@mdi/js';
@@ -96,7 +97,7 @@
 		tabindex="-1"
 		use:portal
 		onclick={cancel}
-		onkeydown={(e) => e.key === 'Escape' && cancel()}
+		use:modal={{ onClose: cancel }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
@@ -119,7 +120,7 @@
 			<div class="modal-actions">
 				<button class="modal-cancel" disabled={starting} onclick={cancel}>Cancel</button>
 				<button class="modal-confirm" disabled={starting} onclick={proceed}>
-					{starting ? 'Starting...' : isLastStep ? 'Start print' : 'Proceed'}
+					{starting ? 'Starting…' : isLastStep ? 'Start print' : 'Proceed'}
 				</button>
 			</div>
 		</div>

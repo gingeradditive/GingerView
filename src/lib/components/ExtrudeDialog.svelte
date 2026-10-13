@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
+	import { modal } from '$lib/actions/modal';
 	import { portal } from '$lib/actions/portal';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
@@ -11,6 +13,7 @@
 		extrudeSpeed,
 		extrudeTemperature,
 		fillZoneTemperatures,
+		materialPresets,
 		speedOptions,
 		startExtrudeSequence,
 		temperatureOptions,
@@ -27,10 +30,10 @@
 
 	const phaseLabels: Record<ExtrudePhase, string> = {
 		idle: 'HEAT & EXTRUDE',
-		homing: 'Homing...',
-		moving: 'Moving...',
-		heating: 'Heating...',
-		extruding: 'Extruding...'
+		homing: 'Homing…',
+		moving: 'Moving…',
+		heating: 'Heating…',
+		extruding: 'Extruding…'
 	};
 
 	// One field per heated zone of the nozzle, so both are filled when the popup
@@ -39,6 +42,20 @@
 	let showCustomTemperatureModal = $state(false);
 	let customTemperatureZones = $state<string[]>([]);
 	let customTemperatureInputs = $state<TemperatureZones>({});
+
+	// Cosa fa ogni opzione, con i numeri veri: "Mid" da solo non dice quanto.
+	const formatCm3 = (mm3: number): string => `${mm3 / 1000} cm³`;
+	const amountHint = (option: (typeof amountOptions)[number]): string =>
+		`Extrude ${formatCm3(option.volumeMm3)} of material`;
+	const speedHint = (option: (typeof speedOptions)[number]): string =>
+		`Extrude at ${option.speedMm3PerS} mm³/s`;
+	const temperatureHint = (value: Temperature): string => {
+		if (value === 'custom') return 'Set your own temperature for each nozzle zone';
+		const preset = materialPresets[value];
+		return preset.firstZoneC === preset.otherZonesC
+			? `All nozzle zones at ${preset.firstZoneC} °C`
+			: `Zone 1 at ${preset.firstZoneC} °C, other zones at ${preset.otherZonesC} °C`;
+	};
 
 	const selectAmount = (value: Amount): void => {
 		extrudeAmount.set(value);
@@ -170,6 +187,7 @@
 					<button
 						class="option-btn"
 						class:selected={$extrudeAmount === option.value}
+						use:tooltip={amountHint(option)}
 						onclick={() => selectAmount(option.value)}
 					>
 						{option.label}
@@ -187,6 +205,7 @@
 					<button
 						class="option-btn"
 						class:selected={$extrudeSpeed === option.value}
+						use:tooltip={speedHint(option)}
 						onclick={() => selectSpeed(option.value)}
 					>
 						{option.label}
@@ -204,6 +223,7 @@
 					<button
 						class="option-btn"
 						class:selected={$extrudeTemperature === option.value}
+						use:tooltip={temperatureHint(option.value)}
 						onclick={() => selectTemperature(option.value)}
 					>
 						{option.label}
@@ -212,7 +232,12 @@
 			</div>
 		</div>
 
-		<button class="extrude-btn" disabled={$extrudePhase !== 'idle'} onclick={handleExtrude}>
+		<button
+			class="extrude-btn"
+			disabled={$extrudePhase !== 'idle'}
+			use:tooltip={'Home if needed, move to the purge position, heat the nozzle and extrude; heaters switch off at the end'}
+			onclick={handleExtrude}
+		>
 			{phaseLabels[$extrudePhase]}
 		</button>
 	</div>
@@ -234,7 +259,7 @@
 		tabindex="-1"
 		use:portal
 		onclick={cancelCustomTemperature}
-		onkeydown={(e) => e.key === 'Escape' && cancelCustomTemperature()}
+		use:modal={{ onClose: cancelCustomTemperature }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>

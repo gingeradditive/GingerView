@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import {
 		Download,
@@ -613,6 +614,7 @@
 								class="icon-btn"
 								onclick={() => downloadConfigFile(selectedPath)}
 								aria-label="Download file"
+								use:tooltip
 								title="Download"
 							>
 								<Download size={16} />

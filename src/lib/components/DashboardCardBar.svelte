@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import type { Snippet } from 'svelte';
 
 	/**
@@ -21,6 +22,7 @@
 		role,
 		ariaLabel,
 		ariaChecked,
+		hint,
 		onclick,
 		children
 	}: {
@@ -30,6 +32,8 @@
 		role?: 'switch';
 		ariaLabel?: string;
 		ariaChecked?: boolean;
+		/** Etichetta (hover / pressione lunga) che spiega cosa fa la barra. */
+		hint?: string;
 		onclick: () => void;
 		/** Lato destro: lo stato (ON/OFF) o l'azione (SET ›). */
 		children: Snippet;
@@ -44,6 +48,7 @@
 	aria-label={ariaLabel}
 	aria-checked={ariaChecked}
 	{disabled}
+	use:tooltip={hint}
 	{onclick}
 >
 	<span class="card-bar-label">{label}</span>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { CheckCircle2, XCircle, Ban, Trash2, RefreshCw } from 'lucide-svelte';
 	import type { MoonrakerHistoryJob, HistoryStatus } from '$lib/types/history';
@@ -198,7 +199,7 @@
 
 		<div class="list-area">
 			{#if loading}
-				<div class="status-message">Loading...</div>
+				<div class="status-message">Loading…</div>
 			{:else if error}
 				<div class="status-message error">{error}</div>
 			{:else if filteredJobs.length === 0}
@@ -252,6 +253,7 @@
 									type="button"
 									class="delete-button"
 									aria-label="Delete entry"
+									use:tooltip
 									onclick={(e) => requestDelete(job, e)}
 								>
 									<Trash2 size={16} />
@@ -265,7 +267,7 @@
 					<div bind:this={sentinel} class="sentinel"></div>
 				{/if}
 				{#if loadingMore}
-					<div class="status-message">Loading more...</div>
+					<div class="status-message">Loading more…</div>
 				{/if}
 			{/if}
 		</div>

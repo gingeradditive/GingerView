@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
 	import { LoaderCircle, CircleCheck, CircleX } from 'lucide-svelte';
 	import type { UpdateLogState } from '$lib/types/update';
 
@@ -41,7 +42,13 @@
 </script>
 
 {#if isOpen}
-	<div class="modal-overlay" role="dialog" aria-modal="true" aria-label={title}>
+	<div
+		class="modal-overlay"
+		role="dialog"
+		aria-modal="true"
+		aria-label={title}
+		use:modal={{ onClose: logState === 'running' ? undefined : onClose }}
+	>
 		<div class="modal-content">
 			<header class="log-header">
 				<h3>{title}</h3>

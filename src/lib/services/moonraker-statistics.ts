@@ -50,14 +50,7 @@ export async function resetHistoryTotals(): Promise<void> {
 }
 
 /** Job totals durations arrive in seconds, same convention as history entries. */
-export function formatDuration(seconds?: number): string {
-	if (seconds == null || seconds <= 0) return '--';
-	const h = Math.floor(seconds / 3600);
-	const m = Math.floor((seconds % 3600) / 60);
-	if (h > 0) return `${h}h ${m.toString().padStart(2, '0')} min`;
-	if (m > 0) return `${m} min`;
-	return `${Math.round(seconds)} s`;
-}
+export { formatDuration } from '$lib/utils/format';
 
 /** `total_memory`/`system_memory` figures from Moonraker are in KiB. */
 export function formatKib(kib?: number): string {

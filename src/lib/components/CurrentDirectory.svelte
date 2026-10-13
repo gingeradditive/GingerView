@@ -1,21 +1,27 @@
 <script lang="ts">
 	import { mdiChevronLeft } from '@mdi/js';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { currentDirPath, navigateUp } from '$lib/stores/directoryStore';
 
-	$: segments = $currentDirPath ? $currentDirPath.split('/') : [];
-	$: currentFolder = segments.length > 0 ? segments[segments.length - 1] : 'Home';
-	$: hasParent = segments.length > 0;
+	const segments = $derived($currentDirPath ? $currentDirPath.split('/') : []);
+	const currentFolder = $derived(segments.length > 0 ? segments[segments.length - 1] : 'Home');
+	const hasParent = $derived(segments.length > 0);
 </script>
 
 <div class="current-directory">
 	<div class="breadcrumb">
 		{#if hasParent}
-			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<span class="back-button clickable" role="button" tabindex="0" on:click={navigateUp}>
-				<svg viewBox="0 0 24 24" width="40" height="40">
+			<button
+				type="button"
+				class="back-button clickable"
+				aria-label="Parent folder"
+				use:tooltip
+				onclick={navigateUp}
+			>
+				<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
 					<path d={mdiChevronLeft} fill="currentColor" />
 				</svg>
-			</span>
+			</button>
 		{/if}
 		<span class="current-folder">{currentFolder}</span>
 	</div>
@@ -33,7 +39,7 @@
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: var(--color-black);
-		font-family: 'Montserrat', sans-serif;
+		font-family: var(--font-sans);
 	}
 
 	.back-button {
@@ -42,6 +48,7 @@
 		background: transparent;
 		border: none;
 		transition: opacity 0.2s;
+		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;

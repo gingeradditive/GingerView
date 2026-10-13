@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
 	// Single-input dialog, the counterpart of ConfirmModal for the actions that need
 	// a name rather than a yes/no (new file, new folder, rename). Validation is the
 	// caller's, passed back through `validate` so the message appears under the
@@ -59,7 +60,7 @@
 		aria-label={title}
 		tabindex="-1"
 		onclick={onCancel}
-		onkeydown={(e) => e.key === 'Escape' && onCancel()}
+		use:modal={{ onClose: onCancel }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>

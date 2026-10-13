@@ -5,6 +5,7 @@
 		getFilamentType
 	} from '$lib/services/moonraker-files';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
+	import { resolve } from '$app/paths';
 
 	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
@@ -14,7 +15,10 @@
 	const dataSource = 'dashboard-job-info';
 	const dataQuery = 'print_stats';
 
-	let jobName = $state('--');
+	// Nessuna stampa in corso: invece di "--" un invito, come le altre card a riposo
+	// ("Waiting for your material!", "Let me extrude!"), con il link ai file.
+	let hasJob = $state(false);
+	let jobName = $state('');
 	let jobMaterial = $state('');
 	let thumbnailUrl = $state<string>('/error-thumbnail.png');
 
@@ -49,11 +53,12 @@
 		const isIdle = printState !== 'printing' && printState !== 'paused';
 
 		const filename = isIdle ? '' : (status.print_stats?.filename ?? '');
+		hasJob = filename !== '';
 		if (filename) {
 			jobName = stripExtension(filename);
 			loadFileMetadata(filename);
 		} else {
-			jobName = '--';
+			jobName = '';
 			jobMaterial = '';
 			thumbnailUrl = '/error-thumbnail.png';
 			lastFilename = null;
@@ -69,11 +74,19 @@
 </script>
 
 <section class="job-info-card" aria-label="Print Job Info">
-	<span class="job-name" title={jobName}>{jobName}</span>
+	{#if hasJob}
+		<span class="job-name" title={jobName}>{jobName}</span>
+	{:else}
+		<span class="job-name idle">What are we building today?</span>
+	{/if}
 	<div class="job-preview">
-		<img src={thumbnailUrl} alt="Print preview" />
+		<img src={thumbnailUrl} alt={hasJob ? 'Print preview' : ''} />
 	</div>
-	<span class="job-material">{jobMaterial}</span>
+	{#if hasJob}
+		<span class="job-material">{jobMaterial}</span>
+	{:else}
+		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's go</a>
+	{/if}
 </section>
 
 <style>
@@ -109,6 +122,11 @@
 		overflow: hidden;
 	}
 
+	/* L'invito è una frase, non un nome file: un filo più piccolo, per stare su due righe. */
+	.job-name.idle {
+		font-size: min(1.6rem, 10cqw);
+	}
+
 	.job-preview {
 		flex: 1;
 		min-height: 0;
@@ -121,6 +139,18 @@
 		max-width: 100%;
 		max-height: 100%;
 		object-fit: contain;
+	}
+
+	.job-cta {
+		flex-shrink: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--color-red);
+		text-decoration: none;
+	}
+
+	.job-cta:hover {
+		text-decoration: underline;
 	}
 
 	.job-material {

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import { tooltip } from '$lib/actions/tooltip';
 	import type { PrintItem } from '$lib/types/print';
 	import { onMount } from 'svelte';
 	import { activeContextMenuId } from '$lib/stores/contextMenuStore';
@@ -200,7 +202,9 @@
 <div class="print-card" role="button" tabindex="0" oncontextmenu={handleContextMenu}>
 	<button
 		class="menu-button"
+		class:on-file={!item.isDirectory}
 		aria-label="Actions for {item.name}"
+		use:tooltip={'More actions'}
 		aria-haspopup="menu"
 		aria-expanded={showContextMenu}
 		onclick={handleMenuButton}
@@ -247,12 +251,13 @@
 {/if}
 
 {#if showRenameModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
 		onclick={(e) => e.target === e.currentTarget && (showRenameModal = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showRenameModal = false)}
+		use:modal={{ onClose: () => (showRenameModal = false) }}
 	>
 		<div class="modal-content">
 			<h3>Rename</h3>
@@ -272,17 +277,18 @@
 {/if}
 
 {#if showMoveModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="modal-overlay"
 		role="dialog"
 		tabindex="0"
 		onclick={(e) => e.target === e.currentTarget && (showMoveModal = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showMoveModal = false)}
+		use:modal={{ onClose: () => (showMoveModal = false) }}
 	>
 		<div class="modal-content">
 			<h3>Move "{item.name}"</h3>
 			{#if loadingDirs}
-				<p class="modal-loading">Loading folders...</p>
+				<p class="modal-loading">Loading folders…</p>
 			{:else}
 				<div class="folder-list">
 					<button class="folder-option" onclick={() => confirmMove('')}>
@@ -337,8 +343,8 @@
 		top: 6px;
 		right: 6px;
 		z-index: 1;
-		width: 40px;
-		height: 40px;
+		width: 44px;
+		height: 44px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -349,6 +355,12 @@
 		box-shadow: var(--shadow-float);
 		color: var(--color-text-muted);
 		cursor: pointer;
+	}
+
+	/* Sulle card dei file il ⋮ sta sopra l'anteprima bianca: l'ombra tonda lì stona.
+	   Resta sulle cartelle. */
+	.menu-button.on-file {
+		box-shadow: none;
 	}
 
 	.menu-button svg {

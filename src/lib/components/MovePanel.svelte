@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { modal } from '$lib/actions/modal';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { mdiArrowDown, mdiArrowLeft, mdiArrowRight, mdiArrowUp, mdiClose } from '@mdi/js';
 	import { portal } from '$lib/actions/portal';
 	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
@@ -42,7 +43,7 @@
 		print_stats?: { state?: string };
 	};
 
-	// Live position, for the readout and the "Moving..." chip.
+	// Live position, for the readout and the "Moving…" chip.
 	let actual = $state<AxisPosition | null>(null);
 	// Where the machine is going: the G-code position, or past it while jog
 	// commands are still on their way. Repeated taps add up from here, without
@@ -186,11 +187,8 @@
 	};
 
 	const handleKeydown = (event: KeyboardEvent): void => {
+		// Escape, focus e blocco dello scroll li gestisce `use:modal`.
 		if (showHomingWarning) return;
-		if (event.key === 'Escape') {
-			onClose();
-			return;
-		}
 		if (event.target instanceof HTMLInputElement) return;
 		const keyJog = keyJogs[event.key];
 		if (!keyJog) return;
@@ -198,16 +196,12 @@
 		jog(...keyJog);
 	};
 
-	onMount(() => {
-		// Without this the page under the overlay would still scroll on PageUp/Down.
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
-		return () => {
-			document.body.style.overflow = previousOverflow;
-		};
-	});
-
 	const axisLabel = (axis: Axis): string => axis.toUpperCase();
+
+	// Il passo scelto, per le etichette dei pulsanti di jog ("Move X by +1 cm").
+	const stepLabel = $derived(
+		jogStepOptions.find((option) => option.mm === $jogStepMm)?.label ?? `${$jogStepMm} mm`
+	);
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -220,6 +214,7 @@
 	aria-label="Move toolhead"
 	tabindex="-1"
 	use:portal
+	use:modal={{ onClose }}
 	onclick={onClose}
 >
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
@@ -236,11 +231,11 @@
 				<span class="readout-unit">mm</span>
 			</div>
 			{#if moving}
-				<span class="moving-chip">Moving...</span>
+				<span class="moving-chip">Moving…</span>
 			{/if}
 			<div class="header-actions">
 				<EmergencyStopButton />
-				<button class="close-btn" aria-label="Close" onclick={onClose}>
+				<button class="close-btn" aria-label="Close" use:tooltip onclick={onClose}>
 					<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiClose} /></svg>
 				</button>
 			</div>
@@ -253,10 +248,11 @@
 				<span>Home the printer to move it.</span>
 				<button
 					class="banner-btn"
+					use:tooltip={'Home all axes (G28): find the zero of X, Y and Z'}
 					disabled={$homingBusy}
 					onclick={() => (showHomingWarning = true)}
 				>
-					{$homingBusy ? 'Homing...' : 'Home'}
+					{$homingBusy ? 'Homing…' : 'Home'}
 				</button>
 			</div>
 		{/if}
@@ -271,6 +267,7 @@
 							class:selected={$jogStepMm === option.mm}
 							role="radio"
 							aria-checked={$jogStepMm === option.mm}
+							use:tooltip={`Each jog button moves ${option.label}`}
 							onclick={() => jogStepMm.set(option.mm)}
 						>
 							{option.label}
@@ -283,6 +280,7 @@
 						<button
 							class="jog-btn pad-up"
 							aria-label="Y plus"
+							use:tooltip={`Move Y by +${stepLabel}`}
 							disabled={!canJog('y', 1)}
 							onclick={() => jog('y', 1)}
 						>
@@ -292,6 +290,7 @@
 						<button
 							class="jog-btn pad-left"
 							aria-label="X minus"
+							use:tooltip={`Move X by −${stepLabel}`}
 							disabled={!canJog('x', -1)}
 							onclick={() => jog('x', -1)}
 						>
@@ -304,6 +303,7 @@
 						<button
 							class="jog-btn pad-right"
 							aria-label="X plus"
+							use:tooltip={`Move X by +${stepLabel}`}
 							disabled={!canJog('x', 1)}
 							onclick={() => jog('x', 1)}
 						>
@@ -313,6 +313,7 @@
 						<button
 							class="jog-btn pad-down"
 							aria-label="Y minus"
+							use:tooltip={`Move Y by −${stepLabel}`}
 							disabled={!canJog('y', -1)}
 							onclick={() => jog('y', -1)}
 						>
@@ -325,6 +326,7 @@
 						<button
 							class="jog-btn"
 							aria-label="Z plus"
+							use:tooltip={`Move Z by +${stepLabel}`}
 							disabled={!canJog('z', 1)}
 							onclick={() => jog('z', 1)}
 						>
@@ -334,6 +336,7 @@
 						<button
 							class="jog-btn"
 							aria-label="Z minus"
+							use:tooltip={`Move Z by −${stepLabel}`}
 							disabled={!canJog('z', -1)}
 							onclick={() => jog('z', -1)}
 						>
@@ -371,10 +374,27 @@
 					{/each}
 				</div>
 				<div class="fill-row">
-					<button class="fill-btn" disabled={!canMove} onclick={fillCenter}>Center XY</button>
-					<button class="fill-btn" disabled={!canMove} onclick={fillCurrent}>Current</button>
+					<button
+						class="fill-btn"
+						disabled={!canMove}
+						use:tooltip={'Fill X and Y with the centre of the bed'}
+						onclick={fillCenter}>Center XY</button
+					>
+					<button
+						class="fill-btn"
+						disabled={!canMove}
+						use:tooltip={'Fill the fields with the current position'}
+						onclick={fillCurrent}>Current</button
+					>
 				</div>
-				<button class="goto-btn" disabled={!canMove || !fieldsValid} onclick={goTo}> GO TO </button>
+				<button
+					class="goto-btn"
+					disabled={!canMove || !fieldsValid}
+					use:tooltip={'Move to the X, Y and Z typed above (Z first when going up, last when going down)'}
+					onclick={goTo}
+				>
+					GO TO
+				</button>
 			</section>
 		</div>
 	</div>

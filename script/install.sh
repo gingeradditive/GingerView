@@ -188,6 +188,14 @@ ${listen}
         add_header Cache-Control "no-store, no-cache, must-revalidate";
     }
 
+    # The web app manifest ("Add to Home Screen"). Debian's mime.types has no
+    # entry for .webmanifest, so without this it went out as octet-stream.
+    # default_type only applies to types nginx does not know: mime.types is
+    # left untouched.
+    location = /manifest.webmanifest {
+        default_type application/manifest+json;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
     }

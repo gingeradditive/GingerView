@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { formatClock as formatDuration } from '$lib/utils/format';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
@@ -43,14 +45,6 @@
 
 	let estimatedTotalSeconds: number | null = null;
 	let lastFilename: string | null = null;
-
-	const formatDuration = (seconds: number): string => {
-		if (!seconds || seconds < 0) return '--:--:--';
-		const h = Math.floor(seconds / 3600);
-		const m = Math.floor((seconds % 3600) / 60);
-		const s = Math.floor(seconds % 60);
-		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
 
 	const loadEstimatedTime = async (filename: string): Promise<void> => {
 		if (!filename || filename === lastFilename) return;
@@ -204,7 +198,7 @@
 		</div>
 	</div>
 	<div class="controls-row">
-		<button class="round-btn" aria-label="Fan" onclick={openFanPopup}>
+		<button class="round-btn" aria-label="Fan" use:tooltip onclick={openFanPopup}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
@@ -219,7 +213,8 @@
 		</button>
 		<button
 			class="square-btn"
-			aria-label="Stop"
+			aria-label="Stop print"
+			use:tooltip
 			onclick={handleCancel}
 			disabled={!hasActiveJob || cancelBusy}
 		>
@@ -229,7 +224,8 @@
 		</button>
 		<button
 			class="square-btn"
-			aria-label={isPaused ? 'Resume' : 'Pause'}
+			aria-label={isPaused ? 'Resume print' : 'Pause print'}
+			use:tooltip
 			onclick={handlePauseResume}
 			disabled={!hasActiveJob || pauseBusy}
 		>
@@ -244,7 +240,7 @@
 				</svg>
 			{/if}
 		</button>
-		<button class="round-btn" aria-label="Light" onclick={openLightPopup}>
+		<button class="round-btn" aria-label="Light" use:tooltip onclick={openLightPopup}>
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />

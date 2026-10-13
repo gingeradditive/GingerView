@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { modal } from '$lib/actions/modal';
+	import ModalCloseButton from '$lib/components/ModalCloseButton.svelte';
 	import type { PrintItem } from '$lib/types/print';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
 	import PrintStartWizard from '$lib/components/PrintStartWizard.svelte';
@@ -30,12 +32,12 @@
 
 	function formatNozzleDiameter(value?: number): string {
 		if (value == null || value <= 0) return '--';
-		return `${value}mm`;
+		return `${value} mm`;
 	}
 
 	function formatFilamentWeight(value?: number): string {
 		if (value == null || value <= 0) return '--';
-		return `${Math.round(value)}g`;
+		return `${Math.round(value)} g`;
 	}
 
 	function getDurationValue(file: PrintItem): string {
@@ -45,9 +47,18 @@
 
 {#if isOpen && item}
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div class="details-overlay" role="dialog" aria-modal="true" tabindex="-1" onclick={onClose}>
+	<div
+		class="details-overlay"
+		role="dialog"
+		aria-modal="true"
+		aria-label={item.name}
+		tabindex="-1"
+		use:modal={{ onClose }}
+		onclick={onClose}
+	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="details-modal" role="document" onclick={(e) => e.stopPropagation()}>
+			<ModalCloseButton {onClose} />
 			<div class="mobile-header">
 				<h2>{item.name}</h2>
 				<p class="subtitle">{item.filamentName || item.material || '--'}</p>
@@ -133,6 +144,7 @@
 	}
 
 	.details-modal {
+		position: relative;
 		width: min(800px, 100%);
 		min-height: 400px;
 		background: var(--color-white);
@@ -198,6 +210,9 @@
 		overflow: hidden;
 		width: 100%;
 		min-width: 0;
+		/* Lascia libera la X in alto a destra (ModalCloseButton). */
+		padding-right: 48px;
+		box-sizing: border-box;
 	}
 
 	h2 {
@@ -288,7 +303,7 @@
 
 		.mobile-header {
 			display: block;
-			padding: 24px 24px 0;
+			padding: 24px 64px 0 24px;
 		}
 
 		.desktop-header {

@@ -116,13 +116,13 @@
 				title="Refresh statistics"
 			>
 				<RefreshCw class={refreshing ? 'spin' : ''} size={16} />
-				{refreshing ? 'Refreshing...' : 'Refresh'}
+				{refreshing ? 'Refreshing…' : 'Refresh'}
 			</button>
 		</header>
 
 		<div class="statistics-body">
 			{#if loading}
-				<div class="status-message">Loading statistics...</div>
+				<div class="status-message">Loading statistics…</div>
 			{:else}
 				<!-- Print job totals -->
 				<div class="section">

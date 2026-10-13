@@ -133,7 +133,7 @@ I cinque colori Ginger, che sono la palette di prodotto:
 | Nero        | `--color-black`      | `#111111` | Testo principale                          |
 
 Sono ripetuti in [tailwind.config.cjs](../tailwind.config.cjs) per le classi Tailwind, ma la
-sorgente per i CSS dei componenti è `app.css`. Font: **Montserrat**.
+sorgente per i CSS dei componenti è `app.css`. Font: **Montserrat**, sempre via `var(--font-sans)`.
 
 `--color-red-dark` (`#B82520`) è il rosso premuto: hover e stato attivo delle azioni primarie.
 
