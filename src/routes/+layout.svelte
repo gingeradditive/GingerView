@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { resolve } from '$app/paths';
-	import favicon from '$lib/assets/favicon.svg';
 	import { configService } from '$lib/services/config';
 	import { mdiTabletDashboard, mdiFileMultiple, mdiCog, mdiCursorMove } from '@mdi/js';
 	import ToastContainer from '$lib/components/ToastContainer.svelte';
@@ -37,10 +36,6 @@
 		}
 	});
 </script>
-
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
 
 <ToastContainer />
 <MoonrakerNotifier />

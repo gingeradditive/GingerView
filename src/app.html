@@ -2,9 +2,24 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- viewport-fit=cover: the dock uses env(safe-area-inset-*) to stay above the iPhone home indicator. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<title>GingerView</title>
-		<meta name="description" content="GingerView - A modern web application" />
+		<meta name="description" content="Control and monitor your Ginger G2 printer" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta name="theme-color" content="#ffffff" />
+		<meta name="color-scheme" content="light" />
+
+		<link rel="icon" href="/favicon.ico" sizes="any" />
+		<link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/manifest.webmanifest" />
+
+		<!-- Added to the iOS home screen it opens full screen, like an app. -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-title" content="G2" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
