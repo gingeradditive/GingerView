@@ -300,7 +300,7 @@
 <style>
 	.history-page {
 		height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		box-sizing: border-box;
 	}
 

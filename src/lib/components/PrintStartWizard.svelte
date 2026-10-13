@@ -150,7 +150,7 @@
 		/* Fixed per-viewport size across every step, so Cancel/Proceed never move —
 		   lets an experienced user click through the wizard without re-aiming. */
 		width: min(380px, calc(100vw - 48px));
-		height: min(460px, calc(100vh - 48px));
+		height: min(460px, calc(100dvh - 48px));
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;

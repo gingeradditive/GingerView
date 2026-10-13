@@ -100,6 +100,10 @@
 	const systemNetworkEntries = $derived(Object.entries(systemInfo?.system_info?.network ?? {}));
 </script>
 
+<svelte:head>
+	<title>Statistics · G2</title>
+</svelte:head>
+
 <section class="statistics-page">
 	<div class="statistics-card">
 		<header class="statistics-header">
@@ -342,7 +346,7 @@
 <style>
 	.statistics-page {
 		height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		box-sizing: border-box;
 	}
 	.statistics-card {
@@ -509,7 +513,7 @@
 
 	@media (max-width: 767.98px) {
 		.statistics-page {
-			padding: 16px 16px 112px;
+			padding: 16px 16px calc(112px + var(--safe-bottom));
 		}
 		.tile-grid {
 			grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));

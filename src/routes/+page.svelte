@@ -3,6 +3,10 @@
 	import DashboardControlPanel from '$lib/components/DashboardControlPanel.svelte';
 </script>
 
+<svelte:head>
+	<title>Dashboard · G2</title>
+</svelte:head>
+
 <div class="dashboard-container">
 	<div class="carousel-area">
 		<DashboardCarousel />

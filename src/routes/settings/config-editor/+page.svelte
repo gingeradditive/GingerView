@@ -457,6 +457,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Config editor · G2</title>
+</svelte:head>
+
 <section class="config-page">
 	<div class="config-card">
 		<header class="config-header">
@@ -691,7 +695,7 @@
 <style>
 	.config-page {
 		height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		box-sizing: border-box;
 	}
 	.config-card {
@@ -974,7 +978,7 @@
 	}
 	@media (max-width: 767.98px) {
 		.config-page {
-			padding: 16px 16px 112px;
+			padding: 16px 16px calc(112px + var(--safe-bottom));
 		}
 		.config-card {
 			padding: 16px;

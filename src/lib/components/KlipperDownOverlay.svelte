@@ -103,7 +103,7 @@
 		right: 0;
 		/* Clears the dock (88px tall from the bottom edge) instead of relying on
 		   z-index alone: the navigation and the emergency stop stay clickable. */
-		bottom: 96px;
+		bottom: calc(96px + var(--safe-bottom));
 		z-index: 2900;
 		display: flex;
 		align-items: center;

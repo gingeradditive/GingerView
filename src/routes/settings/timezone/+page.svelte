@@ -83,6 +83,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Timezone · G2</title>
+</svelte:head>
+
 <section class="timezone-page">
 	<div class="timezone-card">
 		<header class="timezone-header">
@@ -149,7 +153,7 @@
 	*/
 	.timezone-page {
 		min-height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		display: flex;
 		flex-direction: column;
 		box-sizing: border-box;

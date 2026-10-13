@@ -2,6 +2,10 @@
 	import MovementCarousel from '$lib/components/MovementCarousel.svelte';
 </script>
 
+<svelte:head>
+	<title>Movement · G2</title>
+</svelte:head>
+
 <div class="movement-page">
 	<MovementCarousel />
 </div>

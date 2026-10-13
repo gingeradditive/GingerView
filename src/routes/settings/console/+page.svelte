@@ -225,6 +225,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Console · G2</title>
+</svelte:head>
+
 <section class="console-page">
 	<div class="console-card">
 		<header class="console-header">
@@ -290,7 +294,7 @@
 <style>
 	.console-page {
 		height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		box-sizing: border-box;
 	}
 	.console-card {

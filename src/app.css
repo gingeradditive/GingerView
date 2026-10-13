@@ -97,14 +97,18 @@
 	--shadow-panel: 0px 4px 3px 0px rgba(var(--rgb-black), 0.25);
 	--shadow-float: 0 2px 12px rgba(var(--rgb-black), 0.1);
 
+	/* Sotto l'indicatore home dell'iPhone (0 altrove; serve `viewport-fit=cover` in app.html).
+	   Il dock ci sta sopra, e ogni spazio lasciato in fondo per il dock lo include. */
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+
 	/* Lo spazio che le pagine lasciano in fondo per il dock, che è fixed e non ne occupa. */
-	--dock-clearance: 112px;
+	--dock-clearance: calc(112px + var(--safe-bottom));
 }
 
 @media (max-width: 767.98px) {
 	:root {
 		/* Il dock da telefono è più basso (vedi +layout.svelte). */
-		--dock-clearance: 96px;
+		--dock-clearance: calc(96px + var(--safe-bottom));
 	}
 }
 

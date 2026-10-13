@@ -30,6 +30,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Logs · G2</title>
+</svelte:head>
+
 <section class="logs-page">
 	<div class="logs-card">
 		<header class="logs-header">
@@ -78,7 +82,7 @@
 <style>
 	.logs-page {
 		height: 100%;
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		box-sizing: border-box;
 	}
 	.logs-card {

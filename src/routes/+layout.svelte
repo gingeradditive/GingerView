@@ -72,8 +72,8 @@
 	<a
 		href={resolve('/filelist')}
 		class:active={$page.url.pathname.startsWith('/filelist')}
-		aria-label="FileList"
-		title="FileList"
+		aria-label="Files"
+		title="Files"
 	>
 		<svg viewBox="0 0 24 24" aria-hidden="true">
 			<path d={mdiFileMultiple} />
@@ -106,7 +106,7 @@
 		--dock-sep: 19.2px;
 		position: fixed;
 		left: 50%;
-		bottom: 16px;
+		bottom: calc(16px + var(--safe-bottom));
 		transform: translateX(-50%);
 		display: flex;
 		gap: 0.64rem;
@@ -200,7 +200,7 @@
 		.dock {
 			--dock-btn: clamp(40px, 11.5vw, 52.8px);
 			--dock-sep: 8px;
-			bottom: 12px;
+			bottom: calc(12px + var(--safe-bottom));
 			gap: 4px;
 			padding: 8px;
 			border-radius: 16px;

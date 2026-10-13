@@ -28,7 +28,7 @@
 
 <style>
 	.subpage {
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		display: flex;
 		flex-direction: column;
 		gap: 20px;

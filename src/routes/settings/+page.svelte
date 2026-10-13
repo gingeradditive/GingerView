@@ -130,6 +130,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>Settings · G2</title>
+</svelte:head>
+
 <section class="settings-page">
 	<div class="settings-list">
 		<header class="settings-header">
@@ -185,7 +189,7 @@
 
 <style>
 	.settings-page {
-		padding: 24px 24px 112px;
+		padding: 24px 24px calc(112px + var(--safe-bottom));
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
@@ -326,7 +330,7 @@
 	}
 	@media (max-width: 767.98px) {
 		.settings-page {
-			padding: 16px 16px 112px;
+			padding: 16px 16px calc(112px + var(--safe-bottom));
 		}
 	}
 </style>
