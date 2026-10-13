@@ -261,6 +261,9 @@ export const startHoming = async (): Promise<void> => {
 
 export const startExtrudeSequence = async (): Promise<void> => {
 	if (get(extrudePhase) !== 'idle') return;
+	// Zones whose target this sequence set, so they are switched off again at
+	// the end — whether the extrusion finished or something failed on the way.
+	let heatedZones: string[] = [];
 	try {
 		// Leave `idle` before the first await, or a second tap during the homed
 		// check would start a second sequence.
@@ -294,6 +297,7 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		const waitTemperatures = zones.map(
 			(zone) => `TEMPERATURE_WAIT SENSOR=${zone} MINIMUM=${preset.zones[zone]}`
 		);
+		heatedZones = zones;
 		await runGcode([...setTemperatures, ...waitTemperatures].join('\n'));
 
 		extrudePhase.set('extruding');
@@ -309,7 +313,10 @@ export const startExtrudeSequence = async (): Promise<void> => {
 				`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=${zones[0]} DISTANCE=${preset.rotationVolume}`,
 				'M83',
 				`G1 E${amountValue.volumeMm3} F${speedValue.speedMm3PerS * 60}`,
-				'M82'
+				'M82',
+				// The script returns once the move is queued, not done: wait for it,
+				// or the heaters would be switched off mid-extrusion.
+				'M400'
 			].join('\n')
 		);
 	} catch (error) {
@@ -319,6 +326,16 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		console.error(`Extrude sequence failed during ${failedPhase}`, error);
 		toastActions.error('klipper', phaseFailureTitles[failedPhase], describeError(error));
 	} finally {
+		if (heatedZones.length > 0) {
+			try {
+				await runGcode(
+					heatedZones.map((zone) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=0`).join('\n')
+				);
+			} catch (error) {
+				console.error('Could not switch off the nozzle heaters', error);
+				toastActions.error('klipper', 'Heaters still on', describeError(error));
+			}
+		}
 		extrudePhase.set('idle');
 	}
 };
