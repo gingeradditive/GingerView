@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { Download, FileText, Trash2, LoaderCircle } from 'lucide-svelte';
 	import { LOG_FILES, downloadLog, clearLogs, type LogFile } from '$lib/services/moonraker-logs';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
 	let downloadingId = $state<string | null>(null);
 	let isClearing = $state(false);
+	let showClearConfirm = $state(false);
 
 	async function handleDownload(file: LogFile) {
 		if (downloadingId) return;
@@ -17,8 +19,15 @@
 		}
 	}
 
-	async function handleClear() {
+	// I log sono quello che serve all'assistenza dopo un problema: svuotarli
+	// per sbaglio li perde, quindi si chiede prima.
+	function handleClear() {
 		if (isClearing) return;
+		showClearConfirm = true;
+	}
+
+	async function confirmClear() {
+		showClearConfirm = false;
 		isClearing = true;
 		try {
 			await clearLogs();
@@ -78,6 +87,16 @@
 		</div>
 	</div>
 </section>
+
+<ConfirmModal
+	isOpen={showClearConfirm}
+	title="Clear all logs?"
+	message="The Klipper, Moonraker and Crowsnest logs will be emptied."
+	details="Download them first if you need them for support."
+	confirmLabel="Clear logs"
+	onConfirm={confirmClear}
+	onCancel={() => (showClearConfirm = false)}
+/>
 
 <style>
 	.logs-page {

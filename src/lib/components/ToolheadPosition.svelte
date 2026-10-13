@@ -3,7 +3,7 @@
 	import { Tween } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { mdiCursorMove } from '@mdi/js';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import MovePanel from '$lib/components/MovePanel.svelte';
 	import { homingBusy, startHoming } from '$lib/stores/movementStore';
@@ -170,18 +170,8 @@
 	const handleMotorOff = async (): Promise<void> => {
 		if (!motorsEnabled || motorsBusy) return;
 		motorsBusy = true;
-		try {
-			const response = await fetch(`${getMoonrakerApiUrl()}/printer/gcode/script?script=M84`, {
-				method: 'POST'
-			});
-			if (response.ok) {
-				motorsEnabled = false;
-			}
-		} catch {
-			// ignore; next poll will reflect the actual motor state
-		} finally {
-			motorsBusy = false;
-		}
+		if (await sendGcode('M84', 'Could not switch the motors off')) motorsEnabled = false;
+		motorsBusy = false;
 	};
 
 	let showMovePanel = $state(false);

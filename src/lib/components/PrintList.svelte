@@ -20,6 +20,7 @@
 	import { currentDirPath, navigateToDir } from '$lib/stores/directoryStore';
 	import { fetchUsbStatus } from '$lib/services/usb-api';
 	import { gcodesChanged } from '$lib/services/moonraker-notifier';
+	import { toastActions } from '$lib/stores/toastStore';
 
 	const PAGE_SIZE = 20;
 	// G2-Service non ha un canale push: la presenza della chiavetta si chiede a intervalli.
@@ -187,20 +188,31 @@
 		}
 	}
 
+	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+
+	// Un G-code di pellet pesa decine di MB: senza un segno il pulsante sembra
+	// non aver fatto niente, e un secondo tocco ripartiva con un altro upload.
+	let uploading = $state(false);
+	let creatingFolder = $state(false);
+
 	async function handleFileSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const file = target.files?.[0];
 
 		if (file && file.name.toLowerCase().endsWith('.gcode')) {
+			uploading = true;
 			try {
 				await uploadFile(file, dirPath ? `gcodes/${dirPath}` : 'gcodes');
-				await loadDirectory();
+				toastActions.info('moonraker', 'Upload complete', file.name);
+				await loadDirectory({ quiet: true });
 			} catch (e) {
 				console.error('Upload failed:', e);
-				alert('Upload failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+				toastActions.error('moonraker', 'Upload failed', describeError(e));
+			} finally {
+				uploading = false;
 			}
 		} else if (file) {
-			alert('Please select a .gcode file');
+			toastActions.warning('moonraker', 'Not a G-code file', 'Choose a .gcode file to upload.');
 		}
 		// Reset input so re-selecting same file triggers change
 		if (target) target.value = '';
@@ -221,8 +233,9 @@
 	}
 
 	async function handleCreateFolder() {
-		if (!folderName.trim()) return;
+		if (!folderName.trim() || creatingFolder) return;
 
+		creatingFolder = true;
 		try {
 			const fullPath = dirPath ? `gcodes/${dirPath}/${folderName}` : `gcodes/${folderName}`;
 			await createDirectory(fullPath);
@@ -231,7 +244,9 @@
 			await loadDirectory();
 		} catch (e) {
 			console.error('Create folder failed:', e);
-			alert('Create folder failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			toastActions.error('moonraker', 'Create folder failed', describeError(e));
+		} finally {
+			creatingFolder = false;
 		}
 	}
 
@@ -343,7 +358,14 @@
 					><path d={mdiFolderPlus} fill="#D72E28" /></svg
 				>
 			</button>
-			<button class="action-button" onclick={() => fileInput.click()} aria-label="Upload file">
+			<button
+				class="action-button"
+				class:busy={uploading}
+				onclick={() => fileInput.click()}
+				aria-label={uploading ? 'Uploading…' : 'Upload file'}
+				aria-busy={uploading}
+				disabled={uploading}
+			>
 				<svg viewBox="0 0 24 24" width="40" height="40"><path d={mdiUpload} fill="#D72E28" /></svg>
 			</button>
 		</div>
@@ -375,7 +397,9 @@
 					use:focusOnMount
 				/>
 				<div class="modal-actions">
-					<button class="modal-confirm" onclick={handleCreateFolder}>Create</button>
+					<button class="modal-confirm" onclick={handleCreateFolder} disabled={creatingFolder}
+						>{creatingFolder ? 'Creating…' : 'Create'}</button
+					>
 					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}
 						>Cancel</button
 					>
@@ -466,6 +490,32 @@
 		background: transparent;
 		border: none;
 		cursor: pointer;
+	}
+
+	.action-button:disabled {
+		cursor: default;
+	}
+
+	/* Upload in corso: la freccia pulsa finché Moonraker non ha il file. */
+	.action-button.busy svg {
+		animation: upload-pulse 1s ease-in-out infinite;
+	}
+
+	@keyframes upload-pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.35;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.action-button.busy svg {
+			animation: none;
+			opacity: 0.5;
+		}
 	}
 
 	/* Colonne quante ne stanno, card che si allargano a riempire la riga e ultima riga allineata

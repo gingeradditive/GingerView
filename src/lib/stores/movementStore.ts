@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { getMoonrakerApiUrl } from '$lib/services/config';
+import { describeError, readError, runGcode } from '$lib/services/moonraker-gcode';
 import { loadNozzleZones } from '$lib/services/moonraker-zones';
 import { toastActions } from '$lib/stores/toastStore';
 
@@ -133,47 +134,6 @@ export const jogStepMm = writable(10);
 /** Commands of the Move panel still waiting for Kalico's answer. */
 export const moveRequestsInFlight = writable(0);
 
-/**
- * Moonraker reports a refused command as `{"error": {"message": ...}}` with a
- * non-2xx status. That message is the one worth showing ("Must home axis first",
- * "Printer is shutdown"), so prefer it over the bare HTTP status text.
- */
-const readError = async (response: Response, fallback: string): Promise<string> => {
-	try {
-		const payload = await response.json();
-		const message = payload?.error?.message;
-		if (typeof message === 'string' && message.trim()) return message;
-	} catch {
-		// Body was not JSON — fall through to the generic message.
-	}
-	return `${fallback}: ${response.status} ${response.statusText}`;
-};
-
-/**
- * Throws when the printer refuses the command.
- *
- * Kalico answers `printer/gcode/script` only once every command in the script
- * has run, so a non-2xx here means the machine did **not** do what was asked.
- * The caller has to know: an extrude sequence that ignored a failed `G28` went
- * on to move, heat and extrude from an unknown position.
- */
-const runGcode = async (script: string): Promise<void> => {
-	let response: Response;
-	try {
-		response = await fetch(
-			`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(script)}`,
-			{
-				method: 'POST'
-			}
-		);
-	} catch {
-		throw new Error('Moonraker is unreachable');
-	}
-	if (!response.ok) {
-		throw new Error(await readError(response, 'Command refused'));
-	}
-};
-
 // Purge/maintenance position: nozzle centered on X, front of the bed, well clear of it on Z.
 const getPurgePositionX = async (): Promise<number> => {
 	const response = await fetch(
@@ -230,9 +190,6 @@ const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 		rotationVolume: preset.rotationVolume
 	};
 };
-
-const describeError = (error: unknown): string =>
-	error instanceof Error ? error.message : 'Unknown error';
 
 // Which step gave up, as the title of the toast. `idle` cannot fail — the
 // sequence is not running — but the map has to cover the whole type.

@@ -1,9 +1,8 @@
 <script lang="ts">
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
-	import { toastActions } from '$lib/stores/toastStore';
+	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
 	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
@@ -92,23 +91,13 @@
 
 	const setFeeder = async (enable: boolean): Promise<void> => {
 		feederBusy = true;
-		try {
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${enable ? 'FEEDER_ENABLE' : 'FEEDER_DISABLE'}`,
-				{ method: 'POST' }
-			);
-			if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-			// The status pin follows within a second; show the new state now.
-			feederOn = enable;
-		} catch (error) {
-			toastActions.error(
-				'klipper',
-				enable ? 'Could not switch the feeder on' : 'Could not switch the feeder off',
-				error instanceof Error ? error.message : 'Moonraker is unreachable'
-			);
-		} finally {
-			feederBusy = false;
-		}
+		const ok = await sendGcode(
+			enable ? 'FEEDER_ENABLE' : 'FEEDER_DISABLE',
+			enable ? 'Could not switch the feeder on' : 'Could not switch the feeder off'
+		);
+		// The status pin follows within a second; show the new state now.
+		if (ok) feederOn = enable;
+		feederBusy = false;
 	};
 
 	const toggleFeeder = (): void => {

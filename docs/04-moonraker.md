@@ -102,13 +102,19 @@ macchina. La formula corretta è ancora da definire (Q1 in [Q&A.md](Q&A.md)).
 POST /printer/gcode/script?script=<comando urlencoded>
 ```
 
+I pannelli in uso passano da [moonraker-gcode.ts](../src/lib/services/moonraker-gcode.ts): `runGcode()`
+lancia un errore con il messaggio di Kalico se il comando è rifiutato, `sendGcode(script, titolo)`
+lo trasforma in un toast di errore e restituisce `true`/`false`. Nessun pulsante ignora più un
+rifiuto in silenzio. **Stop** (`CANCEL_PRINT`) chiede sempre conferma; l'emergency stop del dock no,
+apposta. Lo slider ventola/luce invia il comando al rilascio, non a ogni movimento.
+
 Comandi effettivamente inviati dall'interfaccia:
 
 | Comando                                                                                                                                 | Origine                                                                                                                                                                                           |
 | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PAUSE`                                                                                                                                 | `DashboardPrintJobPanel`                                                                                                                                                                          |
-| `RESUME`                                                                                                                                | `DashboardPrintJobPanel`                                                                                                                                                                          |
-| `CANCEL_PRINT`                                                                                                                          | `DashboardPrintJobPanel`                                                                                                                                                                          |
+| `PAUSE`                                                                                                                                 | `DashboardControlPanel`                                                                                                                                                                           |
+| `RESUME`                                                                                                                                | `DashboardControlPanel`                                                                                                                                                                           |
+| `CANCEL_PRINT`                                                                                                                          | `DashboardControlPanel`, dopo conferma                                                                                                                                                            |
 | `M106 S<0-255>`                                                                                                                         | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola                                                                                                                         |
 | `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                              | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                                                                     |
 | `G28`                                                                                                                                   | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()`, saltato se `homed_axes` contiene già xyz |

@@ -22,6 +22,16 @@
 		leftIconSize?: number;
 		rightIconSize?: number;
 	} = $props();
+
+	// Mentre il dito scorre si aggiorna solo il numero a schermo; il comando parte
+	// al rilascio (`change`). Prima partiva un G-code per ogni pixel di trascinamento.
+	let draft = $state<number | null>(null);
+	const shown = $derived(Math.round(draft ?? value));
+
+	const commit = (next: number): void => {
+		draft = null;
+		onChange(next);
+	};
 </script>
 
 {#if isOpen}
@@ -45,8 +55,9 @@
 					class="popup-slider-icon clickable"
 					role="button"
 					tabindex="0"
-					onclick={() => onChange(0)}
-					onkeydown={(e) => e.key === 'Enter' && onChange(0)}
+					aria-label="Set to 0%"
+					onclick={() => commit(0)}
+					onkeydown={(e) => e.key === 'Enter' && commit(0)}
 				>
 					<path d={leftIconPath} fill="#d72e28" />
 				</svg>
@@ -55,8 +66,10 @@
 					min="0"
 					max="100"
 					step="1"
-					value={Math.round(value)}
-					oninput={(e) => onChange(Number((e.currentTarget as HTMLInputElement).value))}
+					aria-label={ariaLabel}
+					value={shown}
+					oninput={(e) => (draft = Number((e.currentTarget as HTMLInputElement).value))}
+					onchange={(e) => commit(Number((e.currentTarget as HTMLInputElement).value))}
 				/>
 				<svg
 					viewBox="0 0 24 24"
@@ -65,13 +78,14 @@
 					class="popup-slider-icon clickable"
 					role="button"
 					tabindex="0"
-					onclick={() => onChange(100)}
-					onkeydown={(e) => e.key === 'Enter' && onChange(100)}
+					aria-label="Set to 100%"
+					onclick={() => commit(100)}
+					onkeydown={(e) => e.key === 'Enter' && commit(100)}
 				>
 					<path d={rightIconPath} fill="#d72e28" />
 				</svg>
 			</div>
-			<div class="popup-percent">{Math.round(value)}%</div>
+			<div class="popup-percent">{shown}%</div>
 		</div>
 	</div>
 {/if}

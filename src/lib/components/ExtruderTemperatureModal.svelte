@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { Minus, Plus } from 'lucide-svelte';
 	import { portal } from '$lib/actions/portal';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
-	import { toastActions } from '$lib/stores/toastStore';
+	import { sendGcode } from '$lib/services/moonraker-gcode';
 
 	/**
 	 * Temperature libere delle zone dell'ugello — solo in modalità avanzata, la
@@ -69,34 +68,12 @@
 
 	const send = async (values: (number | null)[]): Promise<void> => {
 		busy = true;
-		try {
-			const script = zones
-				.map((zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`)
-				.join('\n');
-			const response = await fetch(
-				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(script)}`,
-				{ method: 'POST' }
-			);
-			if (!response.ok) {
-				let message = `${response.status} ${response.statusText}`;
-				try {
-					const payload = await response.json();
-					if (typeof payload?.error?.message === 'string') message = payload.error.message;
-				} catch {
-					// Corpo non JSON: resta lo stato HTTP.
-				}
-				throw new Error(message);
-			}
-			onClose();
-		} catch (error) {
-			toastActions.error(
-				'klipper',
-				'Could not set the temperatures',
-				error instanceof Error ? error.message : 'Moonraker is unreachable'
-			);
-		} finally {
-			busy = false;
-		}
+		const script = zones
+			.map((zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`)
+			.join('\n');
+		const ok = await sendGcode(script, 'Could not set the temperatures');
+		busy = false;
+		if (ok) onClose();
 	};
 
 	const apply = (): void => {

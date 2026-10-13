@@ -9,6 +9,8 @@
 		fetchDirectoriesRecursive
 	} from '$lib/services/moonraker-files';
 	import { mdiDotsVertical, mdiFolder } from '@mdi/js';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import { toastActions } from '$lib/stores/toastStore';
 
 	let { item }: { item: PrintItem } = $props();
 
@@ -69,8 +71,18 @@
 		openContextMenu(rect.left, rect.bottom);
 	}
 
-	async function handleDelete() {
+	// Moonraker non ha un cestino: eliminare è definitivo, quindi si chiede prima.
+	let showDeleteConfirm = $state(false);
+
+	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+
+	function handleDelete() {
 		closeContextMenu();
+		showDeleteConfirm = true;
+	}
+
+	async function confirmDelete() {
+		showDeleteConfirm = false;
 		try {
 			// Moonraker delete API needs the full path including gcodes/
 			const fullPath = `gcodes/${item.filepath}`;
@@ -85,7 +97,7 @@
 			}
 		} catch (e) {
 			console.error('Delete failed:', e);
-			alert('Delete failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			toastActions.error('moonraker', 'Delete failed', describeError(e));
 		}
 	}
 
@@ -119,7 +131,7 @@
 			}
 		} catch (e) {
 			console.error('Move failed:', e);
-			alert('Move failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			toastActions.error('moonraker', 'Move failed', describeError(e));
 		}
 	}
 
@@ -160,7 +172,7 @@
 			}
 		} catch (e) {
 			console.error('Rename failed:', e);
-			alert('Rename failed: ' + (e instanceof Error ? e.message : 'Unknown error'));
+			toastActions.error('moonraker', 'Rename failed', describeError(e));
 		}
 	}
 
@@ -293,6 +305,18 @@
 		</div>
 	</div>
 {/if}
+
+<ConfirmModal
+	isOpen={showDeleteConfirm}
+	title={item.isDirectory ? 'Delete this folder?' : 'Delete this file?'}
+	message={item.isDirectory
+		? `"${item.name}" and everything inside it will be deleted from the printer.`
+		: `"${item.name}" will be deleted from the printer.`}
+	details="This can't be undone."
+	confirmLabel="Delete"
+	onConfirm={confirmDelete}
+	onCancel={() => (showDeleteConfirm = false)}
+/>
 
 <style>
 	/* La larghezza la decide la griglia di PrintList; tutto il resto è in proporzione alla card

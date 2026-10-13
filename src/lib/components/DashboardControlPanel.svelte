@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
-	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
 	type ControlStatus = {
 		print_stats?: { state?: string; filename?: string; print_duration?: number };
@@ -49,17 +50,6 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		const s = Math.floor(seconds % 60);
 		return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-	};
-
-	const sendGcode = async (gcode: string): Promise<void> => {
-		try {
-			await fetch(
-				`${getMoonrakerApiUrl()}/printer/gcode/script?script=${encodeURIComponent(gcode)}`,
-				{ method: 'POST' }
-			);
-		} catch {
-			// ignore
-		}
 	};
 
 	const loadEstimatedTime = async (filename: string): Promise<void> => {
@@ -124,17 +114,37 @@
 		}
 	};
 
-	const handlePauseResume = (): void => {
-		if (isPaused) {
-			sendGcode('RESUME');
-		} else if (isPrinting) {
-			sendGcode('PAUSE');
+	// Pausa e stop restano disabilitati finché Kalico non risponde: un secondo
+	// tocco durante l'attesa manderebbe PAUSE e poi RESUME.
+	let pauseBusy = $state(false);
+	let cancelBusy = $state(false);
+	let showCancelConfirm = $state(false);
+
+	const handlePauseResume = async (): Promise<void> => {
+		if (pauseBusy || !hasActiveJob) return;
+		pauseBusy = true;
+		try {
+			if (isPaused) await sendGcode('RESUME', 'Could not resume the print');
+			else await sendGcode('PAUSE', 'Could not pause the print');
+		} finally {
+			pauseBusy = false;
 		}
 	};
 
+	// Stop annulla una stampa che può durare ore, e il telefono è in mano accanto
+	// alla macchina: chiede sempre conferma (l'emergency stop del dock no, apposta).
 	const handleCancel = (): void => {
-		if (isPrinting || isPaused) {
-			sendGcode('CANCEL_PRINT');
+		if (cancelBusy || !hasActiveJob) return;
+		showCancelConfirm = true;
+	};
+
+	const confirmCancel = async (): Promise<void> => {
+		showCancelConfirm = false;
+		cancelBusy = true;
+		try {
+			await sendGcode('CANCEL_PRINT', 'Could not cancel the print');
+		} finally {
+			cancelBusy = false;
 		}
 	};
 
@@ -153,7 +163,7 @@
 
 		fanSpeed = speed01;
 		fanOn = speed01 > 0;
-		sendGcode(`M106 S${speed255}`);
+		sendGcode(`M106 S${speed255}`, 'Could not set the fan');
 	};
 
 	const openLightPopup = (): void => {
@@ -170,7 +180,7 @@
 
 		lightValue = white01;
 		lightOn = white01 > 0;
-		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`);
+		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`, 'Could not set the light');
 	};
 
 	onMount(() => {
@@ -207,7 +217,12 @@
 				</foreignObject>
 			</svg>
 		</button>
-		<button class="square-btn" aria-label="Stop" onclick={handleCancel} disabled={!hasActiveJob}>
+		<button
+			class="square-btn"
+			aria-label="Stop"
+			onclick={handleCancel}
+			disabled={!hasActiveJob || cancelBusy}
+		>
 			<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
 				<rect x="2" y="2" width="14" height="14" rx="2" fill="#d72e28" />
 			</svg>
@@ -216,7 +231,7 @@
 			class="square-btn"
 			aria-label={isPaused ? 'Resume' : 'Pause'}
 			onclick={handlePauseResume}
-			disabled={!hasActiveJob}
+			disabled={!hasActiveJob || pauseBusy}
 		>
 			{#if isPaused}
 				<svg width="26" height="26" viewBox="0 0 18 18" fill="none">
@@ -244,6 +259,15 @@
 		</button>
 	</div>
 </section>
+
+<ConfirmModal
+	isOpen={showCancelConfirm}
+	title="Stop the print?"
+	message="The current print will be cancelled. This can't be undone."
+	confirmLabel="Stop print"
+	onConfirm={confirmCancel}
+	onCancel={() => (showCancelConfirm = false)}
+/>
 
 <QuickActionSliderPopup
 	isOpen={fanPopupOpen}
