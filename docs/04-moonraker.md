@@ -298,6 +298,17 @@ sorgente è stato cancellato dopo la stampa.
 totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 [Statistics](#statistics), e viceversa il **Reset** di quella pagina non svuota questo elenco.
 
+### Preferenze di GingerView
+
+| Endpoint                                                     | Usato da      | Scopo                                |
+| ------------------------------------------------------------ | ------------- | ------------------------------------ |
+| `GET /server/database/item?namespace=gingerview&key=ui_mode` | `uiModeStore` | Legge la modalità Simple/Advanced    |
+| `POST /server/database/item`                                 | `uiModeStore` | La salva (`{namespace, key, value}`) |
+
+Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
+della macchina, quindi kiosk e telefono vedono la stessa. Chiave mancante (404) = default
+`advanced`. Per ora la modalità viene solo salvata: nessuna pagina la legge ancora.
+
 ### Statistics
 
 Tutto in [moonraker-statistics.ts](../src/lib/services/moonraker-statistics.ts), usato da

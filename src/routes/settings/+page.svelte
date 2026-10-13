@@ -14,7 +14,9 @@
 	} from 'lucide-svelte';
 	import { resolve } from '$app/paths';
 	import type { RouteId } from '$app/types';
+	import { onMount } from 'svelte';
 	import { CONFIG_EDITOR_ENABLED } from '$lib/services/moonraker-config';
+	import { ensureUiMode, setUiMode, uiMode, type UiMode } from '$lib/stores/uiModeStore';
 
 	type BaseItem = {
 		id: string;
@@ -109,6 +111,20 @@
 
 	const items = allItems.filter((item) => item.enabled !== false);
 
+	const uiModes: { value: UiMode; label: string }[] = [
+		{ value: 'simple', label: 'Simple' },
+		{ value: 'advanced', label: 'Advanced' }
+	];
+
+	function selectUiMode(mode: UiMode) {
+		if (mode === $uiMode) return;
+		setUiMode(mode, $uiMode);
+	}
+
+	onMount(() => {
+		ensureUiMode();
+	});
+
 	function handleExternalClick(item: ExternalItem) {
 		window.open(item.href, '_blank');
 	}
@@ -118,6 +134,26 @@
 	<div class="settings-list">
 		<header class="settings-header">
 			<h1>Settings</h1>
+			<div
+				class="mode-switch"
+				class:advanced={$uiMode === 'advanced'}
+				role="radiogroup"
+				aria-label="Interface mode"
+			>
+				<span class="mode-thumb" aria-hidden="true"></span>
+				{#each uiModes as mode (mode.value)}
+					<button
+						type="button"
+						class="mode-option"
+						class:selected={$uiMode === mode.value}
+						role="radio"
+						aria-checked={$uiMode === mode.value}
+						onclick={() => selectUiMode(mode.value)}
+					>
+						{mode.label}
+					</button>
+				{/each}
+			</div>
 		</header>
 
 		{#each items as item, index (item.id)}
@@ -165,6 +201,71 @@
 		font-size: 2rem;
 		font-weight: 700;
 		color: var(--color-text-secondary);
+	}
+	/* Due metà uguali e un cursore rosso che scorre sotto quella scelta: si legge
+	   come un interruttore, ma dice per esteso entrambe le posizioni. */
+	.mode-switch {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		flex-shrink: 0;
+		padding: 4px;
+		background: var(--color-background);
+		border: 1px solid var(--color-border-light);
+		border-radius: 999px;
+	}
+	.mode-thumb {
+		position: absolute;
+		top: 4px;
+		bottom: 4px;
+		left: 4px;
+		width: calc(50% - 4px);
+		border-radius: 999px;
+		background: var(--color-red);
+		box-shadow: var(--shadow-panel);
+		transition: transform 0.2s ease;
+	}
+	.mode-switch.advanced .mode-thumb {
+		transform: translateX(100%);
+	}
+	.mode-option {
+		position: relative;
+		z-index: 1;
+		min-width: 104px;
+		height: 44px;
+		padding: 0 16px;
+		background: transparent;
+		border: none;
+		border-radius: 999px;
+		font-size: 0.95rem;
+		font-weight: 700;
+		letter-spacing: 0.03em;
+		color: var(--color-text-soft);
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+	.mode-option.selected {
+		color: var(--color-white);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.mode-thumb,
+		.mode-option {
+			transition: none;
+		}
+	}
+	/* Sul telefono accanto al titolo non ci sta senza rimpicciolirlo: va sotto, a
+	   tutta larghezza, e resta grande da premere. */
+	@media (max-width: 480px) {
+		.settings-header {
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+		.mode-switch {
+			width: 100%;
+		}
+		.mode-option {
+			min-width: 0;
+		}
 	}
 	.settings-list {
 		background: var(--color-white);
