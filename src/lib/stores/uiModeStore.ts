@@ -6,17 +6,16 @@ import { toastActions } from '$lib/stores/toastStore';
  * Modalità dell'interfaccia: semplice o avanzata, scelta da `/settings`.
  *
  * Vive nel database di Moonraker (namespace `gingerview`), non nel browser: è
- * un'impostazione della **macchina**, quindi il kiosk e il telefono di chi la
- * usa devono vedere la stessa. Per ora nessuna pagina la legge — il selettore
- * esiste e la scelta viene salvata, il comportamento arriverà dopo.
+ * un'impostazione della **macchina**, quindi telefoni, tablet e computer che si
+ * collegano devono vedere la stessa. Per ora nessuna pagina la legge — il
+ * selettore esiste e la scelta viene salvata, il comportamento arriverà dopo.
  *
- * Il default è `advanced`, cioè l'interfaccia com'è oggi: quando la modalità
- * semplice inizierà a nascondere qualcosa, chi non l'ha mai scelta non deve
- * ritrovarsi senza pezzi.
+ * L'interfaccia com'è oggi **è** la modalità semplice, ed è il default: la
+ * modalità avanzata aggiungerà funzioni, non ne toglierà a chi non la sceglie.
  */
 export type UiMode = 'simple' | 'advanced';
 
-const DEFAULT_MODE: UiMode = 'advanced';
+const DEFAULT_MODE: UiMode = 'simple';
 const DB_NAMESPACE = 'gingerview';
 const DB_KEY = 'ui_mode';
 

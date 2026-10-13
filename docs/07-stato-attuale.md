@@ -205,7 +205,7 @@ letto a runtime. I task sono `CFG-1`, `CFG-3` e `MAT-1`.
 
 `/settings/config-editor` è nato come pagina **di sviluppo**: serve a mettere a punto la
 configurazione della macchina dal browser, non è qualcosa che un operatore debba raggiungere.
-Modificare `printer.cfg` dal touchscreen di una macchina consegnata è un modo per romperla.
+Modificare `printer.cfg` dal telefono su una macchina consegnata è un modo per romperla.
 
 Per questo non è cablata: la costante `CONFIG_EDITOR_ENABLED` in
 [moonraker-config.ts](../src/lib/services/moonraker-config.ts) è l'unico interruttore. A `false`

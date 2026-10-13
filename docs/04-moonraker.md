@@ -306,8 +306,9 @@ totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 | `POST /server/database/item`                                 | `uiModeStore` | La salva (`{namespace, key, value}`) |
 
 Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
-della macchina, quindi kiosk e telefono vedono la stessa. Chiave mancante (404) = default
-`advanced`. Per ora la modalità viene solo salvata: nessuna pagina la legge ancora.
+della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa. Chiave
+mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
+Per ora la modalità viene solo salvata: nessuna pagina la legge ancora.
 
 ### Statistics
 

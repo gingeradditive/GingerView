@@ -60,10 +60,9 @@ export function describeTimezoneError(error: unknown, fallback: string): string 
 /**
  * `GET /service/timezone`.
  *
- * Il dato deve arrivare dall'host e non dal browser: sul kiosk della stampante
- * il browser gira sulla macchina e i due coinciderebbero, ma da telefono
- * `Intl` riporta il fuso del telefono — che è il motivo per cui questa pagina
- * esiste. Se `timedatectl` non risponde arriva un errore
+ * Il dato deve arrivare dall'host e non dal browser: la macchina non ha uno
+ * schermo, si usa sempre da telefono, tablet o computer, e lì `Intl` riporta
+ * il fuso del dispositivo — che è il motivo per cui questa pagina esiste. Se `timedatectl` non risponde arriva un errore
  * (`SYSTEM_TOOL_UNAVAILABLE`) e non un ripiego: un "UTC" inventato sarebbe un
  * dato su cui l'utente potrebbe agire.
  */

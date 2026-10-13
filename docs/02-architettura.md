@@ -170,7 +170,7 @@ riferimento) e `world-map.ts` (le terre emerse di Natural Earth come unico path 
   (`setPrinterTimezone()`). Ogni orario dell'interfaccia — ETA della dashboard, timestamp della
   console, ora di reset del rate limit GitHub nella pagina Update — si formatta in questo fuso
   con `formatZoneTime()`. Finché il valore è `null` (non ancora arrivato, o G2-Service muto) si
-  ripiega sul fuso del browser, che sul kiosk della macchina coincide. Le **durate** (tempo
+  ripiega sul fuso del browser, che spesso coincide con quello della macchina. Le **durate** (tempo
   trascorso, tempo residuo) non passano di qui: sono differenze, e un fuso non le cambia.
 - **`movementStore.ts`** — stato della pagina Movement che deve **sopravvivere alla pagina**:
   parametri di estrusione selezionati (`extrudeAmount`, `extrudeSpeed`, `extrudeTemperature`,

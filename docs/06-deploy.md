@@ -328,7 +328,7 @@ Le chiamate sono due:
 | Upload                      | `POST /api/files/local`, multipart `file`, `path`, `print` | `path` è la sottocartella di `gcodes`, creata se manca                                       |
 
 **"Upload and Print" avvia la stampa subito** (`print=true`), senza la checklist di
-`PrintStartWizard` sul touch: nessuna conferma a bordo macchina. GingerView mostra la stampa
+`PrintStartWizard` in GingerView: nessuna conferma prima che la macchina parta. GingerView mostra la stampa
 in corso dalla sottoscrizione a `print_stats` e aggiorna la lista file da sola
 (`notify_filelist_changed`). Copiare la checklist nello slicer è `PRN-3` in
 [TODO.md](TODO.md).

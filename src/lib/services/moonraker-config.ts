@@ -27,8 +27,8 @@ export const CONFIG_ROOT = 'config';
 
 /**
  * Master switch for the whole feature. Set to `false` to hide the Settings entry
- * and turn the page into a notice: editing `printer.cfg` from the touchscreen is
- * a development convenience, not something an operator should reach.
+ * and turn the page into a notice: editing `printer.cfg` from the browser is a
+ * development convenience, not something an operator should reach.
  */
 export const CONFIG_EDITOR_ENABLED = true;
 

@@ -13,7 +13,7 @@ import { fetchTimezoneStatus } from '$lib/services/timezone';
  * come si leggono gli orari, invece di essere una pagina senza effetti.
  *
  * `null` significa "non ancora noto": chi formatta ripiega sul fuso del browser,
- * che sul kiosk della macchina è lo stesso e altrove è comunque meglio di niente.
+ * che spesso è lo stesso della macchina e comunque è meglio di niente.
  * Le durate (tempo trascorso, tempo residuo) non passano di qui: sono differenze,
  * e un fuso non le cambia.
  */
