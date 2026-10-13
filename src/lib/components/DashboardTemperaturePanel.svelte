@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SlidersHorizontal } from 'lucide-svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
+	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
+	import { uiMode } from '$lib/stores/uiModeStore';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -32,6 +35,8 @@
 	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
+	// Solo in modalità avanzata: in semplice il pannello è di sola lettura.
+	let showTemperatureModal = $state(false);
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
@@ -122,6 +127,16 @@
 </script>
 
 <section class="temperature-panel" aria-label="Klipper temperature panel">
+	{#if $uiMode === 'advanced' && zoneKeys.length > 0}
+		<button
+			type="button"
+			class="settings-btn"
+			aria-label="Set extruder temperatures"
+			onclick={() => (showTemperatureModal = true)}
+		>
+			<SlidersHorizontal size={20} />
+		</button>
+	{/if}
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
@@ -150,6 +165,14 @@
 	</div>
 </section>
 
+<ExtruderTemperatureModal
+	isOpen={showTemperatureModal}
+	zones={zoneKeys}
+	temperatures={extruderTemperatures}
+	targets={extruderTargets}
+	onClose={() => (showTemperatureModal = false)}
+/>
+
 <style>
 	.temperature-panel {
 		background: var(--color-white);
@@ -163,6 +186,7 @@
 		height: 100%;
 		box-sizing: border-box;
 		box-shadow: var(--shadow-panel);
+		position: relative;
 		/*
 		 * Everything inside is drawn in `--u`, a pixel that shrinks when the panel
 		 * is too short (13" laptops, small screens) and is a plain pixel otherwise.
@@ -171,6 +195,30 @@
 		 */
 		container-type: size;
 		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
+	}
+
+	/* Fuori dalla scala `--u`: è un bersaglio da dito, resta 44px anche quando il
+	   disegno si rimpicciolisce. */
+	.settings-btn {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		z-index: 1;
+		width: 44px;
+		height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-white);
+		border: 1px solid var(--color-border-light);
+		border-radius: 12px;
+		box-shadow: var(--shadow-panel);
+		color: var(--color-red);
+		cursor: pointer;
+	}
+
+	.settings-btn:hover {
+		background: var(--color-background);
 	}
 
 	.extruders {

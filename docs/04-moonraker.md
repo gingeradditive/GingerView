@@ -308,7 +308,12 @@ totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
 della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa. Chiave
 mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
-Per ora la modalità viene solo salvata: nessuna pagina la legge ancora.
+Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
+
+- **Dashboard, card temperature**: pulsante in alto a destra che apre
+  `ExtruderTemperatureModal` — target libero per ogni zona dell'ugello (0–300 °C, vuoto o 0 =
+  spenta), applicato solo con **Apply** in un unico `SET_HEATER_TEMPERATURE` per zona; **All off**
+  le spegne tutte. In `simple` il pulsante non c'è e la card è di sola lettura.
 
 ### Statistics
 
