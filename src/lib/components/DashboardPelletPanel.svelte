@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 	import { toastActions } from '$lib/stores/toastStore';
@@ -161,21 +162,18 @@
 			{/if}
 		</div>
 	</div>
-	<button
-		class="feeder-btn"
-		class:on={feederOn}
+	<DashboardCardBar
+		label="FEEDER"
+		active={feederOn}
 		role="switch"
-		aria-checked={feederOn}
-		aria-label="Feeder"
+		ariaLabel="Feeder"
+		ariaChecked={feederOn}
 		disabled={feederBusy}
 		onclick={toggleFeeder}
 	>
-		<span class="feeder-name">FEEDER</span>
-		<span class="feeder-state">
-			<span class="feeder-dot"></span>
-			{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
-		</span>
-	</button>
+		<span class="status-dot" class:on={feederOn}></span>
+		{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
+	</DashboardCardBar>
 </section>
 
 <ConfirmModal
@@ -204,78 +202,20 @@
 		container-type: inline-size;
 	}
 
-	/* Barra di stato in fondo alla card, stessa grammatica dei pulsanti di opzione
-	   di Heat & Extrude: spento è una superficie neutra, acceso ha il bordo rosso.
-	   Sta sopra il riempimento rosso (z-index 1) e il testo (2), con fondo sempre
-	   pieno, così resta leggibile anche a serbatoio pieno. */
-	.feeder-btn {
-		position: absolute;
-		left: 12px;
-		right: 12px;
-		bottom: 12px;
-		z-index: 3;
-		height: 52px;
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 0 14px;
-		box-sizing: border-box;
-		background: var(--color-background);
-		border: 1px solid var(--color-border-light);
-		border-radius: 12px;
-		color: var(--color-text-soft);
-		cursor: pointer;
-		transition:
-			background 0.15s,
-			border-color 0.15s,
-			color 0.15s;
-	}
-
-	.feeder-btn:hover {
-		background: var(--color-surface-sunken);
-	}
-
-	.feeder-btn.on {
-		background: var(--color-white);
-		border: 2px solid var(--color-red);
-		padding: 0 13px;
-		color: var(--color-red);
-	}
-
-	.feeder-btn:disabled {
-		cursor: default;
-		opacity: 0.6;
-	}
-
-	.feeder-name {
-		font-size: 0.95rem;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-	}
-
-	.feeder-state {
-		margin-left: auto;
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 0.85rem;
-		font-weight: 600;
-		letter-spacing: 0.05em;
-	}
-
-	.feeder-dot {
+	/* Il pallino accanto a ON/OFF nella barra del feeder (DashboardCardBar). */
+	.status-dot {
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
 		background: var(--color-gray-light);
 	}
 
-	.feeder-btn.on .feeder-dot {
+	.status-dot.on {
 		background: var(--color-red);
-		animation: feeder-pulse 1.6s ease-in-out infinite;
+		animation: status-pulse 1.6s ease-in-out infinite;
 	}
 
-	@keyframes feeder-pulse {
+	@keyframes status-pulse {
 		0%,
 		100% {
 			box-shadow: 0 0 0 0 rgba(215, 46, 40, 0.45);
@@ -286,7 +226,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.feeder-btn.on .feeder-dot {
+		.status-dot.on {
 			animation: none;
 		}
 	}

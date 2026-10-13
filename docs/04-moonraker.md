@@ -310,10 +310,12 @@ della macchina, quindi ogni telefono, tablet o computer che si collega vede la s
 mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
 Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
 
-- **Dashboard, card temperature**: pulsante in alto a destra che apre
+- **Dashboard, card temperature**: barra **EXTRUDER · SET ›** in fondo alla card (lo stesso
+  `DashboardCardBar` della barra FEEDER nella card PELLET; bordo rosso se almeno una zona ha un
+  target) che apre
   `ExtruderTemperatureModal` — target libero per ogni zona dell'ugello (0–300 °C, vuoto o 0 =
   spenta), applicato solo con **Apply** in un unico `SET_HEATER_TEMPERATURE` per zona; **All off**
-  le spegne tutte. In `simple` il pulsante non c'è e la card è di sola lettura.
+  le spegne tutte. In `simple` la barra non c'è e la card è di sola lettura.
 
 ### Statistics
 

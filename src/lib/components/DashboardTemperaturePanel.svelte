@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SlidersHorizontal } from 'lucide-svelte';
+	import { ChevronRight } from 'lucide-svelte';
+	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
 	import { uiMode } from '$lib/stores/uiModeStore';
@@ -37,6 +38,9 @@
 	let bedTarget = $state<number | null>(null);
 	// Solo in modalità avanzata: in semplice il pannello è di sola lettura.
 	let showTemperatureModal = $state(false);
+	let showTemperatureBar = $derived($uiMode === 'advanced' && zoneKeys.length > 0);
+	// La barra è "accesa" come quella del feeder quando almeno una zona scalda.
+	let anyZoneHeating = $derived(extruderTargets.some((target) => target != null && target > 0));
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
@@ -126,17 +130,11 @@
 	);
 </script>
 
-<section class="temperature-panel" aria-label="Klipper temperature panel">
-	{#if $uiMode === 'advanced' && zoneKeys.length > 0}
-		<button
-			type="button"
-			class="settings-btn"
-			aria-label="Set extruder temperatures"
-			onclick={() => (showTemperatureModal = true)}
-		>
-			<SlidersHorizontal size={20} />
-		</button>
-	{/if}
+<section
+	class="temperature-panel"
+	class:with-bar={showTemperatureBar}
+	aria-label="Klipper temperature panel"
+>
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
@@ -163,6 +161,17 @@
 			</div>
 		</div>
 	</div>
+	{#if showTemperatureBar}
+		<DashboardCardBar
+			label="EXTRUDER"
+			active={anyZoneHeating}
+			ariaLabel="Set extruder temperatures"
+			onclick={() => (showTemperatureModal = true)}
+		>
+			SET
+			<ChevronRight size={18} />
+		</DashboardCardBar>
+	{/if}
 </section>
 
 <ExtruderTemperatureModal
@@ -197,28 +206,11 @@
 		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
 	}
 
-	/* Fuori dalla scala `--u`: è un bersaglio da dito, resta 44px anche quando il
-	   disegno si rimpicciolisce. */
-	.settings-btn {
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		z-index: 1;
-		width: 44px;
-		height: 44px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--color-white);
-		border: 1px solid var(--color-border-light);
-		border-radius: 12px;
-		box-shadow: var(--shadow-panel);
-		color: var(--color-red);
-		cursor: pointer;
-	}
-
-	.settings-btn:hover {
-		background: var(--color-background);
+	/* Spazio per la barra delle temperature (DashboardCardBar, 64px) più il
+	   respiro del padding: il disegno si ridimensiona nel resto, perché `--u`
+	   si misura sull'area dei contenuti. */
+	.temperature-panel.with-bar {
+		padding-bottom: 80px;
 	}
 
 	.extruders {
