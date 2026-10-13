@@ -135,18 +135,6 @@
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">
-	<button
-		class="feeder-toggle"
-		class:on={feederOn}
-		role="switch"
-		aria-checked={feederOn}
-		aria-label="Feeder"
-		disabled={feederBusy}
-		onclick={toggleFeeder}
-	>
-		<span class="feeder-toggle-label">FEEDER</span>
-		<span class="feeder-toggle-track"><span class="feeder-toggle-thumb"></span></span>
-	</button>
 	<div class="pellet-visual">
 		{#if !isIdle}
 			<div class="pellet-fill" style="height: {percentage}%">
@@ -173,6 +161,21 @@
 			{/if}
 		</div>
 	</div>
+	<button
+		class="feeder-btn"
+		class:on={feederOn}
+		role="switch"
+		aria-checked={feederOn}
+		aria-label="Feeder"
+		disabled={feederBusy}
+		onclick={toggleFeeder}
+	>
+		<span class="feeder-name">FEEDER</span>
+		<span class="feeder-state">
+			<span class="feeder-dot"></span>
+			{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
+		</span>
+	</button>
 </section>
 
 <ConfirmModal
@@ -201,66 +204,91 @@
 		container-type: inline-size;
 	}
 
-	/* Sopra il riempimento rosso (z-index 1) e il testo (2): fondo bianco sempre,
-	   così resta leggibile anche a serbatoio pieno. */
-	.feeder-toggle {
+	/* Barra di stato in fondo alla card, stessa grammatica dei pulsanti di opzione
+	   di Heat & Extrude: spento è una superficie neutra, acceso ha il bordo rosso.
+	   Sta sopra il riempimento rosso (z-index 1) e il testo (2), con fondo sempre
+	   pieno, così resta leggibile anche a serbatoio pieno. */
+	.feeder-btn {
 		position: absolute;
-		top: 12px;
+		left: 12px;
 		right: 12px;
+		bottom: 12px;
 		z-index: 3;
+		height: 52px;
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		padding: 6px 8px 6px 12px;
-		background: var(--color-white);
+		gap: 10px;
+		padding: 0 14px;
+		box-sizing: border-box;
+		background: var(--color-background);
 		border: 1px solid var(--color-border-light);
-		border-radius: 999px;
-		box-shadow: var(--shadow-panel);
+		border-radius: 12px;
+		color: var(--color-text-soft);
 		cursor: pointer;
+		transition:
+			background 0.15s,
+			border-color 0.15s,
+			color 0.15s;
 	}
 
-	.feeder-toggle:disabled {
+	.feeder-btn:hover {
+		background: var(--color-surface-sunken);
+	}
+
+	.feeder-btn.on {
+		background: var(--color-white);
+		border: 2px solid var(--color-red);
+		padding: 0 13px;
+		color: var(--color-red);
+	}
+
+	.feeder-btn:disabled {
 		cursor: default;
 		opacity: 0.6;
 	}
 
-	.feeder-toggle-label {
-		font-size: 0.8rem;
+	.feeder-name {
+		font-size: 0.95rem;
 		font-weight: 700;
 		letter-spacing: 0.05em;
-		color: var(--color-text-muted);
 	}
 
-	.feeder-toggle.on .feeder-toggle-label {
-		color: var(--color-red);
+	.feeder-state {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
 	}
 
-	.feeder-toggle-track {
-		position: relative;
-		width: 36px;
-		height: 20px;
-		border-radius: 999px;
-		background: var(--color-gray);
-		transition: background 0.15s;
-	}
-
-	.feeder-toggle.on .feeder-toggle-track {
-		background: var(--color-red);
-	}
-
-	.feeder-toggle-thumb {
-		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 16px;
-		height: 16px;
+	.feeder-dot {
+		width: 8px;
+		height: 8px;
 		border-radius: 50%;
-		background: var(--color-white);
-		transition: transform 0.15s;
+		background: var(--color-gray-light);
 	}
 
-	.feeder-toggle.on .feeder-toggle-thumb {
-		transform: translateX(16px);
+	.feeder-btn.on .feeder-dot {
+		background: var(--color-red);
+		animation: feeder-pulse 1.6s ease-in-out infinite;
+	}
+
+	@keyframes feeder-pulse {
+		0%,
+		100% {
+			box-shadow: 0 0 0 0 rgba(215, 46, 40, 0.45);
+		}
+		50% {
+			box-shadow: 0 0 0 5px rgba(215, 46, 40, 0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.feeder-btn.on .feeder-dot {
+			animation: none;
+		}
 	}
 
 	.pellet-visual {
@@ -306,7 +334,9 @@
 	.pellet-text {
 		position: absolute;
 		inset: 0;
-		padding: 16px;
+		/* In fondo c'è la barra del feeder (52px + 12px di margine): il testo si
+		   centra nello spazio che resta sopra. */
+		padding: 16px 16px 76px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
