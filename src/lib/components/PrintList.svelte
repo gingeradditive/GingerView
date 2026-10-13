@@ -39,14 +39,16 @@
 	let showUsbModal = $state(false);
 	let usbPollTimer: ReturnType<typeof setInterval> | undefined;
 
+	// Ogni caricamento prende un numero: se nel frattempo ne è partito un altro
+	// (cambio cartella, refresh da notifica) il suo risultato è vecchio e si scarta.
+	// Dichiarato prima di `subscribe`, che chiama subito `loadDirectory()`: dopo,
+	// la prima chiamata lo troverebbe non ancora inizializzato (ReferenceError).
+	let loadSeq = 0;
+
 	const unsubscribe = currentDirPath.subscribe((value) => {
 		dirPath = value;
 		loadDirectory();
 	});
-
-	// Ogni caricamento prende un numero: se nel frattempo ne è partito un altro
-	// (cambio cartella, refresh da notifica) il suo risultato è vecchio e si scarta.
-	let loadSeq = 0;
 
 	// `quiet`: aggiorna la lista senza svuotarla né mostrare il caricamento, per i
 	// refresh in background (file arrivato da GingerSlicer) mentre la si guarda.
