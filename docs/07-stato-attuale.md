@@ -68,7 +68,7 @@ cose già note o si scambi un segnaposto per un bug.
   hardware reale.**
 - Avvio stampa dal popup dettagli file: il pulsante **Print** apre
   [PrintStartWizard.svelte](../src/lib/components/PrintStartWizard.svelte), un wizard a 4 step
-  (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, aspiratore/valvola
+  (procedi/cancel) — materiale/tubi, ugello/bed, spray protettivo piano, valvola
   dryer — e solo all'ultimo step invia `POST /printer/print/start?filename=...`, poi torna
   sulla dashboard (`goto('/')`).
 - Pagina History (`/settings/history`): stesso layout a card di Console/Log — intestazione con

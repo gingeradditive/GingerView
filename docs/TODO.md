@@ -41,7 +41,7 @@ l'area indica l'argomento, non lo stato, così un task che si sblocca mantiene i
 
 ## PRN — Avvio e gestione stampa
 
-- `PRN-3` Portare in GingerSlicer una copia della checklist di `PrintStartWizard` (materiale, tubi vuoti, ugello e piatto, spray, aspiratore fumi, valvola essiccatore) come conferma prima di "Upload and Print", che oggi avvia la stampa senza passare da GingerView — rimandato
+- `PRN-3` Portare in GingerSlicer una copia della checklist di `PrintStartWizard` (materiale, tubi vuoti, ugello e piatto, spray, valvola essiccatore) come conferma prima di "Upload and Print", che oggi avvia la stampa senza passare da GingerView — rimandato
 
 ## CAM — Webcam
 

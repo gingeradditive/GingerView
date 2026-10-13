@@ -27,11 +27,8 @@
 			checklist: ['Apply the protective glass spray']
 		},
 		{
-			title: 'Ventilation & material feed',
-			checklist: [
-				'Check that the fume extractor is on and connected',
-				"Check that the dryer's material valve is open"
-			]
+			title: 'Material feed',
+			checklist: ["Check that the dryer's material valve is open"]
 		}
 	];
 
