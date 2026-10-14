@@ -166,20 +166,54 @@ l'interfaccia sia rotta perché la macchina non si muove). La stampante della de
 - **Congelamento**: 3–4 giorni prima della partenza per la fiera non si pubblica più nulla;
   solo test finale su più telefoni (iPhone e Android), anche con rete mobile scarsa.
 
-| Tappa | Contenuto                                                                           |
-| ----- | ----------------------------------------------------------------------------------- |
-| 1     | ✅ Branch `demo/fiera`, deploy su Cloudflare Pages, URL attivo                      |
-| 2     | Simulatore base: stato stampante, temperature, movimenti, dashboard viva            |
-| 3     | File veri + percorso lista → dettagli → wizard → stampa accelerata                  |
-| 4     | Altre pagine credibili, avviso + badge demo, file di configurazione nascondi/blocca |
-| 5     | Rifinitura e test su telefoni veri → congelamento                                   |
-| 6     | _(Extra)_ Benvenuto con missioni, contatori di eventi                               |
+| Tappa | Contenuto                                                                              |
+| ----- | -------------------------------------------------------------------------------------- |
+| 1     | ✅ Branch `demo/fiera`, deploy su Cloudflare Pages, URL attivo                         |
+| 2     | ✅ Simulatore base: stato stampante, temperature, movimenti, dashboard viva            |
+| 3     | ✅ Percorso lista → dettagli → wizard → stampa accelerata (file G2 veri da fornire)    |
+| 4     | ✅ Altre pagine credibili, avviso + badge demo, file di configurazione nascondi/blocca |
+| 5     | 🟡 Test automatici fatti (Chromium, WebKit, 3G); mancano telefoni veri → congelamento  |
+| 6     | _(Extra)_ Benvenuto con missioni, contatori di eventi                                  |
 
 ## Cose da decidere / adattare per la demo
 
-- **Reset dello stato** al ricaricamento (ed eventualmente dopo inattività), così ogni
-  visitatore riparte dalla stampante ferma.
+- **Reset dello stato** (fatto): al ricaricamento si riparte dalla stampante ferma. Reset per
+  inattività non fatto, vedi DEMO-DOMANDE.md.
 - **Solo smartphone verticale**: è il dispositivo con cui arriveranno dal QR.
-- **Dominio e QR**: URL corto e stabile (es. `demo.gingeradditive.com`), QR generato su quello.
+- **QR**: punta a https://gingerview-demo.pages.dev (deciso, vedi Pubblicazione).
+
+## Come è fatta la demo (codice)
+
+Tutto il codice della demo è in `src/lib/demo/`; fuori ci sono solo due agganci:
+`src/hooks.client.ts` installa il simulatore e `src/routes/+layout.svelte` monta
+`DemoLayer.svelte`, entrambi solo con `VITE_DEMO=1`. Senza il flag la build è
+identica a quella delle stampanti (verificato: nessuna traccia della demo nel bundle).
+
+| File                     | Cosa fa                                                                    |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `config.ts`              | **Punto unico di configurazione**: tempi, pagine nascoste, azioni bloccate |
+| `index.ts`               | Sostituisce `fetch` e `WebSocket` verso la stampante                       |
+| `http.ts`                | Risposte REST di Moonraker e G2-Service                                    |
+| `socket.ts`              | WebSocket JSON-RPC: sottoscrizioni, notifiche differenziali, console       |
+| `printer.ts`             | La G2 simulata: temperature, movimenti, G-code, stampa accelerata          |
+| `storage.ts`             | Root `gcodes`, `config`, `logs` in memoria                                 |
+| `history.ts`             | Storico precompilato (tempi reali) + stampe del visitatore                 |
+| `data/`                  | Rete, fuso, USB, sistema, aggiornamenti, config ridotta, log               |
+| `events.ts`              | Eventi osservabili (`print:start`, `print:complete`…) per le missioni      |
+| `DemoLayer.svelte`       | Avviso al primo accesso, badge DEMO, etichetta tempo accelerato            |
+| `files/`                 | Catalogo dei file (metadati + miniature), generato dallo script            |
+| `tools/import-gcode.mjs` | Aggiunge G-code veri: estrae metadati e miniatura, non pubblica il G-code  |
+
+Comandi:
+
+```sh
+VITE_DEMO=1 npm run dev                                   # demo in locale
+node src/lib/demo/tools/import-gcode.mjs --reset *.gcode  # sostituisce i file della demo
+```
+
+Lo stato vive in memoria: ricaricando la pagina si riparte dalla stampante ferma.
 
 ## Domande aperte
+
+Vedi [DEMO-DOMANDE.md](DEMO-DOMANDE.md): domande, default scelti e segnalazioni emerse
+durante le tappe 2–5.
