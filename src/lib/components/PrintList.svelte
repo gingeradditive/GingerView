@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount, onDestroy } from 'svelte';
 	import PrintCard from './PrintCard.svelte';
 	import PrintDetailsPopup from './PrintDetailsPopup.svelte';
 	import CurrentDirectory from './CurrentDirectory.svelte';
 	import UsbImportModal from './UsbImportModal.svelte';
+	import PromptModal from './PromptModal.svelte';
 	import type { PrintItem } from '$lib/types/print';
 	import { mdiFolderPlus, mdiUpload, mdiUsbFlashDrive } from '@mdi/js';
 	import {
@@ -35,7 +35,6 @@
 	let error = $state<string | null>(null);
 	let dirPath = $state('');
 	let showCreateFolderModal = $state(false);
-	let folderName = $state('');
 	let visibleCount = PAGE_SIZE;
 	let showPrintDetailsModal = $state(false);
 	let selectedPrint = $state<PrintItem | null>(null);
@@ -235,15 +234,21 @@
 		showPrintDetailsModal = false;
 	}
 
-	async function handleCreateFolder() {
-		if (!folderName.trim() || creatingFolder) return;
+	function validateFolderName(value: string): string {
+		const name = value.trim();
+		if (!name) return 'Enter a folder name.';
+		if (name.includes('/')) return "A name can't contain '/'.";
+		return '';
+	}
+
+	async function handleCreateFolder(folderName: string) {
+		if (creatingFolder) return;
 
 		creatingFolder = true;
 		try {
 			const fullPath = dirPath ? `gcodes/${dirPath}/${folderName}` : `gcodes/${folderName}`;
 			await createDirectory(fullPath);
 			showCreateFolderModal = false;
-			folderName = '';
 			await loadDirectory();
 		} catch (e) {
 			console.error('Create folder failed:', e);
@@ -280,10 +285,6 @@
 
 		return () => observer.disconnect();
 	});
-
-	function focusOnMount(node: HTMLInputElement) {
-		node.focus();
-	}
 
 	function handleFileDeleted() {
 		loadDirectory();
@@ -433,36 +434,19 @@
 		/>
 	</div>
 
-	{#if showCreateFolderModal}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div
-			class="modal-overlay"
-			role="dialog"
-			tabindex="0"
-			onclick={(e) => e.target === e.currentTarget && (showCreateFolderModal = false)}
-			use:modal={{ onClose: () => (showCreateFolderModal = false) }}
-		>
-			<div class="modal-content">
-				<h3>Create new folder</h3>
-				<input
-					type="text"
-					bind:value={folderName}
-					placeholder="Folder name"
-					class="folder-input"
-					onkeydown={(e) => e.key === 'Enter' && handleCreateFolder()}
-					use:focusOnMount
-				/>
-				<div class="modal-actions">
-					<button class="modal-confirm" onclick={handleCreateFolder} disabled={creatingFolder}
-						>{creatingFolder ? 'Creating…' : 'Create'}</button
-					>
-					<button class="modal-cancel" onclick={() => (showCreateFolderModal = false)}
-						>Cancel</button
-					>
-				</div>
-			</div>
-		</div>
-	{/if}
+	<PromptModal
+		isOpen={showCreateFolderModal}
+		title="New folder"
+		hint={dirPath ? `Inside /${dirPath}` : 'In the printer root'}
+		label="Folder name"
+		placeholder="e.g. Vases"
+		confirmLabel="Create"
+		busy={creatingFolder}
+		busyLabel="Creating…"
+		validate={validateFolderName}
+		onConfirm={handleCreateFolder}
+		onCancel={() => (showCreateFolderModal = false)}
+	/>
 
 	{#if loading}
 		<div class="status-message">Loading…</div>
@@ -721,83 +705,5 @@
 			opacity: 0;
 			transform: scale(0.6);
 		}
-	}
-
-	.modal-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 2000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 24px;
-		width: min(400px, calc(100% - 32px));
-		box-sizing: border-box;
-		box-shadow: var(--shadow-panel);
-	}
-
-	.modal-content h3 {
-		margin: 0 0 16px 0;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--color-black);
-	}
-
-	.folder-input {
-		width: 100%;
-		padding: 12px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		font-size: 0.9rem;
-		margin-bottom: 16px;
-		box-sizing: border-box;
-	}
-
-	.folder-input:focus {
-		outline: none;
-		border-color: var(--color-red);
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-	}
-
-	.modal-confirm {
-		min-height: 44px;
-		padding: 8px 20px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: white;
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
-
-	.modal-cancel {
-		min-height: 44px;
-		padding: 8px 20px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		background: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
-		color: var(--color-text-soft);
 	}
 </style>

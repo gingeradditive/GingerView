@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
 	import Fraction from '$lib/components/Fraction.svelte';
@@ -197,6 +198,8 @@
 </section>
 
 <ConfirmModal
+	tone="warning"
+	icon={Power}
 	isOpen={showFeederOffConfirm}
 	title="Switch the feeder off?"
 	message="A print is running: with the feeder off, running out of pellet will no longer pause it."

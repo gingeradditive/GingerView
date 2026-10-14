@@ -16,7 +16,15 @@
  *     <div role="dialog" aria-modal="true" use:modal={{ onClose: cancel }}>…</div>
  */
 
-type ModalOptions = { onClose?: () => void };
+type ModalOptions = {
+	onClose?: () => void;
+	/**
+	 * `false`: all'apertura il focus va sulla finestra e non sul primo controllo. Al tocco
+	 * il primo controllo è quasi sempre la X o Cancel, e ci si vedeva sopra l'anello del
+	 * focus e il tooltip senza che nessuno l'avesse toccato. Tab porta comunque dentro.
+	 */
+	focusFirst?: boolean;
+};
 
 const FOCUSABLE = [
 	'a[href]',
@@ -49,6 +57,7 @@ const unlockScroll = (): void => {
 
 export function modal(node: HTMLElement, options: ModalOptions = {}) {
 	let onClose = options.onClose;
+	const focusFirst = options.focusFirst ?? true;
 	const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
 	stack.push(node);
@@ -58,7 +67,7 @@ export function modal(node: HTMLElement, options: ModalOptions = {}) {
 	// Dopo il primo render del contenuto (e dopo un eventuale autofocus suo).
 	queueMicrotask(() => {
 		if (node.contains(document.activeElement)) return;
-		const first = focusables(node)[0];
+		const first = focusFirst ? focusables(node)[0] : undefined;
 		(first ?? node).focus({ preventScroll: true });
 	});
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CircleStop } from 'lucide-svelte';
 	import { formatClock as formatDuration } from '$lib/utils/format';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
@@ -257,6 +258,7 @@
 </section>
 
 <ConfirmModal
+	icon={CircleStop}
 	isOpen={showCancelConfirm}
 	title="Stop the print?"
 	message="The current print will be cancelled. This can't be undone."
