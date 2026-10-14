@@ -127,9 +127,7 @@
 
 	.preview img {
 		position: absolute;
-		inset: 10px;
-		width: calc(100% - 20px);
-		height: calc(100% - 20px);
+		inset: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: contain;

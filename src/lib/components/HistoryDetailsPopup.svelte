@@ -183,23 +183,21 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 		gap: 20px;
-		align-items: center;
 	}
 
+	/* Come nel dettaglio stampa: la miniatura è alta quanto i valori accanto. */
 	.preview {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		position: relative;
+		min-height: 0;
 		border-radius: 18px;
-		background: var(--color-background);
-		padding: 12px;
+		background: var(--color-surface-soft);
 	}
 
 	.preview img {
+		position: absolute;
+		inset: 0;
 		width: 100%;
-		max-width: 280px;
-		height: auto;
-		aspect-ratio: 1 / 1;
+		height: 100%;
 		object-fit: contain;
 	}
 
@@ -229,8 +227,9 @@
 			gap: 14px;
 		}
 
-		.preview img {
-			max-width: 200px;
+		/* In colonna non c'è niente accanto da cui prendere l'altezza. */
+		.preview {
+			height: 200px;
 		}
 
 		.stats {
