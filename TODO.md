@@ -34,13 +34,12 @@ Quando una voce è fatta, si spunta qui e si aggiorna DEMO.md.
 
 ## Decisioni da prendere
 
-- [ ] **Config editor**: tenere la configurazione ridotta e inventata
-      (default), mostrare quella vera, oppure nascondere la pagina?
+- [x] **Config editor**: nascosto (14/10/2026).
 - [ ] **Cosa nascondere o bloccare.** Ora è tutto visibile. Candidati:
   - [ ] Emergency stop: porta la demo in "Kalico is shut down", con il
         riavvio dal dock;
   - [ ] Update;
-  - [ ] Config editor;
+  - [x] Config editor (nascosto);
   - [ ] Open Wiki: è un link esterno.
 - [ ] **Durata delle stampe**: ok il default di 2–5 minuti con
       "Accelerated time ×360"?

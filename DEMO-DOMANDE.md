@@ -23,12 +23,9 @@ aggiorna DEMO.md e si cancella la voce da qui.
    sono 50×50 e si vedono sgranate. Le miniature dei segnaposto restano in
    `src/lib/demo/files/thumbs/` finché non le cancelli a mano.
 
-2. **Configurazione nell'editor.** Ho messo una configurazione **ridotta e
-   inventata** con la stessa struttura di quella vera (file per area, 4 zone,
-   START_PRINT/END_PRINT), senza pin, PID e tarature. Il sito è pubblico e i
-   concorrenti saranno in fiera. Se preferisci mostrare quella vera, o
-   nascondere l'editor, basta dirlo. Per nasconderlo:
-   `hiddenRoutes: ['/settings/config-editor']` in `src/lib/demo/config.ts`.
+2. **Config editor: deciso, nascosto.** La configurazione ridotta e inventata
+   resta nel simulatore (`src/lib/demo/data/config-files.ts`), ma la pagina
+   non si raggiunge più.
 
 3. **Durata delle stampe.** Default applicato: 10 s di stampa per ogni ora
    reale, tra 75 s e 230 s, più 30–60 s di riscaldamento, quindi 2–5 minuti
@@ -44,7 +41,6 @@ aggiorna DEMO.md e si cancella la voce da qui.
    Candidati da valutare:
    - **Emergency stop**: porta la demo in "Kalico is shut down", con il
      riavvio dal dock. È credibile, ma può spaventare;
-   - **Config editor**: vedi punto 2;
    - **Update**: funziona, ma "aggiornare" una demo è strano;
    - **Open Wiki**: link esterno.
 

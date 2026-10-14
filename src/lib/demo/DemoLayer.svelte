@@ -70,7 +70,12 @@
 		if (demoConfig.hiddenRoutes.length > 0) {
 			style = document.createElement('style');
 			style.textContent = demoConfig.hiddenRoutes
-				.map((route) => `a[href="${route}"], a[href^="${route}/"]`)
+				// I link sono relativi (`./settings/…`, `../settings/…`): si confronta la fine.
+				// Con il link sparisce anche la linea divisoria che lo precede nelle Settings.
+				.map(
+					(route) =>
+						`a[href$="${route}"], a[href*="${route}/"], .divider:has(+ a[href$="${route}"])`
+				)
 				.join(',\n')
 				.concat(' { display: none !important; }');
 			document.head.append(style);

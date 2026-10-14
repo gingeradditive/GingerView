@@ -112,6 +112,8 @@ manutenzione.
 - Cosa nascondere, togliere o bloccare (funzioni non pronte, azioni prive di senso in demo) si
   decide **in corso d'opera**. Conviene quindi prevedere un punto unico di configurazione
   della demo (es. elenco di pagine/azioni nascoste o bloccate) per cambiarlo velocemente.
+- **Config editor nascosto** (14/10/2026): sparisce dalle Settings e l'indirizzo diretto
+  riporta alla dashboard (`hiddenRoutes` in `src/lib/demo/config.ts`).
 
 ## Pubblicazione (deciso)
 
