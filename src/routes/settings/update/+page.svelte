@@ -408,6 +408,7 @@
 />
 
 <ConfirmModal
+	tone="warning"
 	isOpen={confirmState !== null}
 	title={confirmState?.title ?? ''}
 	message={confirmState?.message ?? ''}

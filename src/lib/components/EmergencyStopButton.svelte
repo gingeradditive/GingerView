@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { RotateCcw } from 'lucide-svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { mdiHandBackRight, mdiRestart } from '@mdi/js';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
@@ -115,6 +116,8 @@
 </button>
 
 <ConfirmModal
+	tone="warning"
+	icon={RotateCcw}
 	isOpen={confirmOpen}
 	title="Firmware restart?"
 	message="This restarts Kalico and the MCUs to bring the printer out of shutdown."
