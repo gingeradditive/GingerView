@@ -124,16 +124,20 @@ manutenzione.
 - **URL: https://gingerview-demo.pages.dev** (dominio di default di Cloudflare Pages, nessun
   sottodominio aziendale). Il QR punta a questo indirizzo.
 - Progetto Pages `gingerview-demo` (Pages classico, non Worker), branch di produzione
-  `demo/fiera`. Deploy tramite upload diretto con wrangler:
+  `demo/fiera`. **Il deploy è automatico**: a ogni push su `demo/fiera` il workflow
+  `.github/workflows/deploy-demo.yml` compila e pubblica con wrangler (upload diretto, il
+  progetto non è "Git connected" su Cloudflare e non serve che lo sia).
+- Il workflow usa i secret del repo `CLOUDFLARE_API_TOKEN` (permesso Account → Cloudflare
+  Pages → Edit) e `CLOUDFLARE_ACCOUNT_ID`. Se il token viene revocato o scade, il deploy si
+  ferma: va rigenerato e aggiornato il secret.
+- Deploy manuale (se serve):
 
   ```sh
   BUILD_DIR=build-demo npm run build
   npx wrangler pages deploy build-demo --project-name gingerview-demo --branch demo/fiera
   ```
 
-  Servono `CLOUDFLARE_API_TOKEN` (permesso Account → Cloudflare Pages → Edit) e
-  `CLOUDFLARE_ACCOUNT_ID` nell'ambiente.
-
+- PR di tracciamento (draft, **da non mergiare**): gingeradditive/GingerView#7.
 - La build della demo va in `build-demo/` (ignorata da git, scelta con `BUILD_DIR` in
   `svelte.config.js`): `build/` è tracciata ed è ciò che scaricano le stampanti.
 
