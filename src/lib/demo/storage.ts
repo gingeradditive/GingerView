@@ -340,16 +340,16 @@ export async function uploadFile(
 	return { item: itemFor(path), action: existed ? 'modify_file' : 'create_file' };
 }
 
-/** Aggiunge un G-code (import da USB), senza contenuto proprio. */
-export function addGcode(
-	path: string,
-	metadata: Metadata,
-	size: number,
-	thumbnail?: Thumbnail
-): void {
-	ensureParents(path);
-	nodes.set(path, { kind: 'file', modified: now(), size, metadata, thumbnail });
-	announce('create_file', path);
+/**
+ * Copia un G-code già presente sotto un altro nome (import da USB): stessi
+ * metadati e stessa miniatura, data di oggi.
+ */
+export function copyGcode(source: string, target: string, size: number): void {
+	const node = nodes.get(source);
+	if (!node || node.kind !== 'file') throw new StorageError(`File ${source} does not exist`, 404);
+	ensureParents(target);
+	nodes.set(target, { ...node, modified: now(), size, metadata: { ...node.metadata } });
+	announce('create_file', target);
 }
 
 export function deleteFile(path: string): void {

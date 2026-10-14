@@ -466,10 +466,7 @@ const routes: [string, RegExp, Handler][] = [
 			}
 
 			const job = host.startUsbImport(() => {
-				const metadata = storage.getMetadata(file.source) ?? {};
-				// La miniatura del file d'origine resta valida: è un asset della build.
-				const { thumbnails: _thumbnails, filename: _filename, ...rest } = metadata;
-				storage.addGcode(target(name), rest, file.size);
+				storage.copyGcode(`gcodes/${file.source}`, target(name), file.size);
 				return { result: { filename: name, path: destDir ? `${destDir}/${name}` : name } };
 			});
 			return json(job, 202);
