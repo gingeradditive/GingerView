@@ -13,7 +13,7 @@ export type DemoEvents = {
 	'print:resume': { filename: string };
 	'print:complete': { filename: string };
 	'print:cancel': { filename: string };
-	'gcode': { script: string };
+	gcode: { script: string };
 	'klippy:shutdown': Record<string, never>;
 	'klippy:ready': Record<string, never>;
 };

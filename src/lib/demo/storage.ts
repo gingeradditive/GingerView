@@ -84,7 +84,9 @@ function ensureParents(path: string, modified = now()): void {
 function seed(): void {
 	for (const entry of catalog as CatalogEntry[]) {
 		const path = `gcodes/${entry.path}`;
-		const url = entry.thumbnail ? thumbnailUrls[`./files/thumbs/${entry.thumbnail.file}`] : undefined;
+		const url = entry.thumbnail
+			? thumbnailUrls[`./files/thumbs/${entry.thumbnail.file}`]
+			: undefined;
 		ensureParents(path, entry.modified);
 		nodes.set(path, {
 			kind: 'file',
@@ -202,7 +204,12 @@ export function listDirectory(path: string): Record<string, unknown> | null {
 	for (const [childPath, node] of nodes) {
 		if (parentOf(childPath) !== clean) continue;
 		if (node.kind === 'dir') {
-			dirs.push({ dirname: nameOf(childPath), modified: node.modified, size: 4096, permissions: 'rw' });
+			dirs.push({
+				dirname: nameOf(childPath),
+				modified: node.modified,
+				size: 4096,
+				permissions: 'rw'
+			});
 		} else {
 			files.push({
 				filename: nameOf(childPath),
@@ -214,7 +221,10 @@ export function listDirectory(path: string): Record<string, unknown> | null {
 		}
 	}
 
-	const used = [...nodes.values()].reduce((sum, node) => sum + (node.kind === 'file' ? node.size : 0), 0);
+	const used = [...nodes.values()].reduce(
+		(sum, node) => sum + (node.kind === 'file' ? node.size : 0),
+		0
+	);
 	const total = 58 * 1024 ** 3;
 	return {
 		dirs,
@@ -273,7 +283,9 @@ function announce(action: string, path: string, source?: string): void {
 		{
 			action,
 			item: itemFor(path),
-			...(source ? { source_item: { root: rootOf(source), path: source.slice(rootOf(source).length + 1) } } : {})
+			...(source
+				? { source_item: { root: rootOf(source), path: source.slice(rootOf(source).length + 1) } }
+				: {})
 		}
 	]);
 }
@@ -302,7 +314,11 @@ async function readGcodeMetadata(file: Blob): Promise<Metadata> {
 }
 
 /** `POST /server/files/upload`. */
-export async function uploadFile(root: string, subdir: string, file: File): Promise<Record<string, unknown>> {
+export async function uploadFile(
+	root: string,
+	subdir: string,
+	file: File
+): Promise<Record<string, unknown>> {
 	const dir = subdir ? `${root}/${subdir.replace(/^\/+|\/+$/g, '')}` : root;
 	const path = `${dir}/${file.name}`;
 	assertWritable(path);
@@ -322,7 +338,12 @@ export async function uploadFile(root: string, subdir: string, file: File): Prom
 }
 
 /** Aggiunge un G-code (import da USB), senza contenuto proprio. */
-export function addGcode(path: string, metadata: Metadata, size: number, thumbnail?: Thumbnail): void {
+export function addGcode(
+	path: string,
+	metadata: Metadata,
+	size: number,
+	thumbnail?: Thumbnail
+): void {
 	ensureParents(path);
 	nodes.set(path, { kind: 'file', modified: now(), size, metadata, thumbnail });
 	announce('create_file', path);
@@ -347,7 +368,8 @@ export function createDirectory(path: string): void {
 
 export function deleteDirectory(path: string, force: boolean): void {
 	assertWritable(path);
-	if (nodes.get(path)?.kind !== 'dir') throw new StorageError(`Directory ${path} does not exist`, 404);
+	if (nodes.get(path)?.kind !== 'dir')
+		throw new StorageError(`Directory ${path} does not exist`, 404);
 	const children = [...nodes.keys()].filter((key) => key.startsWith(`${path}/`));
 	if (children.length > 0 && !force) throw new StorageError(`Directory ${path} is not empty`, 400);
 	const item = itemFor(path);
@@ -368,11 +390,17 @@ export function moveEntry(source: string, dest: string): Record<string, unknown>
 	if (nodes.has(target)) throw new StorageError(`Destination ${target} already exists`, 400);
 
 	ensureParents(target);
-	const moved = [...nodes.entries()].filter(([key]) => key === source || key.startsWith(`${source}/`));
+	const moved = [...nodes.entries()].filter(
+		([key]) => key === source || key.startsWith(`${source}/`)
+	);
 	for (const [key] of moved) nodes.delete(key);
 	for (const [key, value] of moved) nodes.set(target + key.slice(source.length), value);
 
 	const action = node.kind === 'dir' ? 'move_dir' : 'move_file';
 	announce(action, target, source);
-	return { item: itemFor(target), source_item: { path: source.slice(rootOf(source).length + 1), root: rootOf(source) }, action };
+	return {
+		item: itemFor(target),
+		source_item: { path: source.slice(rootOf(source).length + 1), root: rootOf(source) },
+		action
+	};
 }

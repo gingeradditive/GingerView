@@ -41,7 +41,8 @@ if (inputs.length === 0) {
 
 mkdirSync(thumbsDir, { recursive: true });
 /** @type {Array<Record<string, unknown>>} */
-let catalog = !reset && existsSync(catalogPath) ? JSON.parse(readFileSync(catalogPath, 'utf8')) : [];
+let catalog =
+	!reset && existsSync(catalogPath) ? JSON.parse(readFileSync(catalogPath, 'utf8')) : [];
 
 const slug = (/** @type {string} */ text) =>
 	text
@@ -76,8 +77,11 @@ for (const input of inputs) {
 		metadata
 	});
 
-	const hours = typeof metadata.estimated_time === 'number' ? (metadata.estimated_time / 3600).toFixed(1) : '?';
-	console.log(`+ ${path}  (${hours} h, ${metadata.filament_type ?? '?'}, miniatura ${best ? `${best.width}x${best.height}` : 'assente'})`);
+	const hours =
+		typeof metadata.estimated_time === 'number' ? (metadata.estimated_time / 3600).toFixed(1) : '?';
+	console.log(
+		`+ ${path}  (${hours} h, ${metadata.filament_type ?? '?'}, miniatura ${best ? `${best.width}x${best.height}` : 'assente'})`
+	);
 }
 
 catalog.sort((a, b) => String(a.path).localeCompare(String(b.path)));

@@ -86,7 +86,11 @@ function seed(): void {
 		};
 		jobs.push(job);
 		addToTotals(job);
-		updateMetadata(filename, { job_id: job.job_id, print_start_time: start, last_print_duration: printDuration });
+		updateMetadata(filename, {
+			job_id: job.job_id,
+			print_start_time: start,
+			last_print_duration: printDuration
+		});
 	});
 
 	// Qualche centinaio di ore prima dello storico visibile: la macchina non è nuova.

@@ -59,7 +59,8 @@ function readNumber(text, key) {
  */
 export function extractThumbnails(text) {
 	const thumbnails = [];
-	const pattern = /; thumbnail(?:_PNG)? begin (\d+)x(\d+) \d+\r?\n([\s\S]*?)\r?\n; thumbnail(?:_PNG)? end/g;
+	const pattern =
+		/; thumbnail(?:_PNG)? begin (\d+)x(\d+) \d+\r?\n([\s\S]*?)\r?\n; thumbnail(?:_PNG)? end/g;
 	for (const match of text.matchAll(pattern)) {
 		const base64 = match[3]
 			.split('\n')
@@ -101,8 +102,10 @@ export function parseGcodeMetadata(text) {
 	metadata.nozzle_diameter = readNumber(text, 'nozzle_diameter');
 	metadata.first_layer_extr_temp = readNumber(text, 'first_layer_temperature');
 	metadata.first_layer_bed_temp =
-		readNumber(text, 'first_layer_bed_temperature') ?? readNumber(text, 'hot_plate_temp_initial_layer');
-	metadata.extruder_temp = readNumber(text, 'nozzle_temperature') ?? readNumber(text, 'temperature');
+		readNumber(text, 'first_layer_bed_temperature') ??
+		readNumber(text, 'hot_plate_temp_initial_layer');
+	metadata.extruder_temp =
+		readNumber(text, 'nozzle_temperature') ?? readNumber(text, 'temperature');
 	metadata.bed_temp = readNumber(text, 'hot_plate_temp') ?? readNumber(text, 'bed_temperature');
 
 	/** @type {Record<string, string | number>} */

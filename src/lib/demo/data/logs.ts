@@ -13,10 +13,13 @@ export const LOG_FILES: Record<string, () => string> = {
 	'klippy.log': () =>
 		lines([
 			[620, 'Starting Klippy...'],
-			[620, 'Args: [\'/home/pi/kalico/klippy/klippy.py\', \'/home/pi/printer_data/config/printer.cfg\']'],
-			[619, 'Git version: \'v2026.09-demo\''],
-			[618, 'Loaded MCU \'mcu\' 112 commands'],
-			[617, 'Configured MCU \'mcu\' (1024 moves)'],
+			[
+				620,
+				"Args: ['/home/pi/kalico/klippy/klippy.py', '/home/pi/printer_data/config/printer.cfg']"
+			],
+			[619, "Git version: 'v2026.09-demo'"],
+			[618, "Loaded MCU 'mcu' 112 commands"],
+			[617, "Configured MCU 'mcu' (1024 moves)"],
 			[617, 'Extruder zones: extruder, extruder1, extruder2, extruder3'],
 			[616, 'webhooks client: identified GingerView'],
 			[615, 'Printer is ready'],
@@ -26,7 +29,10 @@ export const LOG_FILES: Record<string, () => string> = {
 	'moonraker.log': () =>
 		lines([
 			[625, '[server.py:main()] Starting Moonraker on (0.0.0.0, 7125)'],
-			[624, '[confighelper.py:read_file()] Configuration File: /home/pi/printer_data/config/moonraker.conf'],
+			[
+				624,
+				'[confighelper.py:read_file()] Configuration File: /home/pi/printer_data/config/moonraker.conf'
+			],
 			[623, '[file_manager.py:__init__()] Using File Manager root: gcodes'],
 			[622, '[update_manager.py:__init__()] Update manager initialized'],
 			[618, '[klippy_connection.py:_check_ready()] Klippy ready'],
