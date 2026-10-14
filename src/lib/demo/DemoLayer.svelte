@@ -169,11 +169,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		/* Rosa chiaro semitrasparente, con le strisce appena accennate: resta
+		/* Bianco appena rosato e semitrasparente, con le strisce appena accennate: resta
 		   riconoscibile come "nastro" della demo senza pesare sulla pagina. */
 		background:
-			repeating-linear-gradient(-45deg, rgba(var(--rgb-red), 0.07) 0 14px, transparent 14px 28px),
-			rgba(247, 217, 216, 0.82);
+			repeating-linear-gradient(-45deg, rgba(var(--rgb-red), 0.05) 0 14px, transparent 14px 28px),
+			rgba(255, 244, 244, 0.88);
 		backdrop-filter: blur(10px) saturate(140%);
 		-webkit-backdrop-filter: blur(10px) saturate(140%);
 		border-bottom: 2px solid var(--color-red);
