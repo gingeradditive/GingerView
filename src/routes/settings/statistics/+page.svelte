@@ -13,7 +13,8 @@
 		HardDrive,
 		Server,
 		TriangleAlert,
-		Trash2
+		Trash2,
+		RotateCcw
 	} from 'lucide-svelte';
 	import type {
 		HistoryTotalsResult,
@@ -335,6 +336,7 @@
 </section>
 
 <ConfirmModal
+	icon={RotateCcw}
 	isOpen={showResetConfirm}
 	title="Reset print statistics?"
 	message="Total jobs, print time and filament totals will be reset to zero. This cannot be undone."

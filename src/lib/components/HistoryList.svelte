@@ -282,6 +282,7 @@
 />
 
 <ConfirmModal
+	icon={Trash2}
 	isOpen={jobPendingDelete !== null}
 	title="Delete this entry?"
 	message={jobPendingDelete ? `"${jobPendingDelete.filename}" will be removed from history.` : ''}
@@ -291,6 +292,7 @@
 />
 
 <ConfirmModal
+	icon={Trash2}
 	isOpen={showClearAllConfirm}
 	title="Clear print history?"
 	message="All entries will be permanently removed. This cannot be undone."

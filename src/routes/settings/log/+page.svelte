@@ -91,6 +91,7 @@
 </section>
 
 <ConfirmModal
+	icon={Trash2}
 	isOpen={showClearConfirm}
 	title="Clear all logs?"
 	message="The Klipper, Moonraker and Crowsnest logs will be emptied."
