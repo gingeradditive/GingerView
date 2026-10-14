@@ -63,7 +63,7 @@ con il Wi‑Fi dell'ufficio.
 
 Su ciascuno controllare:
 
-- [ ] avviso al primo accesso, poi badge DEMO in alto a destra;
+- [ ] avviso al primo accesso, poi barra DEMO fissa in alto (anche sotto la notch);
 - [ ] percorso completo: file → dettagli → wizard → stampa fino alla fine;
 - [ ] etichetta "Accelerated time" non coperta dalla notch;
 - [ ] telefono bloccato a metà stampa e poi riaperto: la stampa è andata

@@ -77,7 +77,7 @@ Ho provato tutto in automatico:
 Restano i **telefoni veri**: un iPhone e un Android, possibilmente su rete
 mobile, scansionando un QR. Cose da guardare:
 
-- l'avviso al primo accesso e il badge DEMO in alto a destra;
+- l'avviso al primo accesso e la barra DEMO fissa in alto;
 - la notch dell'iPhone sopra l'etichetta "Accelerated time";
 - bloccare il telefono durante una stampa e riaprirlo: la stampa deve essere
   andata avanti nel frattempo.

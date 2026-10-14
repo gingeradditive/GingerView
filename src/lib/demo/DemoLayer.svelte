@@ -17,8 +17,8 @@
 	 * montato dal layout (e solo con `VITE_DEMO=1`):
 	 *
 	 * - l'avviso al primo accesso: la stampante è virtuale, non la G2 allo stand;
-	 * - il badge DEMO, sempre visibile, che riapre l'avviso;
-	 * - l'etichetta "tempo accelerato" mentre una stampa gira;
+	 * - la barra DEMO fissa in alto, che riapre l'avviso e durante una stampa
+	 *   mostra il tempo accelerato;
 	 * - un messaggio a fine stampa con il tempo vero del pezzo;
 	 * - le pagine nascoste di `demoConfig.hiddenRoutes`.
 	 */
@@ -94,23 +94,26 @@
 	const speedLabel = $derived(job ? `×${Math.round(job.speedup)}` : '');
 </script>
 
-<button
-	class="demo-badge"
-	type="button"
-	onclick={() => (noticeOpen = true)}
-	aria-label="About this demo"
->
-	DEMO
-</button>
-
-{#if job && job.phase === 'printing'}
-	<div class="time-chip" role="status">
-		<span aria-hidden="true">⏩</span>
-		{job.paused ? 'Paused · accelerated time' : `Accelerated time ${speedLabel}`}
+<!-- La barra della demo: fissa, nera, fuori dal linguaggio visivo di GingerView
+     apposta, perché nessuno la scambi per una parte dell'interfaccia. -->
+<header class="demo-header">
+	<button class="demo-id" type="button" onclick={() => (noticeOpen = true)}>
+		<span class="demo-tag">DEMO</span>
+		<span class="demo-name">{demoConfig.printerName}</span>
+	</button>
+	<div class="demo-status" role="status">
+		{#if job && job.phase === 'printing'}
+			<span aria-hidden="true">⏩</span>
+			{job.paused ? 'Paused' : `Accelerated time ${speedLabel}`}
+		{:else if job}
+			Heating up…
+		{:else}
+			<button class="demo-about" type="button" onclick={() => (noticeOpen = true)}>
+				Not the booth printer · <u>About</u>
+			</button>
+		{/if}
 	</div>
-{:else if job}
-	<div class="time-chip" role="status">Heating up…</div>
-{/if}
+</header>
 
 {#if noticeOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
@@ -143,39 +146,76 @@
 {/if}
 
 <style>
-	.demo-badge {
-		position: fixed;
-		top: calc(6px + env(safe-area-inset-top, 0px));
-		right: 10px;
-		z-index: 2900;
-		padding: 3px 9px;
-		border: none;
-		border-radius: 999px;
-		background: var(--color-red);
-		color: var(--color-white);
-		font: inherit;
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		box-shadow: var(--shadow-panel);
-		cursor: pointer;
+	/* Spazio per la barra: le pagine scorrono sotto di lei, non dietro. */
+	:global(:root) {
+		--demo-header-height: calc(40px + env(safe-area-inset-top, 0px));
 	}
 
-	.time-chip {
+	:global(.page-content) {
+		box-sizing: border-box;
+		padding-top: var(--demo-header-height);
+	}
+
+	.demo-header {
 		position: fixed;
-		top: calc(6px + env(safe-area-inset-top, 0px));
-		left: 50%;
-		transform: translateX(-50%);
+		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 2900;
-		padding: 3px 12px;
-		border-radius: 999px;
-		background: var(--color-black);
+		height: var(--demo-header-height);
+		box-sizing: border-box;
+		padding: env(safe-area-inset-top, 0px) 12px 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		background: repeating-linear-gradient(-45deg, #111 0 14px, #1c1c1c 14px 28px);
+		border-bottom: 3px solid var(--color-red);
 		color: var(--color-white);
-		font-size: 0.72rem;
+		font-size: 0.78rem;
+	}
+
+	.demo-id,
+	.demo-about {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0;
+		border: none;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+		min-width: 0;
+	}
+
+	.demo-tag {
+		padding: 2px 8px;
+		border-radius: 4px;
+		background: var(--color-red);
+		font-weight: 800;
+		letter-spacing: 0.12em;
+	}
+
+	.demo-name {
 		font-weight: 700;
 		white-space: nowrap;
-		box-shadow: var(--shadow-panel);
-		pointer-events: none;
+	}
+
+	.demo-status {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		font-weight: 700;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.demo-about {
+		font-weight: 500;
+		color: var(--color-gray);
 	}
 
 	.notice-overlay {
