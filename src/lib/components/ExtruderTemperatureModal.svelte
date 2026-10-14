@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { tooltip } from '$lib/actions/tooltip';
-	import { Minus, Plus, Power } from 'lucide-svelte';
+	import { Power } from 'lucide-svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import ZoneTemperatureEditor from '$lib/components/ZoneTemperatureEditor.svelte';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 
 	/**
@@ -30,7 +30,6 @@
 	// calibrazione): l'interfaccia si ferma a un limite da pellet, lo stesso
 	// del popup Custom di Heat & Extrude.
 	const MAX_TEMPERATURE = 300;
-	const STEP = 5;
 
 	let inputs = $state<(number | null)[]>([]);
 	let busy = $state(false);
@@ -53,20 +52,6 @@
 
 	const allValid = $derived(inputs.every(isValid));
 
-	const step = (index: number, direction: 1 | -1): void => {
-		const current = inputs[index] ?? 0;
-		// Allinea al multiplo di 5 nella direzione del tasto: 212 → 215 / 210.
-		const next =
-			direction > 0
-				? Math.floor(current / STEP) * STEP + STEP
-				: Math.ceil(current / STEP) * STEP - STEP;
-		const clamped = Math.max(0, Math.min(MAX_TEMPERATURE, next));
-		inputs[index] = clamped === 0 ? null : clamped;
-	};
-
-	const formatTemperature = (value: number | null | undefined): string =>
-		value == null || Number.isNaN(value) ? '--' : `${Math.round(value)}°`;
-
 	const send = async (values: (number | null)[]): Promise<void> => {
 		busy = true;
 		const script = zones
@@ -82,9 +67,10 @@
 		send(inputs);
 	};
 
+	// Spegne solo i campi: come per i valori scritti a mano, il comando parte con Apply.
 	const allOff = (): void => {
 		if (busy) return;
-		send(zones.map(() => null));
+		inputs = zones.map(() => null);
 	};
 </script>
 
@@ -95,53 +81,27 @@
 			<p class="sheet-subtitle">Target per zone, in °C. Empty or 0 switches the zone off.</p>
 		{/snippet}
 
-		<div class="zone-list">
-			{#each zones as zone, index (zone)}
-				<div class="zone-row" class:invalid={!isValid(inputs[index])}>
-					<div class="zone-info">
-						<span class="zone-name">Zone {index + 1}</span>
-						<span class="zone-current">Now {formatTemperature(temperatures[index])}</span>
-					</div>
-					<div class="stepper">
-						<button
-							type="button"
-							class="step-btn"
-							aria-label={`Lower zone ${index + 1}`}
-							use:tooltip={'−5 °C'}
-							disabled={busy || (inputs[index] ?? 0) <= 0}
-							onclick={() => step(index, -1)}><Minus size={20} /></button
-						>
-						<input
-							type="number"
-							inputmode="numeric"
-							min="0"
-							max={MAX_TEMPERATURE}
-							step="1"
-							placeholder="Off"
-							aria-label={`Zone ${index + 1} target`}
-							disabled={busy}
-							bind:value={inputs[index]}
-							onkeydown={(e) => e.key === 'Enter' && apply()}
-						/>
-						<button
-							type="button"
-							class="step-btn"
-							aria-label={`Raise zone ${index + 1}`}
-							use:tooltip={'+5 °C'}
-							disabled={busy || (inputs[index] ?? 0) >= MAX_TEMPERATURE}
-							onclick={() => step(index, 1)}><Plus size={20} /></button
-						>
-					</div>
-				</div>
-			{/each}
-		</div>
+		<ZoneTemperatureEditor
+			bind:values={inputs}
+			current={temperatures}
+			invalid={inputs.map((value) => !isValid(value))}
+			disabled={busy}
+			max={MAX_TEMPERATURE}
+			placeholder="Off"
+			onEnter={apply}
+		/>
 
 		{#if !allValid}
 			<p class="sheet-error error">Use whole numbers from 0 to {MAX_TEMPERATURE} °C.</p>
 		{/if}
 
 		{#snippet footer()}
-			<button type="button" class="btn btn-secondary off" disabled={busy} onclick={allOff}>
+			<button
+				type="button"
+				class="btn btn-secondary off"
+				disabled={busy || inputs.every((value) => value == null)}
+				onclick={allOff}
+			>
 				<Power size={18} />
 				All off
 			</button>
@@ -154,109 +114,11 @@
 {/if}
 
 <style>
-	.zone-list {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.zone-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		padding: 10px 0;
-		border-bottom: 1px solid var(--color-surface-sunken);
-	}
-
-	.zone-row:last-child {
-		border-bottom: none;
-	}
-
-	.zone-info {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		min-width: 0;
-	}
-
-	.zone-name {
-		font-size: 0.95rem;
-		font-weight: 700;
-		color: var(--color-black);
-	}
-
-	.zone-current {
-		font-size: 0.8rem;
-		color: var(--color-text-subtle);
-	}
-
-	.stepper {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		flex-shrink: 0;
-	}
-
-	.step-btn {
-		width: 44px;
-		height: 44px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--color-background);
-		border: 1px solid var(--color-border-light);
-		border-radius: 10px;
-		color: var(--color-text-muted);
-		cursor: pointer;
-	}
-
-	.step-btn:hover:not(:disabled) {
-		background: var(--color-surface-sunken);
-	}
-
-	.step-btn:disabled {
-		cursor: default;
-		opacity: 0.4;
-	}
-
-	.stepper input {
-		width: 72px;
-		height: 44px;
-		box-sizing: border-box;
-		padding: 0 8px;
-		border: 1px solid var(--color-gray);
-		border-radius: 10px;
-		font-size: 1.05rem;
-		font-weight: 600;
-		text-align: center;
-		color: var(--color-black);
-		-moz-appearance: textfield;
-		appearance: textfield;
-	}
-
-	.stepper input::-webkit-outer-spin-button,
-	.stepper input::-webkit-inner-spin-button {
-		-webkit-appearance: none;
-		margin: 0;
-	}
-
-	.stepper input:focus {
-		outline: none;
-		border: 2px solid var(--color-red);
-		padding: 0 7px;
-	}
-
-	.zone-row.invalid .stepper input {
-		border: 2px solid var(--color-red);
-		padding: 0 7px;
-		color: var(--color-red);
-	}
-
 	.off {
 		color: var(--color-red);
 	}
 
 	.error {
-		margin-top: 10px;
+		margin-top: 12px;
 	}
 </style>

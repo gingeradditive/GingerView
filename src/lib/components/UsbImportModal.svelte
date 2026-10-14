@@ -156,9 +156,31 @@
 	const conflictIsPrinting = $derived(!!conflict && printingFile === join(destDir, conflict.name));
 </script>
 
+{#snippet conflictActions()}
+	<button type="button" class="btn btn-secondary" onclick={() => (conflict = null)}>Cancel</button>
+	<button
+		type="button"
+		class="btn btn-secondary"
+		disabled={conflictIsPrinting}
+		onclick={() => runImport(conflict!, 'overwrite')}
+	>
+		Overwrite
+	</button>
+	<button type="button" class="btn btn-primary" onclick={() => runImport(conflict!, 'rename')}>
+		Keep both
+	</button>
+{/snippet}
+
 {#if isOpen}
 	<!-- Una copia in corso non si interrompe: `close` aspetta che finisca. -->
-	<Sheet label="Import from USB stick" onClose={close} size="md" panelClass="usb-panel">
+	<!-- Il footer c'è solo per il file già presente: le scelte stanno dove stanno nelle altre finestre. -->
+	<Sheet
+		label="Import from USB stick"
+		onClose={close}
+		size="md"
+		panelClass="usb-panel"
+		footer={conflict ? conflictActions : undefined}
+	>
 		{#snippet header()}
 			<div class="usb-header">
 				{#if usbPath && !conflict}
@@ -202,26 +224,6 @@
 				{#if conflictIsPrinting}
 					<p class="conflict-note">It is being printed right now, so it cannot be replaced.</p>
 				{/if}
-				<div class="conflict-actions">
-					<button type="button" class="btn btn-secondary" onclick={() => (conflict = null)}>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="btn btn-secondary"
-						disabled={conflictIsPrinting}
-						onclick={() => runImport(conflict!, 'overwrite')}
-					>
-						Overwrite
-					</button>
-					<button
-						type="button"
-						class="btn btn-primary"
-						onclick={() => runImport(conflict!, 'rename')}
-					>
-						Keep both
-					</button>
-				</div>
 			</div>
 		{:else if loading && !listing}
 			<div class="usb-status">Reading the USB stick…</div>
@@ -481,16 +483,6 @@
 		background: var(--color-background);
 		border-radius: 8px;
 		padding: 10px 14px;
-	}
-
-	.conflict-actions {
-		display: flex;
-		gap: 8px;
-	}
-
-	.conflict-actions .btn {
-		flex: 1;
-		padding: 0 10px;
 	}
 
 	:global(.usb-panel) {

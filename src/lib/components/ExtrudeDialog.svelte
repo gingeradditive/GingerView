@@ -3,6 +3,7 @@
 	import { tooltip } from '$lib/actions/tooltip';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import ZoneTemperatureEditor from '$lib/components/ZoneTemperatureEditor.svelte';
 	import ExtruderLive from '$lib/illustrations/ExtruderLive.svelte';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
@@ -166,7 +167,7 @@
 	// asked (see moonraker-zones.ts).
 	let showCustomTemperatureModal = $state(false);
 	let customTemperatureZones = $state<string[]>([]);
-	let customTemperatureInputs = $state<TemperatureZones>({});
+	let customTemperatureInputs = $state<(number | null)[]>([]);
 	let customTemperatureError = $state('');
 
 	// Cosa fa ogni opzione, con i numeri veri: "Mid" da solo non dice quanto.
@@ -211,27 +212,33 @@
 		}
 
 		customTemperatureZones = zones;
-		customTemperatureInputs = fillZoneTemperatures(zones, $customTemperaturePreset.zones);
+		const stored = fillZoneTemperatures(zones, $customTemperaturePreset.zones);
+		customTemperatureInputs = zones.map((zone) => stored[zone] ?? null);
 		customTemperatureError = '';
 		showCustomTemperatureModal = true;
 	};
+
+	const isCustomValueValid = (value: number | null): boolean =>
+		value != null && Number.isFinite(value) && value > 0 && value <= 300;
 
 	const cancelCustomTemperature = (): void => {
 		showCustomTemperatureModal = false;
 	};
 
 	const confirmCustomTemperature = (): void => {
-		const isValid = customTemperatureZones.every(
-			(zone) => Number.isFinite(customTemperatureInputs[zone]) && customTemperatureInputs[zone] > 0
-		);
+		const isValid = customTemperatureInputs.every(isCustomValueValid);
 		// Prima un valore non valido veniva ignorato in silenzio e "Custom" restava selezionato
 		// con le temperature vecchie.
 		if (!isValid) {
-			customTemperatureError = 'Every zone needs a temperature above 0 °C.';
+			customTemperatureError = 'Every zone needs a temperature from 1 to 300 °C.';
 			return;
 		}
+		const zones: TemperatureZones = {};
+		customTemperatureZones.forEach((zone, index) => {
+			zones[zone] = customTemperatureInputs[index] as number;
+		});
 		customTemperaturePreset.set({
-			zones: { ...customTemperatureInputs },
+			zones,
 			rotationVolume: $customTemperaturePreset.rotationVolume
 		});
 		extrudeTemperature.set('custom');
@@ -421,33 +428,17 @@
 			<p class="sheet-subtitle">Target for each nozzle zone, in °C.</p>
 		{/snippet}
 
-		<!-- Lo scheletro dell'estrusore, come nella dashboard: zona 1 in alto, l'ugello in
-		     fondo. Ogni campo sta dentro la sua zona, così si vede quale si sta impostando. -->
-		<div class="skeleton">
-			{#each customTemperatureZones as zone, index (zone)}
-				<label class="zone-row">
-					<span class="zone-index">{index + 1}</span>
-					<span
-						class="zone-band"
-						class:invalid={!!customTemperatureError && !(customTemperatureInputs[zone] > 0)}
-					>
-						<input
-							type="number"
-							inputmode="numeric"
-							min="0"
-							max="300"
-							aria-label={`Zone ${index + 1} target, °C`}
-							aria-invalid={!!customTemperatureError && !(customTemperatureInputs[zone] > 0)}
-							bind:value={customTemperatureInputs[zone]}
-							oninput={() => (customTemperatureError = '')}
-							onkeydown={(e) => e.key === 'Enter' && confirmCustomTemperature()}
-						/>
-					</span>
-					<span class="zone-unit">°C</span>
-				</label>
-			{/each}
-			<img class="skeleton-nozzle" src="/NozzleHead.svg" alt="" />
-		</div>
+		<ZoneTemperatureEditor
+			bind:values={customTemperatureInputs}
+			current={customTemperatureZones.map(
+				(zone) => zoneReadings[progressZones.indexOf(zone)]?.temperature ?? null
+			)}
+			invalid={customTemperatureInputs.map(
+				(value) => !!customTemperatureError && !isCustomValueValid(value)
+			)}
+			onEdit={() => (customTemperatureError = '')}
+			onEnter={confirmCustomTemperature}
+		/>
 		{#if customTemperatureError}
 			<p class="sheet-error custom-error" role="alert">{customTemperatureError}</p>
 		{/if}
@@ -595,91 +586,6 @@
 		cursor: default;
 		opacity: 0.55;
 		pointer-events: none;
-	}
-
-	.skeleton {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 6px;
-	}
-
-	/* Una zona: la card grigia della dashboard, con il campo al centro. */
-	/* Una zona: numero a sinistra e °C a destra, fuori dalla banda grigia della dashboard
-	   che contiene solo il campo. Colonne laterali uguali: la banda resta in asse con l'ugello. */
-	.zone-row {
-		display: grid;
-		grid-template-columns: 28px 100px 28px;
-		align-items: center;
-		gap: 8px;
-		cursor: text;
-	}
-
-	.zone-index {
-		justify-self: end;
-		font-size: 0.9rem;
-		font-weight: 700;
-		color: var(--color-text-subtle);
-	}
-
-	.zone-band {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		height: 54px;
-		border: 1px solid var(--color-text-subtle);
-		border-radius: 8px;
-		background: var(--color-gray-light);
-		box-sizing: border-box;
-	}
-
-	.zone-band:focus-within {
-		border-color: var(--color-red);
-		box-shadow: 0 0 0 3px rgba(var(--rgb-red), 0.15);
-	}
-
-	.zone-band.invalid {
-		border-color: var(--color-red);
-	}
-
-	.zone-band input {
-		width: 64px;
-		height: 40px;
-		padding: 0 6px;
-		box-sizing: border-box;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-white);
-		font-family: inherit;
-		font-size: 1.25rem;
-		font-weight: 700;
-		text-align: center;
-		color: var(--color-black);
-		appearance: textfield;
-		-moz-appearance: textfield;
-	}
-
-	.zone-band input::-webkit-outer-spin-button,
-	.zone-band input::-webkit-inner-spin-button {
-		appearance: none;
-		margin: 0;
-	}
-
-	.zone-band input:focus {
-		outline: none;
-	}
-
-	.zone-unit {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--color-text-subtle);
-	}
-
-	.skeleton-nozzle {
-		width: 62px;
-		height: 33px;
-		margin-top: 2px;
-		object-fit: contain;
 	}
 
 	.custom-error {
