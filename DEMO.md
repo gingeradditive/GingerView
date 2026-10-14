@@ -208,11 +208,16 @@ identica a quella delle stampanti (verificato: nessuna traccia della demo nel bu
 Comandi:
 
 ```sh
-VITE_DEMO=1 npm run dev                                   # demo in locale
+npm run dev                                               # demo in locale (serve .env.development.local, sotto)
+npm run dev -- --host                                     # idem, raggiungibile dal telefono in rete
 node src/lib/demo/tools/import-gcode.mjs --reset *.gcode  # sostituisce i file della demo
 ```
 
 Lo stato vive in memoria: ricaricando la pagina si riparte dalla stampante ferma.
+
+In locale la demo si accende con `VITE_DEMO=1` in `.env.development.local` (ignorato da git,
+letto solo da `npm run dev`). Per sviluppare contro una G2 vera si commenta `VITE_DEMO` e si
+imposta `GINGERVIEW_PRINTER=<ip>`, come in `.env.example`.
 
 ## Domande aperte
 
