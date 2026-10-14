@@ -17,10 +17,18 @@
 	const dataSource = 'dashboard-pellet';
 	const dataQuery = 'print_stats&output_pin _FEEDER_STATUS';
 	const maxPelletKg = 5;
+	// I G-code Ginger contano il "filamento" in mm³: filament_diameter 1.1284 dà
+	// 1 mm³ per mm, e 1.24 g/cm³ è la densità che Orca usa di default.
+	const defaultGramsPerMm = 0.00124;
+	// Senza filament_used in crescita da questo tempo, la macchina non estrude.
+	const extrudingTimeoutMs = 2000;
 
 	let usedKg = $state(0);
 	let totalKg = $state(maxPelletKg);
 	let isIdle = $state(true);
+	// I pallini vibrano solo mentre il pellet scende davvero: fermi in pausa e
+	// durante il riscaldamento.
+	let extruding = $state(false);
 	// The feeder's on/off, as the machine reports it (`_FEEDER_STATUS` in
 	// 50_feeder.cfg). START_PRINT switches it on and END_PRINT off: this switch is
 	// for doing it by hand in between.
@@ -40,24 +48,36 @@
 	}));
 
 	let lastFilename: string | null = null;
-	let filamentWeightTotal: number | null = null;
+	let gramsPerMm = defaultGramsPerMm;
+	let lastFilamentUsed = 0;
+	let lastExtrusionAt = 0;
+	let printing = false;
+
+	const updateExtruding = (): void => {
+		extruding = printing && Date.now() - lastExtrusionAt < extrudingTimeoutMs;
+	};
+
+	// Lo stato arriva solo quando cambia: se filament_used smette di salire non
+	// arriva niente, e i pallini si fermano grazie a questo controllo.
+	$effect(() => {
+		const timer = setInterval(updateExtruding, 500);
+		return () => clearInterval(timer);
+	});
 
 	const loadFileWeight = async (filename: string): Promise<void> => {
 		if (!filename || filename === lastFilename) return;
 		lastFilename = filename;
 		try {
 			const metadata = await getFileMetadata(filename);
-			// filament_weight_total is in grams
-			if (metadata.filament_weight_total && metadata.filament_weight_total > 0) {
-				filamentWeightTotal = metadata.filament_weight_total;
-				totalKg = filamentWeightTotal / 1000;
-			} else {
-				filamentWeightTotal = null;
-				totalKg = maxPelletKg;
-			}
+			const weight = metadata.filament_weight_total ?? 0; // g
+			const length = metadata.filament_total ?? 0; // mm
+			totalKg = weight > 0 ? weight / 1000 : maxPelletKg;
+			// Il rapporto peso/lunghezza del file stesso vale qualunque diametro e
+			// densità abbia impostato lo slicer.
+			gramsPerMm = weight > 0 && length > 0 ? weight / length : defaultGramsPerMm;
 		} catch {
-			filamentWeightTotal = null;
 			totalKg = maxPelletKg;
+			gramsPerMm = defaultGramsPerMm;
 		}
 	};
 
@@ -78,16 +98,16 @@
 			loadFileWeight(filename);
 		} else {
 			lastFilename = null;
-			filamentWeightTotal = null;
 			totalKg = maxPelletKg;
+			gramsPerMm = defaultGramsPerMm;
 		}
 
-		// filament_used is in mm; approximate weight using ~1.24 g/cm³ PLA density
-		// and 1.75mm filament: weight(g) = length(mm) * π * (0.875)² * 1.24 / 1000
-		const filamentUsedMm = printStats.filament_used ?? 0;
-		const filamentArea = Math.PI * Math.pow(0.875, 2); // mm²
-		const densityGPerMm3 = 0.00124; // g/mm³ (1.24 g/cm³)
-		usedKg = (filamentUsedMm * filamentArea * densityGPerMm3) / 1000;
+		const filamentUsed = printStats.filament_used ?? 0; // mm
+		if (filamentUsed > lastFilamentUsed) lastExtrusionAt = Date.now();
+		lastFilamentUsed = filamentUsed;
+		printing = printState === 'printing';
+		updateExtruding();
+		usedKg = (filamentUsed * gramsPerMm) / 1000;
 	};
 
 	const setFeeder = async (enable: boolean): Promise<void> => {
@@ -129,7 +149,12 @@
 	<div class="pellet-visual">
 		{#if !isIdle}
 			<div class="pellet-fill" style="height: {percentage}%">
-				<svg width="100%" height="48px" style="position: absolute; top: -24px; left: 0;">
+				<svg
+					width="100%"
+					height="48px"
+					style="position: absolute; top: -24px; left: 0;"
+					class:still={!extruding}
+				>
 					<!-- Lista statica di 40 bolle, mai riordinata: l'indice è una key corretta. -->
 					{#each circles as circle, i (i)}
 						<circle
@@ -246,6 +271,11 @@
 		background: var(--color-red);
 		transition: height 0.3s ease;
 		z-index: 1;
+	}
+
+	.still circle {
+		/* Lo stile inline imposta l'animazione: qui serve !important per fermarla. */
+		animation-play-state: paused !important;
 	}
 
 	@keyframes -global-pellet-vibrate {
