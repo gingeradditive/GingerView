@@ -1,55 +1,91 @@
-<!-- La G2 vista di fronte, con la testa che stampa un vaso: l'apertura della demo. -->
+<!--
+	La G2 stilizzata come le altre illustrazioni: il cubo di profilati con gli angolari rossi,
+	il gantry con la testa che scorre e il tubo del materiale, un vaso sul piano rosso e un
+	sacco di pellet sul fondo.
+-->
 <svg class="gv-illu" viewBox="0 0 240 160" aria-hidden="true">
-	<ellipse class="bg" cx="120" cy="86" rx="110" ry="70" />
-	<rect class="sf-gray" x="150" y="4" width="34" height="18" rx="4" />
-	<rect class="sf" x="40" y="16" width="160" height="128" rx="10" />
-	<rect class="inner" x="52" y="28" width="136" height="96" rx="5" />
-	<rect class="dark" x="52" y="42" width="136" height="7" rx="2" />
-	<path class="vase" d="M104 112 C98 100 101 90 110 84 H130 C139 90 142 100 136 112 Z" />
-	<path class="ln-thin" d="M101 102 H139 M102 94 H138" />
+	<ellipse class="bg" cx="120" cy="84" rx="104" ry="72" />
+
+	<!-- Faccia dietro, più leggera. -->
+	<path class="ln-thin" d="M86 116 V16 H186 V116 Z" />
+	<path class="ln-thin" d="M56 140 L86 116" />
+
+	<!-- Il sacco di pellet sul fondo. -->
+	<path class="sf-gray" d="M160 116 V96 Q160 90 166 90 H174 Q180 90 180 96 V116 Z" />
+	<path class="ln-thin" d="M163 96 Q170 99 177 96" />
+
+	<!-- Il piano di vetro e il vaso in stampa. -->
+	<path class="bed" d="M58 138 H154 L184 114 H88 Z" />
+	<path class="vase" d="M110 130 C106 122 108 115 113 112 H127 C132 115 134 122 130 130 Z" />
+	<path class="ln-thin vase-lines" d="M109 124 H131 M110 118 H130" />
+
+	<!-- Spigoli laterali e il gantry. -->
+	<path class="ln" d="M56 40 L86 16 M156 40 L186 16 M156 140 L186 116" />
+	<path class="ln gantry" d="M71 78 H171" />
+
 	<g class="head">
-		<rect class="accent" x="108" y="38" width="24" height="24" rx="4" />
-		<path class="dark" d="M115 62 H125 L122 72 H118 Z" />
+		<path class="ln-thin" d="M140 16 C140 40 120 40 120 70" />
+		<rect class="accent" x="111" y="70" width="18" height="16" rx="3" />
+		<path class="sf" d="M114 86 H126 L122 96 H118 Z" />
 	</g>
-	<rect class="dark" x="60" y="112" width="120" height="6" rx="2" />
-	<text x="120" y="137" text-anchor="middle">G2</text>
-	<rect class="dark" x="50" y="144" width="16" height="6" rx="2" />
-	<rect class="dark" x="174" y="144" width="16" height="6" rx="2" />
+
+	<!-- Faccia davanti. -->
+	<rect class="frame" x="56" y="40" width="100" height="100" rx="3" />
+
+	<!-- Angolari rossi. -->
+	<g class="accent">
+		<rect x="51" y="35" width="10" height="10" rx="2.5" />
+		<rect x="151" y="35" width="10" height="10" rx="2.5" />
+		<rect x="51" y="135" width="10" height="10" rx="2.5" />
+		<rect x="151" y="135" width="10" height="10" rx="2.5" />
+		<rect x="82" y="12" width="8" height="8" rx="2" />
+		<rect x="182" y="12" width="8" height="8" rx="2" />
+		<rect x="182" y="112" width="8" height="8" rx="2" />
+	</g>
 </svg>
 
 <style>
-	.inner {
-		fill: var(--color-background);
-		stroke: var(--color-text-subtle);
-		stroke-width: 2;
+	.frame {
+		fill: none;
+		stroke: var(--color-text-muted);
+		stroke-width: 4;
 	}
 
-	.vase {
+	.gantry {
+		stroke-width: 5;
+	}
+
+	.bed {
 		fill: var(--color-danger-bg);
 		stroke: var(--color-red);
 		stroke-width: 3;
 		stroke-linejoin: round;
 	}
 
-	text {
-		font-family: var(--font-sans);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.1em;
-		fill: var(--color-text-muted);
+	.vase {
+		fill: var(--color-white);
+		stroke: var(--color-red);
+		stroke-width: 3;
+		stroke-linejoin: round;
 	}
 
+	.vase-lines {
+		stroke: var(--color-red);
+		opacity: 0.5;
+	}
+
+	/* La testa va avanti e indietro lungo il gantry. */
 	.head {
-		animation: travel 3s ease-in-out infinite;
+		animation: travel 3.2s ease-in-out infinite;
 	}
 
 	@keyframes travel {
 		0%,
 		100% {
-			transform: translateX(-14px);
+			transform: translateX(-22px);
 		}
 		50% {
-			transform: translateX(14px);
+			transform: translateX(22px);
 		}
 	}
 </style>
