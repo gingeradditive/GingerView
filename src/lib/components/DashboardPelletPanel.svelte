@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
+	import Fraction from '$lib/components/Fraction.svelte';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
@@ -147,7 +148,9 @@
 			{#if isIdle}
 				<span class="pellet-value">Waiting for<br />your material!</span>
 			{:else}
-				<span class="pellet-value">{remainingKg.toFixed(1)}/{totalKg.toFixed(1)} KG</span>
+				<span class="pellet-value"
+					><Fraction value="{remainingKg.toFixed(1)} KG" total="{totalKg.toFixed(1)} KG" /></span
+				>
 			{/if}
 		</div>
 	</div>

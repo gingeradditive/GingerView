@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Fraction from '$lib/components/Fraction.svelte';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
 	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
@@ -90,7 +91,9 @@
 			<span class="z-value">Infinity and beyond!</span>
 			<span class="z-value-sub">Joking just a meter :(</span>
 		{:else}
-			<span class="z-value">{currentHeight.toFixed(1)} / {maxHeight} mm</span>
+			<span class="z-value"
+				><Fraction value="{currentHeight.toFixed(1)} mm" total="{maxHeight} mm" /></span
+			>
 		{/if}
 	</div>
 </section>
