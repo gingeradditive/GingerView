@@ -94,8 +94,8 @@
 	const speedLabel = $derived(job ? `×${Math.round(job.speedup)}` : '');
 </script>
 
-<!-- La barra della demo: fissa, nera, fuori dal linguaggio visivo di GingerView
-     apposta, perché nessuno la scambi per una parte dell'interfaccia. -->
+<!-- La barra della demo: fissa, rosa a strisce, fuori dal linguaggio visivo di
+     GingerView apposta, perché nessuno la scambi per una parte dell'interfaccia. -->
 <header class="demo-header">
 	<button class="demo-id" type="button" onclick={() => (noticeOpen = true)}>
 		<span class="demo-tag">DEMO</span>
@@ -169,9 +169,15 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		background: repeating-linear-gradient(-45deg, #111 0 14px, #1c1c1c 14px 28px);
-		border-bottom: 3px solid var(--color-red);
-		color: var(--color-white);
+		/* Rosa chiaro semitrasparente, con le strisce appena accennate: resta
+		   riconoscibile come "nastro" della demo senza pesare sulla pagina. */
+		background:
+			repeating-linear-gradient(-45deg, rgba(var(--rgb-red), 0.07) 0 14px, transparent 14px 28px),
+			rgba(247, 217, 216, 0.82);
+		backdrop-filter: blur(10px) saturate(140%);
+		-webkit-backdrop-filter: blur(10px) saturate(140%);
+		border-bottom: 2px solid var(--color-red);
+		color: var(--color-black);
 		font-size: 0.78rem;
 	}
 
@@ -193,6 +199,7 @@
 		padding: 2px 8px;
 		border-radius: 4px;
 		background: var(--color-red);
+		color: var(--color-white);
 		font-weight: 800;
 		letter-spacing: 0.12em;
 	}
@@ -215,7 +222,7 @@
 
 	.demo-about {
 		font-weight: 500;
-		color: var(--color-gray);
+		color: var(--color-text-muted);
 	}
 
 	.notice-overlay {

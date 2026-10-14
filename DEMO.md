@@ -149,7 +149,7 @@ l'interfaccia sia rotta perché la macchina non si muove). La stampante della de
 
 - **avviso al primo accesso**, chiudibile con un tap: "Virtual G2: this demo doesn't control
   the printer at the booth" (nella fase 2 confluisce nella schermata di benvenuto);
-- **barra "DEMO" fissa in alto** (nera a strisce, filo rosso), volutamente diversa dal resto
+- **barra "DEMO" fissa in alto** (rosa chiaro semitrasparente a strisce, filo rosso, testo nero), volutamente diversa dal resto
   dell'interfaccia: riapre l'avviso e durante la stampa mostra il tempo accelerato;
 - **nome stampante** simulata del tipo "G2 · Virtual".
 
