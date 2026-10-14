@@ -149,7 +149,7 @@
 				<span class="pellet-value">Waiting for<br />your material!</span>
 			{:else}
 				<span class="pellet-value"
-					><Fraction value="{remainingKg.toFixed(1)} KG" total="{totalKg.toFixed(1)} KG" /></span
+					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
 				>
 			{/if}
 		</div>
