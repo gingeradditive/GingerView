@@ -103,7 +103,16 @@
 	</button>
 	<div class="demo-status" role="status">
 		{#if job && job.phase === 'printing'}
-			<span aria-hidden="true">⏩</span>
+			<!-- Icone disegnate come quelle del pannello di stampa: niente emoji. -->
+			<svg class="demo-icon" viewBox="0 0 18 18" aria-hidden="true">
+				{#if job.paused}
+					<rect x="3" y="2" width="4" height="14" rx="1.5" />
+					<rect x="11" y="2" width="4" height="14" rx="1.5" />
+				{:else}
+					<polygon points="1,3 9,9 1,15" />
+					<polygon points="9,3 17,9 9,15" />
+				{/if}
+			</svg>
 			{job.paused ? 'Paused' : `Accelerated time ${speedLabel}`}
 		{:else if job}
 			Heating up…
@@ -218,6 +227,13 @@
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+
+	.demo-icon {
+		width: 14px;
+		height: 14px;
+		flex-shrink: 0;
+		fill: var(--color-red);
 	}
 
 	.demo-about {
