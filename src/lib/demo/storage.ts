@@ -121,9 +121,12 @@ seed();
  * carica il PNG senza passare dal simulatore.
  */
 function thumbnailRelativePath(dir: string, url: string): string | null {
-	if (!url.startsWith('/')) return null;
+	// Con i percorsi relativi di SvelteKit l'URL dell'asset è assoluto: serve il
+	// solo percorso, e solo se è sullo stesso sito (un `data:` non si può risalire).
+	const resolved = new URL(url, window.location.href);
+	if (resolved.origin !== window.location.origin) return null;
 	const depth = 2 + dir.split('/').length; // server/files + cartella
-	return `${'../'.repeat(depth)}${url.slice(1)}`;
+	return `${'../'.repeat(depth)}${resolved.pathname.slice(1)}`;
 }
 
 function thumbnailsFor(path: string, node: FileNode): Metadata[] | undefined {

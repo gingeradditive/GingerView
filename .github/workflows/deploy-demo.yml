@@ -36,6 +36,7 @@ jobs:
         run: npm run build
         env:
           BUILD_DIR: build-demo
+          VITE_DEMO: '1'
 
       - name: Deploy to Cloudflare Pages
         run: npx --yes wrangler@4 pages deploy build-demo --project-name gingerview-demo --branch demo/fiera --commit-hash "$GITHUB_SHA"
