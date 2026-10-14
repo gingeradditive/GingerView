@@ -92,7 +92,7 @@
 			<span class="z-value-sub">Joking just a meter :(</span>
 		{:else}
 			<span class="z-value"
-				><Fraction value="{currentHeight.toFixed(1)} mm" total="{maxHeight} mm" /></span
+				><Fraction value={currentHeight.toFixed(1)} total={String(maxHeight)} unit="mm" /></span
 			>
 		{/if}
 	</div>
