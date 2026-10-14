@@ -51,7 +51,7 @@ dalle altre; nessuna esperienza condivisa tra visitatori. Un modulo `src/lib/dem
 1. Intercetta `fetch` e `WebSocket` (sostituzione globale attivata da un flag di build, es.
    `VITE_DEMO=1`) e risponde con dati finti invece di contattare la rete.
 2. Contiene un **simulatore di stampante** minimale: temperature che salgono verso il target,
-   posizione assi che si aggiorna con i comandi di movimento, avanzamento di una stampa finta,
+   ogni zona con la sua velocità e qualche decimo di oscillazione a regime, posizione assi che si aggiorna con i comandi di movimento, avanzamento di una stampa finta,
    lista file con miniature, storico precompilato.
 3. Invia aggiornamenti periodici (`notify_status_update`) come farebbe Moonraker.
 

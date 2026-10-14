@@ -22,7 +22,6 @@ export class GcodeError extends Error {}
 
 export const ZONES = ['extruder', 'extruder1', 'extruder2', 'extruder3'];
 
-const AMBIENT = 22;
 const AXIS_MIN = [0, 0, -5];
 const AXIS_MAX = [1100, 1000, 1050];
 /** Dove G28 lascia la testina. */
@@ -41,21 +40,58 @@ type KlippyState = 'ready' | 'startup' | 'shutdown';
 let klippy: KlippyState = 'ready';
 let stateMessage = 'Printer is ready';
 
+/**
+ * Un riscaldatore con la sua fisica, semplificata: la resistenza scalda a
+ * `rate` °C/s a piena potenza, il blocco disperde verso l'ambiente con
+ * costante `lossTau`, e la potenza arriva al blocco con un ritardo `lag`.
+ * Un PI con feed-forward la regola. I parametri sono un po' diversi per ogni
+ * zona, così le curve salgono separate e a regime oscillano di qualche decimo,
+ * come su una macchina vera.
+ */
 type Heater = {
 	temperature: number;
 	target: number;
-	heatTau: number;
-	coolTau: number;
 	maxTemp: number;
+	rate: number;
+	lossTau: number;
+	lag: number;
+	ambient: number;
+	/** Errore di taratura del feed-forward: l'integrale lo recupera a regime. */
+	feedForwardError: number;
+	/** Fase del disturbo lento (correnti d'aria, ventola, pellet che entra). */
+	phase: number;
+	power: number;
+	integral: number;
 };
 
-const heaters: Record<string, Heater> = Object.fromEntries([
-	...ZONES.map((zone) => [
-		zone,
-		{ temperature: AMBIENT, target: 0, heatTau: 10, coolTau: 45, maxTemp: 300 }
-	]),
-	['heater_bed', { temperature: AMBIENT, target: 0, heatTau: 12, coolTau: 90, maxTemp: 110 }]
-]);
+const heater = (
+	maxTemp: number,
+	rate: number,
+	lossTau: number,
+	lag: number,
+	ambient: number,
+	feedForwardError: number
+): Heater => ({
+	temperature: ambient,
+	target: 0,
+	maxTemp,
+	rate,
+	lossTau,
+	lag,
+	ambient,
+	feedForwardError,
+	phase: Math.random() * Math.PI * 2,
+	power: 0,
+	integral: 0
+});
+
+const heaters: Record<string, Heater> = {
+	extruder: heater(300, 8.0, 50, 2.2, 22.4, 1.04),
+	extruder1: heater(300, 7.2, 46, 2.8, 23.1, 0.97),
+	extruder2: heater(300, 6.7, 52, 3.1, 22.7, 1.06),
+	extruder3: heater(300, 7.6, 44, 2.5, 23.4, 0.95),
+	heater_bed: heater(110, 1.9, 95, 4.0, 22.1, 1.03)
+};
 
 type Move = { from: number[]; to: number[]; duration: number; elapsed: number; eVelocity: number };
 
@@ -140,16 +176,13 @@ const round = (value: number, digits = 2): number => {
 	return Math.round(value * factor) / factor;
 };
 
-/** Un decimo di grado di rumore, come un termistore vero: solo a regime. */
+/** Un decimo di grado di rumore, come un termistore vero. */
 function displayedTemperature(heater: Heater): number {
-	const goal = heater.target > 0 ? heater.target : AMBIENT;
-	const noise = Math.abs(heater.temperature - goal) < 1 ? (Math.random() - 0.5) * 0.3 : 0;
-	return round(heater.temperature + noise);
+	return round(heater.temperature + (Math.random() - 0.5) * 0.25);
 }
 
 function heaterPower(heater: Heater): number {
-	if (heater.target <= 0) return 0;
-	return round(Math.min(1, Math.max(0.12, (heater.target - heater.temperature) / 25)), 2);
+	return round(heater.power, 2);
 }
 
 /** Tutti gli oggetti di Klipper che la demo conosce, completi. */
@@ -289,20 +322,31 @@ export function getJobInfo(): {
 
 // --- simulazione --------------------------------------------------------------
 
+let thermalClock = 0;
+
 function stepHeaters(dt: number): void {
+	thermalClock += dt;
 	for (const heater of Object.values(heaters)) {
-		const heating = heater.target > 0 && heater.temperature < heater.target;
-		if (heating) {
-			// Si mira un po' sopra il target e ci si ferma lì: un avvicinamento
-			// esponenziale puro non arriverebbe mai, e TEMPERATURE_WAIT aspetterebbe.
-			const goal = heater.target + 4;
-			heater.temperature = goal + (heater.temperature - goal) * Math.exp(-dt / heater.heatTau);
-			heater.temperature = Math.min(heater.temperature, heater.target);
+		let command = 0;
+		if (heater.target > 0) {
+			const error = heater.target - heater.temperature;
+			const feedForward =
+				((heater.target - heater.ambient) / (heater.rate * heater.lossTau)) *
+				heater.feedForwardError;
+			// L'integrale lavora solo vicino al target, come l'anti-windup di Klipper.
+			if (Math.abs(error) < 15)
+				heater.integral = Math.min(0.1, Math.max(-0.1, heater.integral + error * 0.002 * dt));
+			command = Math.min(1, Math.max(0, feedForward + 0.09 * error + heater.integral));
 		} else {
-			const goal = heater.target > 0 ? heater.target : AMBIENT - 2;
-			heater.temperature = goal + (heater.temperature - goal) * Math.exp(-dt / heater.coolTau);
-			if (heater.target <= 0) heater.temperature = Math.max(heater.temperature, AMBIENT);
+			heater.integral = 0;
 		}
+		heater.power += (command - heater.power) * (1 - Math.exp(-dt / heater.lag));
+		const disturbance = heater.target > 0 ? 0.15 * Math.sin(thermalClock / 7 + heater.phase) : 0;
+		heater.temperature +=
+			(heater.power * heater.rate -
+				(heater.temperature - heater.ambient) / heater.lossTau +
+				disturbance) *
+			dt;
 	}
 }
 
