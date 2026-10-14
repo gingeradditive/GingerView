@@ -48,8 +48,6 @@ Quando una voce è fatta, si spunta qui e si aggiorna DEMO.md.
       telefono/tablet fisso con la demo aperta. Sì o no?
 - [ ] **Bug di GingerView anche su `main`**: li correggo? Dettagli in
       DEMO-DOMANDE.md.
-  - [ ] Pannello pellet: peso calcolato con filamento da 1,75 mm invece della
-        convenzione Ginger 1 mm = 1 mm³;
   - [ ] Config editor sul telefono: l'albero dei file è troppo basso;
   - [ ] Durata diversa tra card in lista e popup dei dettagli.
 

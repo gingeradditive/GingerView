@@ -87,10 +87,6 @@ mobile, scansionando un QR. Cose da guardare:
 Non li ho corretti: sono fuori dal perimetro della demo. Dimmi se aprire i
 fix su `main`.
 
-- **Pannello pellet.** Il peso usato è calcolato supponendo filamento da
-  1,75 mm (`DashboardPelletPanel.svelte`). I G-code Ginger usano invece
-  `filament_diameter: 1.1284`, cioè 1 mm = 1 mm³. Con i file veri il pellet
-  "finisce" a circa un terzo della stampa. Nella demo si vede.
 - **Config editor sul telefono.** Il riquadro dell'albero è troppo basso: con
   tre voci la terza (`printer.cfg`) è tagliata e serve scorrere per vederla.
 - **Durata nel popup dei dettagli.** Mostra `last_print_duration` (l'ultima
