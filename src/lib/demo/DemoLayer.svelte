@@ -3,8 +3,9 @@
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/stores';
-	import { modal } from '$lib/actions/modal';
-	import { portal } from '$lib/actions/portal';
+	import { MonitorSmartphone, FastForward, RotateCcw } from 'lucide-svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import PrinterG2 from '$lib/illustrations/PrinterG2.svelte';
 	import { toastActions } from '$lib/stores/toastStore';
 	import { formatDuration } from '$lib/utils/format';
 	import { demoConfig } from './config';
@@ -130,33 +131,38 @@
 </header>
 
 {#if noticeOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div
-		class="notice-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="demo-notice-title"
-		tabindex="-1"
-		use:portal
-		use:modal={{ onClose: closeNotice }}
-		onclick={closeNotice}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="notice" role="document" onclick={(event) => event.stopPropagation()}>
-			<img src="/Printers/G2/Logo.svg" alt="" class="logo" />
+	<!-- Sopra a tutto, anche alla barra DEMO: è la prima cosa che si vede. -->
+	<Sheet label="About this demo" onClose={closeNotice} size="sm" layer={10}>
+		<div class="notice">
+			<div class="hero"><PrinterG2 /></div>
+			<span class="eyebrow">Virtual printer</span>
 			<h2 id="demo-notice-title">{demoConfig.printerName}</h2>
 			<p class="lead">
 				This is <strong>GingerView</strong>, the interface of the Ginger G2 — running on a virtual
 				printer in your browser.
 			</p>
 			<ul>
-				<li>It does <strong>not</strong> control the G2 at the booth.</li>
-				<li>Pick a file and start a print: it runs in accelerated time, a few minutes.</li>
-				<li>Everything resets when you reload the page.</li>
+				<li>
+					<span class="li-icon"><MonitorSmartphone size={18} /></span>
+					<span>It does <strong>not</strong> control the G2 at the booth.</span>
+				</li>
+				<li>
+					<span class="li-icon"><FastForward size={18} /></span>
+					<span>Pick a file and print it: it runs in accelerated time, a few minutes.</span>
+				</li>
+				<li>
+					<span class="li-icon"><RotateCcw size={18} /></span>
+					<span>Everything resets when you reload the page.</span>
+				</li>
 			</ul>
-			<button class="start" type="button" onclick={closeNotice}>Start exploring</button>
 		</div>
-	</div>
+
+		{#snippet footer()}
+			<button class="btn btn-primary start" type="button" onclick={closeNotice}>
+				Start exploring
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
@@ -246,52 +252,43 @@
 		color: var(--color-text-muted);
 	}
 
-	.notice-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 4000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 16px;
-		background: rgba(var(--rgb-gray-mid), 0.3);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-	}
-
 	.notice {
-		width: min(380px, 100%);
-		box-sizing: border-box;
-		padding: 24px;
-		border-radius: 16px;
-		background: var(--color-white);
-		box-shadow: var(--shadow-panel);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
 	}
 
-	.logo {
-		height: 34px;
-		margin-bottom: 12px;
+	.hero {
+		width: min(260px, 80%);
+		aspect-ratio: 3 / 2;
+		margin-bottom: 8px;
+	}
+
+	.eyebrow {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-red);
 	}
 
 	h2 {
-		margin: 0 0 10px;
-		font-size: 1.25rem;
+		margin: 4px 0 8px;
+		font-size: 1.35rem;
 		font-weight: 800;
 		color: var(--color-black);
 	}
 
 	.lead {
-		margin: 0 0 14px;
+		margin: 0 0 16px;
 		font-size: 0.95rem;
+		line-height: 1.45;
 		color: var(--color-text-muted);
 	}
 
 	ul {
-		margin: 0 0 20px;
+		margin: 0;
 		padding: 0;
 		list-style: none;
 		display: flex;
@@ -302,39 +299,31 @@
 	}
 
 	li {
-		position: relative;
-		padding: 9px 12px 9px 30px;
-		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 12px;
+		border-radius: 12px;
 		background: var(--color-background);
 		font-size: 0.88rem;
+		line-height: 1.35;
 		color: var(--color-text-muted);
 	}
 
-	li::before {
-		content: '';
-		position: absolute;
-		left: 12px;
-		top: 16px;
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--color-red);
+	.li-icon {
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 34px;
+		height: 34px;
+		border-radius: 10px;
+		background: var(--color-white);
+		color: var(--color-red);
 	}
 
 	.start {
-		width: 100%;
-		padding: 12px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: var(--color-white);
-		font: inherit;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-
-	.start:hover {
-		background: var(--color-red-dark);
+		min-height: 54px;
+		font-size: 1.05rem;
 	}
 </style>
