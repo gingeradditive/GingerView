@@ -122,8 +122,12 @@
 		overflow: hidden;
 	}
 
-	/* L'invito ha lo stesso font del titolo FLOW delle altre card. */
+	/* L'invito ha lo stesso font del titolo FLOW delle altre card, e può andare su tre righe:
+	   il limite di due serve ai nomi file. */
 	.job-name.idle {
+		font-size: min(var(--dashboard-title-size), 12cqw);
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;

@@ -144,9 +144,9 @@
 		pointer-events: none;
 	}
 
-	/* Scale with the gauge, never above the original size. */
+	/* Dimensioni comuni a tutte le card, calcolate in DashboardCarousel. */
 	.flow-label {
-		font-size: min(2rem, calc(var(--gauge) * 0.12));
+		font-size: var(--dashboard-title-size);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
@@ -154,7 +154,7 @@
 	}
 
 	.flow-value {
-		font-size: min(1.7rem, calc(var(--gauge) * 0.09));
+		font-size: var(--dashboard-subtitle-size);
 		font-weight: 500;
 		color: var(--color-text-soft);
 		line-height: 1.3;
