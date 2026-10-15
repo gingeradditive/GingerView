@@ -171,7 +171,7 @@
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br />your material!</span>
+				<span class="pellet-value idle">Waiting for<br />your material!</span>
 			{:else}
 				<span class="pellet-value"
 					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
@@ -312,15 +312,24 @@
 		text-align: center;
 	}
 
+	/* Stessi font di FLOW e "Let me extrude!". */
 	.pellet-label {
 		font-size: min(2rem, 18cqw);
 		font-weight: 700;
-		color: var(--color-black-pure);
+		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.pellet-value {
 		font-size: min(1.7rem, 13cqw);
 		color: var(--color-black-pure);
 		font-weight: 500;
+		line-height: 1.3;
+	}
+
+	/* A riposo non c'è il riempimento rosso sotto: grigio come "Let me extrude!". */
+	.pellet-value.idle {
+		color: var(--color-text-soft);
 	}
 </style>
