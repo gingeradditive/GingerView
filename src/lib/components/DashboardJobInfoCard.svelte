@@ -122,9 +122,11 @@
 		overflow: hidden;
 	}
 
-	/* L'invito è una frase, non un nome file: un filo più piccolo, per stare su due righe. */
+	/* L'invito ha lo stesso font del titolo FLOW delle altre card. */
 	.job-name.idle {
-		font-size: min(1.6rem, 10cqw);
+		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.job-preview {

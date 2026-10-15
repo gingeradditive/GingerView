@@ -187,21 +187,26 @@
 		container-type: inline-size;
 	}
 
+	/* Titolo, sottotitolo e battuta: stessi font di FLOW, "Let me extrude!" e
+	   "Pick a file and let's go" (ma grigia: qui non è un link). */
 	.z-label {
 		font-size: min(2rem, 22cqw);
 		font-weight: 700;
 		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.z-value {
 		font-size: min(1.7rem, 17cqw);
 		color: var(--color-text-soft);
 		font-weight: 500;
+		line-height: 1.3;
 	}
 
 	.z-value-sub {
-		font-size: min(1.5rem, 14cqw);
+		font-size: 0.95rem;
 		color: var(--color-text-disabled);
-		font-weight: 400;
+		font-weight: 600;
 	}
 </style>
