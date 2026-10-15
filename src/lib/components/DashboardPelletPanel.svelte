@@ -299,14 +299,14 @@
 	.pellet-text {
 		position: absolute;
 		inset: 0;
-		/* In fondo c'è la barra del feeder (52px + 12px di margine): il testo si
-		   centra nello spazio che resta sopra. */
-		padding: 16px 16px 76px;
+		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
+		   altezza. In fondo resta lo spazio della barra del feeder (52px + 12px di margine). */
+		padding: 76px 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 4px;
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		z-index: 2;
 		color: var(--color-black-pure);
 		text-align: center;
