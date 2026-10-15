@@ -144,6 +144,33 @@
 		height: 100%;
 		padding-left: 1.5rem;
 		box-sizing: border-box;
+		/* Il riferimento per i testi delle card: il contenuto della slide è la card intera. */
+		container-type: size;
+	}
+
+	/* Testi delle card della dashboard: titolo come "FLOW", sottotitolo come "Let me extrude!".
+	   Registrate come <length>, le unità cq si risolvono qui, sulla slide, e le card ereditano
+	   già i px; senza registrazione si risolverebbero sul container più vicino a chi le usa,
+	   diverso in ogni card (la colonna di Z HEIGHT, il cerchio di FLOW). Stanno qui e non in
+	   app.css perché Tailwind ci aggiunge un fallback per Safari che le riporta al valore
+	   iniziale su ogni elemento. Il valore iniziale non può essere in rem. */
+	@property --dashboard-title-size {
+		syntax: '<length>';
+		inherits: true;
+		initial-value: 32px;
+	}
+
+	@property --dashboard-subtitle-size {
+		syntax: '<length>';
+		inherits: true;
+		initial-value: 27.2px;
+	}
+
+	/* Stessa misura del cerchio di FLOW (il quadrato più grande dentro la card, tolti i
+	   16px di padding): ogni card scrive titolo e sottotitolo con le stesse dimensioni. */
+	.embla__slide > :global(*) {
+		--dashboard-title-size: min(2rem, calc((min(100cqw, 100cqh) - 32px) * 0.12));
+		--dashboard-subtitle-size: min(1.7rem, calc((min(100cqw, 100cqh) - 32px) * 0.09));
 	}
 
 	@media (min-width: 768px) and (max-width: 1199.98px) and (min-height: 600px) {

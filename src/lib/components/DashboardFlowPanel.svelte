@@ -137,16 +137,16 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: calc(var(--gauge) * 0.03);
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		/* Keeps the text inside the ring (inner diameter ≈ 74% of the gauge). */
 		padding: 0 calc(var(--gauge) * 0.2);
 		text-align: center;
 		pointer-events: none;
 	}
 
-	/* Scale with the gauge, never above the original size. */
+	/* Dimensioni comuni a tutte le card, calcolate in DashboardCarousel. */
 	.flow-label {
-		font-size: min(2rem, calc(var(--gauge) * 0.12));
+		font-size: var(--dashboard-title-size);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
@@ -154,7 +154,7 @@
 	}
 
 	.flow-value {
-		font-size: min(1.7rem, calc(var(--gauge) * 0.09));
+		font-size: var(--dashboard-subtitle-size);
 		font-weight: 500;
 		color: var(--color-text-soft);
 		line-height: 1.3;
