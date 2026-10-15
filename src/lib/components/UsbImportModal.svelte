@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
 	import { tooltip } from '$lib/actions/tooltip';
 	import {
 		mdiChevronLeft,
@@ -10,7 +9,7 @@
 		mdiTrayArrowDown,
 		mdiUsbFlashDrive
 	} from '@mdi/js';
-	import { portal } from '$lib/actions/portal';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import { formatBytes } from '$lib/services/moonraker-statistics';
 	import {
@@ -157,23 +156,33 @@
 	const conflictIsPrinting = $derived(!!conflict && printingFile === join(destDir, conflict.name));
 </script>
 
-{#if isOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<!-- Portalled per la stessa ragione di ConfirmModal: dentro il carosello o il dock
-	     `position: fixed` si appoggerebbe al contenitore trasformato. -->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label="Import from USB stick"
-		tabindex="-1"
-		use:portal
-		onclick={close}
-		use:modal={{ onClose: close }}
+{#snippet conflictActions()}
+	<button type="button" class="btn btn-secondary" onclick={() => (conflict = null)}>Cancel</button>
+	<button
+		type="button"
+		class="btn btn-secondary"
+		disabled={conflictIsPrinting}
+		onclick={() => runImport(conflict!, 'overwrite')}
 	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
-			<header class="usb-header">
+		Overwrite
+	</button>
+	<button type="button" class="btn btn-primary" onclick={() => runImport(conflict!, 'rename')}>
+		Keep both
+	</button>
+{/snippet}
+
+{#if isOpen}
+	<!-- Una copia in corso non si interrompe: `close` aspetta che finisca. -->
+	<!-- Il footer c'è solo per il file già presente: le scelte stanno dove stanno nelle altre finestre. -->
+	<Sheet
+		label="Import from USB stick"
+		onClose={close}
+		size="md"
+		panelClass="usb-panel"
+		footer={conflict ? conflictActions : undefined}
+	>
+		{#snippet header()}
+			<div class="usb-header">
 				{#if usbPath && !conflict}
 					<button
 						type="button"
@@ -204,149 +213,92 @@
 				>
 					<svg viewBox="0 0 24 24" width="28" height="28"><path d={mdiClose} /></svg>
 				</button>
-			</header>
+			</div>
+		{/snippet}
 
-			{#if conflict}
-				<div class="conflict">
-					<p class="conflict-message">
-						<strong>{conflict.name}</strong> already exists in {destLabel}.
-					</p>
-					{#if conflictIsPrinting}
-						<p class="conflict-note">It is being printed right now, so it cannot be replaced.</p>
-					{/if}
-					<div class="conflict-actions">
+		{#if conflict}
+			<div class="conflict">
+				<p class="conflict-message">
+					<strong>{conflict.name}</strong> already exists in {destLabel}.
+				</p>
+				{#if conflictIsPrinting}
+					<p class="conflict-note">It is being printed right now, so it cannot be replaced.</p>
+				{/if}
+			</div>
+		{:else if loading && !listing}
+			<div class="usb-status">Reading the USB stick…</div>
+		{:else if error}
+			<div class="usb-status error">
+				<span>{error}</span>
+				<button type="button" class="btn btn-secondary" onclick={() => load(usbPath)}>Retry</button>
+			</div>
+		{:else if isEmpty}
+			<div class="usb-status">No printable files here</div>
+		{:else if listing}
+			<ul class="usb-list" class:dimmed={loading}>
+				{#each listing.dirs as dir (`d:${dir.name}`)}
+					<li>
 						<button
 							type="button"
-							class="modal-confirm"
-							onclick={() => runImport(conflict!, 'rename')}
+							class="usb-row"
+							onclick={() => openDir(dir.name)}
+							disabled={!!importing || loading}
 						>
-							Keep both
-						</button>
-						<button
-							type="button"
-							class="modal-secondary"
-							disabled={conflictIsPrinting}
-							onclick={() => runImport(conflict!, 'overwrite')}
-						>
-							Overwrite
-						</button>
-						<button type="button" class="modal-cancel" onclick={() => (conflict = null)}>
-							Cancel
-						</button>
-					</div>
-				</div>
-			{:else if loading && !listing}
-				<div class="usb-status">Reading the USB stick…</div>
-			{:else if error}
-				<div class="usb-status error">
-					<span>{error}</span>
-					<button type="button" class="modal-cancel" onclick={() => load(usbPath)}>Retry</button>
-				</div>
-			{:else if isEmpty}
-				<div class="usb-status">No printable files here</div>
-			{:else if listing}
-				<ul class="usb-list" class:dimmed={loading}>
-					{#each listing.dirs as dir (`d:${dir.name}`)}
-						<li>
-							<button
-								type="button"
-								class="usb-row"
-								onclick={() => openDir(dir.name)}
-								disabled={!!importing || loading}
+							<svg
+								class="row-icon folder"
+								viewBox="0 0 24 24"
+								width="28"
+								height="28"
+								aria-hidden="true"
 							>
+								<path d={mdiFolder} />
+							</svg>
+							<span class="row-name">{dir.name}</span>
+							<svg class="row-trail" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+								<path d={mdiChevronRight} />
+							</svg>
+						</button>
+					</li>
+				{/each}
+				{#each listing.files as file (`f:${file.name}`)}
+					<li>
+						<button
+							type="button"
+							class="usb-row"
+							onclick={() => runImport(file, 'fail')}
+							disabled={!!importing || loading}
+						>
+							<svg class="row-icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+								<path d={mdiFileDocumentOutline} />
+							</svg>
+							<span class="row-text">
+								<span class="row-name">{file.name.replace(/\.gcode$/i, '')}</span>
+								<span class="row-meta">
+									{importing === file.name ? 'Importing…' : formatBytes(file.size)}
+								</span>
+							</span>
+							{#if importing === file.name}
+								<span class="spinner" aria-hidden="true"></span>
+							{:else}
 								<svg
-									class="row-icon folder"
-									viewBox="0 0 24 24"
-									width="28"
-									height="28"
-									aria-hidden="true"
-								>
-									<path d={mdiFolder} />
-								</svg>
-								<span class="row-name">{dir.name}</span>
-								<svg
-									class="row-trail"
+									class="row-trail import"
 									viewBox="0 0 24 24"
 									width="24"
 									height="24"
 									aria-hidden="true"
 								>
-									<path d={mdiChevronRight} />
+									<path d={mdiTrayArrowDown} />
 								</svg>
-							</button>
-						</li>
-					{/each}
-					{#each listing.files as file (`f:${file.name}`)}
-						<li>
-							<button
-								type="button"
-								class="usb-row"
-								onclick={() => runImport(file, 'fail')}
-								disabled={!!importing || loading}
-							>
-								<svg class="row-icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-									<path d={mdiFileDocumentOutline} />
-								</svg>
-								<span class="row-text">
-									<span class="row-name">{file.name.replace(/\.gcode$/i, '')}</span>
-									<span class="row-meta">
-										{importing === file.name ? 'Importing…' : formatBytes(file.size)}
-									</span>
-								</span>
-								{#if importing === file.name}
-									<span class="spinner" aria-hidden="true"></span>
-								{:else}
-									<svg
-										class="row-trail import"
-										viewBox="0 0 24 24"
-										width="24"
-										height="24"
-										aria-hidden="true"
-									>
-										<path d={mdiTrayArrowDown} />
-									</svg>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
-	</div>
+							{/if}
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+	</Sheet>
 {/if}
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 3000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 16px;
-		box-sizing: border-box;
-	}
-
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 16px;
-		width: min(480px, 100%);
-		max-height: min(640px, 85vh);
-		display: flex;
-		flex-direction: column;
-		gap: 12px;
-		box-sizing: border-box;
-		box-shadow: var(--shadow-panel);
-	}
-
 	.usb-header {
 		display: flex;
 		align-items: center;
@@ -533,43 +485,7 @@
 		padding: 10px 14px;
 	}
 
-	.conflict-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		justify-content: flex-end;
-	}
-
-	.modal-confirm,
-	.modal-secondary,
-	.modal-cancel {
-		min-height: 44px;
-		padding: 8px 20px;
-		border-radius: 8px;
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
-
-	.modal-confirm {
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-	}
-
-	.modal-secondary {
-		border: 1px solid var(--color-red);
-		background: var(--color-white);
-		color: var(--color-red);
-	}
-
-	.modal-secondary:disabled {
-		opacity: 0.4;
-		cursor: default;
-	}
-
-	.modal-cancel {
-		border: 1px solid var(--color-gray);
-		background: var(--color-white);
-		color: var(--color-text-soft);
+	:global(.usb-panel) {
+		height: min(640px, calc(100dvh - 48px));
 	}
 </style>

@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
-	import ModalCloseButton from '$lib/components/ModalCloseButton.svelte';
-	import { tooltip } from '$lib/actions/tooltip';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	let {
 		isOpen,
 		title,
@@ -35,144 +33,145 @@
 		draft = null;
 		onChange(next);
 	};
+
+	// Scorciatoie esplicite: prima 0% e 100% si ottenevano toccando le icone ai lati dello
+	// slider, e nessuno lo indovinava.
+	const presets = [0, 25, 50, 75, 100];
 </script>
 
 {#if isOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div
-		class="popup-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label={ariaLabel}
-		tabindex="-1"
-		use:modal={{ onClose }}
-		onclick={onClose}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="popup-modal" role="document" onclick={(e) => e.stopPropagation()}>
-			<ModalCloseButton {onClose} />
-			<h3>{title}</h3>
-			<div class="popup-slider-row">
-				<svg
-					viewBox="0 0 24 24"
-					width={leftIconSize}
-					height={leftIconSize}
-					class="popup-slider-icon clickable"
-					role="button"
-					tabindex="0"
-					aria-label="Set to 0%"
-					use:tooltip
-					onclick={() => commit(0)}
-					onkeydown={(e) => e.key === 'Enter' && commit(0)}
-				>
-					<path d={leftIconPath} fill="#d72e28" />
-				</svg>
-				<input
-					type="range"
-					min="0"
-					max="100"
-					step="1"
-					aria-label={ariaLabel}
-					value={shown}
-					oninput={(e) => (draft = Number((e.currentTarget as HTMLInputElement).value))}
-					onchange={(e) => commit(Number((e.currentTarget as HTMLInputElement).value))}
-				/>
-				<svg
-					viewBox="0 0 24 24"
-					width={rightIconSize}
-					height={rightIconSize}
-					class="popup-slider-icon clickable"
-					role="button"
-					tabindex="0"
-					aria-label="Set to 100%"
-					use:tooltip
-					onclick={() => commit(100)}
-					onkeydown={(e) => e.key === 'Enter' && commit(100)}
-				>
-					<path d={rightIconPath} fill="#d72e28" />
-				</svg>
-			</div>
-			<div class="popup-percent">{shown}%</div>
+	<Sheet label={ariaLabel} {onClose} showClose size="sm">
+		{#snippet header()}
+			<h3 class="sheet-title">{title}</h3>
+		{/snippet}
+
+		<div class="percent" aria-hidden="true">{shown}<span>%</span></div>
+
+		<div class="slider-row">
+			<svg viewBox="0 0 24 24" width={leftIconSize} height={leftIconSize} aria-hidden="true">
+				<path d={leftIconPath} />
+			</svg>
+			<input
+				type="range"
+				min="0"
+				max="100"
+				step="1"
+				aria-label={ariaLabel}
+				value={shown}
+				style:--fill="{shown}%"
+				oninput={(e) => (draft = Number((e.currentTarget as HTMLInputElement).value))}
+				onchange={(e) => commit(Number((e.currentTarget as HTMLInputElement).value))}
+			/>
+			<svg viewBox="0 0 24 24" width={rightIconSize} height={rightIconSize} aria-hidden="true">
+				<path d={rightIconPath} />
+			</svg>
 		</div>
-	</div>
+
+		<div class="presets" role="group" aria-label="Quick values">
+			{#each presets as preset (preset)}
+				<button
+					type="button"
+					class="preset"
+					class:active={shown === preset}
+					onclick={() => commit(preset)}
+				>
+					{preset === 0 ? 'Off' : `${preset}%`}
+				</button>
+			{/each}
+		</div>
+	</Sheet>
 {/if}
 
 <style>
-	.popup-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 3000;
-		padding: 24px;
-	}
-
-	.popup-modal {
-		position: relative;
-		width: min(520px, 100%);
-		background: var(--color-white);
-		border-radius: 27px;
-		box-shadow: var(--shadow-panel);
-		padding: 28px 32px;
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
-	}
-
-	.popup-modal h3 {
-		margin: 0;
+	.percent {
 		text-align: center;
-		font-size: 26px;
+		font-size: 3rem;
+		font-weight: 800;
+		line-height: 1;
+		color: var(--color-black);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.percent span {
+		font-size: 1.4rem;
 		font-weight: 700;
-		color: var(--color-text-muted);
+		color: var(--color-text-subtle);
 	}
 
-	.popup-percent {
-		text-align: center;
-		font-size: 22px;
-		font-weight: 600;
-		color: var(--color-black-pure);
-	}
-
-	.popup-slider-row {
+	.slider-row {
 		display: grid;
-		grid-template-columns: auto 1fr auto;
+		grid-template-columns: 30px 1fr 30px;
 		align-items: center;
-		gap: 14px;
+		justify-items: center;
+		gap: 12px;
+		margin: 20px 0 18px;
 	}
 
-	.popup-slider-icon {
-		display: block;
+	.slider-row svg {
+		fill: var(--color-red);
 	}
 
-	.popup-slider-row input[type='range'] {
+	input[type='range'] {
 		width: 100%;
-		accent-color: var(--color-red);
-	}
-
-	.popup-slider-row input[type='range']::-webkit-slider-thumb {
+		height: 10px;
 		appearance: none;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		background: var(--color-red);
+		border-radius: 5px;
+		background: linear-gradient(
+			90deg,
+			var(--color-red) var(--fill),
+			var(--color-surface-sunken) var(--fill)
+		);
 		cursor: pointer;
 	}
 
-	.popup-slider-row input[type='range']::-moz-range-thumb {
-		width: 20px;
-		height: 20px;
+	input[type='range']::-webkit-slider-thumb {
+		appearance: none;
+		width: 28px;
+		height: 28px;
 		border-radius: 50%;
-		background: var(--color-red);
+		background: var(--color-white);
+		box-shadow:
+			0 0 0 3px var(--color-red),
+			0 2px 6px rgba(var(--rgb-black), 0.2);
 		cursor: pointer;
+	}
+
+	input[type='range']::-moz-range-thumb {
+		width: 28px;
+		height: 28px;
 		border: none;
+		border-radius: 50%;
+		background: var(--color-white);
+		box-shadow:
+			0 0 0 3px var(--color-red),
+			0 2px 6px rgba(var(--rgb-black), 0.2);
+		cursor: pointer;
+	}
+
+	.presets {
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		gap: 8px;
+	}
+
+	.preset {
+		min-height: 44px;
+		border: none;
+		border-radius: 12px;
+		background: var(--color-background);
+		color: var(--color-text-muted);
+		font-family: inherit;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+
+	.preset:hover {
+		background: var(--color-surface-sunken);
+	}
+
+	.preset.active {
+		background: var(--color-danger-bg);
+		color: var(--color-red);
+		box-shadow: inset 0 0 0 2px var(--color-red);
 	}
 </style>
