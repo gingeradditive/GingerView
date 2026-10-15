@@ -314,7 +314,7 @@
 
 	/* Stessi font di FLOW e "Let me extrude!". */
 	.pellet-label {
-		font-size: min(2rem, 18cqw);
+		font-size: min(var(--dashboard-title-size), 18cqw);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
@@ -322,7 +322,7 @@
 	}
 
 	.pellet-value {
-		font-size: min(1.7rem, 13cqw);
+		font-size: min(var(--dashboard-subtitle-size), 13cqw);
 		color: var(--color-black-pure);
 		font-weight: 500;
 		line-height: 1.3;

@@ -89,7 +89,7 @@
 		<span class="z-label">Z HEIGHT</span>
 		{#if isIdle}
 			<span class="z-value">Infinity and beyond!</span>
-			<span class="z-value-sub">Joking just a meter :(</span>
+			<span class="z-value-sub">Joking just a meter&nbsp;:(</span>
 		{:else}
 			<span class="z-value"
 				><Fraction value={currentHeight.toFixed(1)} total={String(maxHeight)} unit="mm" /></span
@@ -183,14 +183,15 @@
 		justify-content: center;
 		align-items: center;
 		text-align: center;
-		/* I testi scalano con la colonna: a 2rem "HEIGHT" esce da una colonna di 230px. */
+		/* Le dimensioni sono quelle comuni alle card; il limite in cqw interviene solo se la
+		   colonna è così stretta che "HEIGHT" ne uscirebbe. */
 		container-type: inline-size;
 	}
 
 	/* Titolo, sottotitolo e battuta: stessi font di FLOW, "Let me extrude!" e
 	   "Pick a file and let's go" (ma grigia: qui non è un link). */
 	.z-label {
-		font-size: min(2rem, 22cqw);
+		font-size: min(var(--dashboard-title-size), 22cqw);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
@@ -198,7 +199,7 @@
 	}
 
 	.z-value {
-		font-size: min(1.7rem, 17cqw);
+		font-size: min(var(--dashboard-subtitle-size), 17cqw);
 		color: var(--color-text-soft);
 		font-weight: 500;
 		line-height: 1.3;
