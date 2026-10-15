@@ -137,7 +137,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: calc(var(--gauge) * 0.03);
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		/* Keeps the text inside the ring (inner diameter ≈ 74% of the gauge). */
 		padding: 0 calc(var(--gauge) * 0.2);
 		text-align: center;

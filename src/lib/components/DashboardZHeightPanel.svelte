@@ -13,7 +13,6 @@
 
 	const dataSource = 'dashboard-z-height';
 	const dataQuery = 'toolhead=position,axis_maximum&gcode_move=gcode_position&print_stats=state';
-	const totalSections = 10;
 	const sectionHeight = 100;
 
 	let currentHeight = $state(0);
@@ -24,14 +23,16 @@
 		maxHeight > 0 ? Math.min(100, (currentHeight / maxHeight) * 100) : 0
 	);
 
+	// Una tacca ogni 10cm, sulla stessa scala del riempimento (l'altezza vera della
+	// macchina). Senza quelle troppo vicine alla cima, dove l'etichetta uscirebbe dall'asta.
 	let sections = $derived(
-		Array.from({ length: totalSections }, (_, i) => {
+		Array.from({ length: Math.floor(maxHeight / sectionHeight) }, (_, i) => {
 			const value = (i + 1) * sectionHeight;
 			return {
-				mark: value,
-				label: value === 1000 ? '1m' : `${value}mm`
+				bottom: (value / maxHeight) * 100,
+				label: value === 1000 ? '1m' : `${value / 10}cm`
 			};
-		})
+		}).filter((section) => section.bottom <= 96)
 	);
 
 	const updateZHeight = (status: ZHeightStatus): void => {
@@ -72,17 +73,26 @@
 			<!-- Section marks and labels -->
 			<div class="z-marks">
 				<!-- Tacche posizionali: l'indice è la loro identità, non c'è riordino. -->
-				{#each sections as _section, i (i)}
-					<div class="z-mark" style="bottom: {(i + 1) * 10}%"></div>
-				{/each}
-			</div>
-			<div class="z-labels">
 				{#each sections as section, i (i)}
-					<div class="z-label-mark" style="bottom: {(i + 1) * 10}%">
-						{section.label}
-					</div>
+					<div class="z-mark" style="bottom: {section.bottom}%"></div>
 				{/each}
 			</div>
+			<!-- Le etichette due volte: grigie sul bianco e, ritagliata sul riempimento,
+			     una copia bianca che resta leggibile sul rosso. -->
+			{#each [false, true] as onFill (onFill)}
+				<div
+					class="z-labels"
+					class:on-fill={onFill}
+					style={onFill ? `clip-path: inset(${100 - fillPercentage}% 0 0 0)` : undefined}
+					aria-hidden="true"
+				>
+					{#each sections as section, i (i)}
+						<div class="z-label-mark" style="bottom: {section.bottom}%">
+							{section.label}
+						</div>
+					{/each}
+				</div>
+			{/each}
 		</div>
 	</div>
 	<div class="z-info">
@@ -151,32 +161,42 @@
 	.z-mark {
 		position: absolute;
 		left: 0;
-		right: 50%;
+		right: 60%;
 		height: 1px;
 		background: var(--color-black-pure);
 	}
 
+	/* Nella metà destra dell'asta, accanto alle tacche: prima stavano fuori dall'asta,
+	   che le tagliava, e non si vedevano. */
 	.z-labels {
 		position: absolute;
-		top: -5px;
-		right: -45px;
-		bottom: -5px;
+		inset: 0;
 		pointer-events: none;
+	}
+
+	.z-labels.on-fill {
+		color: var(--color-white);
+		transition: clip-path 0.3s ease;
 	}
 
 	.z-label-mark {
 		position: absolute;
-		right: 0;
-		font-size: 0.7rem;
-		color: var(--color-text-soft);
+		right: 4px;
+		font-size: 0.65rem;
+		font-weight: 600;
+		color: var(--color-text-subtle);
 		transform: translateY(50%);
 		white-space: nowrap;
+	}
+
+	.on-fill .z-label-mark {
+		color: var(--color-white);
 	}
 
 	.z-info {
 		display: flex;
 		flex-direction: column;
-		gap: 8px;
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		flex: 1;
 		min-width: 0;
 		padding: 20px 12px;
