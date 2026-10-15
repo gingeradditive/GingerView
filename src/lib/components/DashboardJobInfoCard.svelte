@@ -80,7 +80,12 @@
 		<span class="job-name idle">What are we building today?</span>
 	{/if}
 	<div class="job-preview">
-		<img src={thumbnailUrl} alt={hasJob ? 'Print preview' : ''} />
+		{#if hasJob}
+			<img src={thumbnailUrl} alt="Print preview" />
+		{:else}
+			<!-- A riposo il logo della G2, lo stesso del dock. -->
+			<img class="idle-logo" src="/Printers/G2/Logo.svg" alt="" />
+		{/if}
 	</div>
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
@@ -145,6 +150,11 @@
 		max-width: 100%;
 		max-height: 100%;
 		object-fit: contain;
+	}
+
+	.job-preview img.idle-logo {
+		width: min(70%, 200px);
+		height: auto;
 	}
 
 	.job-cta {
