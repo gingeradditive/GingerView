@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { LoaderCircle, CircleCheck, CircleX } from 'lucide-svelte';
 	import type { UpdateLogState } from '$lib/types/update';
 
@@ -42,16 +42,17 @@
 </script>
 
 {#if isOpen}
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label={title}
-		use:modal={{ onClose: logState === 'running' ? undefined : onClose }}
+	<!-- Finché gira non si chiude: niente Escape, niente tocco fuori. -->
+	<Sheet
+		label={title}
+		onClose={logState === 'running' ? undefined : onClose}
+		dismissible={false}
+		size="lg"
+		panelClass="update-log-panel"
 	>
-		<div class="modal-content">
-			<header class="log-header">
-				<h3>{title}</h3>
+		{#snippet header()}
+			<div class="log-header">
+				<h3 class="sheet-title">{title}</h3>
 				<span class="state-pill {logState}">
 					{#if logState === 'running'}
 						<LoaderCircle class="spin" size={16} />
@@ -64,109 +65,103 @@
 						Failed
 					{/if}
 				</span>
-			</header>
+			</div>
+		{/snippet}
 
+		<div class="log-body">
 			<div bind:this={logRef} class="log-output">
 				{#each lines as line, index (index)}
 					<div class="log-line">{line}</div>
 				{/each}
 				{#if lines.length === 0}
-					<div class="log-line muted">Waiting for output…</div>
+					<div class="log-line muted">Waiting to hear back…</div>
 				{/if}
 			</div>
 
 			{#if logState === 'running'}
 				<p class="note">Do not power off the printer until the operation has finished.</p>
 			{:else if logState === 'error' && errorMessage}
-				<p class="note error">{errorMessage}</p>
+				<p class="sheet-error">{errorMessage}</p>
 			{:else if logState === 'success' && successNote}
 				<p class="note">{successNote}</p>
 			{/if}
-
-			<div class="log-actions">
-				<button type="button" class="close-btn" onclick={onClose} disabled={logState === 'running'}>
-					{closeLabel}
-				</button>
-			</div>
 		</div>
-	</div>
+
+		{#snippet footer()}
+			<button
+				type="button"
+				class="btn btn-primary"
+				onclick={onClose}
+				disabled={logState === 'running'}
+			>
+				{closeLabel}
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 2600;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 24px;
-		box-sizing: border-box;
+	:global(.update-log-panel) {
+		height: min(600px, calc(100dvh - 48px));
 	}
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 20px;
-		padding: 24px;
-		width: min(720px, 100%);
-		height: min(560px, 100%);
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-shadow: var(--shadow-panel);
-		box-sizing: border-box;
+
+	@media (max-width: 767.98px) {
+		:global(.update-log-panel) {
+			height: calc(100dvh - 24px);
+		}
 	}
+
 	.log-header {
 		display: flex;
 		align-items: center;
 		gap: 14px;
-		flex-shrink: 0;
 	}
-	.log-header h3 {
-		margin: 0;
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
+
 	.state-pill {
 		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		border-radius: 999px;
-		padding: 8px 16px;
-		font-size: 0.9rem;
+		padding: 6px 14px;
+		font-size: 0.85rem;
 		font-weight: 600;
 		flex-shrink: 0;
 	}
+
 	.state-pill.running {
 		background: var(--color-warning-bg);
 		color: var(--color-warning);
 	}
+
 	.state-pill.success {
 		background: var(--color-success-bg);
 		color: var(--color-success);
 	}
+
 	.state-pill.error {
 		background: var(--color-danger-bg);
 		color: var(--color-red);
 	}
+
+	.log-body {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
 	.log-output {
 		flex: 1;
-		min-height: 0;
+		min-height: 120px;
 		overflow-y: auto;
 		border: 1px solid var(--color-border-light);
-		border-radius: 16px;
-		padding: 16px 20px;
+		border-radius: 14px;
+		padding: 14px 16px;
 		box-sizing: border-box;
 		background: var(--color-background);
 	}
+
 	.log-line {
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-size: 0.82rem;
@@ -175,36 +170,15 @@
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}
+
 	.log-line.muted {
 		color: var(--color-gray-light);
 	}
+
 	.note {
 		margin: 0;
 		font-size: 0.85rem;
 		color: var(--color-text-subtle);
 		flex-shrink: 0;
-	}
-	.note.error {
-		color: var(--color-red);
-		font-weight: 600;
-	}
-	.log-actions {
-		display: flex;
-		justify-content: flex-end;
-		flex-shrink: 0;
-	}
-	.close-btn {
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-		border-radius: 16px;
-		padding: 12px 32px;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-	.close-btn:disabled {
-		opacity: 0.55;
-		cursor: default;
 	}
 </style>

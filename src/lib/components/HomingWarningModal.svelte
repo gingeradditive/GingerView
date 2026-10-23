@@ -1,153 +1,127 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
-	import { mdiAlertCircleOutline } from '@mdi/js';
-	import { portal } from '$lib/actions/portal';
+	import { House, Flame } from 'lucide-svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import NozzleClean from '$lib/illustrations/NozzleClean.svelte';
+	import BedClear from '$lib/illustrations/BedClear.svelte';
 
+	// Gli stessi due controlli dello step "Nozzle & bed" del wizard di stampa, con gli stessi
+	// disegni, prima di ogni movimento automatico della testa. `action` dice cosa sta per
+	// succedere: "Confirm" da solo non lo diceva.
 	let {
 		isOpen,
+		action = 'home',
 		onConfirm,
 		onCancel
 	}: {
 		isOpen: boolean;
+		action?: 'home' | 'extrude';
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
+
+	const copy = $derived(
+		action === 'extrude'
+			? {
+					title: 'Heat & extrude',
+					text: 'Home if needed, move to the purge spot, heat up and extrude.',
+					confirm: 'Heat & extrude'
+				}
+			: {
+					title: 'Home the printer',
+					text: 'The head will move to its end stops to find the zero',
+					confirm: 'Home'
+				}
+	);
 </script>
 
 {#if isOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label="Confirm before homing"
-		tabindex="-1"
-		use:portal
-		onclick={onCancel}
-		use:modal={{ onClose: onCancel }}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
-			<svg class="warning-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
-				<path d={mdiAlertCircleOutline} fill="#D72E28" />
-			</svg>
-			<h3>Before you continue</h3>
-			<ul class="checklist">
-				<li>Check that the nozzle is clean</li>
-				<li>Check that the bed is clear</li>
-			</ul>
-			<div class="modal-actions">
-				<button class="modal-cancel" onclick={onCancel}>Cancel</button>
-				<button class="modal-confirm" onclick={onConfirm}>Confirm</button>
+	<Sheet label={copy.title} onClose={onCancel} size="md">
+		{#snippet header()}
+			<div class="head">
+				<span class="badge" aria-hidden="true">
+					{#if action === 'extrude'}
+						<Flame size={22} />
+					{:else}
+						<House size={22} />
+					{/if}
+				</span>
+				<div>
+					<h3 class="sheet-title">{copy.title}</h3>
+					<p class="sheet-subtitle">{copy.text}</p>
+				</div>
 			</div>
-		</div>
-	</div>
+		{/snippet}
+
+		<p class="lead">Quick check before we start:</p>
+		<ul class="checks">
+			<li class="check">
+				<div class="art"><NozzleClean /></div>
+				<span>Nozzle is clean</span>
+			</li>
+			<li class="check">
+				<div class="art"><BedClear /></div>
+				<span>Bed is clear</span>
+			</li>
+		</ul>
+
+		{#snippet footer()}
+			<button type="button" class="btn btn-secondary" onclick={onCancel}>Cancel</button>
+			<button type="button" class="btn btn-primary" onclick={onConfirm}>{copy.confirm}</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 2000;
+	.head {
 		display: flex;
-		align-items: center;
-		justify-content: center;
+		align-items: flex-start;
+		gap: 14px;
 	}
 
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 24px;
-		min-width: 300px;
-		max-width: 400px;
+	.badge {
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		background: var(--color-danger-bg);
+		color: var(--color-red);
+	}
+
+	.lead {
+		margin: 0 0 10px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+	}
+
+	.checks {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+
+	.check {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: var(--shadow-panel);
-	}
-
-	.warning-icon {
-		margin-bottom: 8px;
-	}
-
-	.modal-content h3 {
-		margin: 0 0 16px 0;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--color-black);
+		gap: 6px;
+		padding: 10px;
+		border-radius: 14px;
+		box-shadow: inset 0 0 0 1px var(--color-border-light);
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-text-secondary);
 		text-align: center;
 	}
 
-	.checklist {
-		margin: 0 0 20px 0;
-		padding: 0;
-		list-style: none;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
+	.art {
 		width: 100%;
-	}
-
-	.checklist li {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 0.95rem;
-		color: var(--color-text-muted);
-		background: var(--color-background);
-		border-radius: 8px;
-		padding: 10px 14px;
-	}
-
-	.checklist li::before {
-		content: '';
-		flex-shrink: 0;
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--color-red);
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-		width: 100%;
-	}
-
-	.modal-cancel {
-		padding: 8px 20px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		background: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
-		color: var(--color-text-soft);
-	}
-
-	.modal-cancel:hover {
-		background-color: var(--color-background);
-	}
-
-	.modal-confirm {
-		padding: 8px 20px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: white;
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition: background-color 0.15s;
-	}
-
-	.modal-confirm:hover {
-		background: var(--color-red-dark);
+		height: 96px;
 	}
 </style>

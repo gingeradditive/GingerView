@@ -185,7 +185,7 @@
 			<div class="progress-track">
 				<div class="progress-elapsed" style="width: {progress}%"></div>
 				<div class="progress-remaining" style="width: {100 - progress}%">
-					<span class="eta-time">ETA: {eta} / {remaining}</span>
+					<span class="eta-time">Done at: {eta} / {remaining}</span>
 				</div>
 			</div>
 			<span class="elapsed-time">{elapsed}</span>

@@ -41,9 +41,8 @@
 	function copyFor(state: KlippyState): Copy {
 		if (state === 'disconnected') {
 			return {
-				title: 'Kalico is not running',
-				message:
-					'Moonraker cannot reach the Kalico host process, so the printer cannot be controlled from here.',
+				title: "Kalico isn't running",
+				message: "We can't reach Kalico, so you can't control the printer from here right now.",
 				hint: 'Settings stays available — Log and Update still work. If the machine was just powered on, give it a few seconds.'
 			};
 		}
@@ -51,7 +50,7 @@
 			return {
 				title: 'Kalico stopped with an error',
 				message:
-					'The printer firmware is halted. Nothing moves, nothing heats and no job can start until it is restarted.',
+					'The firmware is paused for safety. Nothing will move, heat up or start until you restart it.',
 				hint: 'in the dock to run a firmware restart, or open Settings → Log for the full error.',
 				restart: true
 			};
@@ -59,7 +58,7 @@
 		return {
 			title: 'Kalico is shut down',
 			message:
-				'The printer firmware has stopped. Nothing moves, nothing heats and no job can start until it is restarted.',
+				'The firmware has stopped. Nothing will move, heat up or start until you restart it.',
 			hint: 'in the dock to run a firmware restart, once the machine is safe.',
 			restart: true
 		};

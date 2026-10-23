@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
-	import ModalCloseButton from '$lib/components/ModalCloseButton.svelte';
+	import { Play } from 'lucide-svelte';
 	import type { PrintItem } from '$lib/types/print';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
 	import PrintStartWizard from '$lib/components/PrintStartWizard.svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import StatTile from '$lib/components/ui/StatTile.svelte';
 
 	let {
 		item,
@@ -46,312 +47,117 @@
 </script>
 
 {#if isOpen && item}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div
-		class="details-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label={item.name}
-		tabindex="-1"
-		use:modal={{ onClose }}
-		onclick={onClose}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="details-modal" role="document" onclick={(e) => e.stopPropagation()}>
-			<ModalCloseButton {onClose} />
-			<div class="mobile-header">
-				<h2>{item.name}</h2>
-				<p class="subtitle">{item.filamentName || item.material || '--'}</p>
+	<Sheet label={item.name} {onClose} showClose size="lg">
+		{#snippet header()}
+			<h2 class="sheet-title name">{item.name}</h2>
+			<p class="sheet-subtitle">{item.filamentName || item.material || '--'}</p>
+		{/snippet}
+
+		<div class="layout">
+			<div class="preview">
+				<img
+					src={item.imageUrl ?? '/error-thumbnail.png'}
+					alt={item.name}
+					width="500"
+					height="500"
+				/>
 			</div>
 
-			<div class="preview-pane">
-				<div class="preview-image-wrapper">
-					<img
-						src={item.imageUrl ?? '/error-thumbnail.png'}
-						alt={item.name}
-						width="500"
-						height="500"
-					/>
-					<div class="rotate-overlay">
-						<img src="/3DView.svg" alt="3D View" width="40" height="40" />
-					</div>
-				</div>
-			</div>
-
-			<div class="info-pane">
-				<div class="desktop-header">
-					<h2 class="desktop-title-track">
-						<span class:desktop-title-marquee={item.name.length > 30}>
-							<span class="desktop-title-text">{item.name}</span>
-							{#if item.name.length > 30}
-								<span class="desktop-title-text" aria-hidden="true">{item.name}</span>
-							{/if}
-						</span>
-					</h2>
-					<p class="subtitle">{item.filamentName || item.material || '--'}</p>
-				</div>
-
-				<div class="stats-grid">
-					<div class="stat-card">
-						<img src="/PrintTime.svg" alt="Print duration" width="36" height="36" />
-						<span>{getDurationValue(item)}</span>
-					</div>
-					<div class="stat-card">
-						<img src="/Weight.svg" alt="Filament weight" width="36" height="36" />
-						<span>{formatFilamentWeight(item.filamentWeight)}</span>
-					</div>
-					<div class="stat-card">
-						<img src="/Nozzle.svg" alt="Nozzle diameter" width="36" height="36" />
-						<span>{formatNozzleDiameter(item.nozzleDiameter)}</span>
-					</div>
-					<div class="stat-card">
-						<img src="/Material.svg" alt="Filament type" width="36" height="36" />
-						<span>{item.filamentType || item.material || '--'}</span>
-					</div>
-				</div>
-
-				<div class="actions-row">
-					<button class="print-button" type="button" onclick={handlePrintClick}>Print</button>
-				</div>
+			<div class="stats">
+				<StatTile label="Print time" value={getDurationValue(item)} iconSrc="/PrintTime.svg" />
+				<StatTile
+					label="Weight"
+					value={formatFilamentWeight(item.filamentWeight)}
+					iconSrc="/Weight.svg"
+				/>
+				<StatTile
+					label="Nozzle"
+					value={formatNozzleDiameter(item.nozzleDiameter)}
+					iconSrc="/Nozzle.svg"
+				/>
+				<StatTile
+					label="Material"
+					value={item.filamentType || item.material || '--'}
+					iconSrc="/Material.svg"
+				/>
 			</div>
 		</div>
-	</div>
+
+		{#snippet footer()}
+			<button class="btn btn-primary print" type="button" onclick={handlePrintClick}>
+				<Play size={20} fill="currentColor" />
+				Print!
+			</button>
+		{/snippet}
+	</Sheet>
 
 	<PrintStartWizard
 		isOpen={showPrintWizard}
 		filepath={item.filepath}
+		thumbnailUrl={item.imageUrl}
 		onCancel={cancelPrintWizard}
 		onStarted={handlePrintStarted}
 	/>
 {/if}
 
 <style>
-	.details-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 3000;
-		padding: 24px;
-	}
-
-	.details-modal {
-		position: relative;
-		width: min(800px, 100%);
-		min-height: 400px;
-		background: var(--color-white);
-		border-radius: 27px;
-		display: grid;
-		grid-template-columns: 1fr 2fr;
+	.name {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
 		overflow: hidden;
-		box-shadow: var(--shadow-panel);
-		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
-	.preview-pane {
-		background: var(--color-white);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 24px;
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+		gap: 20px;
 	}
 
-	.preview-image-wrapper {
+	/* La miniatura non decide l'altezza della riga: è alta quanto i quattro valori
+	   accanto, e l'immagine ci sta dentro senza deformarsi. */
+	.preview {
 		position: relative;
-		display: inline-block;
+		min-height: 0;
+		border-radius: 18px;
+		background: var(--color-surface-soft);
 	}
 
-	.preview-image-wrapper > img {
-		width: 200px;
-		max-width: 200px;
-		height: auto;
-		aspect-ratio: 1 / 1;
-		object-fit: contain;
-		background: var(--color-white);
-	}
-
-	.rotate-overlay {
+	.preview img {
 		position: absolute;
-		top: 12px;
-		left: 12px;
-		width: 40px;
-		height: 40px;
-		background: rgba(var(--rgb-white), 0.9);
-		border-radius: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		backdrop-filter: blur(4px);
-		padding: 4px;
-	}
-
-	.info-pane {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		padding: 40px;
-		gap: 28px;
-		min-width: 0;
-	}
-
-	.mobile-header {
-		display: none;
-	}
-
-	.desktop-header {
-		overflow: hidden;
+		inset: 0;
 		width: 100%;
-		min-width: 0;
-		/* Lascia libera la X in alto a destra (ModalCloseButton). */
-		padding-right: 48px;
-		box-sizing: border-box;
+		height: 100%;
+		object-fit: contain;
 	}
 
-	h2 {
-		margin: 0;
-		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
-		color: var(--color-black);
-		font-weight: 600;
-	}
-
-	.desktop-title-track {
-		overflow: hidden;
-		white-space: nowrap;
-	}
-
-	.desktop-title-track > span {
-		display: inline-flex;
-		align-items: baseline;
-		width: max-content;
-	}
-
-	.desktop-title-marquee {
-		gap: 32px;
-		animation: desktop-title-marquee 14s linear infinite;
-	}
-
-	.desktop-title-text {
-		flex-shrink: 0;
-		white-space: nowrap;
-	}
-
-	@keyframes desktop-title-marquee {
-		0%,
-		10% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(calc(-50% - 16px));
-		}
-	}
-
-	.subtitle {
-		margin: 8px 0 0;
-		font-size: 1rem;
-		color: var(--color-text-soft);
-	}
-
-	.stats-grid {
+	.stats {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 14px;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
 	}
 
-	.stat-card {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 8px;
-		font-weight: 600;
-		color: var(--color-text-secondary);
+	.print {
+		min-height: 56px;
+		font-size: 1.1rem;
 	}
 
-	.actions-row {
-		display: flex;
-		justify-content: flex-end;
-	}
-
-	.print-button {
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-		font-size: clamp(1.5rem, 2.3vw, 2.2rem);
-		font-weight: 600;
-		padding: 14px 56px;
-		border-radius: 7px;
-		cursor: pointer;
-		box-shadow: var(--shadow-panel);
-	}
-
-	@media (max-width: 1023.98px) {
-		.details-modal {
-			display: flex;
-			flex-direction: column;
-			min-height: auto;
-			max-height: 90vh;
-			overflow-y: auto;
+	@media (max-width: 767.98px) {
+		.layout {
+			grid-template-columns: 1fr;
+			gap: 14px;
 		}
 
-		.mobile-header {
-			display: block;
-			padding: 24px 64px 0 24px;
+		/* In colonna non c'è niente accanto da cui prendere l'altezza. */
+		.preview {
+			height: 200px;
 		}
 
-		.desktop-header {
-			display: none;
-		}
-
-		.preview-pane {
-			background: var(--color-white);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 24px;
-		}
-
-		.preview-image-wrapper img {
-			max-width: 250px;
-		}
-
-		.info-pane {
-			padding: 8px 24px 24px;
-			gap: 18px;
-		}
-
-		.stats-grid {
+		.stats {
 			grid-template-columns: repeat(4, minmax(0, 1fr));
 			gap: 8px;
-		}
-
-		.stat-card {
-			gap: 6px;
-			font-size: 0.78rem;
-		}
-
-		.stat-card span {
-			white-space: nowrap;
-		}
-
-		.stat-card img {
-			width: 24px;
-			height: 24px;
-		}
-
-		.actions-row {
-			justify-content: stretch;
-		}
-
-		.print-button {
-			width: 100%;
 		}
 	}
 </style>

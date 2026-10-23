@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { onMount } from 'svelte';
 	import {
 		ChevronRight,
@@ -41,17 +41,17 @@
 	 */
 	const SERVICE_MESSAGES: Record<string, string> = {
 		WIFI_AUTH_FAILED: 'Wrong password.',
-		WIFI_NETWORK_NOT_FOUND: 'Network not found. Scan again and retry.',
-		WIFI_TIMEOUT: 'The printer could not join the network in time.',
-		CONFLICT: 'Another connection is already being attempted.',
+		WIFI_NETWORK_NOT_FOUND: "Can't find that network. Scan again",
+		WIFI_TIMEOUT: 'The printer took too long to join. Try once more?',
+		CONFLICT: 'Hang on, an attempt is already underway',
 		SYSTEM_TOOL_UNAVAILABLE: 'Network management is not available on this printer.',
 		NOT_FOUND: 'The printer lost track of the operation. Check the status above.',
-		INVALID_INPUT: 'The printer rejected those network details.',
-		VALIDATION_ERROR: 'The printer rejected those network details.',
+		INVALID_INPUT: "The printer didn't accept those details",
+		VALIDATION_ERROR: "The printer didn't accept those details",
 		INTERNAL_ERROR: 'The printer reported an internal error.',
 		SERVICE_UNREACHABLE:
-			'The printer stopped answering. Joining a network changes its address: reopen GingerView at the new one.',
-		JOB_TIMEOUT: 'The printer is taking longer than expected. Check this page again in a moment.'
+			'We lost the printer! Joining a new network changes its address, so open GingerView at the new one',
+		JOB_TIMEOUT: 'This is taking a bit longer than usual. Check back in a moment.'
 	};
 
 	let status = $state<NetworkStatus | null>(null);
@@ -126,14 +126,14 @@
 	 * situations that ask different things of whoever is reading.
 	 */
 	function describeDisconnected(state: NetworkStatus | null): string {
-		if (!state) return 'Reading the network status…';
+		if (!state) return 'Checking your connection…';
 		if (state.adapter.state === 'connecting') return 'Connecting…';
 
 		const ethernet = state.interfaces.find((iface) => iface.type === 'ethernet');
 		if (!ethernet || ethernet.state === 'unavailable') {
-			return 'No cable plugged in — pick a network below.';
+			return 'No cable plugged in. Pick a Wi-Fi network below';
 		}
-		return 'The cable is plugged in but did not get an address.';
+		return "The cable's plugged in, but didn't get an address";
 	}
 
 	const disconnectedReason = $derived(describeDisconnected(status));
@@ -266,7 +266,7 @@
 			</span>
 			<div class="banner-text">
 				{#if !isConnected}
-					<strong>Disconnected</strong>
+					<strong>Not connected</strong>
 					<span class="ip">{disconnectedReason}</span>
 				{:else if isWired}
 					<strong>Wired</strong>
@@ -317,7 +317,7 @@
 				<span class="row-icon"><Component /></span>
 				<div class="row-text">
 					<strong>Hidden Network</strong>
-					<span>Connect to a network not in the list</span>
+					<span>Can't see yours? Add it by name</span>
 				</div>
 				<span class="chevron"><ChevronRight /></span>
 			</button>
@@ -327,107 +327,110 @@
 
 {#if showPasswordDialog && selectedNetwork}
 	{@const network = selectedNetwork}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		class="overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="connect-dialog-title"
-		tabindex="0"
-		use:modal={{ onClose: closeDialogs }}
-		onclick={(e) => e.target === e.currentTarget && closeDialogs()}
-	>
-		<div class="dialog" role="document">
+	<Sheet label={`Connect to ${network.ssid}`} onClose={closeDialogs} size="sm">
+		{#snippet header()}
 			<div class="dialog-header">
 				<span class="dialog-icon" aria-hidden="true"><Wifi /></span>
-				<h2 id="connect-dialog-title">{network.ssid}</h2>
-				<span class="security-label">{network.security || 'Secured'}</span>
+				<div class="dialog-heading">
+					<h3 class="sheet-title">{network.ssid}</h3>
+					<span class="security-label">{network.security || 'Secured'}</span>
+				</div>
 			</div>
+		{/snippet}
 
-			<label class="field-label" for="wifi-password">Enter password</label>
+		<label class="sheet-field">
+			<span>Password</span>
+			<!-- svelte-ignore a11y_autofocus -->
 			<input
-				id="wifi-password"
 				type={showPassword ? 'text' : 'password'}
 				bind:value={networkPassword}
-				placeholder=""
+				autocomplete="off"
+				autofocus
+				aria-invalid={!!dialogError}
+				onkeydown={(e) =>
+					e.key === 'Enter' &&
+					networkPassword &&
+					!connecting &&
+					connectToNetwork(network.ssid, networkPassword)}
 			/>
+		</label>
 
-			<label class="show-password">
-				<input type="checkbox" bind:checked={showPassword} />
-				<span class="checkbox-box"></span>
-				<span class="checkbox-label">Show password</span>
-			</label>
+		<label class="show-password">
+			<input type="checkbox" bind:checked={showPassword} />
+			<span class="checkbox-box"></span>
+			<span class="checkbox-label">Show password</span>
+		</label>
 
-			{#if dialogError}
-				<p class="dialog-error">{dialogError}</p>
-			{/if}
+		{#if dialogError}
+			<p class="sheet-error dialog-error" role="alert">{dialogError}</p>
+		{/if}
 
-			<div class="dialog-actions">
-				<button type="button" class="btn cancel" onclick={closeDialogs}>Cancel</button>
-				<button
-					type="button"
-					class="btn confirm"
-					disabled={!networkPassword || connecting}
-					onclick={() => connectToNetwork(network.ssid, networkPassword)}
-				>
-					{connecting ? 'Connecting…' : 'Connect'}
-				</button>
-			</div>
-		</div>
-	</div>
+		{#snippet footer()}
+			<button type="button" class="btn btn-secondary" onclick={closeDialogs}>Cancel</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				disabled={!networkPassword || connecting}
+				onclick={() => connectToNetwork(network.ssid, networkPassword)}
+			>
+				{connecting ? 'Connecting…' : 'Connect'}
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 {#if showHiddenDialog}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		class="overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="hidden-dialog-title"
-		tabindex="0"
-		use:modal={{ onClose: closeDialogs }}
-		onclick={(e) => e.target === e.currentTarget && closeDialogs()}
-	>
-		<div class="dialog" role="document">
+	<Sheet label="Hidden network" onClose={closeDialogs} size="sm">
+		{#snippet header()}
 			<div class="dialog-header">
 				<span class="dialog-icon" aria-hidden="true"><Wifi /></span>
-				<h2 id="hidden-dialog-title">Hidden Wifi</h2>
+				<div class="dialog-heading">
+					<h3 class="sheet-title">Hidden network</h3>
+					<span class="security-label">Not shown in the list</span>
+				</div>
 			</div>
+		{/snippet}
 
-			<label class="field-label" for="hidden-ssid">SSID</label>
-			<input id="hidden-ssid" type="text" bind:value={hiddenSSID} placeholder="" />
-
-			<label class="field-label" for="hidden-password">Password</label>
-			<input
-				id="hidden-password"
-				type={showHiddenPassword ? 'text' : 'password'}
-				bind:value={hiddenPassword}
-				placeholder=""
-			/>
-
-			<label class="show-password">
-				<input type="checkbox" bind:checked={showHiddenPassword} />
-				<span class="checkbox-box"></span>
-				<span class="checkbox-label">Show password</span>
+		<div class="fields">
+			<label class="sheet-field">
+				<span>Network name (SSID)</span>
+				<!-- svelte-ignore a11y_autofocus -->
+				<input type="text" bind:value={hiddenSSID} autocomplete="off" autofocus />
 			</label>
 
-			{#if dialogError}
-				<p class="dialog-error">{dialogError}</p>
-			{/if}
-
-			<div class="dialog-actions">
-				<button type="button" class="btn cancel" onclick={closeDialogs}>Cancel</button>
-				<button
-					type="button"
-					class="btn confirm"
-					disabled={!hiddenSSID || !hiddenPassword || connecting}
-					onclick={() => connectToNetwork(hiddenSSID, hiddenPassword)}
-				>
-					{connecting ? 'Connecting…' : 'Connect'}
-				</button>
-			</div>
+			<label class="sheet-field">
+				<span>Password</span>
+				<input
+					type={showHiddenPassword ? 'text' : 'password'}
+					bind:value={hiddenPassword}
+					autocomplete="off"
+					aria-invalid={!!dialogError}
+				/>
+			</label>
 		</div>
-	</div>
+
+		<label class="show-password">
+			<input type="checkbox" bind:checked={showHiddenPassword} />
+			<span class="checkbox-box"></span>
+			<span class="checkbox-label">Show password</span>
+		</label>
+
+		{#if dialogError}
+			<p class="sheet-error dialog-error" role="alert">{dialogError}</p>
+		{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn btn-secondary" onclick={closeDialogs}>Cancel</button>
+			<button
+				type="button"
+				class="btn btn-primary"
+				disabled={!hiddenSSID || !hiddenPassword || connecting}
+				onclick={() => connectToNetwork(hiddenSSID, hiddenPassword)}
+			>
+				{connecting ? 'Connecting…' : 'Connect'}
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
@@ -608,32 +611,34 @@
 	.scan-btn:disabled {
 		opacity: 0.6;
 	}
-	.overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 2300;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 16px;
-		background: rgba(var(--rgb-gray-dark), 0.45);
-		backdrop-filter: blur(10px);
-	}
-	.dialog {
-		width: min(420px, calc(100vw - 32px));
-		background: var(--color-white);
-		border-radius: 20px;
-		padding: 24px;
-		box-sizing: border-box;
-	}
 	.dialog-header {
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		margin-bottom: 20px;
+	}
+	.dialog-heading {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+	.dialog-heading .sheet-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.fields {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
 	}
 	.dialog-icon {
 		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		background: var(--color-danger-bg);
 		color: var(--color-red);
 		flex-shrink: 0;
 	}
@@ -641,34 +646,9 @@
 		width: 26px;
 		height: 26px;
 	}
-	.dialog-header h2 {
-		margin: 0;
-		font-size: 1.4rem;
-		font-weight: 700;
-		flex: 1;
-		min-width: 0;
-	}
 	.security-label {
-		color: var(--color-text-disabled);
-		font-size: 0.9rem;
-		flex-shrink: 0;
-	}
-	.field-label {
-		display: block;
-		font-size: 0.9rem;
-		font-weight: 600;
-		margin: 12px 0 6px;
-	}
-	.dialog input[type='text'],
-	.dialog input[type='password'] {
-		width: 100%;
-		box-sizing: border-box;
-		border: 1px solid var(--color-border-light);
-		border-radius: 14px;
-		padding: 12px 14px;
-		font-size: 0.95rem;
-		outline: none;
-		font-family: inherit;
+		color: var(--color-text-soft);
+		font-size: 0.85rem;
 	}
 	.show-password {
 		display: flex;
@@ -701,32 +681,6 @@
 		font-weight: 600;
 	}
 	.dialog-error {
-		color: var(--color-red);
-		font-size: 0.85rem;
-		margin: 10px 0 0;
-	}
-	.dialog-actions {
-		display: flex;
-		gap: 12px;
-		margin-top: 22px;
-	}
-	.btn {
-		flex: 1;
-		border: none;
-		border-radius: 14px;
-		padding: 14px;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-	.btn.cancel {
-		background: var(--color-border-light);
-		color: var(--color-white);
-	}
-	.btn.confirm {
-		background: var(--color-red);
-		color: var(--color-white);
-	}
-	.btn.confirm:disabled {
-		opacity: 0.55;
+		margin-top: 12px;
 	}
 </style>

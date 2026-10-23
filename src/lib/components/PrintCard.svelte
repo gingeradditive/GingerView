@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
+	import { Trash2, Pencil, FolderInput, Folder, House, LoaderCircle } from 'lucide-svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import type { PrintItem } from '$lib/types/print';
 	import { onMount } from 'svelte';
@@ -10,8 +10,10 @@
 		moveFile,
 		fetchDirectoriesRecursive
 	} from '$lib/services/moonraker-files';
-	import { mdiDotsVertical, mdiFolder } from '@mdi/js';
+	import { mdiDotsVertical } from '@mdi/js';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import PromptModal from '$lib/components/PromptModal.svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { toastActions } from '$lib/stores/toastStore';
 
 	let { item }: { item: PrintItem } = $props();
@@ -76,7 +78,8 @@
 	// Moonraker non ha un cestino: eliminare è definitivo, quindi si chiede prima.
 	let showDeleteConfirm = $state(false);
 
-	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+	const describeError = (e: unknown): string =>
+		e instanceof Error ? e.message : 'Something went wrong';
 
 	function handleDelete() {
 		closeContextMenu();
@@ -99,7 +102,7 @@
 			}
 		} catch (e) {
 			console.error('Delete failed:', e);
-			toastActions.error('moonraker', 'Delete failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't delete it", describeError(e));
 		}
 	}
 
@@ -133,7 +136,7 @@
 			}
 		} catch (e) {
 			console.error('Move failed:', e);
-			toastActions.error('moonraker', 'Move failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't move it", describeError(e));
 		}
 	}
 
@@ -149,12 +152,19 @@
 		showRenameModal = true;
 	}
 
-	async function confirmRename() {
-		if (!newName.trim()) return;
+	// Prima un nome vuoto veniva ignorato in silenzio: ora lo dice sotto il campo.
+	function validateName(value: string): string {
+		const name = value.trim();
+		if (!name) return 'Give it a name';
+		if (name.includes('/')) return `Names can't have a "/"`;
+		return '';
+	}
+
+	async function confirmRename(value: string) {
 		try {
 			const source = `gcodes/${item.filepath}`;
 			// For files, preserve the extension
-			let finalName = newName.trim();
+			let finalName = value;
 			if (!item.isDirectory) {
 				const dotIndex = item.filename.lastIndexOf('.');
 				const ext = dotIndex > 0 ? item.filename.substring(dotIndex) : '';
@@ -174,7 +184,7 @@
 			}
 		} catch (e) {
 			console.error('Rename failed:', e);
-			toastActions.error('moonraker', 'Rename failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't rename it", describeError(e));
 		}
 	}
 
@@ -204,7 +214,7 @@
 		class="menu-button"
 		class:on-file={!item.isDirectory}
 		aria-label="Actions for {item.name}"
-		use:tooltip={'More actions'}
+		use:tooltip={'More options'}
 		aria-haspopup="menu"
 		aria-expanded={showContextMenu}
 		onclick={handleMenuButton}
@@ -242,83 +252,75 @@
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.key === 'Escape' && handleClickOutside()}
 	>
-		<button class="context-menu-item" role="menuitem" onclick={handleRename}> Rename </button>
-		<button class="context-menu-item" role="menuitem" onclick={handleMove}> Move </button>
+		<button class="context-menu-item" role="menuitem" onclick={handleRename}>
+			<Pencil size={18} />
+			Rename
+		</button>
+		<button class="context-menu-item" role="menuitem" onclick={handleMove}>
+			<FolderInput size={18} />
+			Move
+		</button>
 		<button class="context-menu-item delete" role="menuitem" onclick={handleDelete}>
+			<Trash2 size={18} />
 			{item.isDirectory ? 'Delete folder' : 'Delete print'}
 		</button>
 	</div>
 {/if}
 
-{#if showRenameModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		tabindex="0"
-		onclick={(e) => e.target === e.currentTarget && (showRenameModal = false)}
-		use:modal={{ onClose: () => (showRenameModal = false) }}
-	>
-		<div class="modal-content">
-			<h3>Rename</h3>
-			<input
-				type="text"
-				bind:value={newName}
-				placeholder="New name"
-				class="rename-input"
-				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
-			/>
-			<div class="modal-actions">
-				<button class="modal-confirm" onclick={confirmRename}>Rename</button>
-				<button class="modal-cancel" onclick={() => (showRenameModal = false)}>Cancel</button>
-			</div>
-		</div>
-	</div>
-{/if}
+<PromptModal
+	isOpen={showRenameModal}
+	title="Rename"
+	hint={item.isDirectory ? undefined : "Don't worry, we'll keep the extension"}
+	label="New name"
+	value={newName}
+	placeholder="New name"
+	confirmLabel="Rename"
+	validate={validateName}
+	onConfirm={confirmRename}
+	onCancel={() => (showRenameModal = false)}
+/>
 
 {#if showMoveModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		tabindex="0"
-		onclick={(e) => e.target === e.currentTarget && (showMoveModal = false)}
-		use:modal={{ onClose: () => (showMoveModal = false) }}
-	>
-		<div class="modal-content">
-			<h3>Move "{item.name}"</h3>
-			{#if loadingDirs}
-				<p class="modal-loading">Loading folders…</p>
-			{:else}
-				<div class="folder-list">
-					<button class="folder-option" onclick={() => confirmMove('')}>
-						<svg viewBox="0 0 24 24" width="20" height="20"
-							><path d={mdiFolder} fill="#D72E28" /></svg
-						>
-						/ (Root)
+	<Sheet label="Move {item.name}" onClose={() => (showMoveModal = false)} size="sm">
+		{#snippet header()}
+			<h3 class="sheet-title">Move to…</h3>
+			<p class="sheet-subtitle move-name">{item.name}</p>
+		{/snippet}
+
+		{#if loadingDirs}
+			<p class="move-loading">
+				<LoaderCircle size={18} class="spin" />
+				Getting your folders…
+			</p>
+		{:else}
+			<div class="folder-list">
+				<button class="folder-option" onclick={() => confirmMove('')}>
+					<House size={20} />
+					<span>Main folder</span>
+				</button>
+				{#each availableDirs as dir (dir.path)}
+					<button class="folder-option" onclick={() => confirmMove(dir.path)}>
+						<Folder size={20} />
+						<span>/{dir.path}</span>
 					</button>
-					{#each availableDirs as dir (dir.path)}
-						<button class="folder-option" onclick={() => confirmMove(dir.path)}>
-							<svg viewBox="0 0 24 24" width="20" height="20"
-								><path d={mdiFolder} fill="#D72E28" /></svg
-							>
-							/{dir.path}
-						</button>
-					{/each}
-				</div>
-			{/if}
-			<button class="modal-cancel" onclick={() => (showMoveModal = false)}>Cancel</button>
-		</div>
-	</div>
+				{/each}
+			</div>
+		{/if}
+
+		{#snippet footer()}
+			<button class="btn btn-secondary" onclick={() => (showMoveModal = false)}>Cancel</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <ConfirmModal
+	icon={Trash2}
 	isOpen={showDeleteConfirm}
 	title={item.isDirectory ? 'Delete this folder?' : 'Delete this file?'}
 	message={item.isDirectory
 		? `"${item.name}" and everything inside it will be deleted from the printer.`
 		: `"${item.name}" will be deleted from the printer.`}
-	details="This can't be undone."
+	details="Once it's gone, it's gone."
 	confirmLabel="Delete"
 	onConfirm={confirmDelete}
 	onCancel={() => (showDeleteConfirm = false)}
@@ -488,6 +490,9 @@
 	}
 
 	.context-menu-item {
+		display: flex;
+		align-items: center;
+		gap: 12px;
 		width: 100%;
 		min-height: 44px;
 		padding: 8px 16px;
@@ -504,50 +509,27 @@
 		background-color: var(--color-background);
 	}
 
-	.context-menu-item.delete {
+	.context-menu-item :global(svg) {
+		flex-shrink: 0;
+		color: var(--color-text-soft);
+	}
+
+	.context-menu-item.delete,
+	.context-menu-item.delete :global(svg) {
 		color: var(--color-red);
 	}
 
-	.modal-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 2000;
+	.move-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.move-loading {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-	}
-
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 24px;
-		/* Percentuali dell'overlay, non vw/vh: vedi lo zoom in app.css. */
-		width: min(400px, calc(100% - 32px));
-		box-sizing: border-box;
-		max-height: 80%;
-		display: flex;
-		flex-direction: column;
-		box-shadow: var(--shadow-panel);
-	}
-
-	.modal-content h3 {
-		margin: 0 0 16px 0;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--color-black);
-	}
-
-	.modal-loading {
+		gap: 10px;
+		margin: 8px 0;
 		color: var(--color-text-soft);
 		font-size: 0.9rem;
 	}
@@ -555,84 +537,39 @@
 	.folder-list {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		overflow-y: auto;
-		flex: 1;
-		min-height: 0;
-		margin-bottom: 16px;
+		gap: 6px;
 	}
 
 	.folder-option {
 		display: flex;
 		align-items: center;
-		min-height: 44px;
-		gap: 10px;
-		padding: 10px 12px;
+		gap: 12px;
+		width: 100%;
+		min-height: 52px;
+		padding: 0 14px;
 		border: none;
-		background: none;
-		cursor: pointer;
-		font-size: 0.9rem;
+		border-radius: 12px;
+		background: var(--color-background);
 		color: var(--color-black);
-		border-radius: 8px;
+		font-family: inherit;
+		font-size: 0.95rem;
 		text-align: left;
-		transition: background-color 0.15s;
+		cursor: pointer;
+	}
+
+	.folder-option :global(svg) {
+		flex-shrink: 0;
+		color: var(--color-red);
+	}
+
+	.folder-option span {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.folder-option:hover {
-		background-color: var(--color-background);
-	}
-
-	.modal-cancel {
-		align-self: flex-end;
-		min-height: 44px;
-		padding: 8px 20px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		background: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
-		color: var(--color-text-soft);
-		transition: background-color 0.15s;
-	}
-
-	.modal-cancel:hover {
-		background-color: var(--color-background);
-	}
-
-	.rename-input {
-		width: 100%;
-		padding: 12px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		font-size: 0.9rem;
-		margin-bottom: 16px;
-		box-sizing: border-box;
-	}
-
-	.rename-input:focus {
-		outline: none;
-		border-color: var(--color-red);
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-	}
-
-	.modal-confirm {
-		min-height: 44px;
-		padding: 8px 20px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: white;
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition: background-color 0.15s;
-	}
-
-	.modal-confirm:hover {
-		background: var(--color-red-dark);
+		background: var(--color-surface-sunken);
 	}
 </style>

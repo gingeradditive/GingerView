@@ -77,15 +77,20 @@
 	{#if hasJob}
 		<span class="job-name" title={jobName}>{jobName}</span>
 	{:else}
-		<span class="job-name idle">What are we building today?</span>
+		<span class="job-name idle">What are we making today?</span>
 	{/if}
 	<div class="job-preview">
-		<img src={thumbnailUrl} alt={hasJob ? 'Print preview' : ''} />
+		{#if hasJob}
+			<img src={thumbnailUrl} alt="Print preview" />
+		{:else}
+			<!-- A riposo il logo della G2, lo stesso del dock. -->
+			<img class="idle-logo" src="/Printers/G2/Logo.svg" alt="" />
+		{/if}
 	</div>
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
 	{:else}
-		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's go</a>
+		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's get going!</a>
 	{/if}
 </section>
 
@@ -122,9 +127,15 @@
 		overflow: hidden;
 	}
 
-	/* L'invito è una frase, non un nome file: un filo più piccolo, per stare su due righe. */
+	/* L'invito ha lo stesso font del titolo FLOW delle altre card, e può andare su tre righe:
+	   il limite di due serve ai nomi file. */
 	.job-name.idle {
-		font-size: min(1.6rem, 10cqw);
+		font-size: min(var(--dashboard-title-size), 12cqw);
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.job-preview {
@@ -139,6 +150,11 @@
 		max-width: 100%;
 		max-height: 100%;
 		object-fit: contain;
+	}
+
+	.job-preview img.idle-logo {
+		width: min(70%, 200px);
+		height: auto;
 	}
 
 	.job-cta {

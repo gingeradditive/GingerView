@@ -62,7 +62,7 @@
 						type="button"
 						class="toast-info-btn"
 						onclick={() => openDetails(toast)}
-						aria-label="Show details"
+						aria-label="More info"
 						use:tooltip
 					>
 						<Info size={14} />
@@ -73,7 +73,7 @@
 						type="button"
 						class="toast-close"
 						onclick={() => toastActions.dismiss(toast.id)}
-						aria-label="Dismiss notification"
+						aria-label="Dismiss"
 						use:tooltip
 					>
 						<X size={14} />

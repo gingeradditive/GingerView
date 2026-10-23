@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
 	import Fraction from '$lib/components/Fraction.svelte';
@@ -114,7 +115,7 @@
 		feederBusy = true;
 		const ok = await sendGcode(
 			enable ? 'FEEDER_ENABLE' : 'FEEDER_DISABLE',
-			enable ? 'Could not switch the feeder on' : 'Could not switch the feeder off'
+			enable ? "Couldn't turn the feeder on" : "Couldn't turn the feeder off"
 		);
 		// The status pin follows within a second; show the new state now.
 		if (ok) feederOn = enable;
@@ -171,7 +172,7 @@
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br />your material!</span>
+				<span class="pellet-value idle">Hungry for<br />pellets!</span>
 			{:else}
 				<span class="pellet-value"
 					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
@@ -187,7 +188,7 @@
 		ariaChecked={feederOn}
 		hint={feederOn
 			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
-			: 'Feeder off: no pellet is loaded. Tap to switch on'}
+			: "The feeder's off and there's no pellet loaded. Tap to turn it on."}
 		disabled={feederBusy}
 		onclick={toggleFeeder}
 	>
@@ -197,10 +198,12 @@
 </section>
 
 <ConfirmModal
+	tone="warning"
+	icon={Power}
 	isOpen={showFeederOffConfirm}
-	title="Switch the feeder off?"
-	message="A print is running: with the feeder off, running out of pellet will no longer pause it."
-	confirmLabel="Switch off"
+	title="Turn the feeder off?"
+	message="Heads up! A print is running. With the feeder off, the print won't pause if you run out of pellets!"
+	confirmLabel="Turn it off"
 	onConfirm={confirmFeederOff}
 	onCancel={() => (showFeederOffConfirm = false)}
 />
@@ -299,28 +302,37 @@
 	.pellet-text {
 		position: absolute;
 		inset: 0;
-		/* In fondo c'è la barra del feeder (52px + 12px di margine): il testo si
-		   centra nello spazio che resta sopra. */
-		padding: 16px 16px 76px;
+		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
+		   altezza. In fondo resta lo spazio della barra del feeder (52px + 12px di margine). */
+		padding: 76px 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 4px;
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		z-index: 2;
 		color: var(--color-black-pure);
 		text-align: center;
 	}
 
+	/* Stessi font di FLOW e "Let me extrude!". */
 	.pellet-label {
-		font-size: min(2rem, 18cqw);
+		font-size: min(var(--dashboard-title-size), 18cqw);
 		font-weight: 700;
-		color: var(--color-black-pure);
+		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.pellet-value {
-		font-size: min(1.7rem, 13cqw);
+		font-size: min(var(--dashboard-subtitle-size), 13cqw);
 		color: var(--color-black-pure);
 		font-weight: 500;
+		line-height: 1.3;
+	}
+
+	/* A riposo non c'è il riempimento rosso sotto: grigio come "Let me extrude!". */
+	.pellet-value.idle {
+		color: var(--color-text-soft);
 	}
 </style>

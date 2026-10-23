@@ -6,7 +6,7 @@
 	// lo si dice in parole e si riporta alla dashboard. Gli altri errori mostrano
 	// il messaggio di SvelteKit, che è l'unica cosa utile da riferire.
 	const isNotFound = $derived($page.status === 404);
-	const title = $derived(isNotFound ? 'Page not found' : 'Something went wrong');
+	const title = $derived(isNotFound ? 'Oops, nothing here' : 'Something went wrong');
 </script>
 
 <svelte:head>
@@ -19,9 +19,9 @@
 		<h1>{title}</h1>
 		<p>
 			{#if isNotFound}
-				This page doesn't exist on the printer. It may have moved, or the address has a typo.
+				We couldn't find this page. It may have moved, or there's a typo in the address.
 			{:else}
-				{$page.error?.message ?? 'Unexpected error.'}
+				{$page.error?.message ?? "That wasn't supposed to happen"}
 			{/if}
 		</p>
 		<a class="home-btn" href={resolve('/')}>Back to dashboard</a>

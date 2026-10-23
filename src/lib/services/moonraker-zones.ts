@@ -66,7 +66,7 @@ export const loadNozzleZones = async (): Promise<string[]> => {
 			return zones;
 		})
 		.catch((error) => {
-			console.error('Could not read the nozzle zones', error);
+			console.error("Couldn't read the nozzle zones", error);
 			return [];
 		})
 		.finally(() => {

@@ -68,9 +68,9 @@
 	);
 	let blockedReason = $derived(
 		printState === 'printing'
-			? 'A print is running. Updates are disabled until it finishes.'
+			? "A print is running. Updates must wait until it's done."
 			: printState === 'paused'
-				? 'A print is paused. Finish or cancel it before updating.'
+				? 'A print is paused. Finish or cancel it, then update.'
 				: ''
 	);
 	let actionsDisabled = $derived(isOperationRunning || blockedReason !== '' || isRefreshing);
@@ -82,7 +82,7 @@
 						text: `${updatesAvailable} update${updatesAvailable === 1 ? '' : 's'} available`,
 						tone: 'pending'
 					}
-				: { text: 'Up to date', tone: 'ok' }
+				: { text: "You're up to date", tone: 'ok' }
 	);
 
 	onMount(() => {
@@ -115,7 +115,7 @@
 		try {
 			status = await fetchUpdateStatus();
 		} catch (e) {
-			loadError = e instanceof Error ? e.message : 'Failed to read update status';
+			loadError = e instanceof Error ? e.message : "Couldn't read the update status";
 		} finally {
 			isLoading = false;
 		}
@@ -137,7 +137,7 @@
 		isRefreshing = true;
 		try {
 			status = await refreshUpdateStatus();
-			toastActions.success('moonraker', 'Update check complete', 'Version information refreshed');
+			toastActions.success('moonraker', 'All checked', 'Version info is up to date');
 		} catch {
 			// Error toast already reported by refreshUpdateStatus
 		} finally {
@@ -179,7 +179,7 @@
 			await action();
 			logState = 'success';
 		} catch (e) {
-			const message = e instanceof Error ? e.message : 'Operation failed';
+			const message = e instanceof Error ? e.message : "That didn't work";
 			const stillBusy = await waitWhileBusy();
 			if (stillBusy === 'finished' && completedApps.size > 0) {
 				logLines = [
@@ -194,7 +194,7 @@
 			} else {
 				logState = 'error';
 				logError = message;
-				toastActions.error('moonraker', 'Update failed', message);
+				toastActions.error('moonraker', "The update didn't work", message);
 			}
 		} finally {
 			isOperationRunning = false;
@@ -278,7 +278,7 @@
 
 	function handleUpdateAll() {
 		if (actionsDisabled || updatesAvailable === 0) return;
-		runOperation('Updating all', () => startUpgrade());
+		runOperation('Updating everything', () => startUpgrade());
 	}
 
 	function handleRecover(name: string, hard: boolean) {
@@ -289,8 +289,8 @@
 				? `Delete the ${name} repository and clone it again?`
 				: `Reset the ${name} repository, discarding local changes?`,
 			details: hard
-				? 'Everything that is not in the remote repository is lost, including any local configuration kept inside it.'
-				: 'Local modifications to tracked files are discarded.',
+				? "Anything that isn't in the remote repository will be lost, including local config stored inside it."
+				: 'Any local changes to tracked files will be thrown away.',
 			confirmLabel: hard ? 'Hard recover' : 'Soft recover',
 			run: () =>
 				runOperation(`${hard ? 'Hard' : 'Soft'} recovery of ${name}`, () =>
@@ -335,15 +335,15 @@
 
 		<div class="item-list">
 			{#if isLoading}
-				<p class="placeholder">Loading update status…</p>
+				<p class="placeholder">Checking for updates…</p>
 			{:else if loadError}
 				<div class="load-error">
 					<p>{loadError}</p>
-					<button type="button" class="ghost-btn" onclick={loadStatus}>Retry</button>
+					<button type="button" class="ghost-btn" onclick={loadStatus}>Try again</button>
 				</div>
 			{:else if items.length === 0}
 				<p class="placeholder">
-					No updatable components are configured. Add them to the <code>[update_manager]</code>
+					Nothing's set up for updates yet. Add components to the <code>[update_manager]</code>
 					section of <code>moonraker.conf</code>.
 				</p>
 			{:else}
@@ -408,6 +408,7 @@
 />
 
 <ConfirmModal
+	tone="warning"
 	isOpen={confirmState !== null}
 	title={confirmState?.title ?? ''}
 	message={confirmState?.message ?? ''}

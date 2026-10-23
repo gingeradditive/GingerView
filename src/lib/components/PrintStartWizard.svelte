@@ -1,86 +1,119 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
+	import type { Component } from 'svelte';
+	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { mdiAlertCircleOutline } from '@mdi/js';
-	import { portal } from '$lib/actions/portal';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import MaterialCheck from '$lib/illustrations/MaterialCheck.svelte';
+	import TubesEmpty from '$lib/illustrations/TubesEmpty.svelte';
+	import NozzleClean from '$lib/illustrations/NozzleClean.svelte';
+	import BedClear from '$lib/illustrations/BedClear.svelte';
+	import GlassSpray from '$lib/illustrations/GlassSpray.svelte';
+	import DryerValve from '$lib/illustrations/DryerValve.svelte';
 
-	type WizardStep = {
-		title: string;
-		checklist: string[];
-	};
+	// Uno step per controllo, ognuno col suo disegno: la checklist è solo un promemoria
+	// (niente spunte), chi la conosce passa con "Next, Next, Next" senza spostare il dito.
+	type WizardStep = { title: string; text: string; illustration: Component };
 
 	const steps: WizardStep[] = [
 		{
 			title: 'Material check',
-			checklist: [
-				"Check material, material type, dryness and that there's enough quantity for this print",
-				'Check that the tubes are empty'
-			]
+			text: 'Right material, nice and dry and enough for the whole print',
+			illustration: MaterialCheck
 		},
-		{
-			title: 'Nozzle & bed check',
-			checklist: ['Check that the nozzle is clean', 'Check that the bed is clear']
-		},
+		{ title: 'Feed tubes', text: 'Feed tubes are empty', illustration: TubesEmpty },
+		{ title: 'Nozzle check', text: 'Nozzle is clean', illustration: NozzleClean },
+		{ title: 'Bed check', text: 'Nothing left on the bed', illustration: BedClear },
 		{
 			title: 'Bed preparation',
-			checklist: ['Apply the protective glass spray']
+			text: 'Give the glass a coat of protective spray',
+			illustration: GlassSpray
 		},
-		{
-			title: 'Material feed',
-			checklist: ["Check that the dryer's material valve is open"]
-		}
+		{ title: 'Material feed', text: "Open the dryer's material valve", illustration: DryerValve }
 	];
 
 	let {
 		isOpen,
 		filepath,
+		thumbnailUrl = null,
 		onCancel,
 		onStarted
 	}: {
 		isOpen: boolean;
 		filepath: string;
+		thumbnailUrl?: string | null;
 		onCancel: () => void;
 		onStarted: () => void;
 	} = $props();
 
 	let stepIndex = $state(0);
+	// +1 avanti, -1 indietro: da che lato entra lo step nuovo.
+	let direction = $state(1);
 	let starting = $state(false);
+	let startError = $state('');
 
 	$effect(() => {
-		if (isOpen) stepIndex = 0;
+		if (isOpen) {
+			stepIndex = 0;
+			startError = '';
+		}
 	});
 
 	const isLastStep = $derived(stepIndex === steps.length - 1);
+	const step = $derived(steps[stepIndex]);
+	const fileName = $derived(filepath.split('/').pop() ?? filepath);
+
+	// Le transizioni di Svelte non passano dal CSS: il "movimento ridotto" di app.css non le
+	// ferma, va chiesto qui.
+	const reducedMotion =
+		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	const cancel = (): void => {
 		if (starting) return;
 		onCancel();
 	};
 
+	const back = (): void => {
+		if (starting) return;
+		if (stepIndex === 0) {
+			onCancel();
+			return;
+		}
+		direction = -1;
+		startError = '';
+		stepIndex -= 1;
+	};
+
 	const proceed = async (): Promise<void> => {
 		if (starting) return;
 
 		if (!isLastStep) {
+			direction = 1;
 			stepIndex += 1;
 			return;
 		}
 
 		starting = true;
+		startError = '';
 		try {
-			await fetch(
+			const res = await fetch(
 				`${getMoonrakerApiUrl()}/printer/print/start?filename=${encodeURIComponent(filepath)}`,
-				{
-					method: 'POST'
-				}
+				{ method: 'POST' }
 			);
+			// fetch non lancia sugli errori HTTP: senza questo controllo un avvio rifiutato
+			// (stampa già in corso, file sparito) portava comunque alla dashboard.
+			if (!res.ok) {
+				const body = await res.json().catch(() => null);
+				throw new Error(body?.error?.message ?? `The printer answered ${res.status}`);
+			}
 			// Close the wizard/details popup before navigating away, so we're not
 			// invoking callbacks on components SvelteKit is already tearing down.
 			onStarted();
 			await goto(resolve('/'));
 		} catch (error) {
 			console.error('Print start failed', error);
+			startError = error instanceof Error ? error.message : "Couldn't start the print";
 		} finally {
 			starting = false;
 		}
@@ -88,83 +121,146 @@
 </script>
 
 {#if isOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label={`Print start checklist — step ${stepIndex + 1} of ${steps.length}`}
-		tabindex="-1"
-		use:portal
-		onclick={cancel}
-		use:modal={{ onClose: cancel }}
+	<Sheet
+		label={`Print start checklist — step ${stepIndex + 1} of ${steps.length}`}
+		onClose={cancel}
+		dismissible={false}
+		showClose
+		layer={1}
+		size="wide"
+		panelClass="wizard-panel"
 	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
-			<div class="progress-bar" aria-hidden="true">
-				{#each steps as _, index (index)}
-					<div class="progress-segment" class:filled={index <= stepIndex}></div>
-				{/each}
+		{#snippet header()}
+			<div class="file-row">
+				<img
+					class="thumb"
+					src={thumbnailUrl ?? '/error-thumbnail.png'}
+					alt=""
+					width="44"
+					height="44"
+				/>
+				<div class="file-text">
+					<span class="eyebrow">Ready to print</span>
+					<span class="file-name">{fileName}</span>
+				</div>
 			</div>
-			<div class="step-body">
-				<svg class="warning-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
-					<path d={mdiAlertCircleOutline} fill="#D72E28" />
-				</svg>
-				<h3>{steps[stepIndex].title}</h3>
-				<ul class="checklist">
-					{#each steps[stepIndex].checklist as item (item)}
-						<li>{item}</li>
+			<div class="progress">
+				<span class="progress-label">
+					Step {stepIndex + 1} of {steps.length}
+				</span>
+				<div class="progress-bar" aria-hidden="true">
+					{#each steps as _, index (index)}
+						<div class="progress-segment" class:filled={index <= stepIndex}></div>
 					{/each}
-				</ul>
+				</div>
 			</div>
-			<div class="modal-actions">
-				<button class="modal-cancel" disabled={starting} onclick={cancel}>Cancel</button>
-				<button class="modal-confirm" disabled={starting} onclick={proceed}>
-					{starting ? 'Starting…' : isLastStep ? 'Start print' : 'Proceed'}
-				</button>
+		{/snippet}
+
+		{#key stepIndex}
+			<div
+				class="step"
+				in:fly={{ x: direction * 48, duration: reducedMotion ? 0 : 240, opacity: 0 }}
+			>
+				<h3 class="sheet-title">{step.title}</h3>
+				<div class="check">
+					<div class="art">
+						<step.illustration />
+					</div>
+					<p class="check-text">{step.text}</p>
+				</div>
 			</div>
-		</div>
-	</div>
+		{/key}
+
+		{#if startError}
+			<p class="sheet-error" role="alert">Print not started: {startError}</p>
+		{/if}
+
+		{#snippet footer()}
+			<button type="button" class="btn btn-secondary" disabled={starting} onclick={back}>
+				{stepIndex === 0 ? 'Cancel' : 'Back'}
+			</button>
+			<!-- svelte-ignore a11y_autofocus -->
+			<button type="button" class="btn btn-primary" disabled={starting} autofocus onclick={proceed}>
+				{#if starting}
+					Starting…
+				{:else if isLastStep}
+					{startError ? 'Try again' : "Let's print!"}
+				{:else}
+					Next
+				{/if}
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 3500;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	/* Altezza fissa su tutti gli step: il footer non si sposta mai, e "Next" resta sotto il
+	   dito qualunque sia la lunghezza del testo. */
+	:global(.wizard-panel) {
+		height: min(620px, calc(100dvh - 48px));
 	}
 
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 24px;
-		/* Fixed per-viewport size across every step, so Cancel/Proceed never move —
-		   lets an experienced user click through the wizard without re-aiming. */
-		width: min(380px, calc(100vw - 48px));
-		height: min(460px, calc(100dvh - 48px));
-		box-sizing: border-box;
+	@media (max-width: 767.98px) {
+		:global(.wizard-panel) {
+			height: min(680px, calc(100dvh - 24px));
+		}
+	}
+
+	.file-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+	}
+
+	.thumb {
+		flex-shrink: 0;
+		width: 44px;
+		height: 44px;
+		border-radius: 10px;
+		object-fit: contain;
+		background: var(--color-background);
+	}
+
+	.file-text {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		box-shadow: var(--shadow-panel);
+		min-width: 0;
+	}
+
+	.eyebrow {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-text-subtle);
+	}
+
+	.file-name {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--color-black);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.progress {
+		margin-top: 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.progress-label {
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--color-red);
 	}
 
 	.progress-bar {
 		display: flex;
 		gap: 6px;
-		width: 100%;
-		flex-shrink: 0;
-		margin-bottom: 20px;
 	}
 
 	.progress-segment {
@@ -172,107 +268,54 @@
 		height: 6px;
 		border-radius: 3px;
 		background: var(--color-surface-sunken);
-		transition: background-color 0.2s ease;
+		transition: background-color 0.25s ease;
 	}
 
 	.progress-segment.filled {
 		background: var(--color-red);
 	}
 
-	.step-body {
+	.step {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		width: 100%;
+		gap: 14px;
+		height: 100%;
+	}
+
+	.check {
 		flex: 1;
 		min-height: 0;
-		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 16px 20px 20px;
+		border-radius: 16px;
+		background: var(--color-white);
+		box-shadow: inset 0 0 0 1px var(--color-border-light);
 	}
 
-	.warning-icon {
-		flex-shrink: 0;
-		margin-bottom: 8px;
+	.art {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.modal-content h3 {
-		margin: 0 0 16px 0;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--color-black);
+	.art :global(.gv-illu) {
+		max-height: 260px;
+	}
+
+	.check-text {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--color-text-secondary);
 		text-align: center;
 	}
 
-	.checklist {
-		margin: 0 0 20px 0;
-		padding: 0;
-		list-style: none;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		width: 100%;
-	}
-
-	.checklist li {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		font-size: 0.95rem;
-		color: var(--color-text-muted);
-		background: var(--color-background);
-		border-radius: 8px;
-		padding: 10px 14px;
-	}
-
-	.checklist li::before {
-		content: '';
-		flex-shrink: 0;
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--color-red);
-	}
-
-	.modal-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-		width: 100%;
-		flex-shrink: 0;
-	}
-
-	.modal-cancel {
-		padding: 8px 20px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		background: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
-		color: var(--color-text-soft);
-	}
-
-	.modal-cancel:hover {
-		background-color: var(--color-background);
-	}
-
-	.modal-cancel:disabled,
-	.modal-confirm:disabled {
-		cursor: default;
-		opacity: 0.55;
-		pointer-events: none;
-	}
-
-	.modal-confirm {
-		padding: 8px 20px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: white;
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition: background-color 0.15s;
-	}
-
-	.modal-confirm:hover {
-		background: var(--color-red-dark);
+	.sheet-error {
+		margin-top: 12px;
 	}
 </style>

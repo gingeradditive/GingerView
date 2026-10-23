@@ -104,6 +104,61 @@ export const customTemperaturePreset = writable<TemperaturePreset>({
 export const extrudePhase = writable<ExtrudePhase>('idle');
 
 /**
+ * Come è finita l'ultima sequenza, per il pannello: "Done" per qualche secondo, oppure la
+ * fase che ha fallito con "Retry". `null` mentre gira e quando non c'è niente da dire. Il
+ * toast di errore resta: questo serve a chi guarda il pannello, il toast a chi è altrove.
+ */
+export type ExtrudeOutcome =
+	| { status: 'done' }
+	| { status: 'failed'; phase: Exclude<ExtrudePhase, 'idle'>; message: string };
+
+export const extrudeOutcome = writable<ExtrudeOutcome | null>(null);
+
+/**
+ * Cancel chiesto dall'utente. La sequenza lo guarda tra un comando e l'altro: quello già
+ * mandato a Kalico non si interrompe (un G28 arriva in fondo), ma l'attesa del calore e
+ * l'estrusione sono spezzate apposta in pezzi brevi, così Cancel risponde in pochi secondi.
+ */
+export const extrudeCancelRequested = writable(false);
+
+export const cancelExtrudeSequence = (): void => {
+	if (get(extrudePhase) !== 'idle') extrudeCancelRequested.set(true);
+};
+
+class ExtrudeCancelled extends Error {}
+
+const throwIfCancelled = (): void => {
+	if (get(extrudeCancelRequested)) throw new ExtrudeCancelled();
+};
+
+const HEAT_POLL_MS = 1000;
+// Durata di un pezzo di estrusione: tra un pezzo e il successivo si guarda Cancel.
+const EXTRUDE_CHUNK_S = 5;
+
+/**
+ * Aspetta che ogni zona arrivi al suo target, controllando Cancel a ogni giro. Fa quello
+ * che faceva `TEMPERATURE_WAIT` (soglia minima, nessun timeout), ma senza bloccare la coda
+ * di Kalico, che altrimenti non si poteva fermare se non con l'arresto d'emergenza.
+ */
+const waitForZones = async (targets: Record<string, number>): Promise<void> => {
+	const query = Object.keys(targets).join('&');
+	for (;;) {
+		throwIfCancelled();
+		const response = await fetch(`${getMoonrakerApiUrl()}/printer/objects/query?${query}`);
+		if (!response.ok) {
+			throw new Error(await readError(response, 'Could not read the nozzle temperatures'));
+		}
+		const status = (await response.json())?.result?.status ?? {};
+		const reached = Object.entries(targets).every(
+			([zone, target]) =>
+				typeof status[zone]?.temperature === 'number' && status[zone].temperature >= target
+		);
+		if (reached) return;
+		await new Promise((resolve) => setTimeout(resolve, HEAT_POLL_MS));
+	}
+};
+
+/**
  * True while a `G28` is in flight, whatever started it — the Home button on the
  * first slide or the homing step of the extrude sequence on the second. One
  * flag for both keeps the Home button honest: it reads "Homing..." for any
@@ -194,11 +249,11 @@ const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 // Which step gave up, as the title of the toast. `idle` cannot fail — the
 // sequence is not running — but the map has to cover the whole type.
 const phaseFailureTitles: Record<ExtrudePhase, string> = {
-	idle: 'Extrude failed',
-	homing: 'Homing failed',
-	moving: 'Move to purge position failed',
-	heating: 'Heating failed',
-	extruding: 'Extrusion failed'
+	idle: 'Something went wrong while extruding',
+	homing: "Couldn't home",
+	moving: "Couldn't reach the purge spot",
+	heating: "Couldn't heat up",
+	extruding: "Couldn't extrude"
 };
 
 export const startHoming = async (): Promise<void> => {
@@ -210,7 +265,7 @@ export const startHoming = async (): Promise<void> => {
 		// The button goes back to "Home" either way, so without a toast a refused
 		// homing is indistinguishable from one that worked.
 		console.error('Homing failed', error);
-		toastActions.error('klipper', 'Homing failed', describeError(error));
+		toastActions.error('klipper', "Couldn't home", describeError(error));
 	} finally {
 		homingBusy.set(false);
 	}
@@ -221,6 +276,8 @@ export const startExtrudeSequence = async (): Promise<void> => {
 	// Zones whose target this sequence set, so they are switched off again at
 	// the end — whether the extrusion finished or something failed on the way.
 	let heatedZones: string[] = [];
+	extrudeOutcome.set(null);
+	extrudeCancelRequested.set(false);
 	try {
 		// Leave `idle` before the first await, or a second tap during the homed
 		// check would start a second sequence.
@@ -236,8 +293,10 @@ export const startExtrudeSequence = async (): Promise<void> => {
 			extrudePhase.set('moving');
 		}
 
+		throwIfCancelled();
 		const centerX = await getPurgePositionX();
 		await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
+		throwIfCancelled();
 
 		extrudePhase.set('heating');
 		// Heating the wrong set of zones is worse than not heating at all: a zone
@@ -245,17 +304,15 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		// has, the sequence stops here instead of guessing.
 		const zones = await loadNozzleZones();
 		if (zones.length === 0) {
-			throw new Error('Could not read the nozzle zones from the printer');
+			throw new Error("Couldn't read the nozzle zones from the printer");
 		}
 		const preset = resolveTemperaturePreset(zones);
 		const setTemperatures = zones.map(
 			(zone) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${preset.zones[zone]}`
 		);
-		const waitTemperatures = zones.map(
-			(zone) => `TEMPERATURE_WAIT SENSOR=${zone} MINIMUM=${preset.zones[zone]}`
-		);
 		heatedZones = zones;
-		await runGcode([...setTemperatures, ...waitTemperatures].join('\n'));
+		await runGcode(setTemperatures.join('\n'));
+		await waitForZones(preset.zones);
 
 		extrudePhase.set('extruding');
 		const amountValue = amountOptions.find((option) => option.value === get(extrudeAmount))!;
@@ -265,23 +322,43 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		// mm3-per-rotation for the active material ("rotation volume"), so a relative
 		// E move of <volumeMm3> mm dispenses that many mm3. Unconfirmed on real
 		// hardware — see Q32 in docs/Q&A.md.
+		// In pezzi da EXTRUDE_CHUNK_S secondi, con Cancel guardato tra un pezzo e l'altro:
+		// un'unica mossa da 20 cm³ a Slow durava quasi 7 minuti e non si fermava.
+		const feed = speedValue.speedMm3PerS * 60;
+		const chunkMm3 = speedValue.speedMm3PerS * EXTRUDE_CHUNK_S;
 		await runGcode(
-			[
-				`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=${zones[0]} DISTANCE=${preset.rotationVolume}`,
-				'M83',
-				`G1 E${amountValue.volumeMm3} F${speedValue.speedMm3PerS * 60}`,
-				'M82',
-				// The script returns once the move is queued, not done: wait for it,
-				// or the heaters would be switched off mid-extrusion.
-				'M400'
-			].join('\n')
+			`SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=${zones[0]} DISTANCE=${preset.rotationVolume}`
 		);
+		let remaining = amountValue.volumeMm3;
+		while (remaining > 0) {
+			throwIfCancelled();
+			const chunk = Math.min(chunkMm3, remaining);
+			await runGcode(
+				[
+					'M83',
+					`G1 E${chunk} F${feed}`,
+					'M82',
+					// The script returns once the move is queued, not done: wait for it,
+					// or the heaters would be switched off mid-extrusion.
+					'M400'
+				].join('\n')
+			);
+			remaining -= chunk;
+		}
+		extrudeOutcome.set({ status: 'done' });
 	} catch (error) {
+		if (error instanceof ExtrudeCancelled) {
+			toastActions.info('klipper', 'Extrude cancelled', 'The heaters have been switched off.');
+			return;
+		}
 		// `extrudePhase` still holds the step that failed — `finally` resets it
 		// after this block — so the toast can say where the sequence stopped.
 		const failedPhase = get(extrudePhase);
 		console.error(`Extrude sequence failed during ${failedPhase}`, error);
 		toastActions.error('klipper', phaseFailureTitles[failedPhase], describeError(error));
+		if (failedPhase !== 'idle') {
+			extrudeOutcome.set({ status: 'failed', phase: failedPhase, message: describeError(error) });
+		}
 	} finally {
 		if (heatedZones.length > 0) {
 			try {
@@ -289,10 +366,17 @@ export const startExtrudeSequence = async (): Promise<void> => {
 					heatedZones.map((zone) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=0`).join('\n')
 				);
 			} catch (error) {
-				console.error('Could not switch off the nozzle heaters', error);
-				toastActions.error('klipper', 'Heaters still on', describeError(error));
+				console.error("Couldn't turn the nozzle heaters off", error);
+				toastActions.error(
+					'klipper',
+					'Heaters are still on',
+					"Couldn't turn the nozzle heaters off. Keep an eye on them",
+					undefined,
+					describeError(error)
+				);
 			}
 		}
+		extrudeCancelRequested.set(false);
 		extrudePhase.set('idle');
 	}
 };
@@ -331,7 +415,7 @@ export const moveToolhead = async (from: AxisPosition, to: AxisPosition): Promis
 		return true;
 	} catch (error) {
 		console.error('Move failed', error);
-		toastActions.error('klipper', 'Move failed', describeError(error));
+		toastActions.error('klipper', "Couldn't move there", describeError(error));
 		return false;
 	} finally {
 		moveRequestsInFlight.update((count) => count - 1);
