@@ -71,7 +71,7 @@
 					<div class="log-line">{line}</div>
 				{/each}
 				{#if lines.length === 0}
-					<div class="log-line muted">Waiting for output…</div>
+					<div class="log-line muted">Waiting to hear back…</div>
 				{/if}
 			</div>
 

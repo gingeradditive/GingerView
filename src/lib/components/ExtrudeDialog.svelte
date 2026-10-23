@@ -78,8 +78,8 @@
 			// an empty popup.
 			toastActions.error(
 				'klipper',
-				'Custom temperature unavailable',
-				'Could not read the nozzle zones from the printer'
+				"Can't set a custom temperature right now",
+				"Couldn't read the nozzle zones from the printer"
 			);
 			return;
 		}

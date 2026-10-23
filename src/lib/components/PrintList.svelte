@@ -184,14 +184,15 @@
 		} catch (e) {
 			if (seq !== loadSeq) return;
 			// Un refresh silenzioso fallito lascia la lista che c'era.
-			if (!quiet) error = e instanceof Error ? e.message : 'Failed to load files';
+			if (!quiet) error = e instanceof Error ? e.message : "Couldn't load your files";
 			console.error('Error loading directory:', e);
 		} finally {
 			if (seq === loadSeq) loading = false;
 		}
 	}
 
-	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+	const describeError = (e: unknown): string =>
+		e instanceof Error ? e.message : 'Something went wrong';
 
 	// Un G-code di pellet pesa decine di MB: senza un segno il pulsante sembra
 	// non aver fatto niente, e un secondo tocco ripartiva con un altro upload.
@@ -215,7 +216,11 @@
 				uploading = false;
 			}
 		} else if (file) {
-			toastActions.warning('moonraker', 'Not a G-code file', 'Choose a .gcode file to upload.');
+			toastActions.warning(
+				'moonraker',
+				"That's not a G-code file…",
+				'Choose a .gcode file to upload.'
+			);
 		}
 		// Reset input so re-selecting same file triggers change
 		if (target) target.value = '';
@@ -247,7 +252,7 @@
 			await loadDirectory();
 		} catch (e) {
 			console.error('Create folder failed:', e);
-			toastActions.error('moonraker', 'Create folder failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't create the folder", describeError(e));
 		} finally {
 			creatingFolder = false;
 		}
@@ -394,7 +399,7 @@
 				<button
 					class="action-button usb-button"
 					onclick={() => (showUsbModal = true)}
-					aria-label="Import from USB stick"
+					aria-label="Import from USB"
 					use:tooltip
 				>
 					<svg viewBox="0 0 24 24" width="40" height="40"
@@ -416,7 +421,7 @@
 				class="action-button"
 				class:busy={uploading}
 				onclick={() => fileInput.click()}
-				aria-label={uploading ? 'Uploading…' : 'Upload file'}
+				aria-label={uploading ? 'Uploading…' : 'Upload a file'}
 				use:tooltip
 				aria-busy={uploading}
 				disabled={uploading}
@@ -474,11 +479,11 @@
 				<span class="empty-title">Nothing to print… yet!</span>
 				<span class="empty-sub">
 					{usbMounted
-						? 'Upload a G-code or import one from your USB stick'
-						: 'Upload a G-code to get started'}
+						? 'Upload a G-code file or grab one from your USB stick'
+						: 'Upload a G-code file to get started'}
 				</span>
 			{:else}
-				<span class="empty-title">This folder is empty</span>
+				<span class="empty-title">Nothing in here yet</span>
 				<span class="empty-sub">Feed me some G-code!</span>
 			{/if}
 		</div>
@@ -531,7 +536,7 @@
 			onclick={() => backgroundAction(() => fileInput.click())}
 		>
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiUpload} /></svg>
-			Upload file
+			Upload a file
 		</button>
 		<button
 			class="context-menu-item"

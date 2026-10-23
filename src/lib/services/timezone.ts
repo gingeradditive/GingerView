@@ -86,7 +86,7 @@ export async function setSystemTimezone(id: string): Promise<TimezoneStatus> {
 	} catch (error) {
 		toastActions.error(
 			'network',
-			'Timezone not applied',
+			"Couldn't change the time zone",
 			describeTimezoneError(error, `The printer did not accept ${id}.`)
 		);
 		throw error;

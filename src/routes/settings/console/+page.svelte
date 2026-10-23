@@ -54,7 +54,10 @@
 			return;
 
 		if (connectionAttempts >= maxConnectionAttempts) {
-			addOutput('Max connection attempts reached. Check Moonraker configuration.', 'error');
+			addOutput(
+				"We tried a few times and couldn't connect. Check the Moonraker settings.",
+				'error'
+			);
 			return;
 		}
 
@@ -116,7 +119,11 @@
 				isConnecting = false;
 				isConnected = false;
 				addOutput('WebSocket connection error', 'error');
-				toastActions.error('moonraker', 'Console error', 'WebSocket connection error to Moonraker');
+				toastActions.error(
+					'moonraker',
+					'Console error',
+					"Couldn't keep the connection to Moonraker"
+				);
 			};
 
 			websocket.onclose = (event) => {
@@ -138,8 +145,8 @@
 			addOutput('Failed to create WebSocket connection', 'error');
 			toastActions.error(
 				'moonraker',
-				'Connection failed',
-				'Failed to create WebSocket connection to Moonraker'
+				"Couldn't connect",
+				"We couldn't open a connection to Moonraker"
 			);
 		}
 	}
@@ -271,7 +278,7 @@
 				type="text"
 				bind:value={currentCommand}
 				onkeydown={handleKeydown}
-				placeholder="Enter Klipper command…"
+				placeholder="Type a Klipper command…"
 			/>
 		</div>
 

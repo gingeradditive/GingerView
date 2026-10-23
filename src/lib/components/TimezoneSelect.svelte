@@ -146,7 +146,7 @@
 					bind:value={query}
 					oninput={() => (highlighted = 0)}
 					onkeydown={handleSearchKeydown}
-					placeholder="Search a city or a country…"
+					placeholder="Search for a city or country…"
 					autocomplete="off"
 					spellcheck="false"
 				/>

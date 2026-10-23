@@ -93,7 +93,7 @@
 
 				<div class="stats-grid">
 					<div class="stat-card">
-						<span class="stat-label">Start</span>
+						<span class="stat-label">Started</span>
 						<span>{formatHistoryDate(job.start_time, $printerTimezone)}</span>
 					</div>
 					<div class="stat-card">
@@ -101,7 +101,7 @@
 						<span>{formatEstimatedTime(job.print_duration)}</span>
 					</div>
 					<div class="stat-card">
-						<span class="stat-label">Filament</span>
+						<span class="stat-label">Material used</span>
 						<span>{formatFilamentUsed(job.filament_used)}</span>
 					</div>
 				</div>
@@ -115,7 +115,7 @@
 						title={job.exists ? undefined : 'File no longer exists'}
 						onclick={handleReprintClick}
 					>
-						Reprint
+						Print again
 					</button>
 				</div>
 			</div>

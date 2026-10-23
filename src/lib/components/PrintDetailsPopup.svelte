@@ -111,7 +111,7 @@
 				</div>
 
 				<div class="actions-row">
-					<button class="print-button" type="button" onclick={handlePrintClick}>Print</button>
+					<button class="print-button" type="button" onclick={handlePrintClick}>Print!</button>
 				</div>
 			</div>
 		</div>

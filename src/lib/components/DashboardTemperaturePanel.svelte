@@ -133,7 +133,7 @@
 <section
 	class="temperature-panel"
 	class:with-bar={showTemperatureBar}
-	aria-label="Klipper temperature panel"
+	aria-label="Nozzle and bed temperatures"
 >
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
@@ -165,8 +165,8 @@
 		<DashboardCardBar
 			label="EXTRUDER"
 			active={anyZoneHeating}
-			ariaLabel="Set extruder temperatures"
-			hint="Set a target temperature for each nozzle zone"
+			ariaLabel="Set the extruder temperatures"
+			hint="Pick a target for each nozzle zone"
 			onclick={() => (showTemperatureModal = true)}
 		>
 			SET

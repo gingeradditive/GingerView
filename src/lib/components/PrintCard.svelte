@@ -76,7 +76,8 @@
 	// Moonraker non ha un cestino: eliminare è definitivo, quindi si chiede prima.
 	let showDeleteConfirm = $state(false);
 
-	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+	const describeError = (e: unknown): string =>
+		e instanceof Error ? e.message : 'Something went wrong';
 
 	function handleDelete() {
 		closeContextMenu();
@@ -99,7 +100,7 @@
 			}
 		} catch (e) {
 			console.error('Delete failed:', e);
-			toastActions.error('moonraker', 'Delete failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't delete it", describeError(e));
 		}
 	}
 
@@ -133,7 +134,7 @@
 			}
 		} catch (e) {
 			console.error('Move failed:', e);
-			toastActions.error('moonraker', 'Move failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't move it", describeError(e));
 		}
 	}
 
@@ -174,7 +175,7 @@
 			}
 		} catch (e) {
 			console.error('Rename failed:', e);
-			toastActions.error('moonraker', 'Rename failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't rename it", describeError(e));
 		}
 	}
 
@@ -204,7 +205,7 @@
 		class="menu-button"
 		class:on-file={!item.isDirectory}
 		aria-label="Actions for {item.name}"
-		use:tooltip={'More actions'}
+		use:tooltip={'More options'}
 		aria-haspopup="menu"
 		aria-expanded={showContextMenu}
 		onclick={handleMenuButton}
@@ -288,7 +289,7 @@
 		<div class="modal-content">
 			<h3>Move "{item.name}"</h3>
 			{#if loadingDirs}
-				<p class="modal-loading">Loading folders…</p>
+				<p class="modal-loading">Getting your folders…</p>
 			{:else}
 				<div class="folder-list">
 					<button class="folder-option" onclick={() => confirmMove('')}>
@@ -318,7 +319,7 @@
 	message={item.isDirectory
 		? `"${item.name}" and everything inside it will be deleted from the printer.`
 		: `"${item.name}" will be deleted from the printer.`}
-	details="This can't be undone."
+	details="Once it's gone, it's gone."
 	confirmLabel="Delete"
 	onConfirm={confirmDelete}
 	onCancel={() => (showDeleteConfirm = false)}

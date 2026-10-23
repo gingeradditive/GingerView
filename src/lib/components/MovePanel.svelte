@@ -141,7 +141,7 @@
 
 	const fieldError = (axis: Axis): string | null => {
 		const value = fields[axis];
-		if (value === null || !Number.isFinite(value)) return 'Enter a value';
+		if (value === null || !Number.isFinite(value)) return 'Type a value';
 		if (value < minimum[axis] || value > maximum[axis]) {
 			return `Between ${minimum[axis]} and ${maximum[axis]} mm`;
 		}
@@ -211,7 +211,7 @@
 	class="move-overlay"
 	role="dialog"
 	aria-modal="true"
-	aria-label="Move toolhead"
+	aria-label="Move the head"
 	tabindex="-1"
 	use:portal
 	use:modal={{ onClose }}
@@ -242,13 +242,13 @@
 		</header>
 
 		{#if printing}
-			<div class="banner">Not available while printing.</div>
+			<div class="banner">Not while a print is running, sorry!</div>
 		{:else if limitsKnown && !homed}
 			<div class="banner">
-				<span>Home the printer to move it.</span>
+				<span>Home the printer first, then you can move it</span>
 				<button
 					class="banner-btn"
-					use:tooltip={'Home all axes (G28): find the zero of X, Y and Z'}
+					use:tooltip={'Home all axes so the printer knows where zero is'}
 					disabled={$homingBusy}
 					onclick={() => (showHomingWarning = true)}
 				>
@@ -260,7 +260,7 @@
 		<div class="move-body">
 			<section class="move-section">
 				<span class="section-label">JOG</span>
-				<div class="step-row" role="radiogroup" aria-label="Jog step">
+				<div class="step-row" role="radiogroup" aria-label="Step size">
 					{#each jogStepOptions as option (option.mm)}
 						<button
 							class="step-btn"
@@ -377,20 +377,20 @@
 					<button
 						class="fill-btn"
 						disabled={!canMove}
-						use:tooltip={'Fill X and Y with the centre of the bed'}
+						use:tooltip={'Use the centre of the bed for X and Y'}
 						onclick={fillCenter}>Center XY</button
 					>
 					<button
 						class="fill-btn"
 						disabled={!canMove}
-						use:tooltip={'Fill the fields with the current position'}
+						use:tooltip={'Use where the head is now'}
 						onclick={fillCurrent}>Current</button
 					>
 				</div>
 				<button
 					class="goto-btn"
 					disabled={!canMove || !fieldsValid}
-					use:tooltip={'Move to the X, Y and Z typed above (Z first when going up, last when going down)'}
+					use:tooltip={'Go to the X, Y and Z above (Z moves first going up, last going down)'}
 					onclick={goTo}
 				>
 					GO TO

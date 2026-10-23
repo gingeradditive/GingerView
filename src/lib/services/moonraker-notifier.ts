@@ -114,14 +114,14 @@ export async function fetchServerInfo(): Promise<MoonrakerServerInfo | null> {
 			toastActions.error(
 				'moonraker',
 				'Server info error',
-				`Failed to fetch server info: ${res.status} ${res.statusText}`
+				`Couldn't get info from Moonraker: ${res.status} ${res.statusText}`
 			);
 			return null;
 		}
 		const json = await res.json();
 		return json.result as MoonrakerServerInfo;
 	} catch (e) {
-		console.warn('Failed to fetch Moonraker server info:', e);
+		console.warn("Couldn't get info from Moonraker:", e);
 		return null;
 	}
 }
@@ -151,7 +151,7 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 	for (const component of info.failed_components) {
 		toastActions.error(
 			'moonraker',
-			'Failed component',
+			"Something didn't load",
 			`Moonraker component failed to load: ${component}`,
 			0
 		);
@@ -169,14 +169,14 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 		if (info.klippy_state === 'error') {
 			toastActions.error('klipper', 'Kalico error', firstLine, 0, details);
 		} else {
-			toastActions.error('klipper', 'Kalico shutdown', firstLine, 0, details);
+			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, details);
 		}
 	} else if (!info.klippy_connected) {
 		setKlippyState('disconnected');
 		toastActions.warning(
 			'klipper',
 			'Kalico disconnected',
-			'Kalico host process is not connected to Moonraker.',
+			"Kalico isn't connected to Moonraker",
 			0
 		);
 	} else {
@@ -263,7 +263,7 @@ function handleNotification(data: unknown): void {
 	// Klipper state change notifications
 	if (data.method === 'notify_klippy_ready') {
 		setKlippyState('ready');
-		toastActions.success('klipper', 'Kalico ready', 'Kalico firmware is ready');
+		toastActions.success('klipper', 'Kalico is ready', 'The firmware is ready');
 	}
 
 	if (data.method === 'notify_klippy_shutdown') {
@@ -271,15 +271,15 @@ function handleNotification(data: unknown): void {
 		// Fetch full details asynchronously
 		fetchPrinterInfo().then((printerInfo) => {
 			const stateMsg = printerInfo?.state_message || '';
-			const firstLine = stateMsg.split('\n')[0] || 'Kalico firmware has entered shutdown state';
+			const firstLine = stateMsg.split('\n')[0] || 'The firmware has shut down';
 			klippyMessage.set(stateMsg);
-			toastActions.error('klipper', 'Kalico shutdown', firstLine, 0, stateMsg || undefined);
+			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, stateMsg || undefined);
 		});
 	}
 
 	if (data.method === 'notify_klippy_disconnected') {
 		setKlippyState('disconnected');
-		toastActions.error('klipper', 'Kalico disconnected', 'Kalico host process has disconnected', 0);
+		toastActions.error('klipper', 'Kalico disconnected', 'Lost connection to Kalico', 0);
 	}
 }
 

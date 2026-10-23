@@ -82,7 +82,7 @@
 
 	$effect(() => {
 		if (isOpen && !mounted && !importing) {
-			toastActions.info('system', 'USB stick removed', 'The USB stick is no longer connected.');
+			toastActions.info('system', 'USB stick unplugged', 'The USB stick is no longer connected.');
 			onClose();
 		}
 	});
@@ -99,7 +99,7 @@
 		} catch (e) {
 			if (token !== loadToken) return;
 			if (e instanceof ServiceError && e.code === 'USB_NOT_MOUNTED') {
-				toastActions.info('system', 'USB stick removed', describeUsbError(e, ''));
+				toastActions.info('system', 'USB stick unplugged', describeUsbError(e, ''));
 				onClose();
 				return;
 			}
@@ -128,7 +128,11 @@
 		importing = file.name;
 		try {
 			const result = await importUsbFile(join(usbPath, file.name), destDir, onConflict);
-			toastActions.success('system', 'File imported', `${result.filename} is ready to print.`);
+			toastActions.success(
+				'system',
+				'Got it, file imported!',
+				`${result.filename} is ready to print.`
+			);
 			onImported(result);
 			onClose();
 		} catch (e) {
@@ -152,7 +156,7 @@
 	}
 
 	const title = $derived(usbPath ? usbPath.slice(usbPath.lastIndexOf('/') + 1) : 'USB stick');
-	const destLabel = $derived(destDir ? destDir.slice(destDir.lastIndexOf('/') + 1) : 'Home');
+	const destLabel = $derived(destDir ? destDir.slice(destDir.lastIndexOf('/') + 1) : 'My files');
 	const isEmpty = $derived(!!listing && listing.dirs.length === 0 && listing.files.length === 0);
 	const conflictIsPrinting = $derived(!!conflict && printingFile === join(destDir, conflict.name));
 </script>
@@ -165,7 +169,7 @@
 		class="modal-overlay"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Import from USB stick"
+		aria-label="Import from USB"
 		tabindex="-1"
 		use:portal
 		onclick={close}
@@ -212,7 +216,7 @@
 						<strong>{conflict.name}</strong> already exists in {destLabel}.
 					</p>
 					{#if conflictIsPrinting}
-						<p class="conflict-note">It is being printed right now, so it cannot be replaced.</p>
+						<p class="conflict-note">It's printing right now, so it can't be replaced.</p>
 					{/if}
 					<div class="conflict-actions">
 						<button
@@ -228,7 +232,7 @@
 							disabled={conflictIsPrinting}
 							onclick={() => runImport(conflict!, 'overwrite')}
 						>
-							Overwrite
+							Replace it
 						</button>
 						<button type="button" class="modal-cancel" onclick={() => (conflict = null)}>
 							Cancel
@@ -236,11 +240,12 @@
 					</div>
 				</div>
 			{:else if loading && !listing}
-				<div class="usb-status">Reading the USB stick…</div>
+				<div class="usb-status">Taking a look at your USB stick…</div>
 			{:else if error}
 				<div class="usb-status error">
 					<span>{error}</span>
-					<button type="button" class="modal-cancel" onclick={() => load(usbPath)}>Retry</button>
+					<button type="button" class="modal-cancel" onclick={() => load(usbPath)}>Try again</button
+					>
 				</div>
 			{:else if isEmpty}
 				<div class="usb-status">No printable files here</div>

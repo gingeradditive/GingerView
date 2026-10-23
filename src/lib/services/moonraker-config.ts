@@ -134,7 +134,7 @@ export async function readConfigFile(path: string): Promise<string> {
 	const res = await fetch(`${getApiUrl()}/server/files/${encodePath(path)}?t=${Date.now()}`);
 	if (!res.ok) {
 		const msg = `Failed to open ${path}: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Open error', msg);
+		toastActions.error('moonraker', "Couldn't open the file", msg);
 		throw new Error(msg);
 	}
 	return res.text();
@@ -161,7 +161,7 @@ export async function writeConfigFile(path: string, content: string): Promise<vo
 	const res = await fetch(`${getApiUrl()}/server/files/upload`, { method: 'POST', body: form });
 	if (!res.ok) {
 		const msg = `Failed to save ${filename}: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Save error', msg);
+		toastActions.error('moonraker', "Couldn't save", msg);
 		throw new Error(msg);
 	}
 }
@@ -175,7 +175,7 @@ export async function downloadConfigFile(path: string): Promise<void> {
 	const res = await fetch(`${getApiUrl()}/server/files/${encodePath(path)}`);
 	if (!res.ok) {
 		const msg = `Failed to download ${path}: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Download error', msg);
+		toastActions.error('moonraker', "Couldn't download", msg);
 		throw new Error(msg);
 	}
 
@@ -215,9 +215,9 @@ export function suggestedRestartFor(path: string): RestartTarget | null {
  */
 export function validateEntryName(name: string): string {
 	const trimmed = name.trim();
-	if (!trimmed) return 'Name cannot be empty';
-	if (trimmed.startsWith('.')) return 'Name cannot start with a dot';
-	if (/[/\\]/.test(trimmed)) return 'Name cannot contain slashes';
+	if (!trimmed) return 'Give it a name';
+	if (trimmed.startsWith('.')) return "Names can't start with a dot";
+	if (/[/\\]/.test(trimmed)) return "Names can't have slashes";
 	if (trimmed === '..') return 'Invalid name';
 	return '';
 }

@@ -94,9 +94,9 @@
 	let lineCount = $derived(content === '' ? 0 : content.split('\n').length);
 	let statePill = $derived(
 		printerState === 'ready'
-			? { text: 'Klipper ready', tone: 'ok' }
+			? { text: 'Klipper is ready', tone: 'ok' }
 			: printerState === ''
-				? { text: 'Klipper unreachable', tone: 'problem' }
+				? { text: "Can't reach Klipper", tone: 'problem' }
 				: {
 						text: `Klipper ${printerState}`,
 						tone: printerState === 'startup' ? 'pending' : 'problem'
@@ -109,9 +109,9 @@
 	 */
 	let restartBlockedReason = $derived(
 		printState === 'printing'
-			? 'A print is running. Restarting would abort it, so restarts are disabled.'
+			? 'A print is running, and restarting would stop it, so restarts are off for now.'
 			: printState === 'paused'
-				? 'A print is paused. Finish or cancel it before restarting.'
+				? 'A print is paused. Finish or cancel it, then restart.'
 				: ''
 	);
 	let restartDisabled = $derived(isRestarting || restartBlockedReason !== '');
@@ -146,7 +146,7 @@
 			tree = toTreeNodes(dir.entries);
 			writable = dir.writable;
 		} catch (e) {
-			loadError = e instanceof Error ? e.message : 'Failed to list config files';
+			loadError = e instanceof Error ? e.message : "Couldn't list the config files";
 		} finally {
 			isLoading = false;
 		}
@@ -287,7 +287,7 @@
 		isRestarting = true;
 		pendingRestart = null;
 		printerState = 'startup';
-		toastActions.info('klipper', label, 'Restart requested, waiting for the printer…');
+		toastActions.info('klipper', label, 'Restarting, hang tight…');
 
 		try {
 			await requestRestart(target);
@@ -297,17 +297,17 @@
 				toastActions.error(
 					'klipper',
 					label,
-					'The printer did not answer after the restart. Check the console.'
+					'No answer after the restart. Take a look at the console.'
 				);
 			} else if (info.state === 'ready') {
-				toastActions.success('klipper', label, 'The printer is ready again');
+				toastActions.success('klipper', label, "We're back! The printer is ready");
 			} else {
 				// This is where a broken config surfaces: Klippy comes back in `error`
 				// with the parse failure in `state_message`.
 				toastActions.error(
 					'klipper',
 					`${label} — ${info.state}`,
-					info.stateMessage || 'The printer did not come back ready',
+					info.stateMessage || "The printer didn't come back ready",
 					12000
 				);
 			}
@@ -332,7 +332,7 @@
 	function promptNewFile() {
 		promptState = {
 			title: 'New file',
-			label: `Created in ${activeDir}`,
+			label: `Added to ${activeDir}`,
 			value: '',
 			placeholder: 'macros.cfg',
 			confirmLabel: 'Create',
@@ -352,7 +352,7 @@
 	function promptNewFolder() {
 		promptState = {
 			title: 'New folder',
-			label: `Created in ${activeDir}`,
+			label: `Added to ${activeDir}`,
 			value: '',
 			placeholder: 'macros',
 			confirmLabel: 'Create',
@@ -397,7 +397,7 @@
 			title: isDirectory ? 'Delete folder' : 'Delete file',
 			message: `Delete ${name}?`,
 			details: isDirectory
-				? 'The folder and everything inside it are removed from the printer.'
+				? 'This removes the folder and everything in it from the printer.'
 				: 'The file is removed from the printer. This cannot be undone.',
 			confirmLabel: 'Delete',
 			run: async () => {
@@ -541,8 +541,7 @@
 				<div class="banner warn">
 					<TriangleAlert size={18} />
 					<span>
-						Moonraker serves the config folder read-only. Files can be opened and downloaded but not
-						saved.
+						The config folder is read-only here. You can open and download files, but not save them.
 					</span>
 				</div>
 			{/if}
@@ -576,14 +575,14 @@
 					</div>
 					<div class="tree-scroll">
 						{#if isLoading}
-							<p class="placeholder">Loading config files…</p>
+							<p class="placeholder">Loading your config files…</p>
 						{:else if loadError}
 							<div class="load-error">
 								<p>{loadError}</p>
-								<button type="button" class="ghost-btn" onclick={loadRoot}>Retry</button>
+								<button type="button" class="ghost-btn" onclick={loadRoot}>Try again</button>
 							</div>
 						{:else if tree.length === 0}
-							<p class="placeholder">The config folder is empty.</p>
+							<p class="placeholder">No config files here yet.</p>
 						{:else}
 							<ConfigFileTree
 								nodes={tree}
@@ -601,12 +600,12 @@
 
 				<div class="editor-pane">
 					{#if !selectedPath}
-						<p class="placeholder">Pick a file on the left to edit it.</p>
+						<p class="placeholder">Pick a file on the left to start editing.</p>
 					{:else}
 						<div class="pane-head">
 							<span class="file-path" title={selectedPath}>
 								{selectedPath}
-								{#if isDirty}<span class="dirty" title="Unsaved changes">●</span>{/if}
+								{#if isDirty}<span class="dirty" title="Not saved yet">●</span>{/if}
 							</span>
 							<span class="line-count">{lineCount} lines</span>
 							<button
@@ -630,7 +629,7 @@
 								onclick={() => guardUnsaved(() => openFile(selectedPath, 0))}
 								disabled={busy}
 							>
-								Revert
+								Undo changes
 							</button>
 							<span class="toolbar-spacer"></span>
 							<button
