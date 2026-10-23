@@ -57,9 +57,9 @@
 			<p class="recovery-text">
 				<TriangleAlert size={16} />
 				<span>
-					Moonraker reports this repository as <strong>{state.badge.toLowerCase()}</strong> and cannot
-					update it. A soft recovery discards local changes with a reset; a hard recovery deletes the
-					repository and clones it again.
+					Moonraker says this repository is <strong>{state.badge.toLowerCase()}</strong> and cannot update
+					it. A soft recovery discards local changes with a reset; a hard recovery deletes the repository
+					and clones it again.
 				</span>
 			</p>
 			<div class="recovery-actions">

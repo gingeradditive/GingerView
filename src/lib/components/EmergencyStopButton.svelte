@@ -56,8 +56,8 @@
 			klippyState.set('shutdown');
 			toastActions.warning(
 				'klipper',
-				'Emergency stop sent',
-				'Kalico is shut down. Press the button again to run a firmware restart when the machine is safe.'
+				"Emergency stop sent. Everything's stopped.",
+				'Kalico is shut down. Once the machine is safe, press the button again to restart the firmware.'
 			);
 		} catch {
 			// The service already raised a persistent error toast.
@@ -73,7 +73,7 @@
 	async function resetNow() {
 		confirmOpen = false;
 		busy = true;
-		toastActions.info('klipper', 'Firmware restart', 'Restarting Kalico and the MCUs…');
+		toastActions.info('klipper', 'Firmware restart', 'Restarting Kalico and the boards…');
 
 		await requestRestart('firmware');
 		const info = await waitForKlipperReady();
@@ -82,12 +82,12 @@
 			toastActions.error(
 				'klipper',
 				'Firmware restart',
-				'Kalico did not come back within 90 seconds. Check the machine.',
+				"Kalico hasn't come back after 90 seconds. Please check the machine.",
 				0
 			);
 		} else if (info.state === 'ready') {
 			klippyState.set('ready');
-			toastActions.success('klipper', 'Kalico ready', 'Firmware restart complete.');
+			toastActions.success('klipper', 'Kalico is ready', "Restart done, you're good to go.");
 		} else {
 			klippyState.set(info.state as KlippyState);
 			const firstLine = info.stateMessage.split('\n')[0] || `Kalico is in ${info.state} state`;
@@ -116,9 +116,9 @@
 
 <ConfirmModal
 	isOpen={confirmOpen}
-	title="Firmware restart?"
-	message="This restarts Kalico and the MCUs to bring the printer out of shutdown."
-	details="Make sure the machine is safe first: heaters and steppers go back under Kalico's control."
+	title="Restart the firmware?"
+	message="This restarts Kalico and the control boards to wake the printer up again."
+	details="Make sure the machine is safe first. Heaters and motors will be back under Kalico's control."
 	confirmLabel="Restart"
 	onConfirm={resetNow}
 	onCancel={() => (confirmOpen = false)}

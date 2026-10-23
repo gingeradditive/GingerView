@@ -114,7 +114,7 @@
 		feederBusy = true;
 		const ok = await sendGcode(
 			enable ? 'FEEDER_ENABLE' : 'FEEDER_DISABLE',
-			enable ? 'Could not switch the feeder on' : 'Could not switch the feeder off'
+			enable ? "Couldn't turn the feeder on" : "Couldn't turn the feeder off"
 		);
 		// The status pin follows within a second; show the new state now.
 		if (ok) feederOn = enable;
@@ -171,7 +171,7 @@
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br />your material!</span>
+				<span class="pellet-value">Hungry for<br />pellets!</span>
 			{:else}
 				<span class="pellet-value"
 					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
@@ -187,7 +187,7 @@
 		ariaChecked={feederOn}
 		hint={feederOn
 			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
-			: 'Feeder off: no pellet is loaded. Tap to switch on'}
+			: "The feeder's off and there's no pellet loaded. Tap to turn it on."}
 		disabled={feederBusy}
 		onclick={toggleFeeder}
 	>
@@ -198,9 +198,9 @@
 
 <ConfirmModal
 	isOpen={showFeederOffConfirm}
-	title="Switch the feeder off?"
-	message="A print is running: with the feeder off, running out of pellet will no longer pause it."
-	confirmLabel="Switch off"
+	title="Turn the feeder off?"
+	message="Heads up! A print is running. With the feeder off, the print won't pause if you run out of pellets!"
+	confirmLabel="Turn it off"
 	onConfirm={confirmFeederOff}
 	onCancel={() => (showFeederOffConfirm = false)}
 />

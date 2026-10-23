@@ -25,7 +25,7 @@
 		},
 		{
 			title: 'Bed preparation',
-			checklist: ['Apply the protective glass spray']
+			checklist: ['Give the glass a coat of protective spray']
 		},
 		{
 			title: 'Material feed',
@@ -120,7 +120,7 @@
 			<div class="modal-actions">
 				<button class="modal-cancel" disabled={starting} onclick={cancel}>Cancel</button>
 				<button class="modal-confirm" disabled={starting} onclick={proceed}>
-					{starting ? 'Starting…' : isLastStep ? 'Start print' : 'Proceed'}
+					{starting ? 'Starting…' : isLastStep ? "Let's print!" : 'Proceed'}
 				</button>
 			</div>
 		</div>

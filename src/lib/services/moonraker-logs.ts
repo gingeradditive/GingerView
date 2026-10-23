@@ -28,7 +28,7 @@ export async function downloadLog(file: LogFile): Promise<void> {
 	const res = await fetch(`${apiUrl}/server/files/${file.path}`);
 	if (!res.ok) {
 		const msg = `Failed to download ${file.filename}: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Download error', msg);
+		toastActions.error('moonraker', "Couldn't download the log", msg);
 		throw new Error(msg);
 	}
 
@@ -58,7 +58,7 @@ export async function clearLogs(): Promise<void> {
 	});
 	if (!res.ok) {
 		const msg = `Failed to clear logs: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Clear logs error', msg);
+		toastActions.error('moonraker', "Couldn't clear the logs", msg);
 		throw new Error(msg);
 	}
 
@@ -72,6 +72,6 @@ export async function clearLogs(): Promise<void> {
 	toastActions.success(
 		'moonraker',
 		'Logs cleared',
-		'Klipper and Moonraker logs have been rolled over'
+		'Fresh Klipper and Moonraker logs are ready to go'
 	);
 }

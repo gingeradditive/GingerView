@@ -118,8 +118,8 @@
 		if (pauseBusy || !hasActiveJob) return;
 		pauseBusy = true;
 		try {
-			if (isPaused) await sendGcode('RESUME', 'Could not resume the print');
-			else await sendGcode('PAUSE', 'Could not pause the print');
+			if (isPaused) await sendGcode('RESUME', "Couldn't resume the print");
+			else await sendGcode('PAUSE', "Couldn't pause the print");
 		} finally {
 			pauseBusy = false;
 		}
@@ -136,7 +136,7 @@
 		showCancelConfirm = false;
 		cancelBusy = true;
 		try {
-			await sendGcode('CANCEL_PRINT', 'Could not cancel the print');
+			await sendGcode('CANCEL_PRINT', "Couldn't cancel the print");
 		} finally {
 			cancelBusy = false;
 		}
@@ -157,7 +157,7 @@
 
 		fanSpeed = speed01;
 		fanOn = speed01 > 0;
-		sendGcode(`M106 S${speed255}`, 'Could not set the fan');
+		sendGcode(`M106 S${speed255}`, "Couldn't change the fan speed");
 	};
 
 	const openLightPopup = (): void => {
@@ -174,7 +174,7 @@
 
 		lightValue = white01;
 		lightOn = white01 > 0;
-		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`, 'Could not set the light');
+		sendGcode(`SET_LED LED=LED_CAMERA WHITE=${white01.toFixed(2)}`, "Couldn't change the light");
 	};
 
 	onMount(() => {
@@ -187,7 +187,7 @@
 <section class="control-panel" aria-label="Print Control">
 	<div class="time-row">
 		<span class="time-elapsed">{elapsed}</span>
-		<span class="time-eta">ETA: {eta}</span>
+		<span class="time-eta">Done at: {eta}</span>
 		<span class="time-remaining">{remaining}</span>
 	</div>
 	<div class="progress-bar">
@@ -258,9 +258,9 @@
 
 <ConfirmModal
 	isOpen={showCancelConfirm}
-	title="Stop the print?"
-	message="The current print will be cancelled. This can't be undone."
-	confirmLabel="Stop print"
+	title="Stop this print?"
+	message="We'll cancel the current print, and there's no way to undo it"
+	confirmLabel="Yes, stop it"
 	onConfirm={confirmCancel}
 	onCancel={() => (showCancelConfirm = false)}
 />

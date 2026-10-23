@@ -199,20 +199,20 @@
 
 		<div class="list-area">
 			{#if loading}
-				<div class="status-message">Loading…</div>
+				<div class="status-message">Just a sec…</div>
 			{:else if error}
 				<div class="status-message error">{error}</div>
 			{:else if filteredJobs.length === 0}
-				<div class="status-message">No prints found</div>
+				<div class="status-message">No prints here yet. Time to make something!</div>
 			{:else}
 				<div class="table">
 					<div class="row header">
 						<span class="col thumb"></span>
 						<span class="col name">Name</span>
 						<span class="col status">Status</span>
-						<span class="col date">Start</span>
-						<span class="col duration">Duration</span>
-						<span class="col filament">Filament</span>
+						<span class="col date">Started</span>
+						<span class="col duration">Print time</span>
+						<span class="col filament">Material used</span>
 						<span class="col actions"></span>
 					</div>
 					{#each filteredJobs as job (job.job_id)}
@@ -292,8 +292,8 @@
 
 <ConfirmModal
 	isOpen={showClearAllConfirm}
-	title="Clear print history?"
-	message="All entries will be permanently removed. This cannot be undone."
+	title="Clear your print history?"
+	message="All entries will be permanently removed. This can't be undone."
 	confirmLabel="Clear all"
 	onConfirm={confirmClearAll}
 	onCancel={() => (showClearAllConfirm = false)}

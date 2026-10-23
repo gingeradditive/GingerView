@@ -83,7 +83,7 @@ export async function serviceRequest<T>(path: string, options: RequestInit = {})
 		});
 	} catch {
 		throw new ServiceError(
-			'The printer service is not answering. Check that G2-Service is running.',
+			"The printer isn't answering. Check that G2-Service is running.",
 			'SERVICE_UNREACHABLE'
 		);
 	}
@@ -121,7 +121,11 @@ async function readError(response: Response): Promise<ServiceError> {
 
 	if (Array.isArray(detail)) {
 		const first = detail[0] as ValidationErrorDetail | undefined;
-		return new ServiceError(first?.msg ?? 'Invalid request', 'VALIDATION_ERROR', response.status);
+		return new ServiceError(
+			first?.msg ?? "That request didn't look right",
+			'VALIDATION_ERROR',
+			response.status
+		);
 	}
 
 	return new ServiceError(
@@ -164,7 +168,7 @@ export async function waitForJob<T>(
 			}
 			if (job.status === 'failed') {
 				throw new ServiceError(
-					job.error?.message ?? 'The operation failed.',
+					job.error?.message ?? "That didn't work.",
 					job.error?.code ?? 'INTERNAL_ERROR'
 				);
 			}
@@ -175,10 +179,7 @@ export async function waitForJob<T>(
 		}
 
 		if (Date.now() >= deadline) {
-			throw (
-				unreachable ??
-				new ServiceError('The operation is taking longer than expected.', 'JOB_TIMEOUT')
-			);
+			throw unreachable ?? new ServiceError('This is taking longer than usual…', 'JOB_TIMEOUT');
 		}
 		await delay(JOB_POLL_INTERVAL_MS);
 	}

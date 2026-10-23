@@ -171,7 +171,7 @@
 	const handleMotorOff = async (): Promise<void> => {
 		if (!motorsEnabled || motorsBusy) return;
 		motorsBusy = true;
-		if (await sendGcode('M84', 'Could not switch the motors off')) motorsEnabled = false;
+		if (await sendGcode('M84', "Couldn't turn motors off")) motorsEnabled = false;
 		motorsBusy = false;
 	};
 
@@ -259,7 +259,7 @@
 		<button
 			class="control-btn home"
 			aria-label={$homingBusy ? 'Homing' : 'Home'}
-			use:tooltip={'Home all axes (G28): find the zero of X, Y and Z'}
+			use:tooltip={'Home all axes so the printer knows where zero is'}
 			disabled={$homingBusy}
 			onclick={handleHome}
 		>
@@ -270,10 +270,10 @@
 		</button>
 		<button
 			class="control-btn"
-			aria-label={motorsEnabled ? 'Disable Motors' : 'Motors Disabled'}
+			aria-label={motorsEnabled ? 'Motors off' : 'Motors are off'}
 			use:tooltip={motorsEnabled
-				? 'Switch the stepper motors off (M84) so the axes move by hand. Homing is needed again afterwards'
-				: 'Motors are off: Home or a move switches them back on'}
+				? "Turn the motors off so you can move the axes by hand. You'll need to home again afterwards"
+				: 'Motors are off. Hit Home or move an axis to turn them back on'}
 			aria-disabled={!motorsEnabled || motorsBusy}
 			onclick={handleMotorOff}
 		>
@@ -283,7 +283,7 @@
 					fill="currentColor"
 				/>
 			</svg>
-			<span>{motorsEnabled ? 'Disable Motors' : 'Motors Disabled'}</span>
+			<span>{motorsEnabled ? 'Motors off' : 'Motors are off'}</span>
 		</button>
 	</div>
 </div>

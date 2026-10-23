@@ -194,11 +194,11 @@ const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 // Which step gave up, as the title of the toast. `idle` cannot fail — the
 // sequence is not running — but the map has to cover the whole type.
 const phaseFailureTitles: Record<ExtrudePhase, string> = {
-	idle: 'Extrude failed',
-	homing: 'Homing failed',
-	moving: 'Move to purge position failed',
-	heating: 'Heating failed',
-	extruding: 'Extrusion failed'
+	idle: 'Something went wrong while extruding',
+	homing: "Couldn't home",
+	moving: "Couldn't reach the purge spot",
+	heating: "Couldn't heat up",
+	extruding: "Couldn't extrude"
 };
 
 export const startHoming = async (): Promise<void> => {
@@ -210,7 +210,7 @@ export const startHoming = async (): Promise<void> => {
 		// The button goes back to "Home" either way, so without a toast a refused
 		// homing is indistinguishable from one that worked.
 		console.error('Homing failed', error);
-		toastActions.error('klipper', 'Homing failed', describeError(error));
+		toastActions.error('klipper', "Couldn't home", describeError(error));
 	} finally {
 		homingBusy.set(false);
 	}
@@ -245,7 +245,7 @@ export const startExtrudeSequence = async (): Promise<void> => {
 		// has, the sequence stops here instead of guessing.
 		const zones = await loadNozzleZones();
 		if (zones.length === 0) {
-			throw new Error('Could not read the nozzle zones from the printer');
+			throw new Error("Couldn't read the nozzle zones from the printer");
 		}
 		const preset = resolveTemperaturePreset(zones);
 		const setTemperatures = zones.map(
@@ -289,8 +289,14 @@ export const startExtrudeSequence = async (): Promise<void> => {
 					heatedZones.map((zone) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=0`).join('\n')
 				);
 			} catch (error) {
-				console.error('Could not switch off the nozzle heaters', error);
-				toastActions.error('klipper', 'Heaters still on', describeError(error));
+				console.error("Couldn't turn the nozzle heaters off", error);
+				toastActions.error(
+					'klipper',
+					'Heaters are still on',
+					"Couldn't turn the nozzle heaters off. Keep an eye on them",
+					undefined,
+					describeError(error)
+				);
 			}
 		}
 		extrudePhase.set('idle');
@@ -331,7 +337,7 @@ export const moveToolhead = async (from: AxisPosition, to: AxisPosition): Promis
 		return true;
 	} catch (error) {
 		console.error('Move failed', error);
-		toastActions.error('klipper', 'Move failed', describeError(error));
+		toastActions.error('klipper', "Couldn't move there", describeError(error));
 		return false;
 	} finally {
 		moveRequestsInFlight.update((count) => count - 1);

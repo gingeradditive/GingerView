@@ -73,7 +73,7 @@
 		const script = zones
 			.map((zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`)
 			.join('\n');
-		const ok = await sendGcode(script, 'Could not set the temperatures');
+		const ok = await sendGcode(script, "Couldn't set the temperatures");
 		busy = false;
 		if (ok) onClose();
 	};
@@ -104,7 +104,7 @@
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
 			<h3>Extruder temperatures</h3>
-			<p class="hint">Target per zone, in °C. Empty or 0 switches the zone off.</p>
+			<p class="hint">Target for each zone, in °C. Leave it empty or type 0 to turn a zone off.</p>
 
 			<div class="zone-list">
 				{#each zones as zone, index (zone)}
@@ -148,11 +148,11 @@
 			</div>
 
 			{#if !allValid}
-				<p class="error">Use whole numbers from 0 to {MAX_TEMPERATURE} °C.</p>
+				<p class="error">Use numbers between 0 and {MAX_TEMPERATURE} °C.</p>
 			{/if}
 
 			<div class="modal-actions">
-				<button type="button" class="btn-off" disabled={busy} onclick={allOff}>All off</button>
+				<button type="button" class="btn-off" disabled={busy} onclick={allOff}>Turn all off</button>
 				<span class="spacer"></span>
 				<button type="button" class="btn-cancel" onclick={onClose}>Cancel</button>
 				<button type="button" class="btn-apply" disabled={busy || !allValid} onclick={apply}>
