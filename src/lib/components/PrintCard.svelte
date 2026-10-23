@@ -78,7 +78,8 @@
 	// Moonraker non ha un cestino: eliminare è definitivo, quindi si chiede prima.
 	let showDeleteConfirm = $state(false);
 
-	const describeError = (e: unknown): string => (e instanceof Error ? e.message : 'Unknown error');
+	const describeError = (e: unknown): string =>
+		e instanceof Error ? e.message : 'Something went wrong';
 
 	function handleDelete() {
 		closeContextMenu();
@@ -101,7 +102,7 @@
 			}
 		} catch (e) {
 			console.error('Delete failed:', e);
-			toastActions.error('moonraker', 'Delete failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't delete it", describeError(e));
 		}
 	}
 
@@ -135,7 +136,7 @@
 			}
 		} catch (e) {
 			console.error('Move failed:', e);
-			toastActions.error('moonraker', 'Move failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't move it", describeError(e));
 		}
 	}
 
@@ -154,8 +155,8 @@
 	// Prima un nome vuoto veniva ignorato in silenzio: ora lo dice sotto il campo.
 	function validateName(value: string): string {
 		const name = value.trim();
-		if (!name) return 'Enter a name.';
-		if (name.includes('/')) return "A name can't contain '/'.";
+		if (!name) return 'Give it a name';
+		if (name.includes('/')) return `Names can't have a "/"`;
 		return '';
 	}
 
@@ -183,7 +184,7 @@
 			}
 		} catch (e) {
 			console.error('Rename failed:', e);
-			toastActions.error('moonraker', 'Rename failed', describeError(e));
+			toastActions.error('moonraker', "Couldn't rename it", describeError(e));
 		}
 	}
 
@@ -213,7 +214,7 @@
 		class="menu-button"
 		class:on-file={!item.isDirectory}
 		aria-label="Actions for {item.name}"
-		use:tooltip={'More actions'}
+		use:tooltip={'More options'}
 		aria-haspopup="menu"
 		aria-expanded={showContextMenu}
 		onclick={handleMenuButton}
@@ -269,7 +270,7 @@
 <PromptModal
 	isOpen={showRenameModal}
 	title="Rename"
-	hint={item.isDirectory ? undefined : 'The extension is kept.'}
+	hint={item.isDirectory ? undefined : "Don't worry, we'll keep the extension"}
 	label="New name"
 	value={newName}
 	placeholder="New name"
@@ -289,13 +290,13 @@
 		{#if loadingDirs}
 			<p class="move-loading">
 				<LoaderCircle size={18} class="spin" />
-				Loading folders…
+				Getting your folders…
 			</p>
 		{:else}
 			<div class="folder-list">
 				<button class="folder-option" onclick={() => confirmMove('')}>
 					<House size={20} />
-					<span>Printer root</span>
+					<span>Main folder</span>
 				</button>
 				{#each availableDirs as dir (dir.path)}
 					<button class="folder-option" onclick={() => confirmMove(dir.path)}>
@@ -319,7 +320,7 @@
 	message={item.isDirectory
 		? `"${item.name}" and everything inside it will be deleted from the printer.`
 		: `"${item.name}" will be deleted from the printer.`}
-	details="This can't be undone."
+	details="Once it's gone, it's gone."
 	confirmLabel="Delete"
 	onConfirm={confirmDelete}
 	onCancel={() => (showDeleteConfirm = false)}

@@ -53,7 +53,7 @@
 		{
 			id: 'update',
 			title: 'Update',
-			description: 'Check for updates and install',
+			description: "See what's new and install updates",
 			icon: CloudDownload,
 			kind: 'route',
 			href: '/settings/update'
@@ -68,7 +68,7 @@
 		},
 		{
 			id: 'wiki',
-			title: 'Open Wiki',
+			title: 'Open the wiki',
 			description: 'Visit the project wiki',
 			icon: BookOpen,
 			kind: 'external',
@@ -101,7 +101,7 @@
 		{
 			id: 'config-editor',
 			title: 'Config editor',
-			description: 'Edit the printer config files and restart the firmware',
+			description: 'Tweak the printer config and restart the firmware',
 			icon: FileCode,
 			kind: 'route',
 			href: '/settings/config-editor',

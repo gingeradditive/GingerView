@@ -64,7 +64,7 @@
 			</div>
 
 			<div class="stats">
-				<StatTile label="Duration" value={getDurationValue(item)} iconSrc="/PrintTime.svg" />
+				<StatTile label="Print time" value={getDurationValue(item)} iconSrc="/PrintTime.svg" />
 				<StatTile
 					label="Weight"
 					value={formatFilamentWeight(item.filamentWeight)}
@@ -86,7 +86,7 @@
 		{#snippet footer()}
 			<button class="btn btn-primary print" type="button" onclick={handlePrintClick}>
 				<Play size={20} fill="currentColor" />
-				Print
+				Print!
 			</button>
 		{/snippet}
 	</Sheet>

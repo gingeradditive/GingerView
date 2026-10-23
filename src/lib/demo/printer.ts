@@ -590,7 +590,7 @@ export function startPrint(filename: string): void {
 }
 
 function pause(): string {
-	if (printStats.state === 'paused') return 'Print already paused';
+	if (printStats.state === 'paused') return 'Already paused';
 	if (!job || printStats.state !== 'printing')
 		throw new GcodeError('No print in progress to pause');
 	printStats.state = 'paused';
@@ -600,7 +600,8 @@ function pause(): string {
 }
 
 function resume(): string {
-	if (!job || printStats.state !== 'paused') return 'Print is not paused, resume aborted';
+	if (!job || printStats.state !== 'paused')
+		return "The print isn't paused, so there's nothing to resume";
 	printStats.state = 'printing';
 	emit('print:resume', { filename: job.filename });
 	return '';
@@ -688,7 +689,7 @@ const SILENT_COMMANDS = new Set([
 ]);
 
 const HELP_TEXT = [
-	'Available commands (Virtual G2):',
+	"Here's what you can try (Virtual G2):",
 	'G28 - Home all axes',
 	'G1 X Y Z E F - Move',
 	'M104 / M109 S - Nozzle zones temperature',

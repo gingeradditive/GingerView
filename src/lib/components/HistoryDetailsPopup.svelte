@@ -101,7 +101,7 @@
 					iconSrc="/PrintTime.svg"
 				/>
 				<StatTile
-					label="Filament"
+					label="Material used"
 					value={formatFilamentUsed(job.filament_used)}
 					iconSrc="/Weight.svg"
 				/>
@@ -109,7 +109,7 @@
 		</div>
 
 		{#if !job.exists}
-			<p class="missing">The file is no longer on the printer, so it can't be printed again.</p>
+			<p class="missing">That file isn't on the printer anymore.</p>
 		{/if}
 
 		{#snippet footer()}
@@ -124,7 +124,7 @@
 				onclick={handleReprintClick}
 			>
 				<RotateCcw size={18} />
-				Reprint
+				Print again
 			</button>
 		{/snippet}
 	</Sheet>

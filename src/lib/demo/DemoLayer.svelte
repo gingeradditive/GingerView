@@ -58,7 +58,7 @@
 				const estimated = Number(getMetadata(filename)?.estimated_time ?? 0);
 				toastActions.success(
 					'system',
-					'Print complete',
+					"Print's done!",
 					estimated > 0
 						? `${stripExtension(filename)} is done. On a real G2 this part takes ${formatDuration(estimated)}.`
 						: `${stripExtension(filename)} is done.`
@@ -93,7 +93,7 @@
 	beforeNavigate((navigation) => {
 		if (navigation.to && isHidden(navigation.to.url.pathname)) {
 			navigation.cancel();
-			toastActions.info('system', 'Demo', 'This page is not part of the demo.');
+			toastActions.info('system', 'Demo', "This page isn't part of the demo.");
 		}
 	});
 
@@ -138,28 +138,30 @@
 			<span class="eyebrow">Virtual printer</span>
 			<h2 id="demo-notice-title">{demoConfig.printerName}</h2>
 			<p class="lead">
-				This is <strong>GingerView</strong>, the interface of the Ginger G2 — running on a virtual
-				printer in your browser.
+				Meet <strong>GingerView</strong>, the interface of the Ginger G2. This one runs on a virtual
+				printer, right in your browser!
 			</p>
 			<ul>
 				<li>
 					<span class="li-icon"><MonitorSmartphone size={18} /></span>
-					<span>It does <strong>not</strong> control the G2 at the booth.</span>
+					<span>Don't worry, it <strong>can't</strong> move the G2 at the booth.</span>
 				</li>
 				<li>
 					<span class="li-icon"><FastForward size={18} /></span>
-					<span>Pick a file and print it: it runs in accelerated time, a few minutes.</span>
+					<span
+						>Pick a file and hit print! It runs on fast-forward, so it's done in a few minutes.</span
+					>
 				</li>
 				<li>
 					<span class="li-icon"><RotateCcw size={18} /></span>
-					<span>Everything resets when you reload the page.</span>
+					<span>Reload the page and everything starts fresh.</span>
 				</li>
 			</ul>
 		</div>
 
 		{#snippet footer()}
 			<button class="btn btn-primary start" type="button" onclick={closeNotice}>
-				Start exploring
+				Let's explore!
 			</button>
 		{/snippet}
 	</Sheet>

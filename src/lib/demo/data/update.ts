@@ -107,16 +107,16 @@ function logLines(item: Item): string[] {
 			'Updating packages...',
 			'Get:1 http://deb.debian.org/debian bookworm InRelease',
 			`Unpacking ${(item.package_list as string[]).join(', ')}...`,
-			'Setting up packages...',
-			'Package update finished'
+			'Setting things up…',
+			'Packages updated'
 		];
 	}
 	return [
 		`Updating ${item.name}...`,
 		`Downloading ${item.name} ${item.remote_version}...`,
-		'Download complete, extracting...',
+		'Downloaded, unpacking…',
 		'Restarting services...',
-		`Update of ${item.name} complete`
+		`${item.name} is updated!`
 	];
 }
 
@@ -138,7 +138,7 @@ async function upgradeOne(name: string): Promise<void> {
 		item.version = item.remote_version;
 	}
 	broadcast('notify_update_response', [
-		{ application: name, proc_id: id, message: `Update of ${name} complete`, complete: true }
+		{ application: name, proc_id: id, message: `${name} is updated!`, complete: true }
 	]);
 }
 
@@ -173,9 +173,9 @@ export async function recover(name: string): Promise<void> {
 	try {
 		const id = procId++;
 		for (const message of [
-			'Attempting repo recovery...',
-			'Resetting repository...',
-			'Recovery complete'
+			'Trying to fix the repository…',
+			'Resetting the repository…',
+			'All fixed!'
 		]) {
 			await wait(800);
 			broadcast('notify_update_response', [
@@ -189,7 +189,7 @@ export async function recover(name: string): Promise<void> {
 			is_valid: true
 		});
 		broadcast('notify_update_response', [
-			{ application: name, proc_id: id, message: 'Recovery complete', complete: true }
+			{ application: name, proc_id: id, message: 'All fixed!', complete: true }
 		]);
 	} finally {
 		busy = false;

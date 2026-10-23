@@ -78,8 +78,8 @@ export async function setUiMode(mode: UiMode, previous: UiMode): Promise<void> {
 		uiMode.set(previous);
 		toastActions.error(
 			'klipper',
-			'Could not save the interface mode',
-			error instanceof Error ? error.message : 'Moonraker is unreachable'
+			"Couldn't save your interface mode",
+			error instanceof Error ? error.message : "Can't reach Moonraker"
 		);
 	}
 }

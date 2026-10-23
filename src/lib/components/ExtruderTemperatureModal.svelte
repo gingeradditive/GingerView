@@ -57,7 +57,7 @@
 		const script = zones
 			.map((zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`)
 			.join('\n');
-		const ok = await sendGcode(script, 'Could not set the temperatures');
+		const ok = await sendGcode(script, "Couldn't set the temperatures");
 		busy = false;
 		if (ok) onClose();
 	};
@@ -78,7 +78,9 @@
 	<Sheet label="Extruder temperatures" {onClose} size="sm">
 		{#snippet header()}
 			<h3 class="sheet-title">Extruder temperatures</h3>
-			<p class="sheet-subtitle">Target per zone, in °C. Empty or 0 switches the zone off.</p>
+			<p class="sheet-subtitle">
+				Target for each zone, in °C. Leave it empty or type 0 to turn a zone off.
+			</p>
 		{/snippet}
 
 		<ZoneTemperatureEditor
@@ -92,7 +94,7 @@
 		/>
 
 		{#if !allValid}
-			<p class="sheet-error error">Use whole numbers from 0 to {MAX_TEMPERATURE} °C.</p>
+			<p class="sheet-error error">Use numbers between 0 and {MAX_TEMPERATURE} °C.</p>
 		{/if}
 
 		{#snippet footer()}
@@ -103,7 +105,7 @@
 				onclick={allOff}
 			>
 				<Power size={18} />
-				All off
+				Turn all off
 			</button>
 			<button type="button" class="btn btn-secondary" onclick={onClose}>Cancel</button>
 			<button type="button" class="btn btn-primary" disabled={busy || !allValid} onclick={apply}>

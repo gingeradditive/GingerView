@@ -123,12 +123,12 @@
 
 		<div class="statistics-body">
 			{#if loading}
-				<div class="status-message">Loading statistics…</div>
+				<div class="status-message">Crunching the numbers…</div>
 			{:else}
 				<!-- Print job totals -->
 				<div class="section">
 					<div class="section-title">
-						<h2>Print jobs</h2>
+						<h2>Your prints</h2>
 						<button
 							type="button"
 							class="reset-button"
@@ -143,7 +143,7 @@
 						<div class="tile">
 							<span class="tile-icon"><Package size={18} /></span>
 							<span class="tile-value">{historyTotals?.job_totals?.total_jobs ?? '--'}</span>
-							<span class="tile-label">Total jobs</span>
+							<span class="tile-label">Total prints</span>
 						</div>
 						<div class="tile">
 							<span class="tile-icon"><Timer size={18} /></span>
@@ -163,7 +163,7 @@
 							<span class="tile-value"
 								>{formatFilamentUsed(historyTotals?.job_totals?.total_filament_used ?? 0)}</span
 							>
-							<span class="tile-label">Filament used</span>
+							<span class="tile-label">Material used</span>
 						</div>
 						<div class="tile">
 							<span class="tile-icon"><Timer size={18} /></span>
@@ -219,7 +219,7 @@
 						<div class="tile">
 							<span class="tile-icon"><Server size={18} /></span>
 							<span class="tile-value">{procStats?.websocket_connections ?? '--'}</span>
-							<span class="tile-label">WebSocket connections</span>
+							<span class="tile-label">Connected clients</span>
 						</div>
 					</div>
 					{#if procStats?.throttled_state?.flags?.length}
@@ -311,7 +311,7 @@
 						<div class="tile">
 							<span class="tile-icon"><Server size={18} /></span>
 							<span class="tile-value small">{serverInfo?.klippy_state ?? '--'}</span>
-							<span class="tile-label">Klippy state</span>
+							<span class="tile-label">Klippy status</span>
 						</div>
 						<div class="tile">
 							<span class="tile-icon"><Layers size={18} /></span>
@@ -339,7 +339,7 @@
 	icon={RotateCcw}
 	isOpen={showResetConfirm}
 	title="Reset print statistics?"
-	message="Total jobs, print time and filament totals will be reset to zero. This cannot be undone."
+	message="Your print count, print time and material totals will go back to zero. This can't be undone!"
 	confirmLabel="Reset"
 	onConfirm={handleReset}
 	onCancel={() => (showResetConfirm = false)}

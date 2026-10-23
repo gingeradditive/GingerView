@@ -77,7 +77,7 @@
 	{#if hasJob}
 		<span class="job-name" title={jobName}>{jobName}</span>
 	{:else}
-		<span class="job-name idle">What are we building today?</span>
+		<span class="job-name idle">What are we making today?</span>
 	{/if}
 	<div class="job-preview">
 		{#if hasJob}
@@ -90,7 +90,7 @@
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
 	{:else}
-		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's go</a>
+		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's get going!</a>
 	{/if}
 </section>
 

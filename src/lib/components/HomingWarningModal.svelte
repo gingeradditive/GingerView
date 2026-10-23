@@ -23,12 +23,12 @@
 		action === 'extrude'
 			? {
 					title: 'Heat & extrude',
-					text: 'The head homes if needed, moves to the purge position, heats up and extrudes.',
+					text: 'Home if needed, move to the purge spot, heat up and extrude.',
 					confirm: 'Heat & extrude'
 				}
 			: {
 					title: 'Home the printer',
-					text: 'The head and the bed move to their end stops to find the zero position.',
+					text: 'The head will move to its end stops to find the zero',
 					confirm: 'Home'
 				}
 	);
@@ -52,7 +52,7 @@
 			</div>
 		{/snippet}
 
-		<p class="lead">Before it starts, check that:</p>
+		<p class="lead">Quick check before we start:</p>
 		<ul class="checks">
 			<li class="check">
 				<div class="art"><NozzleClean /></div>

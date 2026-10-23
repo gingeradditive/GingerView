@@ -374,7 +374,7 @@ const routes: [string, RegExp, Handler][] = [
 				await update.upgrade(body.name ? String(body.name) : undefined);
 				return ok('ok');
 			} catch (error) {
-				return fail(400, error instanceof Error ? error.message : 'Update failed');
+				return fail(400, error instanceof Error ? error.message : "The update didn't work");
 			}
 		}
 	],
@@ -387,7 +387,7 @@ const routes: [string, RegExp, Handler][] = [
 				await update.recover(String(body.name ?? ''));
 				return ok('ok');
 			} catch (error) {
-				return fail(400, error instanceof Error ? error.message : 'Recovery failed');
+				return fail(400, error instanceof Error ? error.message : "The fix didn't work");
 			}
 		}
 	],
@@ -430,7 +430,7 @@ const routes: [string, RegExp, Handler][] = [
 		async ({ request }) => {
 			const body = await readJson(request);
 			const result = host.setTimezone(String(body.timezone ?? ''));
-			return result ? json(result) : serviceFail(400, 'INVALID_INPUT', 'Unknown timezone');
+			return result ? json(result) : serviceFail(400, 'INVALID_INPUT', 'Unknown time zone');
 		}
 	],
 	['GET', /^\/service\/usb$/, () => json({ mounted: true })],

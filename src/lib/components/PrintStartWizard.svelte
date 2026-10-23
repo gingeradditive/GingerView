@@ -19,15 +19,15 @@
 	const steps: WizardStep[] = [
 		{
 			title: 'Material check',
-			text: 'Right material, dry, and enough of it for this print',
+			text: 'Right material, nice and dry and enough for the whole print',
 			illustration: MaterialCheck
 		},
 		{ title: 'Feed tubes', text: 'Feed tubes are empty', illustration: TubesEmpty },
 		{ title: 'Nozzle check', text: 'Nozzle is clean', illustration: NozzleClean },
-		{ title: 'Bed check', text: 'Bed is clear', illustration: BedClear },
+		{ title: 'Bed check', text: 'Nothing left on the bed', illustration: BedClear },
 		{
 			title: 'Bed preparation',
-			text: 'Apply the protective glass spray',
+			text: 'Give the glass a coat of protective spray',
 			illustration: GlassSpray
 		},
 		{ title: 'Material feed', text: "Open the dryer's material valve", illustration: DryerValve }
@@ -113,7 +113,7 @@
 			await goto(resolve('/'));
 		} catch (error) {
 			console.error('Print start failed', error);
-			startError = error instanceof Error ? error.message : 'Could not start the print';
+			startError = error instanceof Error ? error.message : "Couldn't start the print";
 		} finally {
 			starting = false;
 		}
@@ -184,7 +184,7 @@
 				{#if starting}
 					Starting…
 				{:else if isLastStep}
-					{startError ? 'Try again' : 'Start print'}
+					{startError ? 'Try again' : "Let's print!"}
 				{:else}
 					Next
 				{/if}

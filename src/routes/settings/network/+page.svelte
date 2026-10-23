@@ -41,17 +41,17 @@
 	 */
 	const SERVICE_MESSAGES: Record<string, string> = {
 		WIFI_AUTH_FAILED: 'Wrong password.',
-		WIFI_NETWORK_NOT_FOUND: 'Network not found. Scan again and retry.',
-		WIFI_TIMEOUT: 'The printer could not join the network in time.',
-		CONFLICT: 'Another connection is already being attempted.',
+		WIFI_NETWORK_NOT_FOUND: "Can't find that network. Scan again",
+		WIFI_TIMEOUT: 'The printer took too long to join. Try once more?',
+		CONFLICT: 'Hang on, an attempt is already underway',
 		SYSTEM_TOOL_UNAVAILABLE: 'Network management is not available on this printer.',
 		NOT_FOUND: 'The printer lost track of the operation. Check the status above.',
-		INVALID_INPUT: 'The printer rejected those network details.',
-		VALIDATION_ERROR: 'The printer rejected those network details.',
+		INVALID_INPUT: "The printer didn't accept those details",
+		VALIDATION_ERROR: "The printer didn't accept those details",
 		INTERNAL_ERROR: 'The printer reported an internal error.',
 		SERVICE_UNREACHABLE:
-			'The printer stopped answering. Joining a network changes its address: reopen GingerView at the new one.',
-		JOB_TIMEOUT: 'The printer is taking longer than expected. Check this page again in a moment.'
+			'We lost the printer! Joining a new network changes its address, so open GingerView at the new one',
+		JOB_TIMEOUT: 'This is taking a bit longer than usual. Check back in a moment.'
 	};
 
 	let status = $state<NetworkStatus | null>(null);
@@ -126,14 +126,14 @@
 	 * situations that ask different things of whoever is reading.
 	 */
 	function describeDisconnected(state: NetworkStatus | null): string {
-		if (!state) return 'Reading the network status…';
+		if (!state) return 'Checking your connection…';
 		if (state.adapter.state === 'connecting') return 'Connecting…';
 
 		const ethernet = state.interfaces.find((iface) => iface.type === 'ethernet');
 		if (!ethernet || ethernet.state === 'unavailable') {
-			return 'No cable plugged in — pick a network below.';
+			return 'No cable plugged in. Pick a Wi-Fi network below';
 		}
-		return 'The cable is plugged in but did not get an address.';
+		return "The cable's plugged in, but didn't get an address";
 	}
 
 	const disconnectedReason = $derived(describeDisconnected(status));
@@ -266,7 +266,7 @@
 			</span>
 			<div class="banner-text">
 				{#if !isConnected}
-					<strong>Disconnected</strong>
+					<strong>Not connected</strong>
 					<span class="ip">{disconnectedReason}</span>
 				{:else if isWired}
 					<strong>Wired</strong>
@@ -317,7 +317,7 @@
 				<span class="row-icon"><Component /></span>
 				<div class="row-text">
 					<strong>Hidden Network</strong>
-					<span>Connect to a network not in the list</span>
+					<span>Can't see yours? Add it by name</span>
 				</div>
 				<span class="chevron"><ChevronRight /></span>
 			</button>

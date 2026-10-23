@@ -37,5 +37,5 @@ export function installDemo(): void {
 	globalThis.WebSocket = DemoOrNativeWebSocket;
 
 	startSimulation();
-	console.info('[demo] Virtual G2 attiva: nessuna stampante reale è collegata.');
+	console.info('[demo] Virtual G2 is on. No real printer is connected.');
 }

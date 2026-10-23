@@ -24,7 +24,7 @@ export const LOG_FILES: Record<string, () => string> = {
 			[616, 'webhooks client: identified GingerView'],
 			[615, 'Printer is ready'],
 			[300, 'Stats 300.0: gcodein=0 mcu: mcu_awake=0.002 bed: target=0 temp=22.1 pwm=0.000'],
-			[0, 'Virtual G2: this log belongs to the demo printer.']
+			[0, 'Virtual G2: this log is from the demo printer.']
 		]),
 	'moonraker.log': () =>
 		lines([

@@ -98,8 +98,8 @@
 	<div class="z-info">
 		<span class="z-label">Z HEIGHT</span>
 		{#if isIdle}
-			<span class="z-value">Infinity and beyond!</span>
-			<span class="z-value-sub">Joking just a meter&nbsp;:(</span>
+			<span class="z-value">To infinity and beyond!</span>
+			<span class="z-value-sub">Well… one meter, actually&nbsp;:)</span>
 		{:else}
 			<span class="z-value"
 				><Fraction value={currentHeight.toFixed(1)} total={String(maxHeight)} unit="mm" /></span
