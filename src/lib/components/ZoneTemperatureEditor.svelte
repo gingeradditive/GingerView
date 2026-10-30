@@ -10,6 +10,8 @@
 	 * nome della zona fuori a sinistra (con la temperatura attuale, se passata); il °C sta nel
 	 * riquadro bianco accanto al numero.
 	 * La validazione è del chiamante: `invalid` dice quali bande colorare di rosso.
+	 *
+	 * Con `withBed` sotto l'ugello compare anche il piatto, come nella card della dashboard.
 	 */
 	let {
 		values = $bindable(),
@@ -18,6 +20,11 @@
 		disabled = false,
 		max = 300,
 		placeholder = '',
+		withBed = false,
+		bed = $bindable(null),
+		bedCurrent,
+		bedInvalid = false,
+		bedMax = 110,
 		onEdit,
 		onEnter
 	}: {
@@ -28,6 +35,11 @@
 		disabled?: boolean;
 		max?: number;
 		placeholder?: string;
+		withBed?: boolean;
+		bed?: number | null;
+		bedCurrent?: number | null;
+		bedInvalid?: boolean;
+		bedMax?: number;
 		/** A ogni modifica, da campo o da −/+: per togliere l'errore mentre si corregge. */
 		onEdit?: () => void;
 		onEnter?: () => void;
@@ -35,15 +47,22 @@
 
 	const STEP = 5;
 
-	const step = (index: number, direction: 1 | -1): void => {
-		const value = values[index] ?? 0;
-		// Allinea al multiplo di 5 nella direzione del tasto: 212 → 215 / 210.
+	// Allinea al multiplo di 5 nella direzione del tasto: 212 → 215 / 210.
+	const stepped = (value: number | null, direction: 1 | -1, limit: number): number | null => {
+		const from = value ?? 0;
 		const next =
-			direction > 0
-				? Math.floor(value / STEP) * STEP + STEP
-				: Math.ceil(value / STEP) * STEP - STEP;
-		const clamped = Math.max(0, Math.min(max, next));
-		values[index] = clamped === 0 ? null : clamped;
+			direction > 0 ? Math.floor(from / STEP) * STEP + STEP : Math.ceil(from / STEP) * STEP - STEP;
+		const clamped = Math.max(0, Math.min(limit, next));
+		return clamped === 0 ? null : clamped;
+	};
+
+	const step = (index: number, direction: 1 | -1): void => {
+		values[index] = stepped(values[index], direction, max);
+		onEdit?.();
+	};
+
+	const stepBed = (direction: 1 | -1): void => {
+		bed = stepped(bed, direction, bedMax);
 		onEdit?.();
 	};
 
@@ -101,6 +120,54 @@
 		</div>
 	{/each}
 	<img class="skeleton-nozzle" src="/NozzleHead.svg" alt="" />
+	{#if withBed}
+		<div class="zone-row bed-row">
+			<span class="zone-label">
+				<span class="zone-name">Bed</span>
+				{#if bedCurrent !== undefined}
+					<span class="zone-current" title="Current temperature">
+						<Thermometer size={12} />
+						{formatCurrent(bedCurrent)}
+					</span>
+				{/if}
+			</span>
+			<button
+				type="button"
+				class="step-btn"
+				aria-label={`Lower the bed by ${STEP} °C`}
+				disabled={disabled || (bed ?? 0) <= 0}
+				onclick={() => stepBed(-1)}><Minus size={18} /></button
+			>
+			<span class="zone-band" class:invalid={bedInvalid}>
+				<span class="field" class:empty={bed == null}>
+					<input
+						type="number"
+						inputmode="numeric"
+						min="0"
+						max={bedMax}
+						step="1"
+						{placeholder}
+						{disabled}
+						aria-label="Bed target, °C"
+						aria-invalid={bedInvalid}
+						bind:value={bed}
+						oninput={() => onEdit?.()}
+						onkeydown={(e) => e.key === 'Enter' && onEnter?.()}
+					/>
+					{#if bed != null}
+						<span class="unit" aria-hidden="true">°C</span>
+					{/if}
+				</span>
+			</span>
+			<button
+				type="button"
+				class="step-btn"
+				aria-label={`Raise the bed by ${STEP} °C`}
+				disabled={disabled || (bed ?? 0) >= bedMax}
+				onclick={() => stepBed(1)}><Plus size={18} /></button
+			>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -257,5 +324,10 @@
 		height: 33px;
 		margin-top: 2px;
 		object-fit: contain;
+	}
+
+	/* Il piatto sta sotto l'ugello, staccato come nella card della dashboard. */
+	.bed-row {
+		margin-top: 4px;
 	}
 </style>

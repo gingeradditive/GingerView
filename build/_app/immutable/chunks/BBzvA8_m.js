@@ -1,1 +1,0 @@
-import{m as d,a as n,r as p,o as u,p as c}from"./_k29qApM.js";function m(s,o,e){d(()=>{var a=n(()=>o(s,e?.())||{});if(e&&a?.update){var t=!1,f={};p(()=>{var r=e();u(r),t&&c(f,r)&&(f=r,a.update(r))}),t=!0}if(a?.destroy)return()=>a.destroy()})}export{m as a};
