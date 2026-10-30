@@ -2,6 +2,7 @@
 	import {
 		Wifi,
 		Terminal,
+		SquareFunction,
 		CloudDownload,
 		FileText,
 		FileCode,
@@ -49,6 +50,14 @@
 			icon: Terminal,
 			kind: 'route',
 			href: '/settings/console'
+		},
+		{
+			id: 'macros',
+			title: 'Macros',
+			description: 'Run the printer macros',
+			icon: SquareFunction,
+			kind: 'route',
+			href: '/settings/macros'
 		},
 		{
 			id: 'update',
