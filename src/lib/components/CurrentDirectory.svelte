@@ -4,7 +4,7 @@
 	import { currentDirPath, navigateUp } from '$lib/stores/directoryStore';
 
 	const segments = $derived($currentDirPath ? $currentDirPath.split('/') : []);
-	const currentFolder = $derived(segments.length > 0 ? segments[segments.length - 1] : 'Home');
+	const currentFolder = $derived(segments.length > 0 ? segments[segments.length - 1] : 'My files');
 	const hasParent = $derived(segments.length > 0);
 </script>
 

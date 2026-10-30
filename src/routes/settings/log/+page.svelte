@@ -93,9 +93,9 @@
 <ConfirmModal
 	icon={Trash2}
 	isOpen={showClearConfirm}
-	title="Clear all logs?"
-	message="The Klipper, Moonraker and Crowsnest logs will be emptied."
-	details="Download them first if you need them for support."
+	title="Clear all the logs?"
+	message="We'll empty the Klipper, Moonraker and Crowsnest logs."
+	details="If support might need them, download them first."
 	confirmLabel="Clear logs"
 	onConfirm={confirmClear}
 	onCancel={() => (showClearConfirm = false)}

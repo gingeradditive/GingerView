@@ -72,7 +72,7 @@
 			setPrinterTimezone(status.timezone);
 			toastActions.success(
 				'network',
-				'Timezone saved',
+				'Time zone saved!',
 				`Printer time is now ${getCityLabel(selectedTimezone)} (${formatOffset(getOffsetMinutes(selectedTimezone))})`
 			);
 		} catch {
@@ -94,7 +94,7 @@
 		</header>
 
 		{#if isLoading}
-			<div class="state"><LoaderCircle class="spin" /> Reading the current timezone…</div>
+			<div class="state"><LoaderCircle class="spin" /> Checking your time zone…</div>
 		{:else if loadError}
 			<div class="state error">
 				<TriangleAlert />
@@ -123,7 +123,7 @@
 			{#if !ntpSynchronized}
 				<p class="warning">
 					<TriangleAlert />
-					The clock is not synchronised over the network: times may be wrong regardless of the timezone.
+					The clock isn't synced over the internet, so times might be off whatever zone you pick.
 				</p>
 			{/if}
 

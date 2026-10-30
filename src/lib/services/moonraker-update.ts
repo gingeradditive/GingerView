@@ -1,5 +1,6 @@
 import { configService } from './config';
 import { toastActions } from '$lib/stores/toastStore';
+import { friendlyMessage } from './moonraker-gcode';
 import type { UpdateItem, UpdateItemState, UpdateResponse, UpdateStatus } from '$lib/types/update';
 
 /**
@@ -30,7 +31,7 @@ async function readError(res: Response, fallback: string): Promise<string> {
 	try {
 		const json = await res.json();
 		const message = json?.error?.message;
-		if (typeof message === 'string' && message.trim()) return message;
+		if (typeof message === 'string' && message.trim()) return friendlyMessage(message);
 	} catch {
 		// Body was not JSON — fall through to the generic message.
 	}
@@ -56,7 +57,7 @@ async function post(
 export async function fetchUpdateStatus(): Promise<UpdateStatus> {
 	const res = await fetch(`${getApiUrl()}/machine/update/status`);
 	if (!res.ok) {
-		const msg = await readError(res, 'Failed to read update status');
+		const msg = await readError(res, "Couldn't read the update status");
 		toastActions.error('moonraker', 'Update status error', msg);
 		throw new Error(msg);
 	}
@@ -77,8 +78,8 @@ export async function refreshUpdateStatus(name?: string): Promise<UpdateStatus> 
 		body: JSON.stringify(name ? { name } : {})
 	});
 	if (!res.ok) {
-		const msg = await readError(res, 'Failed to refresh update status');
-		toastActions.error('moonraker', 'Check for updates failed', msg);
+		const msg = await readError(res, "Couldn't refresh");
+		toastActions.error('moonraker', "Couldn't check for updates", msg);
 		throw new Error(msg);
 	}
 	const json = await res.json();
@@ -87,7 +88,7 @@ export async function refreshUpdateStatus(name?: string): Promise<UpdateStatus> 
 
 /** `POST /machine/update/upgrade` — omit `name` to update everything. */
 export async function startUpgrade(name?: string): Promise<void> {
-	await post('/machine/update/upgrade', name ? { name } : {}, 'Update failed');
+	await post('/machine/update/upgrade', name ? { name } : {}, "The update didn't work");
 }
 
 /**
@@ -95,7 +96,7 @@ export async function startUpgrade(name?: string): Promise<void> {
  * Soft recovery runs `git reset`; hard recovery deletes the repo and re-clones it.
  */
 export async function startRecover(name: string, hard: boolean): Promise<void> {
-	await post('/machine/update/recover', { name, hard }, 'Recovery failed');
+	await post('/machine/update/recover', { name, hard }, "The fix didn't work");
 }
 
 /**
@@ -192,7 +193,7 @@ export function getItemLabel(item: UpdateItem): string {
 export function getVersionLine(item: UpdateItem): string {
 	if (getItemType(item) === 'system') {
 		const count = item.package_count ?? 0;
-		if (count === 0) return 'No packages to update';
+		if (count === 0) return 'Nothing to update right now';
 		return `${count} package${count === 1 ? '' : 's'} to update`;
 	}
 

@@ -47,9 +47,9 @@
 	// prima l'unico segno era l'etichetta del pulsante.
 	type SequencePhase = Exclude<ExtrudePhase, 'idle'>;
 	const sequence: { phase: SequencePhase; label: string }[] = [
-		{ phase: 'homing', label: 'Home' },
+		{ phase: 'homing', label: 'Homing' },
 		{ phase: 'moving', label: 'Move to purge position' },
-		{ phase: 'heating', label: 'Heat the nozzle' },
+		{ phase: 'heating', label: 'Heating the nozzle' },
 		{ phase: 'extruding', label: 'Extrude' }
 	];
 	type StepState = 'done' | 'active' | 'failed' | 'todo';
@@ -205,8 +205,8 @@
 			// an empty popup.
 			toastActions.error(
 				'klipper',
-				'Custom temperature unavailable',
-				'Could not read the nozzle zones from the printer'
+				"Can't set a custom temperature right now",
+				"Couldn't read the nozzle zones from the printer"
 			);
 			return;
 		}
@@ -389,10 +389,10 @@
 		{#if $extrudeOutcome?.status === 'failed'}
 			<div class="outcome-actions">
 				<button type="button" class="btn btn-secondary" onclick={dismissOutcome}>Back</button>
-				<button type="button" class="btn btn-primary" onclick={retrySequence}>Retry</button>
+				<button type="button" class="btn btn-primary" onclick={retrySequence}>Try again</button>
 			</div>
 		{:else if $extrudeOutcome?.status === 'done'}
-			<button class="btn btn-primary outcome-btn" onclick={dismissOutcome}>Done</button>
+			<button class="btn btn-primary outcome-btn" onclick={dismissOutcome}>All done</button>
 		{:else if running}
 			<button
 				type="button"
@@ -425,7 +425,7 @@
 	<Sheet label="Custom temperature" onClose={cancelCustomTemperature} size="sm">
 		{#snippet header()}
 			<h3 class="sheet-title">Custom temperature</h3>
-			<p class="sheet-subtitle">Target for each nozzle zone, in °C.</p>
+			<p class="sheet-subtitle">Pick a target for each nozzle zone, in °C</p>
 		{/snippet}
 
 		<ZoneTemperatureEditor

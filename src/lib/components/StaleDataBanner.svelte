@@ -49,7 +49,7 @@
 			<path d={mdiCloudOffOutline} fill="currentColor" />
 		</svg>
 		<span class="text">
-			<strong>Data not updating</strong>
+			<strong>Data isn't updating right now</strong>
 			<span class="detail"
 				>the printer stopped answering — showing the last reading ({elapsed})</span
 			>

@@ -67,7 +67,7 @@
 			</svg>
 		</div>
 
-		<div class="presets" role="group" aria-label="Quick values">
+		<div class="presets" role="group" aria-label="Quick picks">
 			{#each presets as preset (preset)}
 				<button
 					type="button"

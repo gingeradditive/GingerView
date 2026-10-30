@@ -34,7 +34,7 @@ export async function emergencyStop(): Promise<void> {
 	try {
 		res = await fetch(`${getApiUrl()}/printer/emergency_stop`, { method: 'POST' });
 	} catch {
-		const msg = 'Could not reach Moonraker. Use the physical emergency stop on the machine.';
+		const msg = "We can't reach the printer. Use the red emergency stop on the machine now.";
 		toastActions.error('klipper', 'Emergency stop failed', msg, 0);
 		throw new Error(msg);
 	}
@@ -67,17 +67,17 @@ export const RESTART_TARGETS: Record<RestartTarget, RestartInfo> = {
 	firmware: {
 		label: 'Firmware restart',
 		endpoint: '/printer/firmware_restart',
-		description: 'Restarts Klipper and the MCUs, reloading the printer configuration'
+		description: 'Restarts Klipper and the boards, and reloads the printer config'
 	},
 	host: {
 		label: 'Host restart',
 		endpoint: '/printer/restart',
-		description: 'Reloads Klipper on the host only, without resetting the MCUs'
+		description: 'Reloads Klipper only, the boards keep running'
 	},
 	moonraker: {
 		label: 'Moonraker restart',
 		endpoint: '/server/restart',
-		description: 'Restarts the Moonraker service, needed after editing moonraker.conf'
+		description: 'Restarts Moonraker. Do this after editing moonraker.conf'
 	}
 };
 
