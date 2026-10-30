@@ -114,6 +114,8 @@ manutenzione.
   della demo (es. elenco di pagine/azioni nascoste o bloccate) per cambiarlo velocemente.
 - **Config editor nascosto** (14/10/2026): sparisce dalle Settings e l'indirizzo diretto
   riporta alla dashboard (`hiddenRoutes` in `src/lib/demo/config.ts`).
+- **Macro nascoste** (30/10/2026): la pagina Impostazioni → Macro esiste solo nella build
+  vera; nella demo è in `hiddenRoutes` come il config editor.
 
 ## Pubblicazione (deciso)
 

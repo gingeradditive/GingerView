@@ -41,7 +41,7 @@ export const demoConfig = {
 	 * Pagine nascoste: il link sparisce e chi ci arriva dall'indirizzo torna
 	 * alla dashboard. Prefissi di percorso, es. `'/settings/config-editor'`.
 	 */
-	hiddenRoutes: ['/settings/config-editor'] as string[],
+	hiddenRoutes: ['/settings/config-editor', '/settings/macros'] as string[],
 
 	/**
 	 * Azioni bloccate: la richiesta risponde con un errore leggibile ("not
