@@ -172,7 +172,7 @@
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
 			{#if isIdle}
-				<span class="pellet-value">Waiting for<br />your material!</span>
+				<span class="pellet-value idle">Waiting for<br />your material!</span>
 			{:else}
 				<span class="pellet-value"
 					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
@@ -302,28 +302,37 @@
 	.pellet-text {
 		position: absolute;
 		inset: 0;
-		/* In fondo c'è la barra del feeder (52px + 12px di margine): il testo si
-		   centra nello spazio che resta sopra. */
-		padding: 16px 16px 76px;
+		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
+		   altezza. In fondo resta lo spazio della barra del feeder (52px + 12px di margine). */
+		padding: 76px 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 4px;
+		gap: calc(var(--dashboard-title-size) * 0.25);
 		z-index: 2;
 		color: var(--color-black-pure);
 		text-align: center;
 	}
 
+	/* Stessi font di FLOW e "Let me extrude!". */
 	.pellet-label {
-		font-size: min(2rem, 18cqw);
+		font-size: min(var(--dashboard-title-size), 18cqw);
 		font-weight: 700;
-		color: var(--color-black-pure);
+		color: var(--color-black);
+		line-height: 1.1;
+		letter-spacing: 0.02em;
 	}
 
 	.pellet-value {
-		font-size: min(1.7rem, 13cqw);
+		font-size: min(var(--dashboard-subtitle-size), 13cqw);
 		color: var(--color-black-pure);
 		font-weight: 500;
+		line-height: 1.3;
+	}
+
+	/* A riposo non c'è il riempimento rosso sotto: grigio come "Let me extrude!". */
+	.pellet-value.idle {
+		color: var(--color-text-soft);
 	}
 </style>
