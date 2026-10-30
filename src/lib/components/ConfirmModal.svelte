@@ -1,17 +1,20 @@
 <script lang="ts">
-	import { modal } from '$lib/actions/modal';
-	import { mdiAlertCircleOutline } from '@mdi/js';
-	import { portal } from '$lib/actions/portal';
+	import { OctagonAlert, TriangleAlert, Info, type Icon as LucideIcon } from 'lucide-svelte';
+	import Sheet from '$lib/components/ui/Sheet.svelte';
 
-	// Generic confirmation dialog, styled after HomingWarningModal. Used by the
-	// update page for the destructive operations (recovery, rollback), which must
-	// never run on a stray tap.
+	// Generic confirmation dialog, for the operations that must never run on a
+	// stray tap (delete, stop, recovery). `tone` picks colour and default icon:
+	// `danger` for what can't be undone, `warning` for what interrupts something,
+	// `info` for the rest. `icon` replaces the default with the action's own
+	// (a bin for Delete, a power button for Switch off).
 	let {
 		isOpen,
 		title,
 		message,
 		details = '',
 		confirmLabel = 'Confirm',
+		tone = 'danger',
+		icon,
 		onConfirm,
 		onCancel
 	}: {
@@ -20,134 +23,100 @@
 		message: string;
 		details?: string;
 		confirmLabel?: string;
+		tone?: 'danger' | 'warning' | 'info';
+		icon?: typeof LucideIcon;
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
+
+	const defaultIcons = { danger: OctagonAlert, warning: TriangleAlert, info: Info };
+	const ToneIcon = $derived(icon ?? defaultIcons[tone]);
 </script>
 
 {#if isOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
 	<!--
-		Portalled unconditionally: the dock (`+layout.svelte`) is centred with
+		Sheet is portalled: the dock (`+layout.svelte`) is centred with
 		`transform: translateX(-50%)`, which makes it a containing block for its
 		`position: fixed` descendants, so the emergency stop's dialog would be laid
-		out against the dock instead of the viewport. Same reason the carousel
-		modals do it — see `portal.ts`.
+		out against the dock instead of the viewport — see `portal.ts`.
 	-->
-	<div
-		class="modal-overlay"
-		role="dialog"
-		aria-modal="true"
-		aria-label={title}
-		tabindex="-1"
-		use:portal
-		onclick={onCancel}
-		use:modal={{ onClose: onCancel }}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
-		<div class="modal-content" role="document" onclick={(e) => e.stopPropagation()}>
-			<svg class="warning-icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
-				<path d={mdiAlertCircleOutline} fill="#D72E28" />
-			</svg>
-			<h3>{title}</h3>
+	<Sheet label={title} onClose={onCancel} size="sm">
+		<div class="content">
+			<span class="badge {tone}" aria-hidden="true">
+				<ToneIcon size={28} />
+			</span>
+			<h3 class="sheet-title">{title}</h3>
 			<p class="message">{message}</p>
 			{#if details}
 				<p class="details">{details}</p>
 			{/if}
-			<div class="modal-actions">
-				<button type="button" class="modal-cancel" onclick={onCancel}>Cancel</button>
-				<button type="button" class="modal-confirm" onclick={onConfirm}>{confirmLabel}</button>
-			</div>
 		</div>
-	</div>
+
+		{#snippet footer()}
+			<button type="button" class="btn btn-secondary" onclick={onCancel}>Cancel</button>
+			<button
+				type="button"
+				class="btn"
+				class:btn-danger={tone === 'danger'}
+				class:btn-primary={tone !== 'danger'}
+				onclick={onConfirm}
+			>
+				{confirmLabel}
+			</button>
+		{/snippet}
+	</Sheet>
 {/if}
 
 <style>
-	.modal-overlay {
-		position: fixed;
-		inset: 0;
-		background: linear-gradient(
-			135deg,
-			rgba(var(--rgb-gray-mid), 0.3),
-			rgba(var(--rgb-gray-mid), 0.22)
-		);
-		backdrop-filter: blur(12px) saturate(130%);
-		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 3000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 24px;
-		box-sizing: border-box;
-	}
-	.modal-content {
-		background: var(--color-white);
-		border-radius: 16px;
-		padding: 24px;
-		min-width: 300px;
-		max-width: 420px;
+	.content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		box-shadow: var(--shadow-panel);
-	}
-	.warning-icon {
-		margin-bottom: 8px;
-	}
-	.modal-content h3 {
-		margin: 0 0 12px;
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--color-black);
 		text-align: center;
+		padding-top: 8px;
 	}
+
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 60px;
+		height: 60px;
+		margin-bottom: 14px;
+		border-radius: 50%;
+	}
+
+	.badge.danger {
+		background: var(--color-danger-bg);
+		color: var(--color-red);
+	}
+
+	.badge.warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+	}
+
+	.badge.info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+	}
+
 	.message {
-		margin: 0 0 12px;
+		margin: 8px 0 0;
 		font-size: 0.95rem;
+		line-height: 1.45;
 		color: var(--color-text-muted);
-		text-align: center;
 	}
+
 	.details {
-		margin: 0 0 20px;
-		font-size: 0.85rem;
-		color: var(--color-text-soft);
-		text-align: center;
-		background: var(--color-background);
-		border-radius: 8px;
-		padding: 10px 14px;
 		width: 100%;
 		box-sizing: border-box;
-	}
-	.modal-actions {
-		display: flex;
-		gap: 8px;
-		justify-content: flex-end;
-		width: 100%;
-		margin-top: 8px;
-	}
-	.modal-cancel {
-		padding: 8px 20px;
-		border: 1px solid var(--color-gray);
-		border-radius: 8px;
-		background: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
+		margin: 14px 0 0;
+		padding: 10px 14px;
+		border-radius: 10px;
+		background: var(--color-background);
+		font-size: 0.85rem;
+		line-height: 1.4;
 		color: var(--color-text-soft);
-	}
-	.modal-cancel:hover {
-		background-color: var(--color-background);
-	}
-	.modal-confirm {
-		padding: 8px 20px;
-		border: none;
-		border-radius: 8px;
-		background: var(--color-red);
-		color: var(--color-white);
-		cursor: pointer;
-		font-size: 0.9rem;
-		transition: background-color 0.15s;
-	}
-	.modal-confirm:hover {
-		background: var(--color-red-dark);
 	}
 </style>
