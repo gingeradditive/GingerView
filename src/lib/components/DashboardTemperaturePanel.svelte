@@ -165,8 +165,8 @@
 		<DashboardCardBar
 			label="EXTRUDER"
 			active={anyZoneHeating}
-			ariaLabel="Set the extruder temperatures"
-			hint="Pick a target for each nozzle zone"
+			ariaLabel="Set the extruder and bed temperatures"
+			hint="Pick a target for each nozzle zone and the bed"
 			onclick={() => (showTemperatureModal = true)}
 		>
 			SET
@@ -180,6 +180,8 @@
 	zones={zoneKeys}
 	temperatures={extruderTemperatures}
 	targets={extruderTargets}
+	{bedTemperature}
+	{bedTarget}
 	onClose={() => (showTemperatureModal = false)}
 />
 
