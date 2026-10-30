@@ -104,6 +104,14 @@ export const customTemperaturePreset = writable<TemperaturePreset>({
 export const extrudePhase = writable<ExtrudePhase>('idle');
 
 /**
+ * L'ultima sequenza è partita "sul posto" (solo modalità advanced): niente homing e niente
+ * spostamento alla zona di spurgo, si scalda e si estrude dove sta la testa, anche con i
+ * motori XYZ spenti. Resta qui perché il pannello mostri gli step giusti e "Try again" la
+ * ripeta uguale.
+ */
+export const extrudeInPlace = writable(false);
+
+/**
  * Come è finita l'ultima sequenza, per il pannello: "Done" per qualche secondo, oppure la
  * fase che ha fallito con "Retry". `null` mentre gira e quando non c'è niente da dire. Il
  * toast di errore resta: questo serve a chi guarda il pannello, il toast a chi è altrove.
@@ -271,8 +279,11 @@ export const startHoming = async (): Promise<void> => {
 	}
 };
 
-export const startExtrudeSequence = async (): Promise<void> => {
+export const startExtrudeSequence = async (options?: { inPlace?: boolean }): Promise<void> => {
 	if (get(extrudePhase) !== 'idle') return;
+	// Senza opzioni (Try again) ripete com'era partita l'ultima volta.
+	if (options?.inPlace !== undefined) extrudeInPlace.set(options.inPlace);
+	const inPlace = get(extrudeInPlace);
 	// Zones whose target this sequence set, so they are switched off again at
 	// the end — whether the extrusion finished or something failed on the way.
 	let heatedZones: string[] = [];
@@ -281,23 +292,27 @@ export const startExtrudeSequence = async (): Promise<void> => {
 	try {
 		// Leave `idle` before the first await, or a second tap during the homed
 		// check would start a second sequence.
-		extrudePhase.set('moving');
-		if (!(await isHomed())) {
-			extrudePhase.set('homing');
-			homingBusy.set(true);
-			try {
-				await runGcode('G28');
-			} finally {
-				homingBusy.set(false);
+		extrudePhase.set(inPlace ? 'heating' : 'moving');
+		if (!inPlace) {
+			if (!(await isHomed())) {
+				extrudePhase.set('homing');
+				homingBusy.set(true);
+				try {
+					await runGcode('G28');
+				} finally {
+					homingBusy.set(false);
+				}
+				extrudePhase.set('moving');
 			}
-			extrudePhase.set('moving');
+
+			throwIfCancelled();
+			const centerX = await getPurgePositionX();
+			await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
+			throwIfCancelled();
 		}
 
-		throwIfCancelled();
-		const centerX = await getPurgePositionX();
-		await runGcode(`G90\nG1 X${centerX} Y0 Z250 F3000`);
-		throwIfCancelled();
-
+		// Da qui in poi solo mosse E: Kalico chiede l'homing solo per le mosse XYZ, quindi
+		// "sul posto" funziona anche con assi non homed e motori spenti.
 		extrudePhase.set('heating');
 		// Heating the wrong set of zones is worse than not heating at all: a zone
 		// left cold blocks the nozzle. If the machine cannot say which zones it
