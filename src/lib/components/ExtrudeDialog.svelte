@@ -8,12 +8,14 @@
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import { toastActions } from '$lib/stores/toastStore';
+	import { ensureUiMode, uiMode } from '$lib/stores/uiModeStore';
 	import {
 		amountOptions,
 		customTemperaturePreset,
 		cancelExtrudeSequence,
 		extrudeAmount,
 		extrudeCancelRequested,
+		extrudeInPlace,
 		extrudeOutcome,
 		extrudePhase,
 		extrudeSpeed,
@@ -34,6 +36,11 @@
 	// mid-sequence no longer resets the dialog — see movementStore.
 	let showHomingWarning = $state(false);
 
+	// "Extrude in place" nel popup di conferma c'è solo in modalità advanced.
+	$effect(() => {
+		ensureUiMode();
+	});
+
 	const phaseLabels: Record<ExtrudePhase, string> = {
 		idle: 'HEAT & EXTRUDE',
 		homing: 'Homing…',
@@ -46,12 +53,18 @@
 	// subito dopo, per dire com'è finita) il pannello mostra queste al posto delle opzioni:
 	// prima l'unico segno era l'etichetta del pulsante.
 	type SequencePhase = Exclude<ExtrudePhase, 'idle'>;
-	const sequence: { phase: SequencePhase; label: string }[] = [
+	// "Sul posto" homing e spostamento non ci sono: restano gli ultimi due.
+	const allSteps: { phase: SequencePhase; label: string }[] = [
 		{ phase: 'homing', label: 'Homing' },
 		{ phase: 'moving', label: 'Move to purge position' },
 		{ phase: 'heating', label: 'Heating the nozzle' },
 		{ phase: 'extruding', label: 'Extrude' }
 	];
+	const sequence = $derived(
+		$extrudeInPlace
+			? allSteps.filter((step) => step.phase === 'heating' || step.phase === 'extruding')
+			: allSteps
+	);
 	type StepState = 'done' | 'active' | 'failed' | 'todo';
 
 	const running = $derived($extrudePhase !== 'idle');
@@ -254,9 +267,9 @@
 		showHomingWarning = false;
 	};
 
-	const confirmHomingWarning = (): void => {
+	const confirmHomingWarning = (options: { inPlace: boolean }): void => {
 		showHomingWarning = false;
-		startExtrudeSequence();
+		startExtrudeSequence({ inPlace: options.inPlace });
 	};
 </script>
 
@@ -417,6 +430,7 @@
 <HomingWarningModal
 	isOpen={showHomingWarning}
 	action="extrude"
+	allowInPlace={$uiMode === 'advanced'}
 	onConfirm={confirmHomingWarning}
 	onCancel={cancelHomingWarning}
 />
