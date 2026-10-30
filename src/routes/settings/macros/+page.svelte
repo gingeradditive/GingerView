@@ -106,17 +106,21 @@
 					<button type="button" class="macro-row" onclick={() => open(macro)}>
 						<span class="icon"><SquareFunction /></span>
 						<div class="row-text">
-							<h2>{macro.name}</h2>
+							<!-- Nomi lunghi in colonna: a capo dopo un `_`, non a metà parola. -->
+							<h2>
+								{#each macro.name.split('_') as part, index (index)}{#if index > 0}_<wbr
+										/>{/if}{part}{/each}
+							</h2>
 							{#if macro.description}
 								<p>{macro.description}</p>
 							{/if}
+							{#if macro.params.length > 0}
+								<span class="chip">
+									{macro.params.length}
+									{macro.params.length === 1 ? 'parameter' : 'parameters'}
+								</span>
+							{/if}
 						</div>
-						{#if macro.params.length > 0}
-							<span class="chip">
-								{macro.params.length}
-								{macro.params.length === 1 ? 'parameter' : 'parameters'}
-							</span>
-						{/if}
 						<span class="chevron"><ChevronRight /></span>
 					</button>
 				{/each}
@@ -255,9 +259,24 @@
 		padding: 10px 20px;
 		font-weight: 700;
 	}
+	/* Una colonna sul telefono, due sul tablet, tre sul computer. Le righe di una
+	   stessa fila hanno la stessa altezza, quindi i bordi dell'ultima fila stanno
+	   tutti sul fondo: il clip li toglie insieme. */
 	.macro-list {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: 1fr;
+		column-gap: 32px;
+		clip-path: inset(0 0 1px 0);
+	}
+	@media (min-width: 768px) {
+		.macro-list {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+	@media (min-width: 1200px) {
+		.macro-list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
 	}
 	.macro-row {
 		width: 100%;
@@ -271,9 +290,6 @@
 		text-align: left;
 		cursor: pointer;
 		color: inherit;
-	}
-	.macro-row:last-child {
-		border-bottom: none;
 	}
 	.icon {
 		display: inline-flex;
@@ -300,7 +316,8 @@
 		color: var(--color-text-subtle);
 	}
 	.chip {
-		flex-shrink: 0;
+		display: inline-block;
+		margin-top: 6px;
 		padding: 4px 10px;
 		border-radius: 999px;
 		background: var(--color-surface-sunken);
@@ -320,13 +337,6 @@
 		}
 		.macros-card {
 			padding: 20px 16px;
-		}
-	}
-	/* Sul telefono il conteggio dei parametri ruba spazio al nome: si vede comunque
-	   aprendo la macro. */
-	@media (max-width: 480px) {
-		.chip {
-			display: none;
 		}
 	}
 
