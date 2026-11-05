@@ -231,10 +231,12 @@ stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai carosell
 [MovementCarousel](../src/lib/components/MovementCarousel.svelte)) danno tre segnali, perché gli
 utenti non capivano dal cellulare che c'erano altre card:
 
-- **card vicine visibili** (solo dashboard): la slide è all'84%, centrata, e il carosello esce dai
-  16px di margine della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati.
-  In Movement no: con due sole card Embla regge il loop solo se ognuna è larga quanto lo schermo,
-  e il loop infinito conta di più;
+- **card vicine visibili**: la slide è all'84%, centrata, e il carosello esce dai 16px di margine
+  della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati. Il loop resta
+  infinito. In Movement, con due sole card a quella larghezza, Embla non riesce a farle girare:
+  su telefono le slide sono duplicate (Position, Heat & extrude, Position, Heat & extrude).
+  `ToolheadPosition` ed `ExtrudeDialog` reggono due istanze perché ognuna si iscrive allo stato
+  con un nome suo (`movement-toolhead-N`, `extrude-progress-N`); da tablet in su la copia sparisce;
 - **scritta "← Swipe to see more →"** in grigio scuro, solo testo (niente sfondo: sembrava un
   pulsante), con il dito che mima il gesto
   ([CarouselSwipeHint.svelte](../src/lib/components/CarouselSwipeHint.svelte)) al posto dei

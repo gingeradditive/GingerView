@@ -1,3 +1,14 @@
+<script lang="ts" module>
+	/**
+	 * Su telefono Movement mostra questa card due volte (vedi MovementCarousel: con due sole
+	 * card il loop infinito si regge solo duplicandole). Ogni istanza ha quindi un nome di
+	 * sottoscrizione suo — con lo stesso nome la seconda prenderebbe il posto della prima, che
+	 * resterebbe con i numeri fermi — e l'aggancio di debug muove tutte le istanze.
+	 */
+	let instanceCount = 0;
+	const testSetters: ((x: number, y: number, z: number) => void)[] = [];
+</script>
+
 <script lang="ts">
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onDestroy, onMount } from 'svelte';
@@ -42,7 +53,7 @@
 		stepper_enable?: { steppers?: Record<string, boolean> };
 	};
 
-	const dataSource = 'movement-toolhead';
+	const dataSource = `movement-toolhead-${++instanceCount}`;
 	const dataQuery =
 		'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers';
 
@@ -125,16 +136,19 @@
 		}
 	};
 
+	const setTestPosition = (x: number, y: number, z: number): void => {
+		actualX.set(x);
+		actualY.set(y);
+		actualZ.set(z);
+		targetX.set(x);
+		targetY.set(y);
+		targetZ.set(z);
+	};
+
 	onMount(() => {
-		const win = window as ToolheadTestWindow;
-		win.setToolheadTestPosition = (x: number, y: number, z: number): void => {
-			actualX.set(x);
-			actualY.set(y);
-			actualZ.set(z);
-			targetX.set(x);
-			targetY.set(y);
-			targetZ.set(z);
-		};
+		testSetters.push(setTestPosition);
+		(window as ToolheadTestWindow).setToolheadTestPosition = (x, y, z) =>
+			testSetters.forEach((set) => set(x, y, z));
 	});
 
 	subscribeWhileVisible<ToolheadStatus>(
@@ -145,7 +159,9 @@
 	);
 
 	onDestroy(() => {
-		if (typeof window !== 'undefined') {
+		const at = testSetters.indexOf(setTestPosition);
+		if (at !== -1) testSetters.splice(at, 1);
+		if (typeof window !== 'undefined' && testSetters.length === 0) {
 			delete (window as ToolheadTestWindow).setToolheadTestPosition;
 		}
 	});
