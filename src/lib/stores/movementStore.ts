@@ -69,13 +69,18 @@ export const temperatureOptions: { value: Temperature; label: string }[] = [
 export type MaterialPreset = {
 	firstZoneC: number;
 	otherZonesC: number;
+	/**
+	 * Piatto per questo materiale. Heat & Extrude non lo usa (scalda solo l'ugello): serve ai
+	 * preset del popup temperature della dashboard, che partono da qui.
+	 */
+	bedC: number;
 	// Klipper rotation_distance for this material; not shown in the UI.
 	rotationVolume: number;
 };
 
 export const materialPresets: Record<'petg' | 'pla', MaterialPreset> = {
-	petg: { firstZoneC: 200, otherZonesC: 220, rotationVolume: 450 },
-	pla: { firstZoneC: 200, otherZonesC: 200, rotationVolume: 330 }
+	petg: { firstZoneC: 200, otherZonesC: 220, bedC: 80, rotationVolume: 450 },
+	pla: { firstZoneC: 200, otherZonesC: 200, bedC: 60, rotationVolume: 330 }
 };
 
 /**

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { onMount } from 'svelte';
 	import { CloudDownload, LoaderCircle, RefreshCw, TriangleAlert } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
@@ -318,7 +319,8 @@
 
 <section class="update-page">
 	<div class="update-card">
-		<header class="update-header">
+		<header class="update-header settings-header">
+			<SettingsBackButton />
 			<h1>Update</h1>
 			<span class="status-pill {headerBadge.tone}">
 				<span class="dot"></span>

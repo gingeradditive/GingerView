@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -239,7 +240,8 @@
 
 <section class="console-page">
 	<div class="console-card">
-		<header class="console-header">
+		<header class="console-header settings-header">
+			<SettingsBackButton />
 			<h1>Console</h1>
 			<button
 				type="button"

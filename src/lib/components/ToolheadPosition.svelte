@@ -1,8 +1,19 @@
+<script lang="ts" module>
+	/**
+	 * Su telefono Movement mostra questa card due volte (vedi MovementCarousel: con due sole
+	 * card il loop infinito si regge solo duplicandole). Ogni istanza ha quindi un nome di
+	 * sottoscrizione suo — con lo stesso nome la seconda prenderebbe il posto della prima, che
+	 * resterebbe con i numeri fermi — e l'aggancio di debug muove tutte le istanze.
+	 */
+	let instanceCount = 0;
+	const testSetters: ((x: number, y: number, z: number) => void)[] = [];
+</script>
+
 <script lang="ts">
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onDestroy, onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
-	import { cubicOut } from 'svelte/easing';
+	import { cubicInOut, cubicOut, linear } from 'svelte/easing';
 	import { mdiCursorMove } from '@mdi/js';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
@@ -38,13 +49,56 @@
 
 	type ToolheadStatus = {
 		toolhead?: { position?: number[]; axis_maximum?: number[] };
+		motion_report?: { live_position?: number[] };
 		gcode_move?: { gcode_position?: number[] };
 		stepper_enable?: { steppers?: Record<string, boolean> };
 	};
 
-	const dataSource = 'movement-toolhead';
+	const dataSource = `movement-toolhead-${++instanceCount}`;
 	const dataQuery =
-		'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers';
+		'toolhead=position,axis_maximum&gcode_move=gcode_position&stepper_enable=steppers' +
+		'&motion_report=live_position';
+
+	/**
+	 * Dove sta davvero la testina.
+	 *
+	 * `toolhead.position` è la posizione **comandata**: salta al punto di arrivo appena il
+	 * movimento entra in coda, mentre la macchina ci mette secondi a raggiungerlo, e a schermo
+	 * sembrava già ferma lì. `motion_report.live_position` è quella reale, campionata da Kalico
+	 * circa quattro volte al secondo: il disegno la segue con un'interpolazione lineare lunga
+	 * quanto un campione, così il punto scorre invece di avanzare a scatti.
+	 *
+	 * Se `motion_report` non c'è, si anima verso il punto comandato alla velocità tipica di un
+	 * movimento a mano, invece di saltarci: non è la posizione vera, ma non finge di essere
+	 * già arrivata.
+	 */
+	const LIVE_SAMPLE_MS = 280;
+	const FALLBACK_SPEED_MM_S = 50;
+	const FALLBACK_MIN_MS = 600;
+	const FALLBACK_MAX_MS = 8000;
+	let hasLivePosition = false;
+	/** Ultimo punto comandato su cui è partito il ripiego: lo stesso punto non lo fa ripartire. */
+	let fallbackGoal: string | null = null;
+
+	const animateToCommanded = (x: number, y: number, z: number): void => {
+		const goal = `${x},${y},${z}`;
+		if (goal === fallbackGoal) return;
+		fallbackGoal = goal;
+		setActual(x, y, z, fallbackDuration(x, y, z), cubicInOut);
+	};
+
+	const setActual = (x: number, y: number, z: number, duration: number, easing = linear): void => {
+		actualX.set(x, { duration, easing });
+		actualY.set(y, { duration, easing });
+		actualZ.set(z, { duration, easing });
+	};
+
+	/** Durata del ripiego: proporzionale alla distanza, entro i limiti. */
+	const fallbackDuration = (x: number, y: number, z: number): number => {
+		const distance = Math.hypot(x - actualX.target, y - actualY.target, z - actualZ.target);
+		const ms = (distance / FALLBACK_SPEED_MM_S) * 1000;
+		return Math.min(FALLBACK_MAX_MS, Math.max(FALLBACK_MIN_MS, ms));
+	};
 
 	const clamp = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
 
@@ -106,14 +160,21 @@
 			targetZ.set(Number(gcodeMove.gcode_position[2]) || 0);
 		}
 
-		if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
-			actualX.set(Number(toolhead.position[0]) || 0);
-			actualY.set(Number(toolhead.position[1]) || 0);
-			actualZ.set(Number(toolhead.position[2]) || 0);
+		const live = status.motion_report?.live_position;
+		if (Array.isArray(live) && live.length > 2) {
+			hasLivePosition = true;
+			setActual(Number(live[0]) || 0, Number(live[1]) || 0, Number(live[2]) || 0, LIVE_SAMPLE_MS);
+		} else if (hasLivePosition) {
+			// Arriva solo quello che cambia: senza live_position in questo aggiornamento la testina
+			// non si è mossa, e la posizione comandata non va usata.
+		} else if (toolhead && Array.isArray(toolhead.position) && toolhead.position.length > 2) {
+			animateToCommanded(
+				Number(toolhead.position[0]) || 0,
+				Number(toolhead.position[1]) || 0,
+				Number(toolhead.position[2]) || 0
+			);
 		} else {
-			actualX.set(targetX.current);
-			actualY.set(targetY.current);
-			actualZ.set(targetZ.current);
+			animateToCommanded(targetX.target, targetY.target, targetZ.target);
 		}
 
 		const stepperEnable = status.stepper_enable;
@@ -125,16 +186,19 @@
 		}
 	};
 
+	const setTestPosition = (x: number, y: number, z: number): void => {
+		actualX.set(x);
+		actualY.set(y);
+		actualZ.set(z);
+		targetX.set(x);
+		targetY.set(y);
+		targetZ.set(z);
+	};
+
 	onMount(() => {
-		const win = window as ToolheadTestWindow;
-		win.setToolheadTestPosition = (x: number, y: number, z: number): void => {
-			actualX.set(x);
-			actualY.set(y);
-			actualZ.set(z);
-			targetX.set(x);
-			targetY.set(y);
-			targetZ.set(z);
-		};
+		testSetters.push(setTestPosition);
+		(window as ToolheadTestWindow).setToolheadTestPosition = (x, y, z) =>
+			testSetters.forEach((set) => set(x, y, z));
 	});
 
 	subscribeWhileVisible<ToolheadStatus>(
@@ -145,7 +209,9 @@
 	);
 
 	onDestroy(() => {
-		if (typeof window !== 'undefined') {
+		const at = testSetters.indexOf(setTestPosition);
+		if (at !== -1) testSetters.splice(at, 1);
+		if (typeof window !== 'undefined' && testSetters.length === 0) {
 			delete (window as ToolheadTestWindow).setToolheadTestPosition;
 		}
 	});

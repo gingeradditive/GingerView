@@ -10,6 +10,7 @@
 	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
+	import PrinterOfflineOverlay from '$lib/components/PrinterOfflineOverlay.svelte';
 	import { ensureUiMode } from '$lib/stores/uiModeStore';
 	import '@fontsource-variable/montserrat';
 	import '../app.css';
@@ -44,6 +45,7 @@
 <main class="page-content">{@render children()}</main>
 <StaleDataBanner />
 <KlipperDownOverlay />
+<PrinterOfflineOverlay />
 
 <nav class="dock" aria-label="Main navigation">
 	<div class="logo-container">

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { tooltip } from '$lib/actions/tooltip';
+	import { swipeHint } from '$lib/actions/swipe-hint';
+	import CarouselSwipeHint from '$lib/components/CarouselSwipeHint.svelte';
 	import { onMount } from 'svelte';
 	import emblaCarouselSvelte from 'embla-carousel-svelte';
 	import type { EmblaCarouselType, EmblaOptionsType } from 'embla-carousel';
@@ -10,15 +11,14 @@
 	import DashboardPelletPanel from '$lib/components/DashboardPelletPanel.svelte';
 
 	const pageCount = 5;
-	// Nomi delle slide, nello stesso ordine: etichetta dei puntini.
-	const pageNames = ['Z height', 'Pellet', 'Print job', 'Temperatures', 'Flow'];
 
 	// Stessa condizione dell'ultima media query in fondo al file: i cinque pannelli
 	// sono tutti a schermo e non c'è niente da far scorrere.
 	const allVisibleQuery = '(min-width: 1200px) and (min-height: 600px)';
+	// Da qui in su si vedono tre card: allineate a sinistra come prima, senza le vicine ai lati.
+	const tabletQuery = '(min-width: 768px) and (min-height: 600px)';
 
 	let emblaApi: EmblaCarouselType | undefined = $state();
-	let selectedIndex = $state(0);
 	let visibleCount = $state(1);
 
 	// Le slide che si vedono adesso. Embla tiene tutte le slide nel DOM, quindi senza
@@ -29,19 +29,19 @@
 	const options: EmblaOptionsType = {
 		axis: 'x',
 		loop: true,
-		align: 'start',
+		// Su telefono la card sta al centro e le vicine spuntano ai lati: si vede che si scorre.
+		align: 'center',
 		startIndex: 2,
 		// Con tutto a schermo il carosello si spegne: niente trascinamento a vuoto.
-		breakpoints: { [allVisibleQuery]: { active: false } }
+		breakpoints: {
+			[tabletQuery]: { align: 'start' },
+			[allVisibleQuery]: { active: false }
+		}
 	};
 
 	const onInit = (event: CustomEvent<EmblaCarouselType>): void => {
 		emblaApi = event.detail;
-		selectedIndex = emblaApi.selectedScrollSnap();
 		slidesInView = emblaApi.slidesInView();
-		emblaApi.on('select', () => {
-			selectedIndex = emblaApi!.selectedScrollSnap();
-		});
 		emblaApi.on('slidesInView', () => {
 			slidesInView = emblaApi!.slidesInView();
 		});
@@ -53,15 +53,6 @@
 	// Da spento Embla non tiene più il conto delle slide visibili: lì sono tutte.
 	const isInView = (index: number): boolean =>
 		visibleCount >= pageCount || slidesInView.includes(index);
-
-	const scrollTo = (index: number): void => {
-		emblaApi?.scrollTo(index);
-	};
-
-	const isDotActive = (index: number): boolean => {
-		const diff = (index - selectedIndex + pageCount) % pageCount;
-		return diff < visibleCount;
-	};
 
 	const updateVisibleCount = (): void => {
 		// Stesse condizioni delle media query in fondo al file: l'altezza serve a tenere il
@@ -80,7 +71,12 @@
 </script>
 
 <div class="dashboard-carousel">
-	<div class="embla" use:emblaCarouselSvelte={{ options, plugins: [] }} onemblaInit={onInit}>
+	<div
+		class="embla"
+		use:emblaCarouselSvelte={{ options, plugins: [] }}
+		use:swipeHint={{ embla: emblaApi }}
+		onemblaInit={onInit}
+	>
 		<div class="embla__container">
 			<div class="embla__slide">
 				<DashboardZHeightPanel visible={isInView(0)} />
@@ -99,16 +95,8 @@
 			</div>
 		</div>
 	</div>
-	<div class="dots">
-		{#each Array(pageCount) as _, index (index)}
-			<button
-				class="dot"
-				class:active={isDotActive(index)}
-				aria-label={pageNames[index]}
-				use:tooltip
-				onclick={() => scrollTo(index)}
-			></button>
-		{/each}
+	<div class="hint-slot">
+		<CarouselSwipeHint />
 	</div>
 </div>
 
@@ -185,38 +173,33 @@
 		}
 	}
 
-	.dots {
-		display: flex;
-		gap: 12px;
+	/* Telefono, una card alla volta: la card al centro all'84% e le vicine che spuntano ai lati,
+	   così si vede che si scorre. Il carosello esce dai 16px di margine della pagina e arriva al
+	   bordo dello schermo; tra le card 12px invece di 24, divisi a metà sui due lati. */
+	@media (max-width: 767.98px), (max-height: 599.98px) {
+		.embla {
+			width: calc(100% + 32px);
+			margin-inline: -16px;
+		}
+
+		.embla__container {
+			margin-left: 0;
+		}
+
+		.embla__slide {
+			flex: 0 0 84%;
+			padding: 0 6px;
+		}
+	}
+
+	/* Con tutte le card a schermo non c'è niente da scorrere: niente scritta. */
+	.hint-slot {
 		flex-shrink: 0;
 	}
 
 	@media (min-width: 1200px) and (min-height: 600px) {
-		.dots {
+		.hint-slot {
 			display: none;
 		}
-	}
-
-	.dot {
-		position: relative;
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		border: none;
-		background: var(--color-divider);
-		padding: 0;
-		cursor: pointer;
-	}
-
-	/* Il puntino resta di 8px, ma si tocca un'area di 20x44: a 8x8 col dito non lo si
-	   prendeva. In larghezza arriva a metà dello spazio fra due puntini, senza sovrapporsi. */
-	.dot::before {
-		content: '';
-		position: absolute;
-		inset: -18px -6px;
-	}
-
-	.dot.active {
-		background: var(--color-text-subtle);
 	}
 </style>

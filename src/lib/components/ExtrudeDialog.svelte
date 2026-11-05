@@ -1,3 +1,9 @@
+<script lang="ts" module>
+	// Su telefono questa card esiste due volte (vedi MovementCarousel): ogni istanza ha un nome
+	// di sottoscrizione suo, altrimenti la seconda toglierebbe gli aggiornamenti alla prima.
+	let instanceCount = 0;
+</script>
+
 <script lang="ts">
 	import { Check, LoaderCircle, X as XIcon } from 'lucide-svelte';
 	import { tooltip } from '$lib/actions/tooltip';
@@ -117,8 +123,10 @@
 		loadNozzleZones().then((zones) => (progressZones = zones));
 	});
 
+	const progressSource = `extrude-progress-${++instanceCount}`;
+
 	subscribeWhileVisible<Record<string, HeaterStatus>>(
-		'extrude-progress',
+		progressSource,
 		() => progressZones.join('&'),
 		(status) => {
 			zoneReadings = progressZones.map((zone) => {

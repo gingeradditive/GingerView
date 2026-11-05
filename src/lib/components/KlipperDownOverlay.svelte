@@ -5,6 +5,7 @@
 		isKlippyDown,
 		klippyMessage,
 		klippyState,
+		printerOnline,
 		type KlippyState
 	} from '$lib/services/moonraker-notifier';
 
@@ -66,7 +67,8 @@
 
 	/** Settings and every subpage under it are exempt. */
 	let onOperatingPage = $derived(!$page.url.pathname.startsWith('/settings'));
-	let visible = $derived(onOperatingPage && isKlippyDown($klippyState));
+	/** With the printer unreachable `PrinterOfflineOverlay` speaks instead. */
+	let visible = $derived(onOperatingPage && $printerOnline && isKlippyDown($klippyState));
 	let copy = $derived(copyFor($klippyState));
 </script>
 

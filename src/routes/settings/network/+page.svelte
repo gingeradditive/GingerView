@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { onMount } from 'svelte';
 	import {
@@ -250,7 +251,8 @@
 
 <section class="network-page">
 	<div class="network-card">
-		<header class="page-header">
+		<header class="page-header settings-header">
+			<SettingsBackButton />
 			<span class="header-icon" aria-hidden="true"><Wifi /></span>
 			<h1>Network</h1>
 		</header>

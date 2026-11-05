@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
+	import { tooltip } from '$lib/actions/tooltip';
 	import Fraction from '$lib/components/Fraction.svelte';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
@@ -36,6 +36,11 @@
 	let feederOn = $state(false);
 	let feederBusy = $state(false);
 	let showFeederOffConfirm = $state(false);
+	let feederHint = $derived(
+		feederOn
+			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
+			: "The feeder's off and there's no pellet loaded. Tap to turn it on."
+	);
 	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
 	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
 
@@ -147,7 +152,19 @@
 </script>
 
 <section class="pellet-panel" aria-label="Pellet Level">
-	<div class="pellet-visual">
+	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
+	     temperature: niente più barre in fondo alle card. Lo stato sta nel badge in alto a
+	     destra, nella stessa posizione del badge dell'estrusore. -->
+	<button
+		type="button"
+		class="pellet-visual"
+		role="switch"
+		aria-checked={feederOn}
+		aria-label="Feeder"
+		aria-busy={feederBusy}
+		use:tooltip={feederHint}
+		onclick={toggleFeeder}
+	>
 		{#if !isIdle}
 			<div class="pellet-fill" style="height: {percentage}%">
 				<svg
@@ -179,22 +196,12 @@
 				>
 			{/if}
 		</div>
-	</div>
-	<DashboardCardBar
-		label="FEEDER"
-		active={feederOn}
-		role="switch"
-		ariaLabel="Feeder"
-		ariaChecked={feederOn}
-		hint={feederOn
-			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
-			: "The feeder's off and there's no pellet loaded. Tap to turn it on."}
-		disabled={feederBusy}
-		onclick={toggleFeeder}
-	>
+	</button>
+	<span class="feeder-badge" class:on={feederOn} aria-hidden="true">
 		<span class="status-dot" class:on={feederOn}></span>
+		<span class="badge-label">FEEDER</span>
 		{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
-	</DashboardCardBar>
+	</span>
 </section>
 
 <ConfirmModal
@@ -225,7 +232,42 @@
 		container-type: inline-size;
 	}
 
-	/* Il pallino accanto a ON/OFF nella barra del feeder (DashboardCardBar). */
+	/* Stato del feeder in alto a destra: stessa posizione e misura del badge dell'estrusore,
+	   ma con la parola, perché qui conta sapere se è acceso. Fondo pieno, così si legge
+	   anche sopra il riempimento rosso. Non riceve tocchi: passa tutto alla card. */
+	.feeder-badge {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 30px;
+		padding: 0 10px;
+		box-sizing: border-box;
+		border-radius: 10px;
+		border: 1px solid transparent;
+		background: var(--color-surface-sunken);
+		color: var(--color-text-muted);
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		pointer-events: none;
+	}
+
+	.feeder-badge.on {
+		background: var(--color-white);
+		border-color: var(--color-red);
+		color: var(--color-red);
+	}
+
+	.badge-label {
+		font-weight: 600;
+		opacity: 0.7;
+	}
+
+	/* Il pallino accanto a ON/OFF nel badge del feeder. */
 	.status-dot {
 		width: 8px;
 		height: 8px;
@@ -257,6 +299,10 @@
 	.pellet-visual {
 		width: 100%;
 		height: 100%;
+		padding: 0;
+		border: none;
+		font: inherit;
+		color: inherit;
 		background: var(--color-white);
 		border-radius: 19.2px;
 		overflow: hidden;
@@ -264,6 +310,26 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		cursor: pointer;
+		transition: filter 0.15s;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.pellet-visual:hover {
+		filter: brightness(0.98);
+	}
+
+	.pellet-visual:active {
+		filter: brightness(0.94);
+	}
+
+	.pellet-visual:focus-visible {
+		outline: 2px solid var(--color-red);
+		outline-offset: -4px;
+	}
+
+	.pellet-visual[aria-busy='true'] {
+		cursor: progress;
 	}
 
 	.pellet-fill {
@@ -303,8 +369,9 @@
 		position: absolute;
 		inset: 0;
 		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
-		   altezza. In fondo resta lo spazio della barra del feeder (52px + 12px di margine). */
-		padding: 76px 16px;
+		   altezza. In alto resta lo spazio del badge del feeder, e lo stesso in fondo per
+		   restare in asse. */
+		padding: 48px 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;

@@ -2,11 +2,16 @@
 	import { Power } from 'lucide-svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import ZoneTemperatureEditor from '$lib/components/ZoneTemperatureEditor.svelte';
-	import { sendGcode } from '$lib/services/moonraker-gcode';
+	import {
+		MAX_BED_TEMPERATURE,
+		MAX_NOZZLE_TEMPERATURE as MAX_TEMPERATURE,
+		applyHeaterTargets
+	} from '$lib/stores/temperaturePresetsStore';
 
 	/**
 	 * Temperature libere delle zone dell'ugello e del piatto — solo in modalità
-	 * avanzata, la apre il pulsante sulla card temperature della dashboard.
+	 * avanzata. È il "Custom" del popup dei preset (`TemperaturePresetsSheet`), che si
+	 * apre toccando il disegno dell'estrusore nella dashboard.
 	 *
 	 * I campi partono dai target attuali e diventano effettivi solo con Apply:
 	 * nessun comando parte mentre si scrive. Campo vuoto o 0 = zona spenta.
@@ -29,13 +34,6 @@
 		bedTarget: number | null;
 		onClose: () => void;
 	} = $props();
-
-	// Kalico accetta fino a max_temp (1000 nella config attuale, valore di
-	// calibrazione): l'interfaccia si ferma a un limite da pellet, lo stesso
-	// del popup Custom di Heat & Extrude.
-	const MAX_TEMPERATURE = 300;
-	// max_temp di [heater_bed] in 30_bed.cfg.
-	const MAX_BED_TEMPERATURE = 110;
 
 	let inputs = $state<(number | null)[]>([]);
 	let bedInput = $state<number | null>(null);
@@ -63,13 +61,7 @@
 
 	const send = async (values: (number | null)[], bed: number | null): Promise<void> => {
 		busy = true;
-		const script = [
-			...zones.map(
-				(zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`
-			),
-			`SET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=${bed ?? 0}`
-		].join('\n');
-		const ok = await sendGcode(script, "Couldn't set the temperatures");
+		const ok = await applyHeaterTargets(zones, values, bed);
 		busy = false;
 		if (ok) onClose();
 	};
@@ -88,9 +80,9 @@
 </script>
 
 {#if isOpen}
-	<Sheet label="Temperatures" {onClose} size="sm">
+	<Sheet label="Custom temperatures" {onClose} size="sm">
 		{#snippet header()}
-			<h3 class="sheet-title">Temperatures</h3>
+			<h3 class="sheet-title">Custom temperatures</h3>
 			<p class="sheet-subtitle">
 				Target for each nozzle zone and the bed, in °C. Leave it empty or type 0 to turn it off.
 			</p>
