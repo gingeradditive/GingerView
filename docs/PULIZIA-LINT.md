@@ -85,7 +85,7 @@ La regola vuole che gli URL interni passino da `resolve()` di `$app/paths`, cosÃ
 corretti se l'app viene servita sotto un percorso base. I sette punti erano i quattro link del
 dock in [`+layout.svelte`](../src/routes/+layout.svelte), la riga di
 [`settings/+page.svelte`](../src/routes/settings/+page.svelte), il "indietro" di
-[`SettingsSubpage.svelte`](../src/lib/components/SettingsSubpage.svelte) e il `goto('/')` di
+`SettingsSubpage.svelte` (poi rimosso, sostituito da `SettingsBackButton`) e il `goto('/')` di
 [`PrintStartWizard.svelte`](../src/lib/components/PrintStartWizard.svelte).
 
 Delle due strade possibili â€” passare per `resolve()` oppure spegnere la regola dichiarando che

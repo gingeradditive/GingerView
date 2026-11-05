@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { onMount } from 'svelte';
 	import { LoaderCircle, TriangleAlert } from 'lucide-svelte';
 	import TimezoneMap from '$lib/components/TimezoneMap.svelte';
@@ -89,7 +90,8 @@
 
 <section class="timezone-page">
 	<div class="timezone-card">
-		<header class="timezone-header">
+		<header class="timezone-header settings-header">
+			<SettingsBackButton />
 			<h1>Timezone</h1>
 		</header>
 

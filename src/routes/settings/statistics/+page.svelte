@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		RefreshCw,
@@ -107,7 +108,8 @@
 
 <section class="statistics-page">
 	<div class="statistics-card">
-		<header class="statistics-header">
+		<header class="statistics-header settings-header">
+			<SettingsBackButton />
 			<h1>Statistics</h1>
 			<button
 				type="button"

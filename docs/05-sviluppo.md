@@ -208,19 +208,31 @@ invece di tab — `npm run format` li normalizza.
 
 ## Aggiungere una sottopagina di impostazioni
 
-1. Crea `src/routes/settings/<nome>/+page.svelte`.
-2. Per un segnaposto bastano tre righe, sfruttando il wrapper esistente:
+1. Crea `src/routes/settings/<nome>/+page.svelte` sullo schema delle altre sottopagine: una
+   `<section>` a tutta altezza con dentro una card bianca, e in cima alla card l'intestazione.
+2. L'intestazione ha la classe `settings-header` e comincia con la freccia indietro:
 
 ```svelte
 <script lang="ts">
-	import SettingsSubpage from '$lib/components/SettingsSubpage.svelte';
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 </script>
 
-<SettingsSubpage title="Nome" />
+<section class="nome-page">
+	<div class="nome-card">
+		<header class="nome-header settings-header">
+			<SettingsBackButton />
+			<h1>Nome</h1>
+			<!-- eventuale pill o pulsante -->
+		</header>
+		…
+	</div>
+</section>
 ```
 
-`SettingsSubpage` fornisce intestazione, pulsante "indietro" verso `/settings` e, in assenza
-di contenuto, il testo "Coming soon". Per una pagina reale, passa il contenuto come figlio.
+`SettingsBackButton` è un link a `/settings` (non un `history.back()`, che da un link diretto
+uscirebbe dall'app). `settings-header` porta la regola comune di [app.css](../src/app.css): su
+telefono quello che non sta accanto al titolo va a capo invece di uscire dalla card. Lo stile
+dell'header (flex, `align-items: center`, gap 14px, `h1` a 2rem) resta nella pagina.
 
 3. Aggiungi la voce all'array `items` in
    [src/routes/settings/+page.svelte](../src/routes/settings/+page.svelte), scegliendo

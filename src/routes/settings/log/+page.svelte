@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { Download, FileText, Trash2, LoaderCircle } from 'lucide-svelte';
 	import { LOG_FILES, downloadLog, clearLogs, type LogFile } from '$lib/services/moonraker-logs';
@@ -46,7 +47,8 @@
 
 <section class="logs-page">
 	<div class="logs-card">
-		<header class="logs-header">
+		<header class="logs-header settings-header">
+			<SettingsBackButton />
 			<h1>Logs</h1>
 		</header>
 
@@ -121,6 +123,7 @@
 	.logs-header {
 		display: flex;
 		align-items: center;
+		gap: 14px;
 		flex-shrink: 0;
 	}
 	.logs-header h1 {
