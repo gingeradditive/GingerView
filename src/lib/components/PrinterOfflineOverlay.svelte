@@ -44,10 +44,7 @@
 				We can't reach the printer. It may be switched off, still starting up, or not on this
 				network.
 			</p>
-			<p class="hint">
-				This page reconnects by itself as soon as the printer is back. If a print was running and
-				only the network dropped, it carries on — the printer doesn't need this page.
-			</p>
+			<p class="hint">This page reconnects by itself as soon as the printer is back.</p>
 
 			<button
 				type="button"
