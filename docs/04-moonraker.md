@@ -30,18 +30,26 @@ HTTP le letture **una tantum** o di pagine che hanno un ciclo proprio:
 
 Oggetti sottoscritti per componente:
 
-| Componente                   | Oggetti sottoscritti                                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                                   |
-| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                                            |
-| `DashboardJobInfoCard`       | `print_stats`                                                                                              |
-| `DashboardPelletPanel`       | `print_stats`                                                                                              |
-| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone              |
-| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                               |
-| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                         |
-| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                                    |
-| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`                   |
-| `MovePanel` (solo se aperto) | `toolhead=position,homed_axes,axis_minimum,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
+| Componente                   | Oggetti sottoscritti                                                                                                    |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                                                |
+| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                                                         |
+| `DashboardJobInfoCard`       | `print_stats`                                                                                                           |
+| `DashboardPelletPanel`       | `print_stats`                                                                                                           |
+| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone                           |
+| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                                            |
+| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                                      |
+| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                                                 |
+| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`, `motion_report=live_position` |
+| `MovePanel` (solo se aperto) | `toolhead=position,homed_axes,axis_minimum,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`              |
+
+**La testina a schermo segue la posizione reale.** `toolhead.position` è la posizione _comandata_:
+salta al punto di arrivo appena il movimento entra in coda, e la card Position mostrava la testina
+già ferma lì mentre la macchina ancora si muoveva. `ToolheadPosition` segue invece
+`motion_report.live_position`, campionata da Kalico circa quattro volte al secondo, con
+un'interpolazione lineare lunga quanto un campione (280 ms): il punto scorre con un ritardo di
+mezzo secondo al massimo. Senza `motion_report` ripiega su un'animazione verso il punto comandato,
+lunga quanto ci metterebbe la testina a 50 mm/s (tra 0,6 e 8 s).
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
