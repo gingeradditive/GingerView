@@ -659,6 +659,22 @@ di produzione i comandi non ci sono.
 All'avvio, `fetchAndDisplayWarnings()` legge `/server/info` e mostra come toast persistenti
 i `warnings`, i `failed_components` e l'eventuale stato `error`/`shutdown` di Klippy.
 
+**Toast che si chiudono da soli quando la condizione rientra.** I toast persistenti che descrivono
+uno stato, e non un evento, hanno una chiave (`key` in
+[toastStore.ts](../src/lib/stores/toastStore.ts)). Un toast nuovo con la stessa chiave sostituisce
+il vecchio invece di accumularsi, e `toastActions.resolve(key)` lo chiude:
+
+| Chiave                           | Toast                                                                    | Si chiude quando                                                       |
+| -------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `klippy-state`                   | Kalico error / shut down / disconnected, "non è tornato" dopo un riavvio | `klippyState` torna `ready`                                            |
+| `moonraker-warning:<testo>`      | avviso di `/server/info`                                                 | sparisce da `/server/info`, riletto a ogni riconnessione del WebSocket |
+| `moonraker-component:<nome>`     | componente che non si è caricato                                         | come sopra (di solito dopo un riavvio di Moonraker)                    |
+| `moonraker-stat-warning:<testo>` | avviso in `notify_proc_stat_update`                                      | esce dalla lista nella notifica successiva                             |
+
+Un avviso chiuso a mano mentre la condizione persiste non viene riproposto alla riconnessione. Gli
+errori legati a un'azione (comando rifiutato, upload fallito, …) restano eventi singoli e si chiudono
+dopo 8 secondi.
+
 **Gli store `klippyState` e `klippyMessage`.** Oltre ai toast, il notifier tiene lo stato di Klippy
 in uno store esportato (`'' | 'ready' | 'startup' | 'shutdown' | 'error' | 'disconnected'`) e, se
 Klippy è fermo, il suo `state_message` in un secondo store. Servono al pulsante di

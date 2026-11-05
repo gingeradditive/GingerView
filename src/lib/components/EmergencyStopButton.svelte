@@ -3,7 +3,11 @@
 	import { tooltip } from '$lib/actions/tooltip';
 	import { mdiHandBackRight, mdiRestart } from '@mdi/js';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import { klippyState, type KlippyState } from '$lib/services/moonraker-notifier';
+	import {
+		KLIPPY_TOAST_KEY,
+		klippyState,
+		type KlippyState
+	} from '$lib/services/moonraker-notifier';
 	import {
 		emergencyStop,
 		requestRestart,
@@ -84,7 +88,9 @@
 				'klipper',
 				'Firmware restart',
 				"Kalico hasn't come back after 90 seconds. Please check the machine.",
-				0
+				0,
+				undefined,
+				KLIPPY_TOAST_KEY
 			);
 		} else if (info.state === 'ready') {
 			klippyState.set('ready');
@@ -92,7 +98,14 @@
 		} else {
 			klippyState.set(info.state as KlippyState);
 			const firstLine = info.stateMessage.split('\n')[0] || `Kalico is in ${info.state} state`;
-			toastActions.error('klipper', `Kalico ${info.state}`, firstLine, 0, info.stateMessage);
+			toastActions.error(
+				'klipper',
+				`Kalico ${info.state}`,
+				firstLine,
+				0,
+				info.stateMessage,
+				KLIPPY_TOAST_KEY
+			);
 		}
 
 		busy = false;

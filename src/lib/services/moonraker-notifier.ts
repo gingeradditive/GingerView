@@ -67,6 +67,61 @@ export type GcodesChange = { dirs: string[] | null };
  */
 export const gcodesChanged = writable<GcodesChange | null>(null);
 
+/**
+ * Chiave dei toast che dicono che Kalico è fermo (error, shutdown, disconnected, non tornato
+ * dopo un riavvio): uno alla volta, e si chiudono da soli quando Kalico torna `ready`.
+ */
+export const KLIPPY_TOAST_KEY = 'klippy-state';
+
+klippyState.subscribe((state) => {
+	if (state === 'ready') toastActions.resolve(KLIPPY_TOAST_KEY);
+});
+
+const warningKey = (warning: string): string => `moonraker-warning:${warning}`;
+const componentKey = (component: string): string => `moonraker-component:${component}`;
+
+/**
+ * Gli avvisi e i componenti falliti che Moonraker segnala adesso, mostrati o chiusi a mano
+ * dall'utente. Serve a due cose: chiudere il toast quando Moonraker smette di segnalarli, e
+ * non riproporre a ogni riconnessione quello che l'utente ha già chiuso.
+ */
+const serverConditions = new Set<string>();
+
+/** Allinea i toast di avvisi e componenti falliti a quello che dice `/server/info`. */
+function syncServerConditions(info: MoonrakerServerInfo): void {
+	const current = new Map<string, () => void>();
+	for (const warning of info.warnings ?? []) {
+		const key = warningKey(warning);
+		current.set(key, () =>
+			toastActions.warning('moonraker', 'Moonraker warning', warning, 0, undefined, key)
+		);
+	}
+	for (const component of info.failed_components ?? []) {
+		const key = componentKey(component);
+		current.set(key, () =>
+			toastActions.error(
+				'moonraker',
+				"Something didn't load",
+				`Moonraker component failed to load: ${component}`,
+				0,
+				undefined,
+				key
+			)
+		);
+	}
+
+	for (const key of [...serverConditions]) {
+		if (current.has(key)) continue;
+		toastActions.resolve(key);
+		serverConditions.delete(key);
+	}
+	for (const [key, show] of current) {
+		if (serverConditions.has(key)) continue;
+		serverConditions.add(key);
+		show();
+	}
+}
+
 /** Keeps the two stores in step: a healthy Klippy has no message. */
 function setKlippyState(state: KlippyState, message = ''): void {
 	klippyState.set(state);
@@ -81,7 +136,8 @@ export function isKlippyDown(state: KlippyState): boolean {
 /**
  * Re-reads the state from `/server/info`, silently. Used at startup and every
  * time the WebSocket (re)connects, since anything that happened while it was
- * down arrived nowhere.
+ * down arrived nowhere. Also closes the toasts of Moonraker warnings and failed
+ * components that are gone (a Moonraker restart is the usual way out).
  */
 export async function refreshKlippyState(): Promise<void> {
 	try {
@@ -89,6 +145,7 @@ export async function refreshKlippyState(): Promise<void> {
 		if (!res.ok) return;
 		const json = await res.json();
 		const info = json.result as MoonrakerServerInfo;
+		syncServerConditions(info);
 		const state: KlippyState = info.klippy_connected
 			? (info.klippy_state as KlippyState)
 			: 'disconnected';
@@ -142,20 +199,8 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 	const info = await fetchServerInfo();
 	if (!info) return;
 
-	// Show Moonraker warnings
-	for (const warning of info.warnings) {
-		toastActions.warning('moonraker', 'Moonraker warning', warning, 0);
-	}
-
-	// Show failed components as errors
-	for (const component of info.failed_components) {
-		toastActions.error(
-			'moonraker',
-			"Something didn't load",
-			`Moonraker component failed to load: ${component}`,
-			0
-		);
-	}
+	// Moonraker warnings and failed components, closed again when they go away.
+	syncServerConditions(info);
 
 	// Show Klipper state issues — fetch full details from /printer/info
 	if (info.klippy_state === 'error' || info.klippy_state === 'shutdown') {
@@ -167,9 +212,9 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 		setKlippyState(info.klippy_state as KlippyState, stateMsg);
 
 		if (info.klippy_state === 'error') {
-			toastActions.error('klipper', 'Kalico error', firstLine, 0, details);
+			toastActions.error('klipper', 'Kalico error', firstLine, 0, details, KLIPPY_TOAST_KEY);
 		} else {
-			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, details);
+			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, details, KLIPPY_TOAST_KEY);
 		}
 	} else if (!info.klippy_connected) {
 		setKlippyState('disconnected');
@@ -177,7 +222,9 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 			'klipper',
 			'Kalico disconnected',
 			"Kalico isn't connected to Moonraker",
-			0
+			0,
+			undefined,
+			KLIPPY_TOAST_KEY
 		);
 	} else {
 		setKlippyState(info.klippy_state as KlippyState);
@@ -204,14 +251,17 @@ function isNotification(data: unknown): data is { method: string; params?: unkno
 	return data.params === undefined || Array.isArray(data.params);
 }
 
-/** The warning strings inside `notify_proc_stat_update`, or none if absent. */
-function readProcStatWarnings(params: unknown[] | undefined): string[] {
+/**
+ * The warning strings inside `notify_proc_stat_update`, or `null` when the update
+ * doesn't carry the list at all — which is not the same as "no warnings left".
+ */
+function readProcStatWarnings(params: unknown[] | undefined): string[] | null {
 	const first = params?.[0];
-	if (!isJsonObject(first)) return [];
+	if (!isJsonObject(first)) return null;
 	const stats = first.moonraker_stats;
-	if (!isJsonObject(stats)) return [];
+	if (!isJsonObject(stats)) return null;
 	const warnings = stats.warnings;
-	if (!Array.isArray(warnings)) return [];
+	if (!Array.isArray(warnings)) return null;
 	return warnings.filter((w): w is string => typeof w === 'string');
 }
 
@@ -248,12 +298,27 @@ function handleNotification(data: unknown): void {
 		if (change) gcodesChanged.set(change);
 	}
 
-	// Moonraker notify_proc_stat_update can contain warnings
+	// Moonraker notify_proc_stat_update can contain warnings: shown once, closed
+	// when they leave the list.
 	if (data.method === 'notify_proc_stat_update') {
-		for (const w of readProcStatWarnings(data.params)) {
-			if (!shownWarnings.has(w)) {
+		const warnings = readProcStatWarnings(data.params);
+		if (warnings) {
+			for (const w of [...shownWarnings]) {
+				if (warnings.includes(w)) continue;
+				shownWarnings.delete(w);
+				toastActions.resolve(`moonraker-stat-warning:${w}`);
+			}
+			for (const w of warnings) {
+				if (shownWarnings.has(w)) continue;
 				shownWarnings.add(w);
-				toastActions.warning('moonraker', 'Moonraker warning', w, 0);
+				toastActions.warning(
+					'moonraker',
+					'Moonraker warning',
+					w,
+					0,
+					undefined,
+					`moonraker-stat-warning:${w}`
+				);
 			}
 		}
 	}
@@ -271,13 +336,27 @@ function handleNotification(data: unknown): void {
 			const stateMsg = printerInfo?.state_message || '';
 			const firstLine = stateMsg.split('\n')[0] || 'The firmware has shut down';
 			klippyMessage.set(stateMsg);
-			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, stateMsg || undefined);
+			toastActions.error(
+				'klipper',
+				'Kalico shut down',
+				firstLine,
+				0,
+				stateMsg || undefined,
+				KLIPPY_TOAST_KEY
+			);
 		});
 	}
 
 	if (data.method === 'notify_klippy_disconnected') {
 		setKlippyState('disconnected');
-		toastActions.error('klipper', 'Kalico disconnected', 'Lost connection to Kalico', 0);
+		toastActions.error(
+			'klipper',
+			'Kalico disconnected',
+			'Lost connection to Kalico',
+			0,
+			undefined,
+			KLIPPY_TOAST_KEY
+		);
 	}
 }
 
