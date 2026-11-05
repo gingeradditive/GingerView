@@ -587,7 +587,7 @@ anche la **sentinella della stampante**: vedi [Stampante offline](#stampante-off
 ### Stampante offline
 
 Il WebSocket del notifier è aperto su ogni pagina per tutta la sessione, quindi è lui a dire se la
-stampante — il Raspberry, non Kalico — risponde. Lo store `printerOnline` (con `offlineSince` e
+stampante — il Raspberry, non Kalico — risponde. Lo store `printerOnline` (con
 `nextRetryAt`) passa a `false` quando la connessione resta giù per più di **5 secondi**: la
 tolleranza assorbe i riavvii di Moonraker (aggiornamenti, cambi di config), che fanno cadere il
 socket per un secondo o due.
@@ -611,9 +611,8 @@ Alla riconnessione `refreshKlippyState()` racconta lo stato attuale.
 [PrinterOfflineOverlay.svelte](../src/lib/components/PrinterOfflineOverlay.svelte), montato nel
 layout, mostra una schermata **bloccante** che copre tutto — dock, Settings e toast compresi
 (`z-index: 10100`). A differenza di `KlipperDownOverlay` qui non c'è una via d'uscita da lasciare
-scoperta: ogni pagina parla con Moonraker. Mostra da quanto la stampante è offline e tra quanto
-parte il prossimo tentativo, con un pulsante "Try now" per non aspettarlo; sparisce da sola appena
-la connessione torna. Finché è a schermo, `KlipperDownOverlay` e `StaleDataBanner` tacciono.
+scoperta: ogni pagina parla con Moonraker. Il pulsante "Try now" serve a non aspettare il
+prossimo tentativo; la schermata sparisce da sola appena la connessione torna. Finché è a schermo, `KlipperDownOverlay` e `StaleDataBanner` tacciono.
 
 **Simularla in sviluppo.** Con `npm run dev` la console del browser espone `gingerview.offline()`
 (stampante spenta: schermata dopo ~5 s), `gingerview.offline('unplug')` (spina staccata: il socket

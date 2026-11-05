@@ -2,11 +2,9 @@
 	import { mdiLanDisconnect } from '@mdi/js';
 	import {
 		nextRetryAt,
-		offlineSince,
 		printerOnline,
 		retryPrinterConnection
 	} from '$lib/services/moonraker-notifier';
-	import { formatElapsed } from '$lib/utils/format';
 
 	/**
 	 * Schermata **bloccante** per la stampante irraggiungibile: spenta, in riavvio
@@ -23,30 +21,10 @@
 	 * riaccesa.
 	 */
 
-	let now = $state(Date.now());
 	let visible = $derived(!$printerOnline);
 
-	// Il contatore gira solo mentre la schermata è su: per ore di sessione normale
-	// non c'è niente da aggiornare.
-	$effect(() => {
-		if (!visible) return;
-		now = Date.now();
-		const ticker = window.setInterval(() => (now = Date.now()), 1000);
-		return () => window.clearInterval(ticker);
-	});
-
-	// Un nuovo tentativo pianificato riallinea l'orologio: senza, il conto alla
-	// rovescia partirebbe da un `now` vecchio fino a un secondo.
-	$effect(() => {
-		if ($nextRetryAt !== null) now = Date.now();
-	});
-
-	let elapsed = $derived($offlineSince === null ? '' : formatElapsed(now - $offlineSince));
-
-	/** Secondi al prossimo tentativo, `null` mentre un tentativo è in corso. */
-	let retryIn = $derived(
-		$nextRetryAt === null ? null : Math.max(0, Math.ceil(($nextRetryAt - now) / 1000))
-	);
+	/** `true` mentre un tentativo è già in corso: premere di nuovo non aggiunge niente. */
+	let checking = $derived($nextRetryAt === null);
 </script>
 
 {#if visible}
@@ -71,24 +49,11 @@
 				only the network dropped, it carries on — the printer doesn't need this page.
 			</p>
 
-			<div class="status" aria-live="polite">
-				<span class="dot" class:checking={retryIn === null || retryIn === 0} aria-hidden="true"
-				></span>
-				{#if retryIn === null || retryIn === 0}
-					Checking…
-				{:else}
-					Trying again in {retryIn}s
-				{/if}
-				{#if elapsed}
-					<span class="elapsed">· offline for {elapsed}</span>
-				{/if}
-			</div>
-
 			<button
 				type="button"
 				class="btn-primary"
 				onclick={retryPrinterConnection}
-				disabled={retryIn === null}
+				disabled={checking}
 			>
 				Try now
 			</button>
@@ -158,45 +123,6 @@
 		line-height: 1.5;
 		color: var(--color-text-soft);
 		text-align: center;
-	}
-
-	.status {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 6px;
-		margin-bottom: 16px;
-		font-size: 0.85rem;
-		color: var(--color-text-muted);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.elapsed {
-		color: var(--color-text-soft);
-	}
-
-	.dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--color-text-soft);
-	}
-
-	.dot.checking {
-		animation: pulse 1s ease-in-out infinite;
-	}
-
-	@keyframes pulse {
-		50% {
-			opacity: 0.25;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.dot.checking {
-			animation: none;
-		}
 	}
 
 	.btn-primary {

@@ -294,9 +294,6 @@ function handleNotification(data: unknown): void {
  */
 export const printerOnline = writable<boolean>(true);
 
-/** Da quando la stampante non risponde, o `null` finché risponde. */
-export const offlineSince = writable<number | null>(null);
-
 /**
  * A che punto è la riconnessione mentre la stampante è offline: quando parte il
  * prossimo tentativo, o `null` mentre ce n'è uno in corso.
@@ -365,7 +362,6 @@ function goOffline(): void {
 	offlineTimer = null;
 	if (isOffline) return;
 	isOffline = true;
-	offlineSince.set(downSince ?? Date.now());
 	printerOnline.set(false);
 	// Quello che sapevamo di Kalico valeva per una macchina che non c'è più: al
 	// ritorno `refreshKlippyState` racconterà lo stato attuale. Idem per i toast di
@@ -382,7 +378,6 @@ function goOnline(): void {
 	nextRetryAt.set(null);
 	if (!isOffline) return;
 	isOffline = false;
-	offlineSince.set(null);
 	printerOnline.set(true);
 }
 
