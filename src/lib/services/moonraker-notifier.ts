@@ -346,6 +346,16 @@ let isOffline = false;
 let downSince: number | null = null;
 let connectNow: (() => void) | null = null;
 
+/**
+ * Guasto finto, solo in sviluppo (vedi `installOfflineSimulator`):
+ * - `'off'`: stampante spenta — il socket si chiude e ogni tentativo fallisce;
+ * - `'unplug'`: spina staccata — il socket resta aperto ma non arriva più niente,
+ *   finché se ne accorge il battito; poi i tentativi falliscono come sopra.
+ */
+type SimulatedFault = 'off' | 'unplug' | null;
+let simulatedFault: SimulatedFault = null;
+let simulateNow: ((fault: SimulatedFault) => void) | null = null;
+
 function clearTimer(timer: ReturnType<typeof setTimeout> | null): null {
 	if (timer !== null) clearTimeout(timer);
 	return null;
@@ -447,6 +457,7 @@ export function startNotifierWebSocket(): () => void {
 
 		let ws: WebSocket;
 		try {
+			if (simulatedFault) throw new Error('printer offline (simulated)');
 			ws = new WebSocket(getWsUrl());
 		} catch {
 			failedAttempts++;
@@ -489,6 +500,8 @@ export function startNotifierWebSocket(): () => void {
 		};
 
 		ws.onmessage = (event) => {
+			// Spina staccata per finta: i messaggi arrivano ma è come se non ci fossero.
+			if (simulatedFault === 'unplug') return;
 			lastMessageAt = Date.now();
 			try {
 				const data = JSON.parse(event.data);
@@ -530,11 +543,17 @@ export function startNotifierWebSocket(): () => void {
 	}
 
 	connectNow = connect;
+	simulateNow = (fault) => {
+		simulatedFault = fault;
+		if (fault === 'off' && notifierWs) lost(notifierWs);
+		if (fault === null && !notifierWs) connect();
+	};
 	document.addEventListener('visibilitychange', onVisible);
 
 	function disconnect() {
 		stopped = true;
 		connectNow = null;
+		simulateNow = null;
 		document.removeEventListener('visibilitychange', onVisible);
 		reconnectTimer = clearTimer(reconnectTimer);
 		offlineTimer = clearTimer(offlineTimer);
@@ -548,4 +567,32 @@ export function startNotifierWebSocket(): () => void {
 
 	connect();
 	return disconnect;
+}
+
+/**
+ * Comandi da console per provare la schermata offline senza toccare la stampante.
+ * Solo in sviluppo: la build di produzione non li contiene.
+ *
+ * - `gingerview.offline()` — stampante spenta: schermata dopo ~5 s;
+ * - `gingerview.offline('unplug')` — spina staccata: schermata dopo 12–17 s;
+ * - `gingerview.online()` — la stampante "torna": sparisce al tentativo successivo.
+ */
+export function installOfflineSimulator(): () => void {
+	const api = {
+		offline(fault: 'off' | 'unplug' = 'off') {
+			simulateNow?.(fault);
+			return `GingerView: printer ${fault === 'off' ? 'switched off' : 'unplugged'} (simulated)`;
+		},
+		online() {
+			simulateNow?.(null);
+			return 'GingerView: printer back (simulated)';
+		}
+	};
+	(window as unknown as { gingerview?: typeof api }).gingerview = api;
+	console.info(
+		"[GingerView] simulate a printer outage: gingerview.offline() · gingerview.offline('unplug') · gingerview.online()"
+	);
+	return () => {
+		delete (window as unknown as { gingerview?: typeof api }).gingerview;
+	};
 }

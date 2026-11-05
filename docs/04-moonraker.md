@@ -615,6 +615,12 @@ scoperta: ogni pagina parla con Moonraker. Mostra da quanto la stampante è offl
 parte il prossimo tentativo, con un pulsante "Try now" per non aspettarlo; sparisce da sola appena
 la connessione torna. Finché è a schermo, `KlipperDownOverlay` e `StaleDataBanner` tacciono.
 
+**Simularla in sviluppo.** Con `npm run dev` la console del browser espone `gingerview.offline()`
+(stampante spenta: schermata dopo ~5 s), `gingerview.offline('unplug')` (spina staccata: il socket
+resta aperto ma muto, schermata dopo 12–17 s) e `gingerview.online()`. Il guasto finto passa dagli
+stessi percorsi di quello vero: i tentativi falliscono finché non si chiama `online()`. Nella build
+di produzione i comandi non ci sono.
+
 All'avvio, `fetchAndDisplayWarnings()` legge `/server/info` e mostra come toast persistenti
 i `warnings`, i `failed_components` e l'eventuale stato `error`/`shutdown` di Klippy.
 
