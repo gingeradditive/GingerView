@@ -84,6 +84,9 @@ build/                      output della build — committato nel repo (vedi doc
   è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
   `/settings`, così il pulsante che fa ripartire la macchina e le pagine diagnostiche restano
   raggiungibili (vedi [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo)).
+- **`<PrinterOfflineOverlay />`** — schermata bloccante, sopra tutto (dock e toast compresi),
+  quando la stampante non risponde affatto: spenta, in riavvio o fuori rete. Ritenta da sola e
+  sparisce al ritorno (vedi [04 — Stampante offline](04-moonraker.md#stampante-offline)).
 
 Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la dock.
 

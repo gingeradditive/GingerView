@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { mdiCloudOffOutline } from '@mdi/js';
 	import { dataStale, staleSince } from '$lib/services/moonraker-subscription';
-	import { isKlippyDown, klippyState } from '$lib/services/moonraker-notifier';
+	import { isKlippyDown, klippyState, printerOnline } from '$lib/services/moonraker-notifier';
+	import { formatElapsed } from '$lib/utils/format';
 
 	/**
 	 * Avviso di **dati non aggiornati**: la stampante ha smesso di rispondere al
@@ -14,11 +15,12 @@
 	 *
 	 * Non compare quando Kalico è fermo: lì le query falliscono per un motivo che
 	 * `KlipperDownOverlay` spiega già, per esteso e con la via d'uscita. Due avvisi
-	 * per lo stesso guasto sono uno di troppo.
+	 * per lo stesso guasto sono uno di troppo. Per la stessa ragione tace quando la
+	 * stampante non risponde affatto: lì parla `PrinterOfflineOverlay`.
 	 */
 
 	let now = $state(Date.now());
-	let visible = $derived($dataStale && !isKlippyDown($klippyState));
+	let visible = $derived($dataStale && $printerOnline && !isKlippyDown($klippyState));
 
 	// Il contatore gira solo mentre l'avviso è a schermo: fuori non c'è niente da
 	// aggiornare, e in un'applicazione che resta aperta per ore un tick al secondo
@@ -29,16 +31,6 @@
 		const ticker = window.setInterval(() => (now = Date.now()), 1000);
 		return () => window.clearInterval(ticker);
 	});
-
-	/** "12s", "3m", "1h 04m": abbastanza per capire se è un blip o un guasto. */
-	function formatElapsed(ms: number): string {
-		const seconds = Math.max(0, Math.floor(ms / 1000));
-		if (seconds < 60) return `${seconds}s`;
-		const minutes = Math.floor(seconds / 60);
-		if (minutes < 60) return `${minutes}m`;
-		const hours = Math.floor(minutes / 60);
-		return `${hours}h ${(minutes % 60).toString().padStart(2, '0')}m`;
-	}
 
 	let elapsed = $derived($staleSince === null ? '' : formatElapsed(now - $staleSince));
 </script>

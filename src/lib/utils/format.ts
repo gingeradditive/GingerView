@@ -5,7 +5,9 @@
  * - `formatClock` — "01:23:45", il cronometro della stampa in corso: cambia ogni
  *   secondo e le cifre non devono ballare;
  * - `formatDuration` — "1h 05 min", "12 min", "40 s": quanto dura (o è durato)
- *   un lavoro, nella lista file, nella cronologia e nelle statistiche.
+ *   un lavoro, nella lista file, nella cronologia e nelle statistiche;
+ * - `formatElapsed` — "12s", "3m", "1h 04m": da quanto dura un guasto (dati fermi,
+ *   stampante irraggiungibile). Abbastanza per capire se è un blip o un guasto.
  *
  * Prima c'erano tre copie con piccole differenze (una mostrava "0 min" per un
  * lavoro di 40 secondi, l'altra "40 s").
@@ -29,4 +31,13 @@ export function formatDuration(seconds?: number | null): string {
 	if (h > 0) return `${h}h ${pad2(m)} min`;
 	if (m > 0) return `${m} min`;
 	return `${Math.round(seconds)} s`;
+}
+
+export function formatElapsed(ms: number): string {
+	const seconds = Math.max(0, Math.floor(ms / 1000));
+	if (seconds < 60) return `${seconds}s`;
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return `${minutes}m`;
+	const hours = Math.floor(minutes / 60);
+	return `${hours}h ${pad2(minutes % 60)}m`;
 }

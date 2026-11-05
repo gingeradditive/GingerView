@@ -58,6 +58,11 @@ function dismissToast(id: string): void {
 	toastList.update((list) => list.filter((t) => t.id !== id));
 }
 
+/** Toglie gli avvisi di una sorgente: quando quello che dicevano non vale più. */
+function clearSource(source: ToastSource): void {
+	toastList.update((list) => list.filter((t) => t.source !== source));
+}
+
 function clearAll(): void {
 	toastList.set([]);
 }
@@ -68,6 +73,7 @@ export const toastActions = {
 	add: addToast,
 	dismiss: dismissToast,
 	clearAll,
+	clearSource,
 
 	error(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
 		return addToast({

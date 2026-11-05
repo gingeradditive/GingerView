@@ -581,7 +581,39 @@ Notifiche gestite:
 | `notify_klippy_disconnected` | toast di errore persistente, `klippyState = 'disconnected'`                                                     |
 | `notify_proc_stat_update`    | estrae `moonraker_stats.warnings`, deduplicati tramite un `Set`                                                 |
 
-Riconnessione: timer fisso a **10 secondi**, senza limite di tentativi.
+Riconnessione a 1, 2, 3, 5 secondi (l'ultima si ripete), senza limite di tentativi. Il socket è
+anche la **sentinella della stampante**: vedi [Stampante offline](#stampante-offline).
+
+### Stampante offline
+
+Il WebSocket del notifier è aperto su ogni pagina per tutta la sessione, quindi è lui a dire se la
+stampante — il Raspberry, non Kalico — risponde. Lo store `printerOnline` (con `offlineSince` e
+`nextRetryAt`) passa a `false` quando la connessione resta giù per più di **5 secondi**: la
+tolleranza assorbe i riavvii di Moonraker (aggiornamenti, cambi di config), che fanno cadere il
+socket per un secondo o due.
+
+Tre modi in cui la connessione si perde, tre modi di accorgersene:
+
+- **spegnimento pulito** (il Pi si spegne, Moonraker chiude il socket): `onclose` immediato;
+- **spina staccata o rete caduta**: il socket resta "aperto" finché TCP non si arrende, anche per
+  minuti. Il notifier manda un `server.info` ogni 5 secondi e, se per 12 secondi non arriva niente
+  (né risposta né notifica), considera la stampante sparita da quando è arrivato l'ultimo messaggio;
+- **host spento al momento del tentativo**: un `new WebSocket` verso un indirizzo muto può restare
+  in CONNECTING per oltre un minuto, quindi ogni tentativo ha un timeout di 5 secondi.
+
+Al ritorno in primo piano di una tab (telefono sbloccato) il controllo è immediato, senza aspettare
+il battito successivo.
+
+Quando la stampante va offline, `klippyState` torna a `''` e i toast `klipper` vengono tolti: valevano
+per una macchina che non c'è più (lo spegnimento annuncia sempre un `notify_klippy_disconnected`).
+Alla riconnessione `refreshKlippyState()` racconta lo stato attuale.
+
+[PrinterOfflineOverlay.svelte](../src/lib/components/PrinterOfflineOverlay.svelte), montato nel
+layout, mostra una schermata **bloccante** che copre tutto — dock, Settings e toast compresi
+(`z-index: 10100`). A differenza di `KlipperDownOverlay` qui non c'è una via d'uscita da lasciare
+scoperta: ogni pagina parla con Moonraker. Mostra da quanto la stampante è offline e tra quanto
+parte il prossimo tentativo, con un pulsante "Try now" per non aspettarlo; sparisce da sola appena
+la connessione torna. Finché è a schermo, `KlipperDownOverlay` e `StaleDataBanner` tacciono.
 
 All'avvio, `fetchAndDisplayWarnings()` legge `/server/info` e mostra come toast persistenti
 i `warnings`, i `failed_components` e l'eventuale stato `error`/`shutdown` di Klippy.
