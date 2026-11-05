@@ -4,6 +4,8 @@
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
 	import TemperaturePresetsSheet from '$lib/components/TemperaturePresetsSheet.svelte';
+	import HeaterTrendIcon from '$lib/components/HeaterTrendIcon.svelte';
+	import { describeTrend, heaterTrend } from '$lib/utils/heater-trend';
 	import { uiMode } from '$lib/stores/uiModeStore';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
@@ -46,33 +48,9 @@
 		return `${Math.round(value)}`;
 	};
 
-	const setTolerance = 5;
-
-	const isBedHeating = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			bedTemperature != null &&
-			!Number.isNaN(bedTemperature) &&
-			bedTemperature < bedTarget
-		);
-	};
-
-	const isBedReady = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			bedTemperature != null &&
-			!Number.isNaN(bedTemperature) &&
-			Math.abs(bedTemperature - bedTarget) <= setTolerance
-		);
-	};
-
-	const showBedSet = (): boolean => {
-		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
-	};
+	const bedTrend = $derived(heaterTrend(bedTemperature, bedTarget));
+	// Il target del piatto resta visibile finché non ci si arriva, in salita o in discesa.
+	const showBedSet = $derived(bedTarget != null && bedTarget > 0 && bedTrend !== 'ready');
 
 	// Il bed c'è sempre: finché le zone non si sanno il pannello è iscritto solo a
 	// quello, e si riscrive da sé — la query cambia e l'iscrizione si rifà —
@@ -140,17 +118,21 @@
 		{/each}
 	</div>
 
-	<div class="bed-section" aria-label="Bed temperature">
+	<div
+		class="bed-section"
+		aria-label={`Bed: ${formatTemperature(bedTemperature)}°, ${describeTrend(bedTrend, bedTarget)}`}
+	>
 		<div class="bed-triangle">
 			<img src="/NozzleHead.svg" alt="Nozzle" class="bed-triangle-icon" />
 		</div>
-		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
+		<div class="bed-card {bedTrend}">
 			<span class="bed-label">BED</span>
-			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
-				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}
+			<span class="bed-trend"><HeaterTrendIcon trend={bedTrend} size={16} /></span>
+			<div class={`bed-temperature-stack ${showBedSet ? 'with-set' : ''}`}>
+				<span class="bed-value {bedTrend}"
 					>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span
 				>
-				{#if showBedSet()}
+				{#if showBedSet}
 					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
 				{/if}
 			</div>
@@ -335,6 +317,18 @@
 		background: var(--color-red);
 	}
 
+	.bed-card.cooling {
+		border-color: rgba(var(--rgb-info), 0.7);
+	}
+
+	/* In alto a destra: "BED" sta in alto a sinistra, i valori in basso a destra. */
+	.bed-trend {
+		position: absolute;
+		top: calc(var(--u) * 7);
+		right: calc(var(--u) * 8);
+		display: inline-flex;
+	}
+
 	.bed-label {
 		font-size: calc(var(--u) * 12.8);
 		font-weight: 600;
@@ -374,6 +368,10 @@
 
 	.bed-value.ready {
 		color: var(--color-white);
+	}
+
+	.bed-value.cooling {
+		color: var(--color-info);
 	}
 
 	.bed-set-temperature {

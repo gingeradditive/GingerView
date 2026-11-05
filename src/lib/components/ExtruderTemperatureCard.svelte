@@ -1,4 +1,7 @@
 <script lang="ts">
+	import HeaterTrendIcon from '$lib/components/HeaterTrendIcon.svelte';
+	import { describeTrend, heaterTrend } from '$lib/utils/heater-trend';
+
 	let {
 		index,
 		temperature,
@@ -9,23 +12,10 @@
 		target: number | null;
 	} = $props();
 
-	const setTolerance = 5;
-
+	const trend = $derived(heaterTrend(temperature, target));
 	const hasSet = $derived(target != null && !Number.isNaN(target) && target > 0);
-	const isReady = $derived(
-		hasSet &&
-			temperature != null &&
-			!Number.isNaN(temperature) &&
-			Math.abs(temperature - (target as number)) <= setTolerance
-	);
-	const isHeating = $derived(
-		hasSet &&
-			!isReady &&
-			temperature != null &&
-			!Number.isNaN(temperature) &&
-			temperature < (target as number)
-	);
-	const showSet = $derived(hasSet && !isReady);
+	// Il target sotto la temperatura resta finché non ci si arriva, in salita o in discesa.
+	const showSet = $derived(hasSet && trend !== 'ready');
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
@@ -34,18 +24,19 @@
 </script>
 
 <div
-	class={`extruder-card ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
-	aria-label={`Extruder ${index} temperature`}
+	class="extruder-card {trend}"
+	aria-label={`Zone ${index}: ${formatTemperature(temperature)}°, ${describeTrend(trend, target)}`}
 >
 	<span class="index">{index}</span>
 	<div class={`temperature-stack ${showSet ? 'with-set' : ''}`}>
-		<span class={`temperature ${isHeating ? 'heating' : ''} ${isReady ? 'ready' : ''}`}
+		<span class="temperature {trend}"
 			>{formatTemperature(temperature)}<span class="degree-symbol">°</span></span
 		>
 		{#if showSet}
 			<span class="set-temperature">{formatTemperature(target)}</span>
 		{/if}
 	</div>
+	<span class="trend-slot"><HeaterTrendIcon {trend} size={13} /></span>
 </div>
 
 <style>
@@ -76,6 +67,19 @@
 		background: var(--color-red);
 	}
 
+	.extruder-card.cooling {
+		border-color: rgba(var(--rgb-info), 0.7);
+	}
+
+	/* Al bordo destro, in asse con la temperatura: a sinistra c'è il numero della zona. */
+	.trend-slot {
+		position: absolute;
+		top: 50%;
+		right: calc(var(--u, 1px) * 6);
+		transform: translateY(-50%);
+		display: inline-flex;
+	}
+
 	.index {
 		font-size: calc(var(--u, 1px) * 12.8);
 		font-weight: 500;
@@ -99,6 +103,18 @@
 		transform: translate(-50%, -43%);
 	}
 
+	/* Con l'icona a destra il numero si sposta un poco a sinistra: con tre cifre il "°" la
+	   toccava. */
+	.extruder-card.heating .temperature-stack,
+	.extruder-card.cooling .temperature-stack {
+		transform: translate(calc(-50% - var(--u, 1px) * 5), -50%);
+	}
+
+	.extruder-card.heating .temperature-stack.with-set,
+	.extruder-card.cooling .temperature-stack.with-set {
+		transform: translate(calc(-50% - var(--u, 1px) * 5), -43%);
+	}
+
 	.temperature {
 		font-size: calc(var(--u, 1px) * 24);
 		font-weight: 600;
@@ -120,6 +136,10 @@
 
 	.temperature.ready {
 		color: var(--color-white);
+	}
+
+	.temperature.cooling {
+		color: var(--color-info);
 	}
 
 	.set-temperature {

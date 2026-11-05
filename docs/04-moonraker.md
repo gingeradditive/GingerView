@@ -326,6 +326,22 @@ Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
   ogni zona (0–300 °C, vuoto o 0 = spenta) e per il piatto (0–110 °C), applicato solo con
   **Apply**. In `simple` il disegno non si tocca e la card è di sola lettura.
 
+**Scalda o si raffredda.** Ogni banda della card (zona dell'ugello o piatto) mostra dove sta
+andando, in tutte e due le modalità, con
+[heater-trend.ts](../src/lib/utils/heater-trend.ts) e
+[HeaterTrendIcon.svelte](../src/lib/components/HeaterTrendIcon.svelte). Si decide dal target e non
+dalla variazione nel tempo, così le oscillazioni a regime non fanno tremolare l'icona:
+
+| Stato     | Quando                                                        | Banda                                     |
+| --------- | ------------------------------------------------------------- | ----------------------------------------- |
+| `heating` | target > 0, temperatura sotto di più di 5 °C                  | bordo e numero rossi, fiamma che tremola  |
+| `ready`   | target > 0, entro ±5 °C                                       | piena rossa, nessuna icona                |
+| `cooling` | target > 0 più basso di oltre 5 °C, o spenta ma sopra i 50 °C | bordo e numero blu, fiocco che gira piano |
+| `idle`    | spenta e sotto i 50 °C                                        | grigia, nessuna icona                     |
+
+Con "riduci movimento" le icone restano ferme. L'`aria-label` di ogni banda dice lo stato
+("Zone 3: 189°, cooling down to 150°").
+
 **Preset di temperatura.** Nell'elenco del primo popup il preset che coincide con i target
 attuali della macchina è segnato **Active**; sotto c'è il link "Manage presets" verso Settings.
 
