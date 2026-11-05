@@ -306,10 +306,12 @@ totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 
 ### Preferenze di GingerView
 
-| Endpoint                                                     | Usato da      | Scopo                                |
-| ------------------------------------------------------------ | ------------- | ------------------------------------ |
-| `GET /server/database/item?namespace=gingerview&key=ui_mode` | `uiModeStore` | Legge la modalità Simple/Advanced    |
-| `POST /server/database/item`                                 | `uiModeStore` | La salva (`{namespace, key, value}`) |
+| Endpoint                                                                 | Usato da                  | Scopo                                        |
+| ------------------------------------------------------------------------ | ------------------------- | -------------------------------------------- |
+| `GET /server/database/item?namespace=gingerview&key=ui_mode`             | `uiModeStore`             | Legge la modalità Simple/Advanced            |
+| `POST /server/database/item`                                             | `uiModeStore`             | La salva (`{namespace, key, value}`)         |
+| `GET /server/database/item?namespace=gingerview&key=temperature_presets` | `temperaturePresetsStore` | Legge i preset di temperatura personalizzati |
+| `POST /server/database/item`                                             | `temperaturePresetsStore` | Salva l'elenco intero, a ogni modifica       |
 
 Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
 della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa. Chiave
@@ -322,6 +324,25 @@ Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
   `ExtruderTemperatureModal` — target libero per ogni zona dell'ugello (0–300 °C, vuoto o 0 =
   spenta), applicato solo con **Apply** in un unico `SET_HEATER_TEMPERATURE` per zona; **All off**
   le spegne tutte. In `simple` la barra non c'è e la card è di sola lettura.
+
+**Preset di temperatura.** In cima a `ExtruderTemperatureModal` c'è una riga di chip
+([TemperaturePresetChips.svelte](../src/lib/components/TemperaturePresetChips.svelte)): un tocco
+riempie zone e piatto, **senza inviare niente** (si applica sempre con Apply). Il chip che coincide
+con i campi è evidenziato; l'ultimo, **Save**, salva i campi attuali come preset nuovo.
+
+- **Di base**: PLA (zone 200 °C, piatto 60 °C) e PETG (zona 1 200 °C, le altre 220 °C, piatto
+  80 °C). Le zone vengono dai `materialPresets` di Heat & Extrude in `movementStore.ts`, che ora
+  hanno anche `bedC`; non si salvano né si modificano.
+- **Personalizzati**: chiave `temperature_presets`, un array di
+  `{ id, name, zones: { extruder: 230, extruder1: 240, … }, bed }` (0 = spenta), riletto a ogni
+  apertura del popup e della pagina. Si gestiscono da
+  [`/settings/temperature-presets`](../src/routes/settings/temperature-presets/+page.svelte):
+  nuovo, modifica, elimina. Nomi unici senza distinguere maiuscole (PLA/PETG compresi). Se il
+  salvataggio fallisce l'elenco torna com'era e compare un toast.
+- Un preset salvato su una macchina con meno zone lascia invariate, nei campi, quelle che non conosce.
+
+Il database si legge e si scrive con
+[moonraker-database.ts](../src/lib/services/moonraker-database.ts) (`getDbItem` / `setDbItem`).
 
 ### Statistics
 

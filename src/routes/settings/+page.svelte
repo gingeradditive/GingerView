@@ -10,6 +10,7 @@
 		History,
 		ChartColumn,
 		Globe,
+		Thermometer,
 		ExternalLink,
 		ChevronRight
 	} from 'lucide-svelte';
@@ -58,6 +59,14 @@
 			icon: SquareFunction,
 			kind: 'route',
 			href: '/settings/macros'
+		},
+		{
+			id: 'temperature-presets',
+			title: 'Temperature presets',
+			description: 'PLA, PETG and your own, for the dashboard',
+			icon: Thermometer,
+			kind: 'route',
+			href: '/settings/temperature-presets'
 		},
 		{
 			id: 'update',

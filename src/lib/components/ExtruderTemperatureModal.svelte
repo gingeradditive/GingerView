@@ -2,7 +2,21 @@
 	import { Power } from 'lucide-svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import ZoneTemperatureEditor from '$lib/components/ZoneTemperatureEditor.svelte';
+	import TemperaturePresetChips from '$lib/components/TemperaturePresetChips.svelte';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
+	import {
+		MAX_BED_TEMPERATURE,
+		MAX_NOZZLE_TEMPERATURE as MAX_TEMPERATURE,
+		builtInPresets,
+		customTemperaturePresets,
+		isPresetNameTaken,
+		loadTemperaturePresets,
+		matchesPreset,
+		newPresetId,
+		presetTargets,
+		saveTemperaturePreset,
+		type HeaterPreset
+	} from '$lib/stores/temperaturePresetsStore';
 
 	/**
 	 * Temperature libere delle zone dell'ugello e del piatto — solo in modalità
@@ -10,6 +24,9 @@
 	 *
 	 * I campi partono dai target attuali e diventano effettivi solo con Apply:
 	 * nessun comando parte mentre si scrive. Campo vuoto o 0 = zona spenta.
+	 *
+	 * In cima i preset (PLA, PETG e quelli salvati): un tocco riempie i campi, sempre
+	 * senza inviare niente. "Save" salva i campi attuali come preset nuovo.
 	 */
 	let {
 		isOpen,
@@ -30,13 +47,6 @@
 		onClose: () => void;
 	} = $props();
 
-	// Kalico accetta fino a max_temp (1000 nella config attuale, valore di
-	// calibrazione): l'interfaccia si ferma a un limite da pellet, lo stesso
-	// del popup Custom di Heat & Extrude.
-	const MAX_TEMPERATURE = 300;
-	// max_temp di [heater_bed] in 30_bed.cfg.
-	const MAX_BED_TEMPERATURE = 110;
-
 	let inputs = $state<(number | null)[]>([]);
 	let bedInput = $state<number | null>(null);
 	let busy = $state(false);
@@ -51,6 +61,7 @@
 				return target != null && target > 0 ? Math.round(target) : null;
 			});
 			bedInput = bedTarget != null && bedTarget > 0 ? Math.round(bedTarget) : null;
+			loadTemperaturePresets();
 		}
 		wasOpen = isOpen;
 	});
@@ -60,6 +71,25 @@
 
 	const bedValid = $derived(isValid(bedInput, MAX_BED_TEMPERATURE));
 	const allValid = $derived(inputs.every((value) => isValid(value)) && bedValid);
+
+	const presets = $derived([...builtInPresets(zones), ...$customTemperaturePresets]);
+	const activeId = $derived(
+		presets.find((preset) => matchesPreset(preset, zones, inputs, bedInput))?.id ?? null
+	);
+	const anyOn = $derived(inputs.some((value) => (value ?? 0) > 0) || (bedInput ?? 0) > 0);
+
+	const pickPreset = (preset: HeaterPreset): void => {
+		inputs = presetTargets(preset, zones, inputs);
+		bedInput = preset.bed > 0 ? preset.bed : null;
+	};
+
+	const savePreset = (name: string): Promise<boolean> =>
+		saveTemperaturePreset({
+			id: newPresetId(),
+			name,
+			zones: Object.fromEntries(zones.map((zone, index) => [zone, inputs[index] ?? 0])),
+			bed: bedInput ?? 0
+		});
 
 	const send = async (values: (number | null)[], bed: number | null): Promise<void> => {
 		busy = true;
@@ -95,6 +125,16 @@
 				Target for each nozzle zone and the bed, in °C. Leave it empty or type 0 to turn it off.
 			</p>
 		{/snippet}
+
+		<TemperaturePresetChips
+			{presets}
+			{activeId}
+			disabled={busy}
+			canSave={allValid && anyOn}
+			isNameTaken={(name) => isPresetNameTaken(name, zones)}
+			onPick={pickPreset}
+			onSave={savePreset}
+		/>
 
 		<ZoneTemperatureEditor
 			bind:values={inputs}
