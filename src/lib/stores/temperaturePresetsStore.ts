@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { getDbItem, setDbItem } from '$lib/services/moonraker-database';
+import { sendGcode } from '$lib/services/moonraker-gcode';
 import { materialPresets } from '$lib/stores/movementStore';
 import { toastActions } from '$lib/stores/toastStore';
 
@@ -7,11 +8,14 @@ import { toastActions } from '$lib/stores/toastStore';
  * Preset di temperatura del popup "Temperatures" della dashboard: una temperatura per
  * zona dell'ugello più il piatto, da mettere nei campi con un tocco.
  *
+ * Si aprono toccando il disegno dell'estrusore (modalità advanced): un tocco su un preset
+ * lo applica subito; "Custom" porta ai campi liberi di `ExtruderTemperatureModal`.
+ *
  * Due famiglie:
  * - **di base** (PLA, PETG): costanti, costruite da `materialPresets` — gli stessi valori
  *   di Heat & Extrude — per le zone che la macchina ha davvero. Non si modificano;
  * - **personalizzati**: salvati nel database di Moonraker (`gingerview` /
- *   `temperature_presets`), quindi uguali da ogni dispositivo. Si creano dal popup o da
+ *   `temperature_presets`), quindi uguali da ogni dispositivo. Si creano da
  *   Settings → Temperature presets.
  *
  * Una temperatura a 0 vuol dire "spenta", come nei campi del popup.
@@ -143,23 +147,7 @@ export function isPresetNameTaken(name: string, zones: string[], exceptId?: stri
 	);
 }
 
-/**
- * I valori da mettere nei campi del popup (`null` = spenta). Una zona che il preset non
- * conosce — salvato su una macchina con meno zone — resta com'era.
- */
-export function presetTargets(
-	preset: HeaterPreset,
-	zones: string[],
-	current: (number | null)[]
-): (number | null)[] {
-	return zones.map((zone, index) => {
-		const value = preset.zones[zone];
-		if (value === undefined) return current[index] ?? null;
-		return value > 0 ? value : null;
-	});
-}
-
-/** I campi coincidono con il preset? Serve a evidenziare il chip giusto. */
+/** I valori coincidono con il preset? Serve a segnare quello attivo. */
 export function matchesPreset(
 	preset: HeaterPreset,
 	zones: string[],
@@ -180,4 +168,22 @@ export function presetSummary(preset: HeaterPreset): string {
 		nozzle = low === high ? `${low}°` : `${low}–${high}°`;
 	}
 	return `${nozzle} · bed ${preset.bed > 0 ? `${preset.bed}°` : 'off'}`;
+}
+
+/**
+ * Manda i target a tutte le zone dell'ugello e al piatto in un solo script (`null` o 0 =
+ * spenta). `false` se Kalico l'ha rifiutato: il toast lo mostra già `sendGcode`.
+ */
+export function applyHeaterTargets(
+	zones: string[],
+	values: (number | null)[],
+	bed: number | null
+): Promise<boolean> {
+	const script = [
+		...zones.map(
+			(zone, index) => `SET_HEATER_TEMPERATURE HEATER=${zone} TARGET=${values[index] ?? 0}`
+		),
+		`SET_HEATER_TEMPERATURE HEATER=heater_bed TARGET=${bed ?? 0}`
+	].join('\n');
+	return sendGcode(script, "Couldn't set the temperatures");
 }

@@ -25,8 +25,8 @@
 	 * Settings → Temperature presets: i preset del popup temperature della dashboard.
 	 *
 	 * PLA e PETG sono di base e si guardano soltanto. Quelli personalizzati si creano,
-	 * modificano ed eliminano qui (o si salvano direttamente dal popup) e stanno sulla
-	 * stampante, quindi valgono da ogni dispositivo.
+	 * modificano ed eliminano solo qui e stanno sulla stampante, quindi valgono da ogni
+	 * dispositivo. Nella dashboard si applicano con un tocco (`TemperaturePresetsSheet`).
 	 */
 
 	let zones = $state<string[]>([]);
@@ -141,8 +141,8 @@
 		</header>
 
 		<p class="intro">
-			One tap in the dashboard's Temperatures popup fills every nozzle zone and the bed. Nothing
-			heats up until you press Apply there.
+			Tap the extruder on the dashboard and pick a preset: every nozzle zone and the bed go straight
+			to these targets.
 		</p>
 
 		{#if loading}
@@ -173,9 +173,7 @@
 				{#if $customTemperaturePresets.length === 0}
 					<div class="empty">
 						<p>No custom presets yet.</p>
-						<p class="empty-hint">
-							Create one here, or set the temperatures in the dashboard popup and tap Save.
-						</p>
+						<p class="empty-hint">Create one with New preset.</p>
 					</div>
 				{:else}
 					<ul class="list">

@@ -318,28 +318,27 @@ della macchina, quindi ogni telefono, tablet o computer che si collega vede la s
 mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
 Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
 
-- **Dashboard, card temperature**: barra **EXTRUDER · SET ›** in fondo alla card (lo stesso
-  `DashboardCardBar` della barra FEEDER nella card PELLET; bordo rosso se almeno una zona ha un
-  target) che apre
-  `ExtruderTemperatureModal` — target libero per ogni zona dell'ugello (0–300 °C, vuoto o 0 =
-  spenta), applicato solo con **Apply** in un unico `SET_HEATER_TEMPERATURE` per zona; **All off**
-  le spegne tutte. In `simple` la barra non c'è e la card è di sola lettura.
+- **Dashboard, card temperature**: il disegno dell'estrusore (zone, ugello e piatto) diventa un
+  pulsante, con un piccolo badge in alto a destra che lo segnala. Il tocco apre
+  `TemperaturePresetsSheet`, l'elenco dei preset: un tocco su un preset lo **applica subito**
+  (un `SET_HEATER_TEMPERATURE` per zona più il piatto, `applyHeaterTargets`) e chiude; **Turn all
+  off** spegne tutto. L'ultima voce, **Custom**, apre `ExtruderTemperatureModal`: target libero per
+  ogni zona (0–300 °C, vuoto o 0 = spenta) e per il piatto (0–110 °C), applicato solo con
+  **Apply**. In `simple` il disegno non si tocca e la card è di sola lettura.
 
-**Preset di temperatura.** In cima a `ExtruderTemperatureModal` c'è una riga di chip
-([TemperaturePresetChips.svelte](../src/lib/components/TemperaturePresetChips.svelte)): un tocco
-riempie zone e piatto, **senza inviare niente** (si applica sempre con Apply). Il chip che coincide
-con i campi è evidenziato; l'ultimo, **Save**, salva i campi attuali come preset nuovo.
+**Preset di temperatura.** Nell'elenco del primo popup il preset che coincide con i target
+attuali della macchina è segnato **Active**; sotto c'è il link "Manage presets" verso Settings.
 
 - **Di base**: PLA (zone 200 °C, piatto 60 °C) e PETG (zona 1 200 °C, le altre 220 °C, piatto
   80 °C). Le zone vengono dai `materialPresets` di Heat & Extrude in `movementStore.ts`, che ora
   hanno anche `bedC`; non si salvano né si modificano.
-- **Personalizzati**: chiave `temperature_presets`, un array di
+- **Personalizzati**: si creano solo da Settings. Chiave `temperature_presets`, un array di
   `{ id, name, zones: { extruder: 230, extruder1: 240, … }, bed }` (0 = spenta), riletto a ogni
   apertura del popup e della pagina. Si gestiscono da
   [`/settings/temperature-presets`](../src/routes/settings/temperature-presets/+page.svelte):
   nuovo, modifica, elimina. Nomi unici senza distinguere maiuscole (PLA/PETG compresi). Se il
   salvataggio fallisce l'elenco torna com'era e compare un toast.
-- Un preset salvato su una macchina con meno zone lascia invariate, nei campi, quelle che non conosce.
+- Un preset salvato su una macchina con meno zone spegne quelle che non conosce.
 
 Il database si legge e si scrive con
 [moonraker-database.ts](../src/lib/services/moonraker-database.ts) (`getDbItem` / `setDbItem`).

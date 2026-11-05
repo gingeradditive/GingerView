@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight } from 'lucide-svelte';
-	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
+	import { SlidersHorizontal } from 'lucide-svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
+	import TemperaturePresetsSheet from '$lib/components/TemperaturePresetsSheet.svelte';
 	import { uiMode } from '$lib/stores/uiModeStore';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
@@ -36,11 +36,10 @@
 	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
-	// Solo in modalità avanzata: in semplice il pannello è di sola lettura.
-	let showTemperatureModal = $state(false);
-	let showTemperatureBar = $derived($uiMode === 'advanced' && zoneKeys.length > 0);
-	// La barra è "accesa" come quella del feeder quando almeno una zona scalda.
-	let anyZoneHeating = $derived(extruderTargets.some((target) => target != null && target > 0));
+	// Solo in modalità avanzata il disegno si tocca: apre i preset, e da lì "Custom" apre i
+	// campi liberi. In semplice il pannello è di sola lettura.
+	let sheet = $state<'presets' | 'custom' | null>(null);
+	let canSet = $derived($uiMode === 'advanced' && zoneKeys.length > 0);
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
@@ -130,11 +129,7 @@
 	);
 </script>
 
-<section
-	class="temperature-panel"
-	class:with-bar={showTemperatureBar}
-	aria-label="Nozzle and bed temperatures"
->
+{#snippet drawing()}
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
@@ -161,28 +156,45 @@
 			</div>
 		</div>
 	</div>
-	{#if showTemperatureBar}
-		<DashboardCardBar
-			label="EXTRUDER"
-			active={anyZoneHeating}
-			ariaLabel="Set the extruder and bed temperatures"
-			hint="Pick a target for each nozzle zone and the bed"
-			onclick={() => (showTemperatureModal = true)}
+{/snippet}
+
+<section class="temperature-panel" aria-label="Nozzle and bed temperatures">
+	{#if canSet}
+		<!-- Tutto il disegno è il pulsante: zone, ugello e piatto. Il badge in alto a destra
+		     dice che si tocca, ora che la barra "EXTRUDER · SET" non c'è più. -->
+		<button
+			type="button"
+			class="drawing interactive"
+			aria-label="Set the extruder and bed temperatures"
+			onclick={() => (sheet = 'presets')}
 		>
-			SET
-			<ChevronRight size={18} />
-		</DashboardCardBar>
+			{@render drawing()}
+		</button>
+		<span class="set-badge" aria-hidden="true"><SlidersHorizontal size={16} /></span>
+	{:else}
+		<div class="drawing">
+			{@render drawing()}
+		</div>
 	{/if}
 </section>
 
+<TemperaturePresetsSheet
+	isOpen={sheet === 'presets'}
+	zones={zoneKeys}
+	targets={extruderTargets}
+	{bedTarget}
+	onClose={() => (sheet = null)}
+	onCustom={() => (sheet = 'custom')}
+/>
+
 <ExtruderTemperatureModal
-	isOpen={showTemperatureModal}
+	isOpen={sheet === 'custom'}
 	zones={zoneKeys}
 	temperatures={extruderTemperatures}
 	targets={extruderTargets}
 	{bedTemperature}
 	{bedTarget}
-	onClose={() => (showTemperatureModal = false)}
+	onClose={() => (sheet = null)}
 />
 
 <style>
@@ -209,11 +221,62 @@
 		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
 	}
 
-	/* Spazio per la barra delle temperature (DashboardCardBar, 64px) più il
-	   respiro del padding: il disegno si ridimensiona nel resto, perché `--u`
-	   si misura sull'area dei contenuti. */
-	.temperature-panel.with-bar {
-		padding-bottom: 80px;
+	/* Il contenitore del disegno: un div in semplice, un pulsante in advanced. Non
+	   aggiunge misure sue, così `--u` resta quello del pannello. */
+	.drawing {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	button.drawing {
+		padding: 8px;
+		margin: -8px;
+		border: none;
+		border-radius: 14px;
+		background: transparent;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+		transition:
+			background-color 0.15s,
+			transform 0.1s;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	button.drawing:hover {
+		background: var(--color-background);
+	}
+
+	button.drawing:active {
+		transform: scale(0.98);
+	}
+
+	button.drawing:focus-visible {
+		outline: 2px solid var(--color-red);
+		outline-offset: 2px;
+	}
+
+	.set-badge {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 10px;
+		background: var(--color-surface-sunken);
+		color: var(--color-text-muted);
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		button.drawing {
+			transition: none;
+		}
 	}
 
 	.extruders {
