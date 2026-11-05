@@ -30,20 +30,22 @@
 		font-size: 0.8rem;
 		font-weight: 600;
 		letter-spacing: 0.01em;
-		color: var(--color-text-muted);
+		/* A metà tra --color-text-muted e --color-text-soft: scuro, ma un filo meno del testo. */
+		--swipe-hint-color: color-mix(in srgb, var(--color-text-muted) 50%, var(--color-text-soft));
+		color: var(--swipe-hint-color);
 		white-space: nowrap;
 		user-select: none;
 		pointer-events: none;
 	}
 
 	.swipe-hint-label :global(.arrow) {
-		color: var(--color-text-muted);
+		color: var(--swipe-hint-color);
 	}
 
 	/* Il dito va e viene in orizzontale, piano: mima il gesto senza attirare troppo. */
 	.finger {
 		display: inline-flex;
-		color: var(--color-text-secondary);
+		color: var(--color-text-muted);
 		animation: finger-swipe 2.4s ease-in-out infinite;
 	}
 
