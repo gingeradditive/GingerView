@@ -231,11 +231,12 @@ stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai carosell
 [MovementCarousel](../src/lib/components/MovementCarousel.svelte)) danno tre segnali, perché gli
 utenti non capivano dal cellulare che c'erano altre card:
 
-- **card vicine visibili**: la slide è all'84%, centrata, e il carosello esce dai 16px di margine
-  della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati. In Movement,
-  con due sole card, Embla non può fare il loop a quella larghezza: lì `loop: false`, la prima
-  card sta a sinistra e la seconda spunta a destra;
-- **scritta "← Swipe to see more →"** con il dito che mima il gesto
+- **card vicine visibili** (solo dashboard): la slide è all'84%, centrata, e il carosello esce dai
+  16px di margine della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati.
+  In Movement no: con due sole card Embla regge il loop solo se ognuna è larga quanto lo schermo,
+  e il loop infinito conta di più;
+- **scritta "← Swipe to see more →"** in grigio scuro, solo testo (niente sfondo: sembrava un
+  pulsante), con il dito che mima il gesto
   ([CarouselSwipeHint.svelte](../src/lib/components/CarouselSwipeHint.svelte)) al posto dei
   puntini. Non è un comando e non dice su quale card si è; si nasconde dove le card sono tutte a
   schermo;

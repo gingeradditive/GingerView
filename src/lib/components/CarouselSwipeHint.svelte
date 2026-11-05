@@ -20,32 +20,30 @@
 </p>
 
 <style>
+	/* Solo testo, senza sfondo né bordo: con la pillola bianca sembrava un pulsante. */
 	.swipe-hint-label {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		margin: 0;
-		padding: 6px 14px;
-		border-radius: 999px;
-		background: var(--color-white);
-		box-shadow: var(--shadow-float);
+		padding: 4px 0;
 		font-size: 0.8rem;
 		font-weight: 600;
 		letter-spacing: 0.01em;
-		color: var(--color-text-soft);
+		color: var(--color-text-muted);
 		white-space: nowrap;
 		user-select: none;
 		pointer-events: none;
 	}
 
 	.swipe-hint-label :global(.arrow) {
-		color: var(--color-text-subtle);
+		color: var(--color-text-muted);
 	}
 
 	/* Il dito va e viene in orizzontale, piano: mima il gesto senza attirare troppo. */
 	.finger {
 		display: inline-flex;
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 		animation: finger-swipe 2.4s ease-in-out infinite;
 	}
 

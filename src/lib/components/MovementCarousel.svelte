@@ -22,11 +22,11 @@
 
 	const options: EmblaOptionsType = {
 		axis: 'x',
-		// Niente loop: con due card all'84% Embla non riesce a farle girare (servirebbe più
-		// contenuto di uno schermo e una card), e lo swipe oltre l'ultima non portava da nessuna
-		// parte. Senza loop la prima sta a sinistra con la seconda che spunta a destra, e viceversa.
-		loop: false,
-		align: 'center',
+		// Loop infinito come nella dashboard. Con due sole card Embla lo regge solo se ognuna è
+		// larga quanto lo schermo: qui niente card vicine ai lati (vedi DashboardCarousel), a far
+		// capire che si scorre restano la scritta e la spinta di invito.
+		loop: true,
+		align: 'start',
 		// Con tutto a schermo il carosello si spegne: niente trascinamento a vuoto.
 		// Da tablet in su le due card stanno a schermo: carosello spento, allineato come prima.
 		breakpoints: { [allVisibleQuery]: { active: false, align: 'start' } }
@@ -117,25 +117,6 @@
 	@media (min-width: 768px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 50%;
-		}
-	}
-
-	/* Telefono, una card alla volta: la card al centro all'84% e le vicine che spuntano ai lati,
-	   così si vede che si scorre. Il carosello esce dai 16px di margine della pagina e arriva al
-	   bordo dello schermo; tra le card 12px invece di 24, divisi a metà sui due lati. */
-	@media (max-width: 767.98px), (max-height: 599.98px) {
-		.embla {
-			width: calc(100% + 32px);
-			margin-inline: -16px;
-		}
-
-		.embla__container {
-			margin-left: 0;
-		}
-
-		.embla__slide {
-			flex: 0 0 84%;
-			padding: 0 6px;
 		}
 	}
 
