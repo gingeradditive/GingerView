@@ -332,14 +332,14 @@ andando, in tutte e due le modalità, con
 [HeaterTrendIcon.svelte](../src/lib/components/HeaterTrendIcon.svelte). Si decide dal target e non
 dalla variazione nel tempo, così le oscillazioni a regime non fanno tremolare l'icona:
 
-| Stato     | Quando                                                        | Banda                                     |
-| --------- | ------------------------------------------------------------- | ----------------------------------------- |
-| `heating` | target > 0, temperatura sotto di più di 5 °C                  | bordo e numero rossi, fiamma che tremola  |
-| `ready`   | target > 0, entro ±5 °C                                       | piena rossa, nessuna icona                |
-| `cooling` | target > 0 più basso di oltre 5 °C, o spenta ma sopra i 50 °C | bordo e numero blu, fiocco che gira piano |
-| `idle`    | spenta e sotto i 50 °C                                        | grigia, nessuna icona                     |
+| Stato     | Quando                                                        | Banda                                      |
+| --------- | ------------------------------------------------------------- | ------------------------------------------ |
+| `heating` | target > 0, temperatura sotto di più di 5 °C                  | bordo e numero rossi, freccia su che sale  |
+| `ready`   | target > 0, entro ±5 °C                                       | piena rossa, nessuna icona                 |
+| `cooling` | target > 0 più basso di oltre 5 °C, o spenta ma sopra i 50 °C | bordo e numero blu, freccia giù che scende |
+| `idle`    | spenta e sotto i 50 °C                                        | grigia, nessuna icona                      |
 
-Con "riduci movimento" le icone restano ferme. L'`aria-label` di ogni banda dice lo stato
+Con "riduci movimento" le frecce restano ferme. L'`aria-label` di ogni banda dice lo stato
 ("Zone 3: 189°, cooling down to 150°").
 
 **Preset di temperatura.** Nell'elenco del primo popup il preset che coincide con i target

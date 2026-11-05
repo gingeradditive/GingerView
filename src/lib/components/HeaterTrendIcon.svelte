@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { Flame, Snowflake } from 'lucide-svelte';
+	import { ArrowDown, ArrowUp } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
 	import type { HeaterTrend } from '$lib/utils/heater-trend';
 
 	/**
-	 * L'icona che dice dove va una banda della dashboard: fiamma se si scalda, fiocco di neve
-	 * se si raffredda, niente a temperatura o da spenta e fredda.
+	 * L'icona che dice dove va una banda della dashboard: freccia su (rossa) se si scalda,
+	 * freccia giù (blu) se si raffredda, niente a temperatura o da spenta e fredda.
 	 *
-	 * Animazioni leggere apposta: le bande sono tante e l'occhio deve restare sui numeri. La
-	 * fiamma tremola, il fiocco gira piano; con "riduci movimento" restano ferme.
+	 * Animazione leggera apposta: le bande sono tante e l'occhio deve restare sui numeri. La
+	 * freccia scivola di poco nella sua direzione e svanisce, poi riparte; con "riduci
+	 * movimento" resta ferma.
 	 *
 	 * `size` è in `--u`, l'unità del disegno della card (vedi DashboardTemperaturePanel), così
 	 * l'icona si rimpicciolisce insieme alle bande sugli schermi bassi.
@@ -24,9 +25,9 @@
 		transition:fade={{ duration: 200 }}
 	>
 		{#if trend === 'heating'}
-			<Flame strokeWidth={2.4} />
+			<ArrowUp strokeWidth={2.8} />
 		{:else}
-			<Snowflake strokeWidth={2.4} />
+			<ArrowDown strokeWidth={2.8} />
 		{/if}
 	</span>
 {/if}
@@ -55,44 +56,40 @@
 		color: var(--color-info);
 	}
 
-	/* Il tremolio parte dalla base, come una fiamma vera. */
+	/* Di quanto scivola la freccia: una frazione della sua altezza, così vale a ogni misura. */
 	.heating :global(svg) {
-		transform-origin: 50% 90%;
-		animation: flicker 1.2s ease-in-out infinite;
+		animation: rise 1.6s ease-in-out infinite;
 	}
 
 	.cooling :global(svg) {
-		animation: drift 8s linear infinite;
+		animation: sink 1.6s ease-in-out infinite;
 	}
 
-	@keyframes flicker {
-		0%,
-		100% {
-			transform: scaleY(1) scaleX(1);
-			opacity: 1;
-		}
-		30% {
-			transform: scaleY(1.12) scaleX(0.95);
-			opacity: 0.85;
-		}
-		60% {
-			transform: scaleY(0.96) scaleX(1.03);
-			opacity: 0.95;
-		}
-	}
-
-	@keyframes drift {
+	@keyframes rise {
 		0% {
-			transform: rotate(0deg);
-			opacity: 1;
+			transform: translateY(18%);
+			opacity: 0.55;
 		}
 		50% {
-			transform: rotate(180deg);
-			opacity: 0.7;
+			opacity: 1;
 		}
 		100% {
-			transform: rotate(360deg);
+			transform: translateY(-18%);
+			opacity: 0.55;
+		}
+	}
+
+	@keyframes sink {
+		0% {
+			transform: translateY(-18%);
+			opacity: 0.55;
+		}
+		50% {
 			opacity: 1;
+		}
+		100% {
+			transform: translateY(18%);
+			opacity: 0.55;
 		}
 	}
 
