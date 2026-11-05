@@ -226,6 +226,28 @@ stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai carosell
 (`DashboardControlPanel`, `DashboardQuickActionsPanel`, `DashboardPrintJobPanel`) non passano
 `visible` e restano sempre iscritti.
 
+**Far capire che si scorre (telefono).** Nel layout a una card i caroselli
+([DashboardCarousel](../src/lib/components/DashboardCarousel.svelte),
+[MovementCarousel](../src/lib/components/MovementCarousel.svelte)) danno tre segnali, perché gli
+utenti non capivano dal cellulare che c'erano altre card:
+
+- **card vicine visibili**: la slide è all'84%, centrata, e il carosello esce dai 16px di margine
+  della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati. In Movement,
+  con due sole card, Embla non può fare il loop a quella larghezza: lì `loop: false`, la prima
+  card sta a sinistra e la seconda spunta a destra;
+- **scritta "← Swipe to see more →"** con il dito che mima il gesto
+  ([CarouselSwipeHint.svelte](../src/lib/components/CarouselSwipeHint.svelte)) al posto dei
+  puntini. Non è un comando e non dice su quale card si è; si nasconde dove le card sono tutte a
+  schermo;
+- **spinta di invito** ([swipe-hint.ts](../src/lib/actions/swipe-hint.ts)): poco dopo l'apertura le
+  card scivolano verso sinistra e tornano, due volte, finché l'utente non ha fatto uno swipe vero
+  su quel dispositivo (`gingerview.swipe-learned` in `localStorage`). Anima `translate` e non il
+  `transform` di Embla, quindi la card selezionata non cambia. Mai con "riduci movimento" né da
+  tablet in su.
+
+Da tablet in su il layout resta quello di prima (tre o cinque card affiancate, allineate a
+sinistra); nella dashboard a tre card la scritta compare al posto dei puntini.
+
 La query è una **funzione** e non una stringa perché non tutti i pannelli sanno da subito cosa
 chiedere: `DashboardTemperaturePanel` scopre le zone dell'ugello dalla macchina, e quando la
 risposta arriva l'iscrizione si rifà da sé. Il resto — una sola connessione, l'unione di quello

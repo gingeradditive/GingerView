@@ -271,8 +271,8 @@ diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
    [DashboardCarousel.svelte](../src/lib/components/DashboardCarousel.svelte), passando al
    pannello `visible={isInView(<indice della slide>)}`: è così che l'iscrizione si ferma quando
    la slide esce dalla viewport.
-3. Aggiorna `pageCount` (usato per i pallini di navigazione) e verifica `startIndex`, che
-   determina quale slide è visibile all'apertura.
+3. Aggiorna `pageCount` e verifica `startIndex`, che determina quale slide è visibile
+   all'apertura.
 4. Controlla i breakpoint responsive (vedi [02 — Breakpoint](02-architettura.md#breakpoint)):
    sopra 1200px di larghezza e 600px di altezza il carosello mostra 5 slide con `flex: 0 0 20%`;
    con un numero diverso di pannelli quella percentuale va aggiornata. Le condizioni stanno sia
