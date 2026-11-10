@@ -353,9 +353,10 @@ Con "riduci movimento" le frecce restano ferme. L'`aria-label` di ogni banda dic
 **Preset di temperatura.** Nell'elenco del primo popup il preset che coincide con i target
 attuali della macchina è segnato **Active**; sotto c'è il link "Manage presets" verso Settings.
 
-- **Di base**: PLA (zone 200 °C, piatto 60 °C) e PETG (zona 1 200 °C, le altre 220 °C, piatto
-  80 °C). Le zone vengono dai `materialPresets` di Heat & Extrude in `movementStore.ts`, che ora
-  hanno anche `bedC`; non si salvano né si modificano.
+- **Di base**: PLA (Z1 170 °C, Z2–Z4 200 °C, piatto 50 °C) e PETG (Z1 180 °C, Z2 220 °C,
+  Z3–Z4 240 °C, piatto 80 °C). Le zone vengono dai `materialPresets` di Heat & Extrude in
+  `movementStore.ts` (`zonesC`, una per zona), che hanno anche `bedC`; non si salvano né si
+  modificano.
 - **Personalizzati**: si creano solo da Settings. Chiave `temperature_presets`, un array di
   `{ id, name, zones: { extruder: 230, extruder1: 240, … }, bed }` (0 = spenta), riletto a ogni
   apertura del popup e della pagina. Si gestiscono da

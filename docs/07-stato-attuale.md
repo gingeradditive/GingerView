@@ -114,8 +114,8 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   (Low/Mid/High → 1000/10000/20000 mm³), velocità (Slow/Standard/Boost → 50/150/250 mm³/s) e
   temperatura (PETG/PLA/Custom). I preset temperatura coprono tutte le zone dell'ugello
   (vedi nota sotto) e portano anche un `rotation_distance` non mostrato in interfaccia
-  (PETG 450, PLA e Custom 330); PETG tiene la prima zona più fredda delle altre (200 contro
-  220), PLA è piatto. "Custom" apre un popup con un campo °C **per ciascuna zona che la
+  (PETG 450, PLA e Custom 330); una temperatura per zona: PETG 180/220/240/240,
+  PLA 170/200/200/200. "Custom" apre un popup con un campo °C **per ciascuna zona che la
   macchina dichiara**. Il pulsante **Extrude** ora esegue davvero una sequenza,
   mostrando la fase in corso come testo del pulsante (disabled nel frattempo): stesso popup di
   avvertimento homing → `G28` → spostamento al centro X, Y0, Z250 → `SET_HEATER_TEMPERATURE` +
