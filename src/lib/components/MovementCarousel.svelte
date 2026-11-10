@@ -73,7 +73,7 @@
 			     extrude): è il minimo perché il loop regga con le vicine visibili ai lati. Da tablet
 			     in su le due card stanno affiancate e c'è una sola copia. -->
 			{#each slides as kind, index (index)}
-				<div class="embla__slide">
+				<div class="embla__slide embla__slide--{kind}">
 					{#if kind === 'position'}
 						<ToolheadPosition visible={isInView(index)} />
 					{:else}
@@ -122,9 +122,14 @@
 		box-sizing: border-box;
 	}
 
+	/* Da tablet in su: due terzi alla card del movimento, l'ultimo terzo a Heat & extrude. */
 	@media (min-width: 768px) and (min-height: 600px) {
-		.embla__slide {
-			flex: 0 0 50%;
+		.embla__slide--position {
+			flex: 0 0 66.667%;
+		}
+
+		.embla__slide--extrude {
+			flex: 0 0 33.333%;
 		}
 	}
 

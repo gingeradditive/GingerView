@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { House, Flame } from 'lucide-svelte';
+	import { mdiHome, mdiPrinter3dNozzle } from '@mdi/js';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
+	import { fitText } from '$lib/actions/fit-text';
 	import NozzleClean from '$lib/illustrations/NozzleClean.svelte';
 	import BedClear from '$lib/illustrations/BedClear.svelte';
 
@@ -35,36 +36,39 @@
 		action === 'extrude'
 			? {
 					title: 'Heat & extrude',
-					text: 'Heat up the nozzle and extrude some material.',
+					text: 'Heats the nozzle and extrudes some material.',
+					lead: 'Before extruding, make sure:',
 					confirm: 'Heat & extrude'
 				}
 			: {
 					title: 'Home the printer',
-					text: 'The head will move to its end stops to find the zero',
+					text: 'The print head will move to the endstops to find its home position.',
+					lead: 'Before homing, make sure:',
 					confirm: 'Home'
 				}
 	);
 </script>
 
 {#if isOpen}
-	<Sheet label={copy.title} onClose={onCancel} size="md">
+	<Sheet label={copy.title} onClose={onCancel} size="md" panelClass="homing-sheet">
 		{#snippet header()}
 			<div class="head">
 				<span class="badge" aria-hidden="true">
-					{#if action === 'extrude'}
-						<Flame size={22} />
-					{:else}
-						<House size={22} />
-					{/if}
+					<!-- La stessa icona del pulsante che apre il popup (Heat & extrude, Home). -->
+					<svg viewBox="0 0 24 24" class="badge-icon">
+						<path d={action === 'extrude' ? mdiPrinter3dNozzle : mdiHome} />
+					</svg>
 				</span>
-				<div>
+				<div class="head-text">
 					<h3 class="sheet-title">{copy.title}</h3>
-					<p class="sheet-subtitle">{copy.text}</p>
+					<!-- Su una riga: il popup è largo abbastanza. Se non lo è, il font si riduce
+					     quanto serve; sul telefono va a capo (vedi lo stile). -->
+					<p class="sheet-subtitle one-line" use:fitText={copy.text}>{copy.text}</p>
 				</div>
 			</div>
 		{/snippet}
 
-		<p class="lead">Quick check before we start:</p>
+		<p class="lead">{copy.lead}</p>
 		<ul class="checks">
 			<li class="check">
 				<div class="art"><NozzleClean /></div>
@@ -87,7 +91,7 @@
 				<span class="in-place-text">
 					<span class="in-place-title">Extrude in place</span>
 					<span class="in-place-hint"
-						>Skip homing and the move to the purge spot.<br />Works with the motors off</span
+						>Extrudes at the current position, without homing.<br />Works with motors disabled.</span
 					>
 				</span>
 				<span class="track" class:on={inPlace} aria-hidden="true"><span class="thumb"></span></span>
@@ -106,6 +110,36 @@
 {/if}
 
 <style>
+	.badge-icon {
+		width: 22px;
+		height: 22px;
+		fill: currentColor;
+	}
+
+	/* Più largo della taglia md (460px): la frase sotto il titolo sta su una riga. */
+	:global(.sheet-panel.size-md.homing-sheet) {
+		max-width: 620px;
+	}
+
+	.head-text {
+		min-width: 0;
+	}
+
+	.one-line {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Sul telefono il popup è già largo quanto lo schermo e la frase dell'homing non ci sta
+	   nemmeno al font minimo: va a capo invece di essere tagliata. */
+	@media (max-width: 767.98px) {
+		.one-line {
+			white-space: normal;
+			overflow: visible;
+		}
+	}
+
 	.head {
 		display: flex;
 		align-items: flex-start;

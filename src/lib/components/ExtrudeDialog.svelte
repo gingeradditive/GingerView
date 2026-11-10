@@ -5,6 +5,7 @@
 </script>
 
 <script lang="ts">
+	import { mdiPrinter3dNozzle } from '@mdi/js';
 	import { Check, LoaderCircle, X as XIcon } from 'lucide-svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
@@ -42,7 +43,7 @@
 	let showHomingWarning = $state(false);
 
 	const phaseLabels: Record<ExtrudePhase, string> = {
-		idle: 'HEAT & EXTRUDE',
+		idle: 'Heat & extrude',
 		homing: 'Homing…',
 		moving: 'Moving…',
 		heating: 'Heating…',
@@ -425,6 +426,8 @@
 				use:tooltip={'Home if needed, move to the purge position, heat the nozzle and extrude; heaters switch off at the end'}
 				onclick={handleExtrude}
 			>
+				<!-- Lucide non ha un'icona dell'estrusore: è l'ugello di Material Design Icons. -->
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiPrinter3dNozzle} /></svg>
 				{phaseLabels.idle}
 			</button>
 		{/if}
@@ -584,6 +587,10 @@
 	}
 
 	.extrude-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
 		background: var(--color-red);
 		border: none;
 		border-radius: 16px;
@@ -594,6 +601,13 @@
 		font-weight: 700;
 		letter-spacing: 0.05em;
 		cursor: pointer;
+	}
+
+	.extrude-btn svg {
+		flex-shrink: 0;
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
 	}
 
 	.extrude-btn:hover {

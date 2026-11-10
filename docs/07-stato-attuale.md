@@ -101,10 +101,13 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
 
 ### La pagina Movement non muove ancora del tutto
 
-- [ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte) **legge** la
-  posizione da `/printer/objects/query` e la disegna in proiezione isometrica. Il pulsante
-  **Disable Motors** invia `M84` (`POST /printer/gcode/script?script=M84`) ed è disabilitato,
-  con etichetta "Motors Disabled", quando `stepper_enable.steppers` riporta tutti gli stepper
+- [ToolheadPosition.svelte](../src/lib/components/ToolheadPosition.svelte) occupa i primi due
+  terzi della pagina (Heat & extrude l'ultimo) con quattro card in due colonne: a sinistra lo
+  schema isometrico con sotto **Disable motors** e **Home** impilati (grandi come "Heat &
+  extrude"), a destra le coordinate X/Y/Z centrate e sotto il jog, con l'avviso "Home all
+  axes before moving" in fondo. Sul telefono le card stanno una sotto l'altra nel carosello. Prima
+  erano tre card più il popup Move. Il pulsante **Disable motors** invia `M84` (`POST /printer/gcode/script?script=M84`) ed è disabilitato,
+  con etichetta "Disabled motors", quando `stepper_enable.steppers` riporta tutti gli stepper
   spenti. Il pulsante **Home** apre prima [HomingWarningModal.svelte](../src/lib/components/HomingWarningModal.svelte)
   (verifica ugello pulito / bed libero) e solo alla conferma invia `G28`; mentre il comando è in
   corso è disabilitato e l'etichetta diventa "Homing...", come fa il pulsante Extrude con le
@@ -129,23 +132,23 @@ macchina. GingerView non lo mostra da nessuna parte e `install.sh` non configura
   [04 — Comandi G-code](04-moonraker.md#comandi-g-code)); i riscaldatori già impostati restano
   però al target, e a spegnerli è solo l'`idle_timeout` di Kalico.
 
-Il pulsante **Move** apre [MovePanel.svelte](../src/lib/components/MovePanel.svelte), un popup
-diviso in due colonne da una linea leggera: due terzi al jog, l'ultimo terzo alla posizione
-attuale X/Y/Z in mm (sul telefono una sotto l'altra).
+Il jog sta nella stessa card, sotto lo schema:
 
 - **Jog**: pad XY a croce e colonna Z, con passo 1 / 10 / 100 / 500 mm (il passo scelto
   resta per la sessione). I tocchi ripetuti si sommano senza aspettare la fine del movimento, e
   il bersaglio è limitato a `axis_minimum`/`axis_maximum`: il pulsante di un asse a fine corsa
-  si disattiva. Da tastiera: frecce per X/Y, PagSu/PagGiù per Z.
+  si disattiva. Da tastiera: frecce per X/Y, PagSu/PagGiù per Z (su telefono la card è
+  duplicata dal carosello: i tasti li gestisce solo la prima istanza visibile).
 
 Il posizionamento a coordinate ("Go to", con "Center XY" e "Current") è stato tolto: resta il jog.
 
 Il jog passa da `moveToolhead()` in `movementStore`, che separa Z e XY in due mosse e le
 ordina in modo che l'ugello non attraversi il piano più basso del necessario: salendo prima Z,
 scendendo prima XY. Senza homing completo (`homed_axes` senza xyz) i comandi sono spenti e il
-banner propone Home; durante una stampa (`printing`/`paused`) il pannello è solo lettura. Ha un
-proprio pulsante di emergenza, perché copre il dock e Kalico non annulla mosse già in coda: con
-Z a 7 mm/s una corsa di 500 mm dura più di un minuto.
+un avviso flottante sopra il pad dice di fare Home; durante una stampa (`printing`/`paused`)
+il jog è spento con il suo avviso. Il pulsante di emergenza è quello del dock, che con la card
+resta sempre visibile: Kalico non annulla mosse già in coda, e con Z a 7 mm/s una corsa di
+500 mm dura più di un minuto.
 
 ### Il calcolo del pellet non ha fondamento fisico
 

@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { CircleStop } from 'lucide-svelte';
 	import { formatClock as formatDuration } from '$lib/utils/format';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
-	import { mdiLightbulb, mdiLightbulbOff, mdiFan } from '@mdi/js';
+	import { mdiLightbulb, mdiLightbulbOff, mdiFan, mdiStop } from '@mdi/js';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { formatZoneTime } from '$lib/services/timezone';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
@@ -250,7 +249,7 @@
 </section>
 
 <ConfirmModal
-	icon={CircleStop}
+	iconPath={mdiStop}
 	isOpen={showCancelConfirm}
 	title="Stop this print?"
 	message="We'll cancel the current print, and there's no way to undo it"
