@@ -205,8 +205,7 @@
 		container-type: inline-size;
 	}
 
-	/* Titolo, sottotitolo e battuta: stessi font di FLOW, "Let me extrude!" e
-	   "Pick a file and let's go" (ma grigia: qui non è un link). */
+	/* Titolo e valore: stessi font delle altre card (vedi DashboardCarousel). */
 	.z-label {
 		font-size: min(var(--dashboard-title-size), 22cqw);
 		font-weight: 700;

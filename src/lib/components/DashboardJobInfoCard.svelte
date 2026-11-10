@@ -15,8 +15,7 @@
 	const dataSource = 'dashboard-job-info';
 	const dataQuery = 'print_stats';
 
-	// Nessuna stampa in corso: invece di "--" un invito, come le altre card a riposo
-	// ("Waiting for your material!", "Let me extrude!"), con il link ai file.
+	// Nessuna stampa in corso: invece di "--" un invito, e tutta la card porta ai file.
 	let hasJob = $state(false);
 	let jobName = $state('');
 	let jobMaterial = $state('');
