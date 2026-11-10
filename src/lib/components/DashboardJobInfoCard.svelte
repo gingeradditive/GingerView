@@ -6,6 +6,7 @@
 	} from '$lib/services/moonraker-files';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import { resolve } from '$app/paths';
+	import { fitText } from '$lib/actions/fit-text';
 
 	/** Falso quando la slide è fuori dalla viewport del carosello: l'iscrizione si ferma. */
 	let { visible = true }: { visible?: boolean } = $props();
@@ -81,22 +82,20 @@
 	aria-label={hasJob ? 'Print Job Info' : 'Pick a file to print'}
 >
 	{#if hasJob}
-		<span class="job-name" title={jobName}>{jobName}</span>
-	{:else}
-		<span class="job-name idle">What are we making today?</span>
+		<span class="job-name" title={jobName} use:fitText={jobName}>{jobName}</span>
 	{/if}
 	<div class="job-preview">
 		{#if hasJob}
 			<img src={thumbnailUrl} alt="Print preview" />
 		{:else}
-			<!-- A riposo il logo della G2, lo stesso del dock. -->
+			<!-- A riposo il logo della G2, lo stesso del dock, con l'invito subito sotto:
+			     insieme stanno al centro della card. -->
 			<img class="idle-logo" src="/Printers/G2/Logo.svg" alt="" />
+			<span class="job-cta">Browse file</span>
 		{/if}
 	</div>
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
-	{:else}
-		<span class="job-cta">Pick a file and let's get going!</span>
 	{/if}
 </svelte:element>
 
@@ -118,38 +117,27 @@
 		container-type: inline-size;
 	}
 
-	/* Un nome file lungo non deve spingere via l'anteprima: due righe al massimo. */
+	/* Sempre su una riga: il font qui è il massimo, `fitText` lo riduce quanto serve
+	   perché il testo ci stia. L'ellissi solo se nemmeno al minimo ci sta. */
 	.job-name {
 		flex-shrink: 0;
 		max-width: 100%;
 		font-size: min(2rem, 12cqw);
 		font-weight: 700;
 		color: var(--color-text-secondary);
-		overflow-wrap: anywhere;
-		display: -webkit-box;
-		-webkit-box-orient: vertical;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
+		white-space: nowrap;
 		overflow: hidden;
-	}
-
-	/* L'invito ha lo stesso font del titolo FLOW delle altre card, e può andare su tre righe:
-	   il limite di due serve ai nomi file. */
-	.job-name.idle {
-		font-size: min(var(--dashboard-title-size), 12cqw);
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
-		color: var(--color-black);
-		line-height: 1.1;
-		letter-spacing: 0.02em;
+		text-overflow: ellipsis;
 	}
 
 	.job-preview {
 		flex: 1;
 		min-height: 0;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: 12px;
 	}
 
 	.job-preview img {
@@ -159,15 +147,17 @@
 	}
 
 	.job-preview img.idle-logo {
-		width: min(70%, 200px);
+		width: min(90%, 300px);
 		height: auto;
 	}
 
+	/* Come "Disabled" di FEEDING e "0 mm³/s" di FLOW: dimensione comune, da DashboardCarousel. */
 	.job-cta {
 		flex-shrink: 0;
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: var(--color-red);
+		font-size: var(--dashboard-subtitle-size);
+		font-weight: 500;
+		color: var(--color-text-soft);
+		line-height: 1.3;
 		text-decoration: none;
 	}
 
@@ -192,10 +182,6 @@
 	.job-info-card.link:focus-visible {
 		outline: 2px solid var(--color-red);
 		outline-offset: -4px;
-	}
-
-	.job-info-card.link:hover .job-cta {
-		text-decoration: underline;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
