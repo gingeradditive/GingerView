@@ -203,14 +203,10 @@
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={fanDash} />
-				<foreignObject x="6" y="6" width="24" height="24">
-					<div class="icon-center">
-						<svg viewBox="0 0 24 24" width="18" height="18" class={fanOn ? 'fan-spinning' : ''}
-							><path d={mdiFan} fill="#d72e28" /></svg
-						>
-					</div>
-				</foreignObject>
 			</svg>
+			<svg viewBox="0 0 24 24" class="round-icon" class:fan-spinning={fanOn} aria-hidden="true"
+				><path d={mdiFan} fill="#d72e28" /></svg
+			>
 		</button>
 		<button
 			class="square-btn"
@@ -245,14 +241,10 @@
 			<svg viewBox="0 0 36 36" class="circular-progress">
 				<circle class="circle-bg" cx="18" cy="18" r="16" />
 				<circle class="circle" cx="18" cy="18" r="16" stroke-dasharray={lightDash} />
-				<foreignObject x="6" y="6" width="24" height="24">
-					<div class="icon-center">
-						<svg viewBox="0 0 24 24" width="18" height="18" style="transform: rotate(90deg);"
-							><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg
-						>
-					</div>
-				</foreignObject>
 			</svg>
+			<svg viewBox="0 0 24 24" class="round-icon" aria-hidden="true"
+				><path d={lightOn ? mdiLightbulb : mdiLightbulbOff} fill="#d72e28" /></svg
+			>
 		</button>
 	</div>
 </section>
@@ -356,6 +348,7 @@
 	}
 
 	.round-btn {
+		position: relative;
 		flex-shrink: 0;
 		width: 48px;
 		height: 48px;
@@ -389,12 +382,16 @@
 		transition: stroke-dasharray 0.3s ease;
 	}
 
-	.icon-center {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
+	/* L'icona sta sopra l'anello, fuori dal suo SVG: prima era un foreignObject dentro
+	   l'anello ruotato di -90°, con la lampadina ruotata di +90° per tornare dritta, e
+	   Safari su iPhone la disegnava piccola e schiacciata. */
+	.round-icon {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 24px;
+		height: 24px;
+		margin: -12px 0 0 -12px;
 	}
 
 	.fan-spinning {
