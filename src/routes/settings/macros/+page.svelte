@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LoaderCircle, Play, Search, SquareFunction } from 'lucide-svelte';
 	import { modal } from '$lib/actions/modal';
@@ -73,7 +74,8 @@
 
 <section class="macros-page">
 	<div class="macros-card">
-		<header class="macros-header">
+		<header class="macros-header settings-header">
+			<SettingsBackButton />
 			<h1>Macros</h1>
 		</header>
 
@@ -201,6 +203,12 @@
 		flex-direction: column;
 		gap: 16px;
 		box-sizing: border-box;
+	}
+	.macros-header {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		flex-shrink: 0;
 	}
 	.macros-header h1 {
 		margin: 0;

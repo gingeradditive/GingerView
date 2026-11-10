@@ -1,4 +1,11 @@
+<script lang="ts" module>
+	// Su telefono questa card esiste due volte (vedi MovementCarousel): ogni istanza ha un nome
+	// di sottoscrizione suo, altrimenti la seconda toglierebbe gli aggiornamenti alla prima.
+	let instanceCount = 0;
+</script>
+
 <script lang="ts">
+	import { mdiPrinter3dNozzle } from '@mdi/js';
 	import { Check, LoaderCircle, X as XIcon } from 'lucide-svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
@@ -8,7 +15,6 @@
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import { toastActions } from '$lib/stores/toastStore';
-	import { ensureUiMode, uiMode } from '$lib/stores/uiModeStore';
 	import {
 		amountOptions,
 		customTemperaturePreset,
@@ -36,13 +42,8 @@
 	// mid-sequence no longer resets the dialog — see movementStore.
 	let showHomingWarning = $state(false);
 
-	// "Extrude in place" nel popup di conferma c'è solo in modalità advanced.
-	$effect(() => {
-		ensureUiMode();
-	});
-
 	const phaseLabels: Record<ExtrudePhase, string> = {
-		idle: 'HEAT & EXTRUDE',
+		idle: 'Heat & extrude',
 		homing: 'Homing…',
 		moving: 'Moving…',
 		heating: 'Heating…',
@@ -117,8 +118,10 @@
 		loadNozzleZones().then((zones) => (progressZones = zones));
 	});
 
+	const progressSource = `extrude-progress-${++instanceCount}`;
+
 	subscribeWhileVisible<Record<string, HeaterStatus>>(
-		'extrude-progress',
+		progressSource,
 		() => progressZones.join('&'),
 		(status) => {
 			zoneReadings = progressZones.map((zone) => {
@@ -164,7 +167,7 @@
 		}
 		const preset = materialPresets[$extrudeTemperature];
 		const label = temperatureOptions.find((option) => option.value === $extrudeTemperature)!.label;
-		return `${label} · ${Math.max(preset.firstZoneC, preset.otherZonesC)} °C`;
+		return `${label} · ${Math.max(...preset.zonesC)} °C`;
 	});
 	const amountSummary = $derived.by(() => {
 		const option = amountOptions.find((o) => o.value === $extrudeAmount)!;
@@ -192,9 +195,11 @@
 	const temperatureHint = (value: Temperature): string => {
 		if (value === 'custom') return 'Set your own temperature for each nozzle zone';
 		const preset = materialPresets[value];
-		return preset.firstZoneC === preset.otherZonesC
-			? `All nozzle zones at ${preset.firstZoneC} °C`
-			: `Zone 1 at ${preset.firstZoneC} °C, other zones at ${preset.otherZonesC} °C`;
+		const [first, ...others] = preset.zonesC;
+		if (others.every((value) => value === first)) return `All nozzle zones at ${first} °C`;
+		if (others.every((value) => value === others[0]))
+			return `Zone 1 at ${first} °C, other zones at ${others[0]} °C`;
+		return `Nozzle zones at ${preset.zonesC.join(' / ')} °C`;
 	};
 
 	const selectAmount = (value: Amount): void => {
@@ -421,6 +426,8 @@
 				use:tooltip={'Home if needed, move to the purge position, heat the nozzle and extrude; heaters switch off at the end'}
 				onclick={handleExtrude}
 			>
+				<!-- Lucide non ha un'icona dell'estrusore: è l'ugello di Material Design Icons. -->
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiPrinter3dNozzle} /></svg>
 				{phaseLabels.idle}
 			</button>
 		{/if}
@@ -430,7 +437,7 @@
 <HomingWarningModal
 	isOpen={showHomingWarning}
 	action="extrude"
-	allowInPlace={$uiMode === 'advanced'}
+	allowInPlace
 	onConfirm={confirmHomingWarning}
 	onCancel={cancelHomingWarning}
 />
@@ -580,6 +587,10 @@
 	}
 
 	.extrude-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
 		background: var(--color-red);
 		border: none;
 		border-radius: 16px;
@@ -590,6 +601,13 @@
 		font-weight: 700;
 		letter-spacing: 0.05em;
 		cursor: pointer;
+	}
+
+	.extrude-btn svg {
+		flex-shrink: 0;
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
 	}
 
 	.extrude-btn:hover {

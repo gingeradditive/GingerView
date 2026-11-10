@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { onMount, onDestroy } from 'svelte';
 	import {
 		RefreshCw,
@@ -13,8 +14,7 @@
 		HardDrive,
 		Server,
 		TriangleAlert,
-		Trash2,
-		RotateCcw
+		Trash2
 	} from 'lucide-svelte';
 	import type {
 		HistoryTotalsResult,
@@ -107,7 +107,8 @@
 
 <section class="statistics-page">
 	<div class="statistics-card">
-		<header class="statistics-header">
+		<header class="statistics-header settings-header">
+			<SettingsBackButton />
 			<h1>Statistics</h1>
 			<button
 				type="button"
@@ -336,7 +337,7 @@
 </section>
 
 <ConfirmModal
-	icon={RotateCcw}
+	icon={Trash2}
 	isOpen={showResetConfirm}
 	title="Reset print statistics?"
 	message="Your print count, print time and material totals will go back to zero. This can't be undone!"

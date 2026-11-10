@@ -10,7 +10,7 @@
 	import EmergencyStopButton from '$lib/components/EmergencyStopButton.svelte';
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
-	import { ensureUiMode } from '$lib/stores/uiModeStore';
+	import PrinterOfflineOverlay from '$lib/components/PrinterOfflineOverlay.svelte';
 	import '@fontsource-variable/montserrat';
 	import '../app.css';
 
@@ -22,12 +22,6 @@
 	// exist only during development: a production build is same-origin and carries no
 	// addresses at all. So the check runs in dev only, and on mount rather than at module
 	// scope, because the WebSocket URL is resolved from `window.location`.
-	// Semplice o avanzata decide cosa mostrano pagine diverse (la dashboard per
-	// prima): si legge una volta all'avvio, non solo aprendo /settings.
-	onMount(() => {
-		ensureUiMode();
-	});
-
 	onMount(() => {
 		if (!import.meta.env.DEV) return;
 		const { isValid, errors } = configService.validateConfig();
@@ -44,6 +38,7 @@
 <main class="page-content">{@render children()}</main>
 <StaleDataBanner />
 <KlipperDownOverlay />
+<PrinterOfflineOverlay />
 {#if import.meta.env.VITE_DEMO === '1'}
 	<!-- Demo per fiera (DEMO.md): senza VITE_DEMO il ramo sparisce dalla build. -->
 	{#await import('$lib/demo/DemoLayer.svelte') then { default: DemoLayer }}

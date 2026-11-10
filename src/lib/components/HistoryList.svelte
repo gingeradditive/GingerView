@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { CheckCircle2, XCircle, Ban, Trash2, RefreshCw } from 'lucide-svelte';
@@ -169,7 +170,8 @@
 
 <section class="history-page">
 	<div class="history-card">
-		<header class="history-header">
+		<header class="history-header settings-header">
+			<SettingsBackButton />
 			<h1>History</h1>
 			<button
 				type="button"

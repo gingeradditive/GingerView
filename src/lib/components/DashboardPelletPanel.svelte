@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
-	import Fraction from '$lib/components/Fraction.svelte';
-	import { getFileMetadata } from '$lib/services/moonraker-files';
+	import { tooltip } from '$lib/actions/tooltip';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -11,76 +9,25 @@
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type PelletStatus = {
-		print_stats?: { state?: string; filename?: string; filament_used?: number };
+		print_stats?: { state?: string };
 		'output_pin _FEEDER_STATUS'?: { value?: number };
 	};
 
 	const dataSource = 'dashboard-pellet';
 	const dataQuery = 'print_stats&output_pin _FEEDER_STATUS';
-	const maxPelletKg = 5;
-	// I G-code Ginger contano il "filamento" in mm³: filament_diameter 1.1284 dà
-	// 1 mm³ per mm, e 1.24 g/cm³ è la densità che Orca usa di default.
-	const defaultGramsPerMm = 0.00124;
-	// Senza filament_used in crescita da questo tempo, la macchina non estrude.
-	const extrudingTimeoutMs = 2000;
 
-	let usedKg = $state(0);
-	let totalKg = $state(maxPelletKg);
 	let isIdle = $state(true);
-	// I pallini vibrano solo mentre il pellet scende davvero: fermi in pausa e
-	// durante il riscaldamento.
-	let extruding = $state(false);
 	// The feeder's on/off, as the machine reports it (`_FEEDER_STATUS` in
 	// 50_feeder.cfg). START_PRINT switches it on and END_PRINT off: this switch is
 	// for doing it by hand in between.
 	let feederOn = $state(false);
 	let feederBusy = $state(false);
 	let showFeederOffConfirm = $state(false);
-	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
-	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
-
-	// Generate circles for the SVG
-	const circles = Array.from({ length: 40 }, (_, i) => ({
-		cx: (i + 0.5) * 2.5,
-		cy: 24,
-		r: Math.random() * 12 + 6,
-		duration: (Math.random() * 0.6 + 0.6).toFixed(2),
-		delay: (Math.random() * 0.6).toFixed(2)
-	}));
-
-	let lastFilename: string | null = null;
-	let gramsPerMm = defaultGramsPerMm;
-	let lastFilamentUsed = 0;
-	let lastExtrusionAt = 0;
-	let printing = false;
-
-	const updateExtruding = (): void => {
-		extruding = printing && Date.now() - lastExtrusionAt < extrudingTimeoutMs;
-	};
-
-	// Lo stato arriva solo quando cambia: se filament_used smette di salire non
-	// arriva niente, e i pallini si fermano grazie a questo controllo.
-	$effect(() => {
-		const timer = setInterval(updateExtruding, 500);
-		return () => clearInterval(timer);
-	});
-
-	const loadFileWeight = async (filename: string): Promise<void> => {
-		if (!filename || filename === lastFilename) return;
-		lastFilename = filename;
-		try {
-			const metadata = await getFileMetadata(filename);
-			const weight = metadata.filament_weight_total ?? 0; // g
-			const length = metadata.filament_total ?? 0; // mm
-			totalKg = weight > 0 ? weight / 1000 : maxPelletKg;
-			// Il rapporto peso/lunghezza del file stesso vale qualunque diametro e
-			// densità abbia impostato lo slicer.
-			gramsPerMm = weight > 0 && length > 0 ? weight / length : defaultGramsPerMm;
-		} catch {
-			totalKg = maxPelletKg;
-			gramsPerMm = defaultGramsPerMm;
-		}
-	};
+	let feederHint = $derived(
+		feederOn
+			? 'Feeding enabled: pellet is loaded automatically. Tap to disable it.'
+			: "Feeding is disabled and there's no pellet loaded. Tap to enable it."
+	);
 
 	const updatePellet = (status: PelletStatus): void => {
 		const feederStatus = status['output_pin _FEEDER_STATUS'];
@@ -88,27 +35,8 @@
 			feederOn = feederStatus.value > 0;
 		}
 
-		const printStats = status.print_stats;
-		if (!printStats) return;
-
-		const printState = printStats.state ?? 'standby';
-		isIdle = printState !== 'printing' && printState !== 'paused';
-
-		const filename = printStats.filename ?? '';
-		if (filename) {
-			loadFileWeight(filename);
-		} else {
-			lastFilename = null;
-			totalKg = maxPelletKg;
-			gramsPerMm = defaultGramsPerMm;
-		}
-
-		const filamentUsed = printStats.filament_used ?? 0; // mm
-		if (filamentUsed > lastFilamentUsed) lastExtrusionAt = Date.now();
-		lastFilamentUsed = filamentUsed;
-		printing = printState === 'printing';
-		updateExtruding();
-		usedKg = (filamentUsed * gramsPerMm) / 1000;
+		const printState = status.print_stats?.state;
+		if (printState) isIdle = printState !== 'printing' && printState !== 'paused';
 	};
 
 	const setFeeder = async (enable: boolean): Promise<void> => {
@@ -146,55 +74,36 @@
 	);
 </script>
 
-<section class="pellet-panel" aria-label="Pellet Level">
-	<div class="pellet-visual">
-		{#if !isIdle}
-			<div class="pellet-fill" style="height: {percentage}%">
-				<svg
-					width="100%"
-					height="48px"
-					style="position: absolute; top: -24px; left: 0;"
-					class:still={!extruding}
-				>
-					<!-- Lista statica di 40 bolle, mai riordinata: l'indice è una key corretta. -->
-					{#each circles as circle, i (i)}
-						<circle
-							cx="{circle.cx}%"
-							cy={circle.cy}
-							r={circle.r}
-							fill="#D72E28"
-							style="animation: pellet-vibrate {circle.duration}s ease-in-out {circle.delay}s infinite;"
-						/>
-					{/each}
-				</svg>
-			</div>
-		{/if}
-		<div class="pellet-text">
-			<span class="pellet-label">PELLET</span>
-			{#if isIdle}
-				<span class="pellet-value idle">Hungry for<br />pellets!</span>
-			{:else}
-				<span class="pellet-value"
-					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
-				>
-			{/if}
-		</div>
-	</div>
-	<DashboardCardBar
-		label="FEEDER"
-		active={feederOn}
+<section class="pellet-panel" aria-label="Pellet feeder">
+	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
+	     temperature. Il disegno è il simbolo d'accensione, non un gauge: cerchio aperto in
+	     alto con la barra nel varco. Rosso se acceso, grigio se spento. -->
+	<button
+		type="button"
+		class="pellet-switch"
+		class:on={feederOn}
+		class:busy={feederBusy}
 		role="switch"
-		ariaLabel="Feeder"
-		ariaChecked={feederOn}
-		hint={feederOn
-			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
-			: "The feeder's off and there's no pellet loaded. Tap to turn it on."}
-		disabled={feederBusy}
+		aria-checked={feederOn}
+		aria-label="Feeding"
+		aria-busy={feederBusy}
+		use:tooltip={feederHint}
 		onclick={toggleFeeder}
 	>
-		<span class="status-dot" class:on={feederOn}></span>
-		{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
-	</DashboardCardBar>
+		<span class="pellet-gauge">
+			<svg viewBox="0 0 220 220" class="power-symbol" aria-hidden="true">
+				<!-- Arco di 310° centrato in basso: il varco di 50° in alto ospita la barra. -->
+				<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" />
+				<line class="power-bar" x1="110" y1="-6" x2="110" y2="44" />
+			</svg>
+			<span class="gauge-content">
+				<span class="pellet-label">FEEDING</span>
+				<span class="feeder-value">
+					{feederBusy ? '…' : feederOn ? 'Enabled' : 'Disabled'}
+				</span>
+			</span>
+		</span>
+	</button>
 </section>
 
 <ConfirmModal
@@ -210,129 +119,129 @@
 
 <style>
 	.pellet-panel {
-		background: var(--color-white);
-		border-radius: 19.2px;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
+		width: 100%;
 		height: 100%;
-		box-sizing: border-box;
-		overflow: hidden;
-		position: relative;
+		border-radius: 19.2px;
 		box-shadow: var(--shadow-panel);
-		container-type: inline-size;
+		overflow: hidden;
 	}
 
-	/* Il pallino accanto a ON/OFF nella barra del feeder (DashboardCardBar). */
-	.status-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: var(--color-gray-light);
-	}
-
-	.status-dot.on {
-		background: var(--color-red);
-		animation: status-pulse 1.6s ease-in-out infinite;
-	}
-
-	@keyframes status-pulse {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(215, 46, 40, 0.45);
-		}
-		50% {
-			box-shadow: 0 0 0 5px rgba(215, 46, 40, 0);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.status-dot.on {
-			animation: none;
-		}
-	}
-
-	.pellet-visual {
+	.pellet-switch {
 		width: 100%;
 		height: 100%;
-		background: var(--color-white);
+		padding: 16px;
+		box-sizing: border-box;
+		border: none;
 		border-radius: 19.2px;
-		overflow: hidden;
-		position: relative;
+		background: var(--color-white);
+		font: inherit;
+		color: inherit;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		cursor: pointer;
+		/* Come FLOW: il gauge si misura sulla card, non sullo schermo. */
+		container-type: size;
+		transition: background-color 0.15s;
+		-webkit-tap-highlight-color: transparent;
 	}
 
-	.pellet-fill {
-		position: absolute;
-		bottom: 0;
-		left: 0;
+	.pellet-switch:hover {
+		background: var(--color-background);
+	}
+
+	.pellet-switch:focus-visible {
+		outline: 2px solid var(--color-red);
+		outline-offset: -4px;
+	}
+
+	.pellet-switch.busy {
+		cursor: progress;
+	}
+
+	.pellet-gauge {
+		/* Lato del gauge: il quadrato più grande che sta nella card, come in FLOW. */
+		--gauge: min(100cqw, 100cqh);
+		position: relative;
+		width: var(--gauge);
+		height: var(--gauge);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition:
+			transform 0.1s,
+			opacity 0.15s;
+	}
+
+	.pellet-switch:active .pellet-gauge {
+		transform: scale(0.97);
+	}
+
+	.pellet-switch.busy .pellet-gauge {
+		opacity: 0.5;
+	}
+
+	.power-symbol {
 		width: 100%;
-		background: var(--color-red);
-		transition: height 0.3s ease;
-		z-index: 1;
+		height: 100%;
+		overflow: visible;
 	}
 
-	.still circle {
-		/* Lo stile inline imposta l'animazione: qui serve !important per fermarla. */
-		animation-play-state: paused !important;
+	/* Spento: grigio e sottile. Accensione e spegnimento hanno la stessa transizione:
+	   colore e spessore sfumano, senza animazioni diverse nei due versi. */
+	.power-arc,
+	.power-bar {
+		fill: none;
+		stroke: var(--color-text-subtle);
+		stroke-width: 10;
+		stroke-linecap: round;
+		transition:
+			stroke 0.3s,
+			stroke-width 0.3s;
 	}
 
-	@keyframes -global-pellet-vibrate {
-		0%,
-		100% {
-			transform: translate(0, 0);
-		}
-		25% {
-			transform: translate(1px, -1.5px);
-		}
-		50% {
-			transform: translate(-1.5px, 1px);
-		}
-		75% {
-			transform: translate(1px, 1px);
-		}
+	/* Acceso: rosso e spesso. */
+	.on .power-arc,
+	.on .power-bar {
+		stroke: var(--color-red);
+		stroke-width: 14;
 	}
 
-	/* Tutta la larghezza del pannello: con left: 50% il testo ne aveva solo metà e andava a capo
-	   a ogni parola. */
-	.pellet-text {
+	.gauge-content {
 		position: absolute;
 		inset: 0;
-		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
-		   altezza. In fondo resta lo spazio della barra del feeder (52px + 12px di margine). */
-		padding: 76px 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: calc(var(--dashboard-title-size) * 0.25);
-		z-index: 2;
-		color: var(--color-black-pure);
+		/* Il testo resta dentro l'anello, come in FLOW. */
+		padding: 0 calc(var(--gauge) * 0.2);
 		text-align: center;
 	}
 
-	/* Stessi font di FLOW e "Let me extrude!". */
+	/* Dimensioni comuni a tutte le card, calcolate in DashboardCarousel. */
 	.pellet-label {
-		font-size: min(var(--dashboard-title-size), 18cqw);
+		font-size: var(--dashboard-title-size);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;
 	}
 
-	.pellet-value {
-		font-size: min(var(--dashboard-subtitle-size), 13cqw);
-		color: var(--color-black-pure);
+	.feeder-value {
+		font-size: var(--dashboard-subtitle-size);
 		font-weight: 500;
+		color: var(--color-text-soft);
 		line-height: 1.3;
 	}
 
-	/* A riposo non c'è il riempimento rosso sotto: grigio come "Let me extrude!". */
-	.pellet-value.idle {
-		color: var(--color-text-soft);
+	@media (prefers-reduced-motion: reduce) {
+		.pellet-switch,
+		.pellet-gauge,
+		.power-arc,
+		.power-bar {
+			transition: none;
+		}
 	}
 </style>

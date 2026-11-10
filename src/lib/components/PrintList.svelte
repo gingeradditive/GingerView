@@ -442,7 +442,6 @@
 	<PromptModal
 		isOpen={showCreateFolderModal}
 		title="New folder"
-		hint={dirPath ? `Inside /${dirPath}` : 'Right in the main folder'}
 		label="Folder name"
 		placeholder="e.g. Vases"
 		confirmLabel="Create"
@@ -467,8 +466,7 @@
 						: 'Upload a G-code file to get started'}
 				</span>
 			{:else}
-				<span class="empty-title">Nothing in here yet</span>
-				<span class="empty-sub">Feed me some G-code!</span>
+				<span class="empty-title">Nothing here yet</span>
 			{/if}
 		</div>
 	{:else}

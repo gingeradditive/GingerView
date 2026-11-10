@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import {
@@ -464,7 +465,8 @@
 
 <section class="config-page">
 	<div class="config-card">
-		<header class="config-header">
+		<header class="config-header settings-header">
+			<SettingsBackButton />
 			<h1>Config editor</h1>
 			<span class="dev-badge">Development</span>
 			<span class="status-pill {statePill.tone}">

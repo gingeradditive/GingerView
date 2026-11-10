@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { ChevronRight } from 'lucide-svelte';
-	import DashboardCardBar from '$lib/components/DashboardCardBar.svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
-	import { uiMode } from '$lib/stores/uiModeStore';
+	import TemperaturePresetsSheet from '$lib/components/TemperaturePresetsSheet.svelte';
+	import HeaterTrendIcon from '$lib/components/HeaterTrendIcon.svelte';
+	import { describeTrend, heaterTrend } from '$lib/utils/heater-trend';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -36,44 +36,19 @@
 	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
-	// Solo in modalità avanzata: in semplice il pannello è di sola lettura.
-	let showTemperatureModal = $state(false);
-	let showTemperatureBar = $derived($uiMode === 'advanced' && zoneKeys.length > 0);
-	// La barra è "accesa" come quella del feeder quando almeno una zona scalda.
-	let anyZoneHeating = $derived(extruderTargets.some((target) => target != null && target > 0));
+	// Il disegno si tocca: apre i preset, e da lì "Custom" apre i campi liberi. Finché
+	// non arrivano le zone il pannello è di sola lettura.
+	let sheet = $state<'presets' | 'custom' | null>(null);
+	let canSet = $derived(zoneKeys.length > 0);
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
 		return `${Math.round(value)}`;
 	};
 
-	const setTolerance = 5;
-
-	const isBedHeating = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			bedTemperature != null &&
-			!Number.isNaN(bedTemperature) &&
-			bedTemperature < bedTarget
-		);
-	};
-
-	const isBedReady = (): boolean => {
-		return (
-			bedTarget != null &&
-			!Number.isNaN(bedTarget) &&
-			bedTarget > 0 &&
-			bedTemperature != null &&
-			!Number.isNaN(bedTemperature) &&
-			Math.abs(bedTemperature - bedTarget) <= setTolerance
-		);
-	};
-
-	const showBedSet = (): boolean => {
-		return bedTarget != null && !Number.isNaN(bedTarget) && bedTarget > 0 && !isBedReady();
-	};
+	const bedTrend = $derived(heaterTrend(bedTemperature, bedTarget));
+	// Il target del piatto resta visibile finché non ci si arriva, in salita o in discesa.
+	const showBedSet = $derived(bedTarget != null && bedTarget > 0 && bedTrend !== 'ready');
 
 	// Il bed c'è sempre: finché le zone non si sanno il pannello è iscritto solo a
 	// quello, e si riscrive da sé — la query cambia e l'iscrizione si rifà —
@@ -130,11 +105,7 @@
 	);
 </script>
 
-<section
-	class="temperature-panel"
-	class:with-bar={showTemperatureBar}
-	aria-label="Nozzle and bed temperatures"
->
+{#snippet drawing()}
 	<div class="extruders">
 		{#each zoneKeys as zone, index (zone)}
 			<ExtruderTemperatureCard
@@ -145,44 +116,63 @@
 		{/each}
 	</div>
 
-	<div class="bed-section" aria-label="Bed temperature">
+	<div
+		class="bed-section"
+		aria-label={`Bed: ${formatTemperature(bedTemperature)}°, ${describeTrend(bedTrend, bedTarget)}`}
+	>
 		<div class="bed-triangle">
 			<img src="/NozzleHead.svg" alt="Nozzle" class="bed-triangle-icon" />
 		</div>
-		<div class={`bed-card ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}>
+		<div class="bed-card {bedTrend}">
 			<span class="bed-label">BED</span>
-			<div class={`bed-temperature-stack ${showBedSet() ? 'with-set' : ''}`}>
-				<span class={`bed-value ${isBedHeating() ? 'heating' : ''} ${isBedReady() ? 'ready' : ''}`}
+			<span class="bed-trend"><HeaterTrendIcon trend={bedTrend} size={16} /></span>
+			<div class={`bed-temperature-stack ${showBedSet ? 'with-set' : ''}`}>
+				<span class="bed-value {bedTrend}"
 					>{formatTemperature(bedTemperature)}<span class="degree-symbol">°</span></span
 				>
-				{#if showBedSet()}
+				{#if showBedSet}
 					<span class="bed-set-temperature">{formatTemperature(bedTarget)}</span>
 				{/if}
 			</div>
 		</div>
 	</div>
-	{#if showTemperatureBar}
-		<DashboardCardBar
-			label="EXTRUDER"
-			active={anyZoneHeating}
-			ariaLabel="Set the extruder and bed temperatures"
-			hint="Pick a target for each nozzle zone and the bed"
-			onclick={() => (showTemperatureModal = true)}
+{/snippet}
+
+<section class="temperature-panel" aria-label="Nozzle and bed temperatures">
+	{#if canSet}
+		<!-- Tutta la card è il pulsante, bordi compresi, non solo il disegno. -->
+		<button
+			type="button"
+			class="drawing interactive"
+			aria-label="Set the extruder and bed temperatures"
+			onclick={() => (sheet = 'presets')}
 		>
-			SET
-			<ChevronRight size={18} />
-		</DashboardCardBar>
+			{@render drawing()}
+		</button>
+	{:else}
+		<div class="drawing">
+			{@render drawing()}
+		</div>
 	{/if}
 </section>
 
+<TemperaturePresetsSheet
+	isOpen={sheet === 'presets'}
+	zones={zoneKeys}
+	targets={extruderTargets}
+	{bedTarget}
+	onClose={() => (sheet = null)}
+	onCustom={() => (sheet = 'custom')}
+/>
+
 <ExtruderTemperatureModal
-	isOpen={showTemperatureModal}
+	isOpen={sheet === 'custom'}
 	zones={zoneKeys}
 	temperatures={extruderTemperatures}
 	targets={extruderTargets}
 	{bedTemperature}
 	{bedTarget}
-	onClose={() => (showTemperatureModal = false)}
+	onClose={() => (sheet = null)}
 />
 
 <style>
@@ -200,20 +190,68 @@
 		box-shadow: var(--shadow-panel);
 		position: relative;
 		/*
-		 * Everything inside is drawn in `--u`, a pixel that shrinks when the panel
-		 * is too short (13" laptops, small screens) and is a plain pixel otherwise.
-		 * The stack is ~362u tall (four zones, the nozzle, the bed) and the bed
-		 * ~150u wide. Resolved by the children, so `cq*` refers to this panel.
+		 * Everything inside is drawn in `--u`, so the extruder scales without
+		 * changing its proportions. The stack is ~362u tall (four zones, the
+		 * nozzle, the bed) and the bed ~150u wide. `--u` is halfway between a plain
+		 * pixel (shrunk only when the panel is too small) and the size that fills
+		 * the card with a little air around it: bigger than it was, not wall to wall.
+		 * Resolved by the children, so `cq*` refers to this panel.
 		 */
 		container-type: size;
-		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
+		--u: calc(
+			(
+					min(1px, calc(100cqh / 362), calc(100cqw / 150)) +
+						min(calc(100cqh / 380), calc(100cqw / 158))
+				) /
+				2
+		);
 	}
 
-	/* Spazio per la barra delle temperature (DashboardCardBar, 64px) più il
-	   respiro del padding: il disegno si ridimensiona nel resto, perché `--u`
-	   si misura sull'area dei contenuti. */
-	.temperature-panel.with-bar {
-		padding-bottom: 80px;
+	/* Il contenitore del disegno: un pulsante, o un div finché non ci sono le zone. Non
+	   aggiunge misure sue, così `--u` resta quello del pannello. */
+	.drawing {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Copre tutta la card, padding compreso: si tocca anche fuori dal disegno. */
+	button.drawing {
+		width: calc(100% + 32px);
+		height: calc(100% + 32px);
+		margin: -16px;
+		padding: 16px;
+		box-sizing: border-box;
+		border: none;
+		border-radius: 19.2px;
+		background: transparent;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+		transition:
+			background-color 0.15s,
+			transform 0.1s;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	button.drawing:hover {
+		background: var(--color-background);
+	}
+
+	button.drawing:active {
+		transform: scale(0.98);
+	}
+
+	button.drawing:focus-visible {
+		outline: 2px solid var(--color-red);
+		outline-offset: -4px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		button.drawing {
+			transition: none;
+		}
 	}
 
 	.extruders {
@@ -272,6 +310,18 @@
 		background: var(--color-red);
 	}
 
+	.bed-card.cooling {
+		border-color: rgba(var(--rgb-info), 0.7);
+	}
+
+	/* In alto a destra: "BED" sta in alto a sinistra, i valori in basso a destra. */
+	.bed-trend {
+		position: absolute;
+		top: calc(var(--u) * 7);
+		right: calc(var(--u) * 8);
+		display: inline-flex;
+	}
+
 	.bed-label {
 		font-size: calc(var(--u) * 12.8);
 		font-weight: 600;
@@ -311,6 +361,10 @@
 
 	.bed-value.ready {
 		color: var(--color-white);
+	}
+
+	.bed-value.cooling {
+		color: var(--color-info);
 	}
 
 	.bed-set-temperature {

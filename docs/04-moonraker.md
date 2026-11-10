@@ -30,18 +30,25 @@ HTTP le letture **una tantum** o di pagine che hanno un ciclo proprio:
 
 Oggetti sottoscritti per componente:
 
-| Componente                   | Oggetti sottoscritti                                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                                   |
-| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                                            |
-| `DashboardJobInfoCard`       | `print_stats`                                                                                              |
-| `DashboardPelletPanel`       | `print_stats`                                                                                              |
-| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone              |
-| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                               |
-| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                         |
-| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                                    |
-| `ToolheadPosition`           | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`                   |
-| `MovePanel` (solo se aperto) | `toolhead=position,homed_axes,axis_minimum,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state` |
+| Componente                   | Oggetti sottoscritti                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DashboardControlPanel`      | `print_stats`, `virtual_sdcard`, `fan`, `led LED_CAMERA`                                                                                                             |
+| `DashboardPrintJobPanel`     | `print_stats`, `virtual_sdcard`                                                                                                                                      |
+| `DashboardJobInfoCard`       | `print_stats`                                                                                                                                                        |
+| `DashboardPelletPanel`       | `print_stats`                                                                                                                                                        |
+| `DashboardTemperaturePanel`  | le zone dell'ugello ricavate da `/printer/objects/list` + `heater_bed` — vedi nota sulle zone                                                                        |
+| `DashboardFlowPanel`         | `gcode_move`, `motion_report`, `print_stats`                                                                                                                         |
+| `DashboardZHeightPanel`      | `toolhead=position,axis_maximum`, `gcode_move=gcode_position`, `print_stats=state`                                                                                   |
+| `DashboardQuickActionsPanel` | `fan`, `led LED_CAMERA`                                                                                                                                              |
+| `ToolheadPosition`           | `toolhead=position,homed_axes,axis_minimum,axis_maximum`, `gcode_move=gcode_position`, `stepper_enable=steppers`, `motion_report=live_position`, `print_stats=state` |
+
+**La testina a schermo segue la posizione reale.** `toolhead.position` è la posizione _comandata_:
+salta al punto di arrivo appena il movimento entra in coda, e la card Position mostrava la testina
+già ferma lì mentre la macchina ancora si muoveva. `ToolheadPosition` segue invece
+`motion_report.live_position`, campionata da Kalico circa quattro volte al secondo, con
+un'interpolazione lineare lunga quanto un campione (280 ms): il punto scorre con un ritardo di
+mezzo secondo al massimo. Senza `motion_report` ripiega su un'animazione verso il punto comandato,
+lunga quanto ci metterebbe la testina a 50 mm/s (tra 0,6 e 8 s).
 
 > Gli oggetti `fan` e `led LED_CAMERA` sono definiti su **tutte** le macchine Ginger, quindi
 > si possono dare per scontati senza controlli difensivi.
@@ -118,8 +125,8 @@ Comandi effettivamente inviati dall'interfaccia:
 | `M106 S<0-255>`                                                                                                                         | `DashboardControlPanel` / `DashboardQuickActionsPanel` — velocità ventola                                                                                                                         |
 | `SET_LED LED=LED_CAMERA WHITE=<0.00-1.00>`                                                                                              | `DashboardControlPanel` / `DashboardQuickActionsPanel` — luce                                                                                                                                     |
 | `G28`                                                                                                                                   | `movementStore` — `startHoming()` (pulsante Home di `ToolheadPosition`, dietro conferma `HomingWarningModal`) e primo passo di `startExtrudeSequence()`, saltato se `homed_axes` contiene già xyz |
-| `M84`                                                                                                                                   | `ToolheadPosition` — pulsante Disable Motors                                                                                                                                                      |
-| `G90` + `G1 Z<z> F420` / `G1 X<x> Y<y> F6000`                                                                                           | `movementStore` — `moveToolhead()` del pannello Move; salendo prima Z, scendendo prima XY                                                                                                         |
+| `M84`                                                                                                                                   | `ToolheadPosition` — pulsante Disable motors                                                                                                                                                      |
+| `G90` + `G1 Z<z> F420` / `G1 X<x> Y<y> F6000`                                                                                           | `movementStore` — `moveToolhead()` del jog di `ToolheadPosition`; salendo prima Z, scendendo prima XY                                                                                             |
 | `G90` + `G1 X<centro> Y0 Z250 F3000`                                                                                                    | `movementStore` — spostamento in posizione di purge dopo l'homing                                                                                                                                 |
 | `SET_HEATER_TEMPERATURE HEATER=<zona> TARGET=<°C>` + `TEMPERATURE_WAIT SENSOR=<stessa> MINIMUM=<°C>`                                    | `movementStore` — una coppia per zona dell'ugello, sulle zone lette da `/printer/objects/list`, preset PETG/PLA/Custom                                                                            |
 | `SET_EXTRUDER_ROTATION_DISTANCE EXTRUDER=<prima zona> DISTANCE=<rotationVolume>` + `M83` + `G1 E<volumeMm3> F<speedMm3PerS*60>` + `M82` | `movementStore` — ultimo passo, estrusione vera e propria: la prima zona (`extruder`) è l'unica con uno stepper. **Non verificato su hardware reale**, vedi Q32 in [Q&A.md](Q&A.md)               |
@@ -306,22 +313,57 @@ totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 
 ### Preferenze di GingerView
 
-| Endpoint                                                     | Usato da      | Scopo                                |
-| ------------------------------------------------------------ | ------------- | ------------------------------------ |
-| `GET /server/database/item?namespace=gingerview&key=ui_mode` | `uiModeStore` | Legge la modalità Simple/Advanced    |
-| `POST /server/database/item`                                 | `uiModeStore` | La salva (`{namespace, key, value}`) |
+| Endpoint                                                                 | Usato da                  | Scopo                                        |
+| ------------------------------------------------------------------------ | ------------------------- | -------------------------------------------- |
+| `GET /server/database/item?namespace=gingerview&key=temperature_presets` | `temperaturePresetsStore` | Legge i preset di temperatura personalizzati |
+| `POST /server/database/item`                                             | `temperaturePresetsStore` | Salva l'elenco intero, a ogni modifica       |
 
 Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
-della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa. Chiave
-mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
-Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
+della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa.
 
-- **Dashboard, card temperature**: barra **EXTRUDER · SET ›** in fondo alla card (lo stesso
-  `DashboardCardBar` della barra FEEDER nella card PELLET; bordo rosso se almeno una zona ha un
-  target) che apre
-  `ExtruderTemperatureModal` — target libero per ogni zona dell'ugello (0–300 °C, vuoto o 0 =
-  spenta), applicato solo con **Apply** in un unico `SET_HEATER_TEMPERATURE` per zona; **All off**
-  le spegne tutte. In `simple` la barra non c'è e la card è di sola lettura.
+La modalità Simple/Advanced è stata tolta: l'interfaccia è sempre quella che prima era la
+modalità advanced. La chiave `ui_mode`, se una stampante l'ha già salvata, non viene più letta.
+
+- **Dashboard, card temperature**: il disegno dell'estrusore (zone, ugello e piatto) diventa un
+  pulsante. Il tocco apre `TemperaturePresetsSheet`, l'elenco dei preset: un tocco su un preset lo **applica subito**
+  (un `SET_HEATER_TEMPERATURE` per zona più il piatto, `applyHeaterTargets`) e chiude; **Turn all
+  off** spegne tutto. L'ultima voce, **Custom**, apre `ExtruderTemperatureModal`: target libero per
+  ogni zona (0–300 °C, vuoto o 0 = spenta) e per il piatto (0–110 °C), applicato solo con
+  **Apply**.
+
+**Scalda o si raffredda.** Ogni banda della card (zona dell'ugello o piatto) mostra dove sta
+andando, con
+[heater-trend.ts](../src/lib/utils/heater-trend.ts) e
+[HeaterTrendIcon.svelte](../src/lib/components/HeaterTrendIcon.svelte). Si decide dal target e non
+dalla variazione nel tempo, così le oscillazioni a regime non fanno tremolare l'icona:
+
+| Stato     | Quando                                                        | Banda                                      |
+| --------- | ------------------------------------------------------------- | ------------------------------------------ |
+| `heating` | target > 0, temperatura sotto di più di 5 °C                  | bordo e numero rossi, freccia su che sale  |
+| `ready`   | target > 0, entro ±5 °C                                       | piena rossa, nessuna icona                 |
+| `cooling` | target > 0 più basso di oltre 5 °C, o spenta ma sopra i 50 °C | bordo e numero blu, freccia giù che scende |
+| `idle`    | spenta e sotto i 50 °C                                        | grigia, nessuna icona                      |
+
+Con "riduci movimento" le frecce restano ferme. L'`aria-label` di ogni banda dice lo stato
+("Zone 3: 189°, cooling down to 150°").
+
+**Preset di temperatura.** Nell'elenco del primo popup il preset che coincide con i target
+attuali della macchina è segnato **Active**; sotto c'è il link "Manage presets" verso Settings.
+
+- **Di base**: PLA (Z1 170 °C, Z2–Z4 200 °C, piatto 50 °C) e PETG (Z1 180 °C, Z2 220 °C,
+  Z3–Z4 240 °C, piatto 80 °C). Le zone vengono dai `materialPresets` di Heat & Extrude in
+  `movementStore.ts` (`zonesC`, una per zona), che hanno anche `bedC`; non si salvano né si
+  modificano.
+- **Personalizzati**: si creano solo da Settings. Chiave `temperature_presets`, un array di
+  `{ id, name, zones: { extruder: 230, extruder1: 240, … }, bed }` (0 = spenta), riletto a ogni
+  apertura del popup e della pagina. Si gestiscono da
+  [`/settings/temperature-presets`](../src/routes/settings/temperature-presets/+page.svelte):
+  nuovo, modifica, elimina. Nomi unici senza distinguere maiuscole (PLA/PETG compresi). Se il
+  salvataggio fallisce l'elenco torna com'era e compare un toast.
+- Un preset salvato su una macchina con meno zone spegne quelle che non conosce.
+
+Il database si legge e si scrive con
+[moonraker-database.ts](../src/lib/services/moonraker-database.ts) (`getDbItem` / `setDbItem`).
 
 ### Statistics
 
@@ -581,10 +623,63 @@ Notifiche gestite:
 | `notify_klippy_disconnected` | toast di errore persistente, `klippyState = 'disconnected'`                                                     |
 | `notify_proc_stat_update`    | estrae `moonraker_stats.warnings`, deduplicati tramite un `Set`                                                 |
 
-Riconnessione: timer fisso a **10 secondi**, senza limite di tentativi.
+Riconnessione a 1, 2, 3, 5 secondi (l'ultima si ripete), senza limite di tentativi. Il socket è
+anche la **sentinella della stampante**: vedi [Stampante offline](#stampante-offline).
+
+### Stampante offline
+
+Il WebSocket del notifier è aperto su ogni pagina per tutta la sessione, quindi è lui a dire se la
+stampante — il Raspberry, non Kalico — risponde. Lo store `printerOnline` (con
+`nextRetryAt`) passa a `false` quando la connessione resta giù per più di **5 secondi**: la
+tolleranza assorbe i riavvii di Moonraker (aggiornamenti, cambi di config), che fanno cadere il
+socket per un secondo o due.
+
+Tre modi in cui la connessione si perde, tre modi di accorgersene:
+
+- **spegnimento pulito** (il Pi si spegne, Moonraker chiude il socket): `onclose` immediato;
+- **spina staccata o rete caduta**: il socket resta "aperto" finché TCP non si arrende, anche per
+  minuti. Il notifier manda un `server.info` ogni 5 secondi e, se per 12 secondi non arriva niente
+  (né risposta né notifica), considera la stampante sparita da quando è arrivato l'ultimo messaggio;
+- **host spento al momento del tentativo**: un `new WebSocket` verso un indirizzo muto può restare
+  in CONNECTING per oltre un minuto, quindi ogni tentativo ha un timeout di 5 secondi.
+
+Al ritorno in primo piano di una tab (telefono sbloccato) il controllo è immediato, senza aspettare
+il battito successivo.
+
+Quando la stampante va offline, `klippyState` torna a `''` e i toast `klipper` vengono tolti: valevano
+per una macchina che non c'è più (lo spegnimento annuncia sempre un `notify_klippy_disconnected`).
+Alla riconnessione `refreshKlippyState()` racconta lo stato attuale.
+
+[PrinterOfflineOverlay.svelte](../src/lib/components/PrinterOfflineOverlay.svelte), montato nel
+layout, mostra una schermata **bloccante** che copre tutto — dock, Settings e toast compresi
+(`z-index: 10100`). A differenza di `KlipperDownOverlay` qui non c'è una via d'uscita da lasciare
+scoperta: ogni pagina parla con Moonraker. Il pulsante "Try now" serve a non aspettare il
+prossimo tentativo; la schermata sparisce da sola appena la connessione torna. Finché è a schermo, `KlipperDownOverlay` e `StaleDataBanner` tacciono.
+
+**Simularla in sviluppo.** Con `npm run dev` la console del browser espone `gingerview.offline()`
+(stampante spenta: schermata dopo ~5 s), `gingerview.offline('unplug')` (spina staccata: il socket
+resta aperto ma muto, schermata dopo 12–17 s) e `gingerview.online()`. Il guasto finto passa dagli
+stessi percorsi di quello vero: i tentativi falliscono finché non si chiama `online()`. Nella build
+di produzione i comandi non ci sono.
 
 All'avvio, `fetchAndDisplayWarnings()` legge `/server/info` e mostra come toast persistenti
 i `warnings`, i `failed_components` e l'eventuale stato `error`/`shutdown` di Klippy.
+
+**Toast che si chiudono da soli quando la condizione rientra.** I toast persistenti che descrivono
+uno stato, e non un evento, hanno una chiave (`key` in
+[toastStore.ts](../src/lib/stores/toastStore.ts)). Un toast nuovo con la stessa chiave sostituisce
+il vecchio invece di accumularsi, e `toastActions.resolve(key)` lo chiude:
+
+| Chiave                           | Toast                                                                    | Si chiude quando                                                       |
+| -------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `klippy-state`                   | Kalico error / shut down / disconnected, "non è tornato" dopo un riavvio | `klippyState` torna `ready`                                            |
+| `moonraker-warning:<testo>`      | avviso di `/server/info`                                                 | sparisce da `/server/info`, riletto a ogni riconnessione del WebSocket |
+| `moonraker-component:<nome>`     | componente che non si è caricato                                         | come sopra (di solito dopo un riavvio di Moonraker)                    |
+| `moonraker-stat-warning:<testo>` | avviso in `notify_proc_stat_update`                                      | esce dalla lista nella notifica successiva                             |
+
+Un avviso chiuso a mano mentre la condizione persiste non viene riproposto alla riconnessione. Gli
+errori legati a un'azione (comando rifiutato, upload fallito, …) restano eventi singoli e si chiudono
+dopo 8 secondi.
 
 **Gli store `klippyState` e `klippyMessage`.** Oltre ai toast, il notifier tiene lo stato di Klippy
 in uno store esportato (`'' | 'ready' | 'startup' | 'shutdown' | 'error' | 'disconnected'`) e, se

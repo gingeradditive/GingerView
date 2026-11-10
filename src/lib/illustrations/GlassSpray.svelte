@@ -23,7 +23,7 @@
 	<path class="sf" d="M64 120 L192 120 L222 88 L94 88 Z" />
 	<path class="spray-film" d="M110 112 L170 112 L184 96 L124 96 Z" />
 	<path class="ln-thin shine" d="M136 106 L146 96 M150 108 L160 98" />
-	<g transform="rotate(-38 58 74)">
+	<g transform="rotate(38 58 74)">
 		<rect class="sf" x="40" y="48" width="36" height="70" rx="8" />
 		<rect class="accent" x="40" y="70" width="36" height="22" />
 		<rect class="ln" x="40" y="48" width="36" height="70" rx="8" />

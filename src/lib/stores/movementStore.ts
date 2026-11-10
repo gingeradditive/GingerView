@@ -60,23 +60,30 @@ export const temperatureOptions: { value: Temperature; label: string }[] = [
 /**
  * Per-material settings.
  *
- * The temperatures are given as "the first zone" plus "all the others" rather
- * than one value per zone: the number of zones is only known once the machine
- * has been asked, and the presets never distinguished more than those two groups
- * anyway — PETG runs the zone Klipper calls `extruder` cooler than the rest,
- * PLA is flat.
+ * One temperature per nozzle zone, in Kalico order (`extruder`, `extruder1`, …).
+ * The number of zones is only known once the machine has been asked: a zone past
+ * the end of the list takes the last value (see `materialZoneTemperature`).
  */
 export type MaterialPreset = {
-	firstZoneC: number;
-	otherZonesC: number;
+	/** Z1, Z2, Z3, Z4 in °C. */
+	zonesC: number[];
+	/**
+	 * Piatto per questo materiale. Heat & Extrude non lo usa (scalda solo l'ugello): serve ai
+	 * preset del popup temperature della dashboard, che partono da qui.
+	 */
+	bedC: number;
 	// Klipper rotation_distance for this material; not shown in the UI.
 	rotationVolume: number;
 };
 
 export const materialPresets: Record<'petg' | 'pla', MaterialPreset> = {
-	petg: { firstZoneC: 200, otherZonesC: 220, rotationVolume: 450 },
-	pla: { firstZoneC: 200, otherZonesC: 200, rotationVolume: 330 }
+	petg: { zonesC: [180, 220, 240, 240], bedC: 80, rotationVolume: 450 },
+	pla: { zonesC: [170, 200, 200, 200], bedC: 50, rotationVolume: 330 }
 };
+
+/** Temperatura della zona `index` per il materiale; oltre la lista vale l'ultima. */
+export const materialZoneTemperature = (preset: MaterialPreset, index: number): number =>
+	preset.zonesC[Math.min(index, preset.zonesC.length - 1)];
 
 /**
  * Targets for `zones`, keeping whatever the stored preset already says and
@@ -104,7 +111,7 @@ export const customTemperaturePreset = writable<TemperaturePreset>({
 export const extrudePhase = writable<ExtrudePhase>('idle');
 
 /**
- * L'ultima sequenza è partita "sul posto" (solo modalità advanced): niente homing e niente
+ * L'ultima sequenza è partita "sul posto": niente homing e niente
  * spostamento alla zona di spurgo, si scalda e si estrude dove sta la testa, anche con i
  * motori XYZ spenti. Resta qui perché il pannello mostri gli step giusti e "Try again" la
  * ripeta uguale.
@@ -186,9 +193,9 @@ export type AxisPosition = Record<Axis, number>;
  */
 export const jogStepOptions: { mm: number; label: string }[] = [
 	{ mm: 1, label: '1 mm' },
-	{ mm: 10, label: '1 cm' },
-	{ mm: 100, label: '10 cm' },
-	{ mm: 500, label: '50 cm' }
+	{ mm: 10, label: '10 mm' },
+	{ mm: 100, label: '100 mm' },
+	{ mm: 500, label: '500 mm' }
 ];
 
 // Kept here rather than in the panel, so reopening it keeps the last step.
@@ -248,7 +255,7 @@ const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 	const preset = materialPresets[selected];
 	return {
 		zones: Object.fromEntries(
-			zones.map((zone, index) => [zone, index === 0 ? preset.firstZoneC : preset.otherZonesC])
+			zones.map((zone, index) => [zone, materialZoneTemperature(preset, index)])
 		),
 		rotationVolume: preset.rotationVolume
 	};

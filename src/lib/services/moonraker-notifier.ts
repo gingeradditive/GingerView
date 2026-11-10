@@ -67,6 +67,61 @@ export type GcodesChange = { dirs: string[] | null };
  */
 export const gcodesChanged = writable<GcodesChange | null>(null);
 
+/**
+ * Chiave dei toast che dicono che Kalico è fermo (error, shutdown, disconnected, non tornato
+ * dopo un riavvio): uno alla volta, e si chiudono da soli quando Kalico torna `ready`.
+ */
+export const KLIPPY_TOAST_KEY = 'klippy-state';
+
+klippyState.subscribe((state) => {
+	if (state === 'ready') toastActions.resolve(KLIPPY_TOAST_KEY);
+});
+
+const warningKey = (warning: string): string => `moonraker-warning:${warning}`;
+const componentKey = (component: string): string => `moonraker-component:${component}`;
+
+/**
+ * Gli avvisi e i componenti falliti che Moonraker segnala adesso, mostrati o chiusi a mano
+ * dall'utente. Serve a due cose: chiudere il toast quando Moonraker smette di segnalarli, e
+ * non riproporre a ogni riconnessione quello che l'utente ha già chiuso.
+ */
+const serverConditions = new Set<string>();
+
+/** Allinea i toast di avvisi e componenti falliti a quello che dice `/server/info`. */
+function syncServerConditions(info: MoonrakerServerInfo): void {
+	const current = new Map<string, () => void>();
+	for (const warning of info.warnings ?? []) {
+		const key = warningKey(warning);
+		current.set(key, () =>
+			toastActions.warning('moonraker', 'Moonraker warning', warning, 0, undefined, key)
+		);
+	}
+	for (const component of info.failed_components ?? []) {
+		const key = componentKey(component);
+		current.set(key, () =>
+			toastActions.error(
+				'moonraker',
+				"Something didn't load",
+				`Moonraker component failed to load: ${component}`,
+				0,
+				undefined,
+				key
+			)
+		);
+	}
+
+	for (const key of [...serverConditions]) {
+		if (current.has(key)) continue;
+		toastActions.resolve(key);
+		serverConditions.delete(key);
+	}
+	for (const [key, show] of current) {
+		if (serverConditions.has(key)) continue;
+		serverConditions.add(key);
+		show();
+	}
+}
+
 /** Keeps the two stores in step: a healthy Klippy has no message. */
 function setKlippyState(state: KlippyState, message = ''): void {
 	klippyState.set(state);
@@ -81,7 +136,8 @@ export function isKlippyDown(state: KlippyState): boolean {
 /**
  * Re-reads the state from `/server/info`, silently. Used at startup and every
  * time the WebSocket (re)connects, since anything that happened while it was
- * down arrived nowhere.
+ * down arrived nowhere. Also closes the toasts of Moonraker warnings and failed
+ * components that are gone (a Moonraker restart is the usual way out).
  */
 export async function refreshKlippyState(): Promise<void> {
 	try {
@@ -89,6 +145,7 @@ export async function refreshKlippyState(): Promise<void> {
 		if (!res.ok) return;
 		const json = await res.json();
 		const info = json.result as MoonrakerServerInfo;
+		syncServerConditions(info);
 		const state: KlippyState = info.klippy_connected
 			? (info.klippy_state as KlippyState)
 			: 'disconnected';
@@ -142,20 +199,8 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 	const info = await fetchServerInfo();
 	if (!info) return;
 
-	// Show Moonraker warnings
-	for (const warning of info.warnings) {
-		toastActions.warning('moonraker', 'Moonraker warning', warning, 0);
-	}
-
-	// Show failed components as errors
-	for (const component of info.failed_components) {
-		toastActions.error(
-			'moonraker',
-			"Something didn't load",
-			`Moonraker component failed to load: ${component}`,
-			0
-		);
-	}
+	// Moonraker warnings and failed components, closed again when they go away.
+	syncServerConditions(info);
 
 	// Show Klipper state issues — fetch full details from /printer/info
 	if (info.klippy_state === 'error' || info.klippy_state === 'shutdown') {
@@ -167,9 +212,9 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 		setKlippyState(info.klippy_state as KlippyState, stateMsg);
 
 		if (info.klippy_state === 'error') {
-			toastActions.error('klipper', 'Kalico error', firstLine, 0, details);
+			toastActions.error('klipper', 'Kalico error', firstLine, 0, details, KLIPPY_TOAST_KEY);
 		} else {
-			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, details);
+			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, details, KLIPPY_TOAST_KEY);
 		}
 	} else if (!info.klippy_connected) {
 		setKlippyState('disconnected');
@@ -177,15 +222,15 @@ export async function fetchAndDisplayWarnings(): Promise<void> {
 			'klipper',
 			'Kalico disconnected',
 			"Kalico isn't connected to Moonraker",
-			0
+			0,
+			undefined,
+			KLIPPY_TOAST_KEY
 		);
 	} else {
 		setKlippyState(info.klippy_state as KlippyState);
 	}
 }
 
-let notifierWs: WebSocket | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 const shownWarnings = new Set<string>();
 
 /** A JSON object, as far as the JSON-RPC boundary lets us claim. */
@@ -206,14 +251,17 @@ function isNotification(data: unknown): data is { method: string; params?: unkno
 	return data.params === undefined || Array.isArray(data.params);
 }
 
-/** The warning strings inside `notify_proc_stat_update`, or none if absent. */
-function readProcStatWarnings(params: unknown[] | undefined): string[] {
+/**
+ * The warning strings inside `notify_proc_stat_update`, or `null` when the update
+ * doesn't carry the list at all — which is not the same as "no warnings left".
+ */
+function readProcStatWarnings(params: unknown[] | undefined): string[] | null {
 	const first = params?.[0];
-	if (!isJsonObject(first)) return [];
+	if (!isJsonObject(first)) return null;
 	const stats = first.moonraker_stats;
-	if (!isJsonObject(stats)) return [];
+	if (!isJsonObject(stats)) return null;
 	const warnings = stats.warnings;
-	if (!Array.isArray(warnings)) return [];
+	if (!Array.isArray(warnings)) return null;
 	return warnings.filter((w): w is string => typeof w === 'string');
 }
 
@@ -250,12 +298,27 @@ function handleNotification(data: unknown): void {
 		if (change) gcodesChanged.set(change);
 	}
 
-	// Moonraker notify_proc_stat_update can contain warnings
+	// Moonraker notify_proc_stat_update can contain warnings: shown once, closed
+	// when they leave the list.
 	if (data.method === 'notify_proc_stat_update') {
-		for (const w of readProcStatWarnings(data.params)) {
-			if (!shownWarnings.has(w)) {
+		const warnings = readProcStatWarnings(data.params);
+		if (warnings) {
+			for (const w of [...shownWarnings]) {
+				if (warnings.includes(w)) continue;
+				shownWarnings.delete(w);
+				toastActions.resolve(`moonraker-stat-warning:${w}`);
+			}
+			for (const w of warnings) {
+				if (shownWarnings.has(w)) continue;
 				shownWarnings.add(w);
-				toastActions.warning('moonraker', 'Moonraker warning', w, 0);
+				toastActions.warning(
+					'moonraker',
+					'Moonraker warning',
+					w,
+					0,
+					undefined,
+					`moonraker-stat-warning:${w}`
+				);
 			}
 		}
 	}
@@ -273,81 +336,337 @@ function handleNotification(data: unknown): void {
 			const stateMsg = printerInfo?.state_message || '';
 			const firstLine = stateMsg.split('\n')[0] || 'The firmware has shut down';
 			klippyMessage.set(stateMsg);
-			toastActions.error('klipper', 'Kalico shut down', firstLine, 0, stateMsg || undefined);
+			toastActions.error(
+				'klipper',
+				'Kalico shut down',
+				firstLine,
+				0,
+				stateMsg || undefined,
+				KLIPPY_TOAST_KEY
+			);
 		});
 	}
 
 	if (data.method === 'notify_klippy_disconnected') {
 		setKlippyState('disconnected');
-		toastActions.error('klipper', 'Kalico disconnected', 'Lost connection to Kalico', 0);
+		toastActions.error(
+			'klipper',
+			'Kalico disconnected',
+			'Lost connection to Kalico',
+			0,
+			undefined,
+			KLIPPY_TOAST_KEY
+		);
 	}
 }
 
+/**
+ * Se la stampante risponde del tutto — il Raspberry, non Kalico.
+ *
+ * Kalico fermo è affare di `klippyState` e ha il suo overlay, con una via
+ * d'uscita. Questo è il caso prima: la macchina è spenta, in riavvio o fuori
+ * rete, quindi manca Moonraker stesso e niente nella pagina può funzionare — né
+ * i comandi, né Settings, né il riavvio del firmware.
+ *
+ * La sentinella è il WebSocket del notifier: è aperto su ogni pagina per tutta
+ * la sessione, quindi la sua sorte è quella della stampante.
+ */
+export const printerOnline = writable<boolean>(true);
+
+/**
+ * A che punto è la riconnessione mentre la stampante è offline: quando parte il
+ * prossimo tentativo, o `null` mentre ce n'è uno in corso.
+ */
+export const nextRetryAt = writable<number | null>(null);
+
+/**
+ * Quanto la connessione può restare giù prima di dichiarare la stampante offline.
+ * Non zero: un riavvio di Moonraker (un aggiornamento, un cambio di config) fa
+ * cadere il socket per un secondo o due, e lo schermo intero non deve lampeggiare
+ * per così poco.
+ */
+const offlineAfterMs = 5000;
+
+/**
+ * Attese tra un tentativo e l'altro; l'ultima vale per tutti i successivi. Brevi
+ * apposta: la schermata offline deve sparire appena la stampante torna, e un
+ * handshake su `/websocket` ogni pochi secondi non costa niente.
+ */
+const retryDelaysMs = [1000, 2000, 3000, 5000];
+
+/**
+ * Un host spento non risponde niente — né rifiuto né reset — e un WebSocket verso
+ * di lui può restare in CONNECTING per più di un minuto prima che il browser
+ * rinunci. Oltre questo limite il tentativo conta come fallito.
+ */
+const connectTimeoutMs = 5000;
+
+/**
+ * Staccare la spina non chiude un socket aperto: il browser ci crede finché TCP
+ * non si arrende, e possono passare minuti. Quindi la connessione si sonda: una
+ * richiesta leggera ogni `heartbeatEveryMs`, e un silenzio più lungo di
+ * `silenceLimitMs` (nessuna risposta, nessuna notifica) vuol dire stampante sparita.
+ */
+const heartbeatEveryMs = 5000;
+const silenceLimitMs = 12000;
+
+let notifierWs: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+let connectTimer: ReturnType<typeof setTimeout> | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let failedAttempts = 0;
+let lastMessageAt = 0;
+let isOffline = false;
+/** Inizio del guasto in corso: la prima chiusura, non il momento in cui l'abbiamo dichiarato. */
+let downSince: number | null = null;
+let connectNow: (() => void) | null = null;
+
+/**
+ * Guasto finto, solo in sviluppo (vedi `installOfflineSimulator`):
+ * - `'off'`: stampante spenta — il socket si chiude e ogni tentativo fallisce;
+ * - `'unplug'`: spina staccata — il socket resta aperto ma non arriva più niente,
+ *   finché se ne accorge il battito; poi i tentativi falliscono come sopra.
+ */
+type SimulatedFault = 'off' | 'unplug' | null;
+let simulatedFault: SimulatedFault = null;
+let simulateNow: ((fault: SimulatedFault) => void) | null = null;
+
+function clearTimer(timer: ReturnType<typeof setTimeout> | null): null {
+	if (timer !== null) clearTimeout(timer);
+	return null;
+}
+
+function goOffline(): void {
+	offlineTimer = null;
+	if (isOffline) return;
+	isOffline = true;
+	printerOnline.set(false);
+	// Quello che sapevamo di Kalico valeva per una macchina che non c'è più: al
+	// ritorno `refreshKlippyState` racconterà lo stato attuale. Idem per i toast di
+	// Kalico ("disconnected", annunciato da una stampante che si stava spegnendo):
+	// lasciati a schermo sopravviverebbero al guasto e confonderebbero.
+	setKlippyState('');
+	toastActions.clearSource('klipper');
+}
+
+function goOnline(): void {
+	offlineTimer = clearTimer(offlineTimer);
+	downSince = null;
+	failedAttempts = 0;
+	nextRetryAt.set(null);
+	if (!isOffline) return;
+	isOffline = false;
+	printerOnline.set(true);
+}
+
+/**
+ * Prova subito a raggiungere la stampante, senza aspettare il prossimo tentativo.
+ * Per il pulsante della schermata offline.
+ */
+export function retryPrinterConnection(): void {
+	connectNow?.();
+}
+
 export function startNotifierWebSocket(): () => void {
-	function connect() {
-		const wsUrl = getWsUrl();
+	let stopped = false;
+
+	/** Molla un socket senza aspettare un handshake di chiusura a cui nessuno risponderà. */
+	function abandon(ws: WebSocket): void {
+		ws.onopen = null;
+		ws.onmessage = null;
+		ws.onclose = null;
+		ws.onerror = null;
 		try {
-			notifierWs = new WebSocket(wsUrl);
-
-			notifierWs.onopen = () => {
-				console.log('[MoonrakerNotifier] WebSocket connected');
-				// Resync: a shutdown that happened while the socket was down was
-				// announced to nobody.
-				refreshKlippyState();
-				// Subscribe to notifications
-				notifierWs?.send(
-					JSON.stringify({
-						jsonrpc: '2.0',
-						method: 'server.connection.identify',
-						params: {
-							client_name: 'GingerView',
-							version: '0.0.1',
-							type: 'web',
-							url: window.location.href
-						},
-						id: Date.now()
-					})
-				);
-			};
-
-			notifierWs.onmessage = (event) => {
-				try {
-					const data = JSON.parse(event.data);
-					handleNotification(data);
-				} catch {
-					// ignore parse errors
-				}
-			};
-
-			notifierWs.onclose = () => {
-				console.log('[MoonrakerNotifier] WebSocket disconnected, will reconnect...');
-				scheduleReconnect();
-			};
-
-			notifierWs.onerror = () => {
-				// onclose will fire after this
-			};
+			ws.close();
 		} catch {
-			scheduleReconnect();
+			// already closed
 		}
+	}
+
+	function stopHeartbeat(): void {
+		if (heartbeatTimer !== null) clearInterval(heartbeatTimer);
+		heartbeatTimer = null;
+	}
+
+	function startHeartbeat(ws: WebSocket): void {
+		stopHeartbeat();
+		lastMessageAt = Date.now();
+		heartbeatTimer = setInterval(() => {
+			if (Date.now() - lastMessageAt > silenceLimitMs) {
+				lost(ws, lastMessageAt);
+				return;
+			}
+			if (ws.readyState === WebSocket.OPEN) {
+				ws.send(JSON.stringify({ jsonrpc: '2.0', method: 'server.info', id: Date.now() }));
+			}
+		}, heartbeatEveryMs);
+	}
+
+	/**
+	 * Il socket è perso, comunque sia andata: si pianifica il prossimo tentativo.
+	 * `since` è quando ha smesso davvero di rispondere: per un silenzio scoperto
+	 * dal battito è l'ultimo messaggio, e la tolleranza è già passata.
+	 */
+	function lost(ws: WebSocket, since = Date.now()): void {
+		if (notifierWs !== ws) return;
+		notifierWs = null;
+		connectTimer = clearTimer(connectTimer);
+		stopHeartbeat();
+		abandon(ws);
+		if (stopped) return;
+
+		if (downSince === null) downSince = since;
+		if (!isOffline && offlineTimer === null) {
+			const wait = Math.max(0, offlineAfterMs - (Date.now() - downSince));
+			offlineTimer = setTimeout(goOffline, wait);
+		}
+		scheduleReconnect();
+	}
+
+	function connect() {
+		if (stopped || notifierWs) return;
+		reconnectTimer = clearTimer(reconnectTimer);
+		nextRetryAt.set(null);
+
+		let ws: WebSocket;
+		try {
+			if (simulatedFault) throw new Error('printer offline (simulated)');
+			ws = new WebSocket(getWsUrl());
+		} catch {
+			failedAttempts++;
+			if (downSince === null) downSince = Date.now();
+			if (!isOffline && offlineTimer === null) {
+				offlineTimer = setTimeout(goOffline, offlineAfterMs);
+			}
+			scheduleReconnect();
+			return;
+		}
+		notifierWs = ws;
+
+		connectTimer = setTimeout(() => {
+			connectTimer = null;
+			failedAttempts++;
+			lost(ws);
+		}, connectTimeoutMs);
+
+		ws.onopen = () => {
+			connectTimer = clearTimer(connectTimer);
+			console.log('[MoonrakerNotifier] WebSocket connected');
+			goOnline();
+			startHeartbeat(ws);
+			// Resync: a shutdown that happened while the socket was down was
+			// announced to nobody.
+			refreshKlippyState();
+			ws.send(
+				JSON.stringify({
+					jsonrpc: '2.0',
+					method: 'server.connection.identify',
+					params: {
+						client_name: 'GingerView',
+						version: '0.0.1',
+						type: 'web',
+						url: window.location.href
+					},
+					id: Date.now()
+				})
+			);
+		};
+
+		ws.onmessage = (event) => {
+			// Spina staccata per finta: i messaggi arrivano ma è come se non ci fossero.
+			if (simulatedFault === 'unplug') return;
+			lastMessageAt = Date.now();
+			try {
+				const data = JSON.parse(event.data);
+				handleNotification(data);
+			} catch {
+				// ignore parse errors
+			}
+		};
+
+		ws.onclose = () => {
+			console.log('[MoonrakerNotifier] WebSocket disconnected, will reconnect...');
+			if (notifierWs === ws && connectTimer !== null) failedAttempts++;
+			lost(ws);
+		};
+
+		ws.onerror = () => {
+			// onclose will fire after this
+		};
 	}
 
 	function scheduleReconnect() {
-		if (reconnectTimer) clearTimeout(reconnectTimer);
-		reconnectTimer = setTimeout(connect, 10000);
+		reconnectTimer = clearTimer(reconnectTimer);
+		const delay = retryDelaysMs[Math.min(failedAttempts, retryDelaysMs.length - 1)];
+		nextRetryAt.set(Date.now() + delay);
+		reconnectTimer = setTimeout(connect, delay);
 	}
 
-	function disconnect() {
-		if (reconnectTimer) {
-			clearTimeout(reconnectTimer);
-			reconnectTimer = null;
-		}
+	/**
+	 * Un telefono che blocca lo schermo congela i timer della pagina: al ritorno il
+	 * socket può essere morto da un pezzo. Si guarda subito, non al prossimo battito.
+	 */
+	function onVisible() {
+		if (document.visibilityState !== 'visible') return;
 		if (notifierWs) {
-			notifierWs.close(1000);
+			if (Date.now() - lastMessageAt > silenceLimitMs) lost(notifierWs, lastMessageAt);
+			return;
+		}
+		connect();
+	}
+
+	connectNow = connect;
+	simulateNow = (fault) => {
+		simulatedFault = fault;
+		if (fault === 'off' && notifierWs) lost(notifierWs);
+		if (fault === null && !notifierWs) connect();
+	};
+	document.addEventListener('visibilitychange', onVisible);
+
+	function disconnect() {
+		stopped = true;
+		connectNow = null;
+		simulateNow = null;
+		document.removeEventListener('visibilitychange', onVisible);
+		reconnectTimer = clearTimer(reconnectTimer);
+		offlineTimer = clearTimer(offlineTimer);
+		connectTimer = clearTimer(connectTimer);
+		stopHeartbeat();
+		if (notifierWs) {
+			abandon(notifierWs);
 			notifierWs = null;
 		}
 	}
 
 	connect();
 	return disconnect;
+}
+
+/**
+ * Comandi da console per provare la schermata offline senza toccare la stampante.
+ * Solo in sviluppo: la build di produzione non li contiene.
+ *
+ * - `gingerview.offline()` — stampante spenta: schermata dopo ~5 s;
+ * - `gingerview.offline('unplug')` — spina staccata: schermata dopo 12–17 s;
+ * - `gingerview.online()` — la stampante "torna": sparisce al tentativo successivo.
+ */
+export function installOfflineSimulator(): () => void {
+	const api = {
+		offline(fault: 'off' | 'unplug' = 'off') {
+			simulateNow?.(fault);
+			return `GingerView: printer ${fault === 'off' ? 'switched off' : 'unplugged'} (simulated)`;
+		},
+		online() {
+			simulateNow?.(null);
+			return 'GingerView: printer back (simulated)';
+		}
+	};
+	(window as unknown as { gingerview?: typeof api }).gingerview = api;
+	console.info(
+		"[GingerView] simulate a printer outage: gingerview.offline() · gingerview.offline('unplug') · gingerview.online()"
+	);
+	return () => {
+		delete (window as unknown as { gingerview?: typeof api }).gingerview;
+	};
 }

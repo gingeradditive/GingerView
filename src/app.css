@@ -232,6 +232,53 @@ button {
 	background-color: var(--color-background);
 }
 
+/*
+ * Intestazione delle sottopagine di Settings: freccia indietro (SettingsBackButton), titolo
+ * e, in alcune, una pill o un pulsante. Su telefono non ci stanno tutti in una riga: quello che
+ * avanza va a capo sotto il titolo invece di uscire dalla card. Ogni pagina tiene il proprio
+ * stile dell'header, qui c'è solo la regola che vale per tutte.
+ */
+@media (max-width: 767.98px) {
+	.settings-header {
+		flex-wrap: wrap;
+		row-gap: 10px;
+	}
+}
+
+/*
+ * Spinta di invito dei caroselli (azione `swipeHint`): le card scivolano verso sinistra e
+ * tornano, due volte, la seconda più piano. Anima `translate`, che si somma al `transform`
+ * con cui Embla posiziona le slide senza sovrascriverlo.
+ */
+.swipe-hint > .embla__container {
+	animation: swipe-hint 1.8s ease-in-out 1;
+}
+
+@keyframes swipe-hint {
+	0%,
+	100% {
+		translate: 0 0;
+	}
+	22% {
+		translate: -32px 0;
+	}
+	44% {
+		translate: 0 0;
+	}
+	62% {
+		translate: -18px 0;
+	}
+	80% {
+		translate: 0 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.swipe-hint > .embla__container {
+		animation: none;
+	}
+}
+
 /* Testo d'apertura delle finestre: titolo e riga sotto, uguali ovunque. */
 .sheet-title {
 	margin: 0;
@@ -475,6 +522,31 @@ button {
 	fill: none;
 	stroke: var(--color-white);
 	stroke-width: 3.5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Disegni piccoli, affiancati (es. i tre controlli del materiale): tratto doppio sul
+   loro viewBox 240×200, così a un terzo della larghezza pesano come gli altri. */
+.gv-illu.bold .ln,
+.gv-illu.bold .sf,
+.gv-illu.bold .sf-gray {
+	stroke-width: 6;
+	stroke-linecap: round;
+}
+
+.gv-illu.bold .ln-accent {
+	stroke-width: 5;
+}
+
+.gv-illu.bold .ok-mark {
+	stroke-width: 5;
+}
+
+.gv-illu.bold .ln-detail {
+	fill: none;
+	stroke: var(--color-text-muted);
+	stroke-width: 4;
 	stroke-linecap: round;
 	stroke-linejoin: round;
 }

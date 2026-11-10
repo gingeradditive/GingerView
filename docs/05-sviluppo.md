@@ -30,6 +30,25 @@ rifiuta il websocket da `localhost`). L'app resta same-origin come in produzione
 `cors_domains` da toccare sulle stampanti, e Moonraker e G2-Service passano entrambi dal
 loro nginx. Il proxy è in [vite.config.ts](../vite.config.ts) e non finisce mai nel bundle.
 
+### Stampante simulata
+
+Per sviluppare senza toccare una stampante vera:
+
+```bash
+./rundev.sh --sim          # oppure: VITE_DEMO=1 npm run dev
+```
+
+Con `VITE_DEMO=1` il simulatore di [src/lib/demo/](../src/lib/demo/) (lo stesso della demo per
+fiera) intercetta nel browser `fetch` e `WebSocket` verso le API della stampante e risponde con
+una G2 virtuale: temperature, movimenti, file, stampe, storico, aggiornamenti, rete, USB. Lo
+stato vive nel browser di chi apre la pagina. In questa modalità [vite.config.ts](../vite.config.ts)
+spegne il proxy, quindi nessuna richiesta può raggiungere `GINGERVIEW_PRINTER` anche se è
+impostata. Le pagine elencate in `hiddenRoutes` di [src/lib/demo/config.ts](../src/lib/demo/config.ts)
+sono nascoste anche qui.
+
+Senza il flag il simulatore non entra nel bundle, e una build con `VITE_DEMO=1` verso `build/`
+viene rifiutata: `build/` è ciò che scaricano le stampanti.
+
 Le variabili `VITE_*` restano come alternativa per chiamare un host direttamente, ma in quel
 caso il browser va cross-origin e `localhost:5173` deve essere tra le `cors_domains` di
 `moonraker.conf` (vedi [04 — CORS](04-moonraker.md#cors)).
@@ -208,19 +227,31 @@ invece di tab — `npm run format` li normalizza.
 
 ## Aggiungere una sottopagina di impostazioni
 
-1. Crea `src/routes/settings/<nome>/+page.svelte`.
-2. Per un segnaposto bastano tre righe, sfruttando il wrapper esistente:
+1. Crea `src/routes/settings/<nome>/+page.svelte` sullo schema delle altre sottopagine: una
+   `<section>` a tutta altezza con dentro una card bianca, e in cima alla card l'intestazione.
+2. L'intestazione ha la classe `settings-header` e comincia con la freccia indietro:
 
 ```svelte
 <script lang="ts">
-	import SettingsSubpage from '$lib/components/SettingsSubpage.svelte';
+	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
 </script>
 
-<SettingsSubpage title="Nome" />
+<section class="nome-page">
+	<div class="nome-card">
+		<header class="nome-header settings-header">
+			<SettingsBackButton />
+			<h1>Nome</h1>
+			<!-- eventuale pill o pulsante -->
+		</header>
+		…
+	</div>
+</section>
 ```
 
-`SettingsSubpage` fornisce intestazione, pulsante "indietro" verso `/settings` e, in assenza
-di contenuto, il testo "Coming soon". Per una pagina reale, passa il contenuto come figlio.
+`SettingsBackButton` è un link a `/settings` (non un `history.back()`, che da un link diretto
+uscirebbe dall'app). `settings-header` porta la regola comune di [app.css](../src/app.css): su
+telefono quello che non sta accanto al titolo va a capo invece di uscire dalla card. Lo stile
+dell'header (flex, `align-items: center`, gap 14px, `h1` a 2rem) resta nella pagina.
 
 3. Aggiungi la voce all'array `items` in
    [src/routes/settings/+page.svelte](../src/routes/settings/+page.svelte), scegliendo
@@ -259,8 +290,8 @@ diff, mentre `npm run format` la spezzerebbe su più righe a ogni rigenerazione.
    [DashboardCarousel.svelte](../src/lib/components/DashboardCarousel.svelte), passando al
    pannello `visible={isInView(<indice della slide>)}`: è così che l'iscrizione si ferma quando
    la slide esce dalla viewport.
-3. Aggiorna `pageCount` (usato per i pallini di navigazione) e verifica `startIndex`, che
-   determina quale slide è visibile all'apertura.
+3. Aggiorna `pageCount` e verifica `startIndex`, che determina quale slide è visibile
+   all'apertura.
 4. Controlla i breakpoint responsive (vedi [02 — Breakpoint](02-architettura.md#breakpoint)):
    sopra 1200px di larghezza e 600px di altezza il carosello mostra 5 slide con `flex: 0 0 20%`;
    con un numero diverso di pannelli quella percentuale va aggiornata. Le condizioni stanno sia

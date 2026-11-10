@@ -84,25 +84,29 @@ build/                      output della build — committato nel repo (vedi doc
   è `shutdown`/`error`/`disconnected`. Si ferma sopra la dock (`bottom: 96px`) e non compare sotto
   `/settings`, così il pulsante che fa ripartire la macchina e le pagine diagnostiche restano
   raggiungibili (vedi [04 — Avviso a schermo](04-moonraker.md#avviso-a-schermo-quando-kalico-è-fermo)).
+- **`<PrinterOfflineOverlay />`** — schermata bloccante, sopra tutto (dock e toast compresi),
+  quando la stampante non risponde affatto: spenta, in riavvio o fuori rete. Ritenta da sola e
+  sparisce al ritorno (vedi [04 — Stampante offline](04-moonraker.md#stampante-offline)).
 
 Tutte le pagine riservano `112px` di padding inferiore per non finire sotto la dock.
 
 ## Rotte
 
-| Rotta                     | Componente principale                         | Note                                                                                                                                                                                                            |
-| ------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                       | `DashboardCarousel` + `DashboardControlPanel` | 5 slide, parte dall'indice 2 (Job Info)                                                                                                                                                                         |
-| `/movement`               | `MovementCarousel`                            | 2 slide: `ToolheadPosition`, `ExtrudeDialog`                                                                                                                                                                    |
-| `/filelist`               | `PageContainer` → `PrintList`                 | Browser dei file G-code                                                                                                                                                                                         |
-| `/settings`               | elenco di voci                                | Alcune voci sono link esterni                                                                                                                                                                                   |
-| `/settings/network`       | pagina completa                               | Unica sottopagina con logica propria oltre a console                                                                                                                                                            |
-| `/settings/console`       | terminale G-code                              | WebSocket diretto verso Moonraker                                                                                                                                                                               |
-| `/settings/log`           | pagina completa                               | Download log + pulizia, non usa `SettingsSubpage` (vedi [04 — Moonraker](04-moonraker.md#log))                                                                                                                  |
-| `/settings/update`        | pagina completa                               | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager))                                                                               |
-| `/settings/timezone`      | pagina completa                               | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
-| `/settings/config-editor` | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
-| `/settings/history`       | pagina completa                               | Elenco job stampati, non usa `SettingsSubpage` (vedi [04 — History](04-moonraker.md#history))                                                                                                                   |
-| `/settings/statistics`    | pagina completa                               | Totali dei job, risorse in tempo reale, hardware, stato del server (vedi [04 — Statistics](04-moonraker.md#statistics))                                                                                         |
+| Rotta                           | Componente principale                         | Note                                                                                                                                                                                                            |
+| ------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                             | `DashboardCarousel` + `DashboardControlPanel` | 5 slide, parte dall'indice 2 (Job Info)                                                                                                                                                                         |
+| `/movement`                     | `MovementCarousel`                            | 2 slide: `ToolheadPosition`, `ExtrudeDialog`                                                                                                                                                                    |
+| `/filelist`                     | `PageContainer` → `PrintList`                 | Browser dei file G-code                                                                                                                                                                                         |
+| `/settings`                     | elenco di voci                                | Alcune voci sono link esterni                                                                                                                                                                                   |
+| `/settings/network`             | pagina completa                               | Unica sottopagina con logica propria oltre a console                                                                                                                                                            |
+| `/settings/console`             | terminale G-code                              | WebSocket diretto verso Moonraker                                                                                                                                                                               |
+| `/settings/log`                 | pagina completa                               | Download log + pulizia (vedi [04 — Moonraker](04-moonraker.md#log))                                                                                                                                             |
+| `/settings/update`              | pagina completa                               | Update manager di Moonraker: sistema e programmi, recovery, rollback (vedi [04 — Update manager](04-moonraker.md#update-manager))                                                                               |
+| `/settings/timezone`            | pagina completa                               | `TimezoneMap` + `TimezoneSelect`. Unica pagina che non parla né con Moonraker né con un servizio reale: il salvataggio è un mock (vedi [04 — Servizio di rete](04-moonraker.md#servizio-di-rete-non-moonraker)) |
+| `/settings/temperature-presets` | pagina completa                               | Preset di temperatura del popup della dashboard: PLA/PETG di base più quelli personalizzati, nel database di Moonraker (vedi [04 — Preferenze](04-moonraker.md#preferenze-di-gingerview))                       |
+| `/settings/config-editor`       | pagina completa                               | Editor dei config: albero della root `config` + editor CodeMirror + riavvii. Pagina **di sviluppo**, nascosta da `CONFIG_EDITOR_ENABLED` (vedi [04 — Config editor](04-moonraker.md#config-editor))             |
+| `/settings/history`             | pagina completa                               | Elenco job stampati (vedi [04 — History](04-moonraker.md#history))                                                                                                                                              |
+| `/settings/statistics`          | pagina completa                               | Totali dei job, risorse in tempo reale, hardware, stato del server (vedi [04 — Statistics](04-moonraker.md#statistics))                                                                                         |
 
 ### Breakpoint
 
@@ -221,6 +225,31 @@ passano `visible` guardando `slidesInView()`. Rientrando in vista il pannello ri
 stato in cache, così non si vedono numeri vecchi. I pannelli fuori dai caroselli
 (`DashboardControlPanel`, `DashboardQuickActionsPanel`, `DashboardPrintJobPanel`) non passano
 `visible` e restano sempre iscritti.
+
+**Far capire che si scorre (telefono).** Nel layout a una card i caroselli
+([DashboardCarousel](../src/lib/components/DashboardCarousel.svelte),
+[MovementCarousel](../src/lib/components/MovementCarousel.svelte)) danno tre segnali, perché gli
+utenti non capivano dal cellulare che c'erano altre card:
+
+- **card vicine visibili**: la slide è all'84%, centrata, e il carosello esce dai 16px di margine
+  della pagina fino al bordo dello schermo, così le card accanto spuntano ai lati. Il loop resta
+  infinito. In Movement, con due sole card a quella larghezza, Embla non riesce a farle girare:
+  su telefono le slide sono duplicate (Position, Heat & extrude, Position, Heat & extrude).
+  `ToolheadPosition` ed `ExtrudeDialog` reggono due istanze perché ognuna si iscrive allo stato
+  con un nome suo (`movement-toolhead-N`, `extrude-progress-N`); da tablet in su la copia sparisce;
+- **scritta "← Swipe to see more →"** in grigio scuro, solo testo (niente sfondo: sembrava un
+  pulsante), con il dito che mima il gesto
+  ([CarouselSwipeHint.svelte](../src/lib/components/CarouselSwipeHint.svelte)) al posto dei
+  puntini. Non è un comando e non dice su quale card si è; si nasconde dove le card sono tutte a
+  schermo;
+- **spinta di invito** ([swipe-hint.ts](../src/lib/actions/swipe-hint.ts)): poco dopo l'apertura le
+  card scivolano verso sinistra e tornano, due volte, finché l'utente non ha fatto uno swipe vero
+  su quel dispositivo (`gingerview.swipe-learned` in `localStorage`). Anima `translate` e non il
+  `transform` di Embla, quindi la card selezionata non cambia. Mai con "riduci movimento" né da
+  tablet in su.
+
+Da tablet in su il layout resta quello di prima (tre o cinque card affiancate, allineate a
+sinistra); nella dashboard a tre card la scritta compare al posto dei puntini.
 
 La query è una **funzione** e non una stringa perché non tutti i pannelli sanno da subito cosa
 chiedere: `DashboardTemperaturePanel` scopre le zone dell'ugello dalla macchina, e quando la

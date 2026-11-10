@@ -13,6 +13,12 @@ export interface Toast {
 	timestamp: Date;
 	duration: number;
 	dismissible: boolean;
+	/**
+	 * Per i toast che descrivono una **condizione** (Kalico fermo, un avviso di Moonraker):
+	 * un nuovo toast con la stessa chiave sostituisce il vecchio invece di accumularsi, e
+	 * `resolve(key)` lo chiude quando la condizione rientra. Senza chiave è un evento singolo.
+	 */
+	key?: string;
 }
 
 type ToastInput = Omit<Toast, 'id' | 'timestamp'> & { duration?: number; dismissible?: boolean };
@@ -31,6 +37,10 @@ function generateId(): string {
 }
 
 function addToast(input: ToastInput): string {
+	if (input.key) {
+		const key = input.key;
+		toastList.update((list) => list.filter((t) => t.key !== key));
+	}
 	const id = generateId();
 	const toast: Toast = {
 		...TOAST_DEFAULTS,
@@ -58,6 +68,16 @@ function dismissToast(id: string): void {
 	toastList.update((list) => list.filter((t) => t.id !== id));
 }
 
+/** Chiude il toast di una condizione che è rientrata (vedi `Toast.key`). */
+function resolve(key: string): void {
+	toastList.update((list) => list.filter((t) => t.key !== key));
+}
+
+/** Toglie gli avvisi di una sorgente: quando quello che dicevano non vale più. */
+function clearSource(source: ToastSource): void {
+	toastList.update((list) => list.filter((t) => t.source !== source));
+}
+
 function clearAll(): void {
 	toastList.set([]);
 }
@@ -68,8 +88,17 @@ export const toastActions = {
 	add: addToast,
 	dismiss: dismissToast,
 	clearAll,
+	clearSource,
+	resolve,
 
-	error(source: ToastSource, title: string, message: string, duration?: number, details?: string) {
+	error(
+		source: ToastSource,
+		title: string,
+		message: string,
+		duration?: number,
+		details?: string,
+		key?: string
+	) {
 		return addToast({
 			type: 'error',
 			source,
@@ -77,7 +106,8 @@ export const toastActions = {
 			message,
 			details,
 			duration: duration ?? 8000,
-			dismissible: true
+			dismissible: true,
+			key
 		});
 	},
 
@@ -86,7 +116,8 @@ export const toastActions = {
 		title: string,
 		message: string,
 		duration?: number,
-		details?: string
+		details?: string,
+		key?: string
 	) {
 		return addToast({
 			type: 'warning',
@@ -95,7 +126,8 @@ export const toastActions = {
 			message,
 			details,
 			duration: duration ?? 6000,
-			dismissible: true
+			dismissible: true,
+			key
 		});
 	},
 

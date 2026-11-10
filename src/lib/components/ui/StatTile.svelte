@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Icon as LucideIcon } from 'lucide-svelte';
 
-	// Un dato del file o del lavoro: icona, valore, e sotto cosa è. Uguale nel dettaglio del
+	// Un dato del file o del lavoro: sopra cosa è, poi il valore e sotto l'icona. Uguale nel dettaglio del
 	// file e in quello dello storico, che prima avevano uno icone senza etichetta e l'altro
 	// etichette senza icone.
 	let {
@@ -18,6 +18,8 @@
 </script>
 
 <div class="stat">
+	<span class="label">{label}</span>
+	<span class="value">{value}</span>
 	<span class="icon" aria-hidden="true">
 		{#if iconSrc}
 			<img src={iconSrc} alt="" width="26" height="26" />
@@ -25,8 +27,6 @@
 			<Icon size={24} />
 		{/if}
 	</span>
-	<span class="value">{value}</span>
-	<span class="label">{label}</span>
 </div>
 
 <style>
@@ -63,8 +63,6 @@
 	.label {
 		font-size: 0.72rem;
 		font-weight: 600;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
 		color: var(--color-text-subtle);
 	}
 </style>

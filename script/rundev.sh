@@ -10,6 +10,8 @@
 # Usage: rundev.sh [options] [-- vite args]
 #   --install       Reinstall dependencies without asking
 #   --no-install    Skip the question and start straight away
+#   --sim           Use the simulated printer in the browser (src/lib/demo/)
+#                   instead of a real one: nothing reaches GINGERVIEW_PRINTER
 #   -h, --help      Show this help
 
 set -Eeuo pipefail
@@ -18,11 +20,13 @@ set -Eeuo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 FORCE_INSTALL=""
+SIM=""
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--install)    FORCE_INSTALL=yes; shift ;;
 		--no-install) FORCE_INSTALL=no; shift ;;
+		--sim)        SIM=1; shift ;;
 		-h|--help)    awk 'NR < 3 { next } /^#/ { sub(/^# ?/, ""); print; next } { exit }' "$0"; exit 0 ;;
 		--)           shift; break ;;
 		*)            break ;;
@@ -94,7 +98,10 @@ if [ -f .env ]; then
 	warn "A .env is read by \`vite build\` too: move its settings to .env.development.local."
 fi
 
-if [ -n "$PRINTER" ]; then
+if [ -n "$SIM" ]; then
+	export VITE_DEMO=1
+	info "Simulated printer in the browser: no real printer is contacted"
+elif [ -n "$PRINTER" ]; then
 	info "Proxying the printer API to $PRINTER (same-origin, like nginx)"
 elif [ -n "$DIRECT_HOST" ]; then
 	info "Calling Moonraker directly at $DIRECT_HOST (needs cors_domains on the printer)"

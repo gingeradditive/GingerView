@@ -6,7 +6,9 @@
 	// stray tap (delete, stop, recovery). `tone` picks colour and default icon:
 	// `danger` for what can't be undone, `warning` for what interrupts something,
 	// `info` for the rest. `icon` replaces the default with the action's own
-	// (a bin for Delete, a power button for Switch off).
+	// (a bin for Delete, a power button for Switch off); `iconPath` does the same
+	// with a Material Design Icons path, for buttons that use one — the dialog
+	// shows the icon of the button that opened it.
 	let {
 		isOpen,
 		title,
@@ -15,6 +17,7 @@
 		confirmLabel = 'Confirm',
 		tone = 'danger',
 		icon,
+		iconPath,
 		onConfirm,
 		onCancel
 	}: {
@@ -25,6 +28,7 @@
 		confirmLabel?: string;
 		tone?: 'danger' | 'warning' | 'info';
 		icon?: typeof LucideIcon;
+		iconPath?: string;
 		onConfirm: () => void;
 		onCancel: () => void;
 	} = $props();
@@ -43,7 +47,11 @@
 	<Sheet label={title} onClose={onCancel} size="sm">
 		<div class="content">
 			<span class="badge {tone}" aria-hidden="true">
-				<ToneIcon size={28} />
+				{#if iconPath}
+					<svg viewBox="0 0 24 24" class="mdi-icon"><path d={iconPath} /></svg>
+				{:else}
+					<ToneIcon size={28} />
+				{/if}
 			</span>
 			<h3 class="sheet-title">{title}</h3>
 			<p class="message">{message}</p>
@@ -84,6 +92,12 @@
 		height: 60px;
 		margin-bottom: 14px;
 		border-radius: 50%;
+	}
+
+	.mdi-icon {
+		width: 28px;
+		height: 28px;
+		fill: currentColor;
 	}
 
 	.badge.danger {
