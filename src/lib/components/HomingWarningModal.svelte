@@ -7,7 +7,7 @@
 	// Gli stessi due controlli dello step "Nozzle & bed" del wizard di stampa, con gli stessi
 	// disegni, prima di ogni movimento automatico della testa. `action` dice cosa sta per
 	// succedere: "Confirm" da solo non lo diceva.
-	// `allowInPlace` (modalità advanced, solo per l'estrusione) aggiunge l'interruttore per
+	// `allowInPlace` (solo per l'estrusione) aggiunge l'interruttore per
 	// estrudere dove sta la testa, senza homing né spostamento.
 	let {
 		isOpen,

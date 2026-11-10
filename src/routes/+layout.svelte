@@ -11,7 +11,6 @@
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
 	import PrinterOfflineOverlay from '$lib/components/PrinterOfflineOverlay.svelte';
-	import { ensureUiMode } from '$lib/stores/uiModeStore';
 	import '@fontsource-variable/montserrat';
 	import '../app.css';
 
@@ -23,12 +22,6 @@
 	// exist only during development: a production build is same-origin and carries no
 	// addresses at all. So the check runs in dev only, and on mount rather than at module
 	// scope, because the WebSocket URL is resolved from `window.location`.
-	// Semplice o avanzata decide cosa mostrano pagine diverse (la dashboard per
-	// prima): si legge una volta all'avvio, non solo aprendo /settings.
-	onMount(() => {
-		ensureUiMode();
-	});
-
 	onMount(() => {
 		if (!import.meta.env.DEV) return;
 		const { isValid, errors } = configService.validateConfig();

@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SlidersHorizontal } from 'lucide-svelte';
 	import ExtruderTemperatureCard from '$lib/components/ExtruderTemperatureCard.svelte';
 	import ExtruderTemperatureModal from '$lib/components/ExtruderTemperatureModal.svelte';
 	import TemperaturePresetsSheet from '$lib/components/TemperaturePresetsSheet.svelte';
 	import HeaterTrendIcon from '$lib/components/HeaterTrendIcon.svelte';
 	import { describeTrend, heaterTrend } from '$lib/utils/heater-trend';
-	import { uiMode } from '$lib/stores/uiModeStore';
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -38,10 +36,10 @@
 	let extruderTargets = $state<(number | null)[]>([]);
 	let bedTemperature = $state<number | null>(null);
 	let bedTarget = $state<number | null>(null);
-	// Solo in modalità avanzata il disegno si tocca: apre i preset, e da lì "Custom" apre i
-	// campi liberi. In semplice il pannello è di sola lettura.
+	// Il disegno si tocca: apre i preset, e da lì "Custom" apre i campi liberi. Finché
+	// non arrivano le zone il pannello è di sola lettura.
 	let sheet = $state<'presets' | 'custom' | null>(null);
-	let canSet = $derived($uiMode === 'advanced' && zoneKeys.length > 0);
+	let canSet = $derived(zoneKeys.length > 0);
 
 	const formatTemperature = (value: number | null): string => {
 		if (value == null || Number.isNaN(value)) return '--';
@@ -142,8 +140,7 @@
 
 <section class="temperature-panel" aria-label="Nozzle and bed temperatures">
 	{#if canSet}
-		<!-- Tutta la card è il pulsante, bordi compresi, non solo il disegno. Il badge in alto
-		     a destra dice che si tocca, ora che la barra "EXTRUDER · SET" non c'è più. -->
+		<!-- Tutta la card è il pulsante, bordi compresi, non solo il disegno. -->
 		<button
 			type="button"
 			class="drawing interactive"
@@ -152,7 +149,6 @@
 		>
 			{@render drawing()}
 		</button>
-		<span class="set-badge" aria-hidden="true"><SlidersHorizontal size={16} /></span>
 	{:else}
 		<div class="drawing">
 			{@render drawing()}
@@ -194,16 +190,24 @@
 		box-shadow: var(--shadow-panel);
 		position: relative;
 		/*
-		 * Everything inside is drawn in `--u`, a pixel that shrinks when the panel
-		 * is too short (13" laptops, small screens) and is a plain pixel otherwise.
-		 * The stack is ~362u tall (four zones, the nozzle, the bed) and the bed
-		 * ~150u wide. Resolved by the children, so `cq*` refers to this panel.
+		 * Everything inside is drawn in `--u`, so the extruder scales without
+		 * changing its proportions. The stack is ~362u tall (four zones, the
+		 * nozzle, the bed) and the bed ~150u wide. `--u` is halfway between a plain
+		 * pixel (shrunk only when the panel is too small) and the size that fills
+		 * the card with a little air around it: bigger than it was, not wall to wall.
+		 * Resolved by the children, so `cq*` refers to this panel.
 		 */
 		container-type: size;
-		--u: min(1px, calc(100cqh / 362), calc(100cqw / 150));
+		--u: calc(
+			(
+					min(1px, calc(100cqh / 362), calc(100cqw / 150)) +
+						min(calc(100cqh / 380), calc(100cqw / 158))
+				) /
+				2
+		);
 	}
 
-	/* Il contenitore del disegno: un div in semplice, un pulsante in advanced. Non
+	/* Il contenitore del disegno: un pulsante, o un div finché non ci sono le zone. Non
 	   aggiunge misure sue, così `--u` resta quello del pannello. */
 	.drawing {
 		display: flex;
@@ -242,21 +246,6 @@
 	button.drawing:focus-visible {
 		outline: 2px solid var(--color-red);
 		outline-offset: -4px;
-	}
-
-	.set-badge {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 30px;
-		height: 30px;
-		border-radius: 10px;
-		background: var(--color-surface-sunken);
-		color: var(--color-text-muted);
-		pointer-events: none;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

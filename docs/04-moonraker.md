@@ -316,26 +316,24 @@ totali aggregati (`total_jobs`, `total_print_time`, …) mostrati in
 
 | Endpoint                                                                 | Usato da                  | Scopo                                        |
 | ------------------------------------------------------------------------ | ------------------------- | -------------------------------------------- |
-| `GET /server/database/item?namespace=gingerview&key=ui_mode`             | `uiModeStore`             | Legge la modalità Simple/Advanced            |
-| `POST /server/database/item`                                             | `uiModeStore`             | La salva (`{namespace, key, value}`)         |
 | `GET /server/database/item?namespace=gingerview&key=temperature_presets` | `temperaturePresetsStore` | Legge i preset di temperatura personalizzati |
 | `POST /server/database/item`                                             | `temperaturePresetsStore` | Salva l'elenco intero, a ogni modifica       |
 
 Le preferenze stanno nel database di Moonraker, namespace `gingerview`, e non nel browser: sono
-della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa. Chiave
-mancante (404) = default `simple`, che è l'interfaccia com'è oggi; `advanced` aggiungerà funzioni.
-Viene letta all'avvio dell'app (`+layout.svelte`). Cosa cambia in `advanced`:
+della macchina, quindi ogni telefono, tablet o computer che si collega vede la stessa.
+
+La modalità Simple/Advanced è stata tolta: l'interfaccia è sempre quella che prima era la
+modalità advanced. La chiave `ui_mode`, se una stampante l'ha già salvata, non viene più letta.
 
 - **Dashboard, card temperature**: il disegno dell'estrusore (zone, ugello e piatto) diventa un
-  pulsante, con un piccolo badge in alto a destra che lo segnala. Il tocco apre
-  `TemperaturePresetsSheet`, l'elenco dei preset: un tocco su un preset lo **applica subito**
+  pulsante. Il tocco apre `TemperaturePresetsSheet`, l'elenco dei preset: un tocco su un preset lo **applica subito**
   (un `SET_HEATER_TEMPERATURE` per zona più il piatto, `applyHeaterTargets`) e chiude; **Turn all
   off** spegne tutto. L'ultima voce, **Custom**, apre `ExtruderTemperatureModal`: target libero per
   ogni zona (0–300 °C, vuoto o 0 = spenta) e per il piatto (0–110 °C), applicato solo con
-  **Apply**. In `simple` il disegno non si tocca e la card è di sola lettura.
+  **Apply**.
 
 **Scalda o si raffredda.** Ogni banda della card (zona dell'ugello o piatto) mostra dove sta
-andando, in tutte e due le modalità, con
+andando, con
 [heater-trend.ts](../src/lib/utils/heater-trend.ts) e
 [HeaterTrendIcon.svelte](../src/lib/components/HeaterTrendIcon.svelte). Si decide dal target e non
 dalla variazione nel tempo, così le oscillazioni a regime non fanno tremolare l'icona:

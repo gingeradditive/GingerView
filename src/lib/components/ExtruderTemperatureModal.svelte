@@ -8,8 +8,7 @@
 	} from '$lib/stores/temperaturePresetsStore';
 
 	/**
-	 * Temperature libere delle zone dell'ugello e del piatto — solo in modalità
-	 * avanzata. È il "Custom" del popup dei preset (`TemperaturePresetsSheet`), che si
+	 * Temperature libere delle zone dell'ugello e del piatto. È il "Custom" del popup dei preset (`TemperaturePresetsSheet`), che si
 	 * apre toccando il disegno dell'estrusore nella dashboard.
 	 *
 	 * I campi partono dai target attuali e diventano effettivi solo con Apply:

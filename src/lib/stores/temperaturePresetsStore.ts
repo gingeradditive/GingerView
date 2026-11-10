@@ -8,7 +8,7 @@ import { toastActions } from '$lib/stores/toastStore';
  * Preset di temperatura del popup "Temperatures" della dashboard: una temperatura per
  * zona dell'ugello più il piatto, da mettere nei campi con un tocco.
  *
- * Si aprono toccando il disegno dell'estrusore (modalità advanced): un tocco su un preset
+ * Si aprono toccando il disegno dell'estrusore: un tocco su un preset
  * lo applica subito; "Custom" porta ai campi liberi di `ExtruderTemperatureModal`.
  *
  * Due famiglie:

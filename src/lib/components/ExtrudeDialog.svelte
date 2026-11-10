@@ -14,7 +14,6 @@
 	import { loadNozzleZones } from '$lib/services/moonraker-zones';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 	import { toastActions } from '$lib/stores/toastStore';
-	import { ensureUiMode, uiMode } from '$lib/stores/uiModeStore';
 	import {
 		amountOptions,
 		customTemperaturePreset,
@@ -41,11 +40,6 @@
 	// Selected parameters and running phase live in the store, so leaving the page
 	// mid-sequence no longer resets the dialog — see movementStore.
 	let showHomingWarning = $state(false);
-
-	// "Extrude in place" nel popup di conferma c'è solo in modalità advanced.
-	$effect(() => {
-		ensureUiMode();
-	});
 
 	const phaseLabels: Record<ExtrudePhase, string> = {
 		idle: 'HEAT & EXTRUDE',
@@ -440,7 +434,7 @@
 <HomingWarningModal
 	isOpen={showHomingWarning}
 	action="extrude"
-	allowInPlace={$uiMode === 'advanced'}
+	allowInPlace
 	onConfirm={confirmHomingWarning}
 	onCancel={cancelHomingWarning}
 />

@@ -20,7 +20,7 @@
 
 	/**
 	 * Il primo popup delle temperature, aperto toccando il disegno dell'estrusore nella
-	 * dashboard (modalità advanced).
+	 * dashboard.
 	 *
 	 * Un preset si **applica al tocco** e il popup si chiude: è una scorciatoia, e una
 	 * conferma in più la renderebbe inutile. Chi vuole decidere zona per zona sceglie
