@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Power } from 'lucide-svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import ZoneTemperatureEditor from '$lib/components/ZoneTemperatureEditor.svelte';
 	import {
@@ -80,7 +79,7 @@
 </script>
 
 {#if isOpen}
-	<Sheet label="Custom temperatures" {onClose} size="sm">
+	<Sheet label="Custom temperatures" {onClose} size="md">
 		{#snippet header()}
 			<h3 class="sheet-title">Custom temperatures</h3>
 			<p class="sheet-subtitle">
@@ -117,7 +116,6 @@
 				disabled={busy || (inputs.every((value) => value == null) && bedInput == null)}
 				onclick={allOff}
 			>
-				<Power size={18} />
 				Turn all off
 			</button>
 			<button type="button" class="btn btn-secondary" onclick={onClose}>Cancel</button>
@@ -129,8 +127,12 @@
 {/if}
 
 <style>
+	/* Testo solo, centrato: con tre pulsanti in fila su telefono va a capo invece di uscire. */
 	.off {
+		padding: 0 12px;
 		color: var(--color-red);
+		white-space: normal;
+		text-align: center;
 	}
 
 	.error {

@@ -2,7 +2,6 @@
 	import {
 		ChevronRight,
 		LoaderCircle,
-		Power,
 		Settings2,
 		SlidersHorizontal,
 		Thermometer
@@ -88,7 +87,7 @@
 </script>
 
 {#if isOpen}
-	<Sheet label="Temperatures" onClose={() => !busy && onClose()} size="sm">
+	<Sheet label="Temperatures" onClose={() => !busy && onClose()} size="md">
 		{#snippet header()}
 			<h3 class="sheet-title">Temperatures</h3>
 			<p class="sheet-subtitle">Pick a preset — it heats up right away.</p>
@@ -149,12 +148,7 @@
 				disabled={busy !== null || !anyOn}
 				onclick={allOff}
 			>
-				{#if busy === 'off'}
-					<LoaderCircle size={18} class="spin" />
-				{:else}
-					<Power size={18} />
-				{/if}
-				Turn all off
+				{busy === 'off' ? 'Turning off…' : 'Turn all off'}
 			</button>
 			<button type="button" class="btn btn-secondary" disabled={busy !== null} onclick={onClose}>
 				Cancel
@@ -295,10 +289,6 @@
 		animation: spin 0.9s linear infinite;
 	}
 
-	.off :global(.spin) {
-		animation: spin 0.9s linear infinite;
-	}
-
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
@@ -324,8 +314,12 @@
 		background: var(--color-background);
 	}
 
+	/* Testo solo, centrato: se non ci sta va a capo invece di uscire dal pulsante. */
 	.off {
+		padding: 0 12px;
 		color: var(--color-red);
+		white-space: normal;
+		text-align: center;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
