@@ -57,8 +57,21 @@ export default defineConfig(({ command, mode }) => {
 		}
 	}
 
+	// Con `VITE_DEMO=1` l'app parla con la stampante simulata nel browser
+	// (src/lib/demo/): niente proxy, così nessuna richiesta può raggiungere una
+	// stampante vera anche se `GINGERVIEW_PRINTER` è impostata.
+	const demo = loadEnv(mode, process.cwd(), 'VITE_').VITE_DEMO === '1';
+
+	// `build/` è tracciata ed è ciò che scaricano le stampanti: il simulatore non
+	// ci deve mai finire. La build della demo usa una cartella sua (BUILD_DIR).
+	if (command === 'build' && demo && (process.env.BUILD_DIR ?? 'build') === 'build') {
+		throw new Error(
+			'Build refused: VITE_DEMO=1 would put the simulated printer into build/. Set BUILD_DIR to another folder.'
+		);
+	}
+
 	// Senza prefisso VITE_: è configurazione del dev server, non deve finire nel bundle.
-	const printer = loadEnv(mode, process.cwd(), 'GINGERVIEW_').GINGERVIEW_PRINTER;
+	const printer = demo ? undefined : loadEnv(mode, process.cwd(), 'GINGERVIEW_').GINGERVIEW_PRINTER;
 
 	return {
 		plugins: [sveltekit()],

@@ -1,0 +1,174 @@
+[
+	{
+		"path": "Bloom Vase_PLA_51m0s.gcode",
+		"size": 3243675,
+		"modified": 1770994157,
+		"thumbnail": {
+			"file": "bloom-vase-pla-51m0s.png",
+			"width": 50,
+			"height": 50,
+			"size": 1766
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.2.0",
+			"estimated_time": 3060,
+			"layer_height": 1.8,
+			"first_layer_height": 1.8,
+			"object_height": 185.4,
+			"filament_total": 512162.8,
+			"filament_weight_total": 635.08,
+			"filament_type": "PLA",
+			"filament_name": "Ginger Generic PLA",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 210,
+			"first_layer_bed_temp": 50,
+			"extruder_temp": 210,
+			"bed_temp": 50
+		}
+	},
+	{
+		"path": "Customer samples/Vase_Wave_rPLA.gcode",
+		"size": 32500000,
+		"modified": 1789635600,
+		"placeholder": true,
+		"thumbnail": {
+			"file": "vase-wave-rpla.png",
+			"width": 300,
+			"height": 300,
+			"size": 21380
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.3.1",
+			"estimated_time": 67200,
+			"layer_height": 2,
+			"first_layer_height": 2,
+			"object_height": 900,
+			"filament_total": 10080645,
+			"filament_weight_total": 12500,
+			"filament_type": "PLA",
+			"filament_name": "Ginger rPLA - v3",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 220,
+			"first_layer_bed_temp": 55,
+			"extruder_temp": 220,
+			"bed_temp": 55
+		}
+	},
+	{
+		"path": "JUG_rPLA.gcode",
+		"size": 1798334,
+		"modified": 1770994157,
+		"thumbnail": {
+			"file": "jug-rpla.png",
+			"width": 50,
+			"height": 50,
+			"size": 1071
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.3.1.1",
+			"estimated_time": 3356,
+			"layer_height": 1.5,
+			"first_layer_height": 1.5,
+			"object_height": 180,
+			"filament_total": 475214.2,
+			"filament_weight_total": 589.27,
+			"filament_type": "PLA",
+			"filament_name": "Ginger rPLA - v3",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 220,
+			"first_layer_bed_temp": 55,
+			"extruder_temp": 220,
+			"bed_temp": 55
+		}
+	},
+	{
+		"path": "Lamp_Shade_Twist_PLA.gcode",
+		"size": 8060000,
+		"modified": 1790413200,
+		"placeholder": true,
+		"thumbnail": {
+			"file": "lamp-shade-twist-pla.png",
+			"width": 300,
+			"height": 300,
+			"size": 35335
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.3.1",
+			"estimated_time": 23400,
+			"layer_height": 2,
+			"first_layer_height": 2,
+			"object_height": 480,
+			"filament_total": 2500000,
+			"filament_weight_total": 3100,
+			"filament_type": "PLA",
+			"filament_name": "Ginger Generic PLA",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 210,
+			"first_layer_bed_temp": 50,
+			"extruder_temp": 210,
+			"bed_temp": 50
+		}
+	},
+	{
+		"path": "Planter_XL_rPETG.gcode",
+		"size": 16640000,
+		"modified": 1790672400,
+		"placeholder": true,
+		"thumbnail": {
+			"file": "planter-xl-rpetg.png",
+			"width": 300,
+			"height": 300,
+			"size": 28567
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.3.1",
+			"estimated_time": 33300,
+			"layer_height": 2,
+			"first_layer_height": 2,
+			"object_height": 620,
+			"filament_total": 5039370,
+			"filament_weight_total": 6400,
+			"filament_type": "PETG",
+			"filament_name": "Ginger rPETG",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 235,
+			"first_layer_bed_temp": 70,
+			"extruder_temp": 235,
+			"bed_temp": 70
+		}
+	},
+	{
+		"path": "Stool_rPP.gcode",
+		"size": 25480000,
+		"modified": 1790067600,
+		"placeholder": true,
+		"thumbnail": {
+			"file": "stool-rpp.png",
+			"width": 300,
+			"height": 300,
+			"size": 25490
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "2.3.1",
+			"estimated_time": 51000,
+			"layer_height": 2,
+			"first_layer_height": 2,
+			"object_height": 450,
+			"filament_total": 10888889,
+			"filament_weight_total": 9800,
+			"filament_type": "PP",
+			"filament_name": "Ginger rPP",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 220,
+			"first_layer_bed_temp": 60,
+			"extruder_temp": 220,
+			"bed_temp": 60
+		}
+	}
+]
