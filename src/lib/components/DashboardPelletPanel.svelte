@@ -41,7 +41,10 @@
 			: "The feeder's off and there's no pellet loaded. Tap to turn it on."
 	);
 	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
-	let percentage = $derived(totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
+	// Solo nel dev server: card sempre mezza piena, per vedere il bordo tra pieno e vuoto
+	// anche a stampa ferma. Nella build per la stampante `DEV` è falso e sparisce.
+	const debugHalfFull = import.meta.env.DEV;
+	let percentage = $derived(debugHalfFull ? 50 : totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
 
 	// Generate circles for the SVG
 	const circles = Array.from({ length: 40 }, (_, i) => ({
@@ -164,7 +167,7 @@
 		use:tooltip={feederHint}
 		onclick={toggleFeeder}
 	>
-		{#if !isIdle}
+		{#if !isIdle || debugHalfFull}
 			<div class="pellet-fill" style="height: {percentage}%">
 				<svg
 					width="100%"
