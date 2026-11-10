@@ -20,11 +20,9 @@
 	/**
 	 * Moves the toolhead, opened by the Move button of `ToolheadPosition`.
 	 *
-	 * Two ways to get somewhere, for a machine of about a metre per side: jog
-	 * buttons with a step from 1 mm to 50 cm for "over there, roughly", and
-	 * coordinate fields for "exactly here". Both send absolute moves through
-	 * `moveToolhead()`, which orders Z and XY so the nozzle does not cross the bed
-	 * low.
+	 * Jog buttons with a step from 1 mm to 500 mm, for a machine of about a metre
+	 * per side. They send absolute moves through `moveToolhead()`, which orders Z
+	 * and XY so the nozzle does not cross the bed low.
 	 *
 	 * Mounted only while open, so its subscription lives only while it is shown.
 	 */
@@ -58,19 +56,12 @@
 	let homedAxes = $state('');
 	let printState = $state('');
 
-	// The coordinate fields. Filled with the position once it is known, and
-	// left alone afterwards: the user may be typing.
-	let fields = $state<Record<Axis, number | null>>({ x: null, y: null, z: null });
-	let fieldsSeeded = false;
-
 	let showHomingWarning = $state(false);
 
 	const toPosition = (values: number[] | undefined): AxisPosition | null =>
 		Array.isArray(values) && values.length > 2
 			? { x: Number(values[0]) || 0, y: Number(values[1]) || 0, z: Number(values[2]) || 0 }
 			: null;
-
-	const round = (value: number): number => Math.round(value * 10) / 10;
 
 	const updateStatus = (status: MoveStatus): void => {
 		const toolhead = status.toolhead;
@@ -92,10 +83,6 @@
 		// client, a homing or a refused move may have changed it).
 		if (gcodePosition) reported = gcodePosition;
 		if (gcodePosition && $moveRequestsInFlight === 0) commanded = gcodePosition;
-		if (gcodePosition && !fieldsSeeded) {
-			fields = { x: round(gcodePosition.x), y: round(gcodePosition.y), z: round(gcodePosition.z) };
-			fieldsSeeded = true;
-		}
 
 		if (typeof status.print_stats?.state === 'string') printState = status.print_stats.state;
 	};
@@ -139,44 +126,13 @@
 		if (!accepted) commanded = reported;
 	};
 
-	const fieldError = (axis: Axis): string | null => {
-		const value = fields[axis];
-		if (value === null || !Number.isFinite(value)) return 'Type a value';
-		if (value < minimum[axis] || value > maximum[axis]) {
-			return `Between ${minimum[axis]} and ${maximum[axis]} mm`;
-		}
-		return null;
-	};
-
-	const fieldsValid = $derived(axes.every((axis) => fieldError(axis) === null));
-
-	const goTo = async (): Promise<void> => {
-		if (!canMove || !fieldsValid || !commanded) return;
-		const from = { ...commanded };
-		const to = { x: fields.x!, y: fields.y!, z: fields.z! };
-		commanded = to;
-		const accepted = await moveToolhead(from, to);
-		if (!accepted) commanded = reported;
-	};
-
-	const fillCenter = (): void => {
-		fields = { ...fields, x: round(maximum.x / 2), y: round(maximum.y / 2) };
-	};
-
-	const fillCurrent = (): void => {
-		const source = commanded ?? actual;
-		if (!source) return;
-		fields = { x: round(source.x), y: round(source.y), z: round(source.z) };
-	};
-
 	const confirmHoming = (): void => {
 		showHomingWarning = false;
 		startHoming();
 	};
 
 	// Arrow keys jog X/Y and PageUp/PageDown jog Z, for whoever drives the panel
-	// from a desktop. Not while typing a coordinate, and not under the homing
-	// confirmation.
+	// from a desktop. Not under the homing confirmation.
 	const keyJogs: Record<string, [Axis, 1 | -1]> = {
 		ArrowUp: ['y', 1],
 		ArrowDown: ['y', -1],
@@ -189,7 +145,6 @@
 	const handleKeydown = (event: KeyboardEvent): void => {
 		// Escape, focus e blocco dello scroll li gestisce `use:modal`.
 		if (showHomingWarning) return;
-		if (event.target instanceof HTMLInputElement) return;
 		const keyJog = keyJogs[event.key];
 		if (!keyJog) return;
 		event.preventDefault();
@@ -198,7 +153,7 @@
 
 	const axisLabel = (axis: Axis): string => axis.toUpperCase();
 
-	// Il passo scelto, per le etichette dei pulsanti di jog ("Move X by +1 cm").
+	// Il passo scelto, per le etichette dei pulsanti di jog ("Move X by +10 mm").
 	const stepLabel = $derived(
 		jogStepOptions.find((option) => option.mm === $jogStepMm)?.label ?? `${$jogStepMm} mm`
 	);
@@ -221,15 +176,6 @@
 	<div class="move-panel" role="document" onclick={(e) => e.stopPropagation()}>
 		<header class="move-header">
 			<h2>Move</h2>
-			<div class="readout" aria-live="polite">
-				{#each axes as axis (axis)}
-					<span class="readout-item">
-						<span class="axis-name axis-{axis}">{axisLabel(axis)}</span>
-						<span class="readout-value">{actual ? actual[axis].toFixed(1) : '—'}</span>
-					</span>
-				{/each}
-				<span class="readout-unit">mm</span>
-			</div>
 			{#if moving}
 				<span class="moving-chip">Moving…</span>
 			{/if}
@@ -347,54 +293,21 @@
 				</div>
 			</section>
 
-			<div class="body-divider"></div>
+			<!-- Due terzi al jog, l'ultimo alle coordinate attuali, divisi da una linea leggera. -->
+			<div class="body-divider" aria-hidden="true"></div>
 
-			<section class="move-section">
-				<span class="section-label">GO TO</span>
-				<div class="field-list">
+			<section class="move-section position-section" aria-live="polite">
+				<span class="section-label">POSITION</span>
+				<div class="position-list">
 					{#each axes as axis (axis)}
-						{@const error = limitsKnown ? fieldError(axis) : null}
-						<label class="coord-field" class:invalid={error !== null}>
+						<div class="position-row">
 							<span class="axis-name axis-{axis}">{axisLabel(axis)}</span>
-							<input
-								type="number"
-								inputmode="decimal"
-								step="0.1"
-								min={minimum[axis]}
-								max={maximum[axis]}
-								bind:value={fields[axis]}
-								disabled={!canMove}
-								onkeydown={(e) => e.key === 'Enter' && goTo()}
-							/>
-							<span class="field-unit">mm</span>
-							<span class="field-hint">
-								{error ?? `${minimum[axis]} – ${maximum[axis]} mm`}
+							<span class="position-value">
+								{actual ? actual[axis].toFixed(1) : '—'}<span class="position-unit">mm</span>
 							</span>
-						</label>
+						</div>
 					{/each}
 				</div>
-				<div class="fill-row">
-					<button
-						class="fill-btn"
-						disabled={!canMove}
-						use:tooltip={'Use the centre of the bed for X and Y'}
-						onclick={fillCenter}>Center XY</button
-					>
-					<button
-						class="fill-btn"
-						disabled={!canMove}
-						use:tooltip={'Use where the head is now'}
-						onclick={fillCurrent}>Current</button
-					>
-				</div>
-				<button
-					class="goto-btn"
-					disabled={!canMove || !fieldsValid}
-					use:tooltip={'Go to the X, Y and Z above (Z moves first going up, last going down)'}
-					onclick={goTo}
-				>
-					GO TO
-				</button>
 			</section>
 		</div>
 	</div>
@@ -451,30 +364,6 @@
 		font-size: 1.3rem;
 		font-weight: 700;
 		color: var(--color-black);
-	}
-
-	.readout {
-		display: flex;
-		align-items: baseline;
-		gap: 16px;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.readout-item {
-		display: inline-flex;
-		align-items: baseline;
-		gap: 6px;
-	}
-
-	.readout-value {
-		font-size: 1.3rem;
-		font-weight: 600;
-		color: var(--color-text-muted);
-	}
-
-	.readout-unit {
-		font-size: 0.9rem;
-		color: var(--color-text-subtle);
 	}
 
 	.axis-name {
@@ -572,17 +461,55 @@
 		gap: 20px;
 	}
 
-	.body-divider {
-		height: 1px;
-		background: var(--color-surface-sunken);
-	}
-
 	.move-section {
-		flex: 1;
+		flex: 2;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 14px;
+	}
+
+	.body-divider {
+		flex-shrink: 0;
+		height: 1px;
+		background: var(--color-border-light);
+	}
+
+	.position-section {
+		flex: 1;
+	}
+
+	.position-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.position-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--color-border-light);
+	}
+
+	.position-row:last-child {
+		border-bottom: none;
+	}
+
+	.position-value {
+		font-size: 1.4rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.position-unit {
+		margin-left: 4px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: var(--color-text-subtle);
 	}
 
 	.section-label {
@@ -592,14 +519,12 @@
 		color: var(--color-text-soft);
 	}
 
-	.step-row,
-	.fill-row {
+	.step-row {
 		display: flex;
 		gap: 8px;
 	}
 
-	.step-btn,
-	.fill-btn {
+	.step-btn {
 		flex: 1;
 		min-height: 44px;
 		background: var(--color-white);
@@ -613,14 +538,20 @@
 		cursor: pointer;
 	}
 
+	/* I passi sono tutti in mm ("500 mm"): su una riga sola anche sui telefoni stretti,
+	   con meno margine ai lati. */
+	.step-btn {
+		white-space: nowrap;
+		padding: 8px 4px;
+	}
+
 	.step-btn.selected {
 		border: 2px solid var(--color-red);
 		color: var(--color-red);
-		padding: 7px;
+		padding: 7px 3px;
 	}
 
-	.step-btn:hover:not(.selected),
-	.fill-btn:hover:not(:disabled) {
+	.step-btn:hover:not(.selected) {
 		background: var(--color-background);
 	}
 
@@ -719,96 +650,8 @@
 		background: var(--color-surface-sunken);
 	}
 
-	.jog-btn:disabled,
-	.fill-btn:disabled {
+	.jog-btn:disabled {
 		opacity: 0.4;
-		cursor: default;
-	}
-
-	.field-list {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-
-	.coord-field {
-		display: grid;
-		grid-template-columns: 28px 1fr auto;
-		grid-template-areas:
-			'axis input unit'
-			'. hint hint';
-		align-items: center;
-		column-gap: 10px;
-		row-gap: 2px;
-	}
-
-	.coord-field .axis-name {
-		grid-area: axis;
-	}
-
-	.coord-field input {
-		grid-area: input;
-		min-width: 0;
-		min-height: 48px;
-		box-sizing: border-box;
-		padding: 8px 12px;
-		border: 1px solid var(--color-gray);
-		border-radius: 10px;
-		font-size: 1.2rem;
-		font-variant-numeric: tabular-nums;
-		color: var(--color-black);
-		background: var(--color-white);
-	}
-
-	.coord-field input:focus {
-		outline: none;
-		border-color: var(--color-red);
-	}
-
-	.coord-field input:disabled {
-		background: var(--color-background);
-		color: var(--color-text-disabled);
-	}
-
-	.field-unit {
-		grid-area: unit;
-		color: var(--color-text-subtle);
-	}
-
-	.field-hint {
-		grid-area: hint;
-		font-size: 0.8rem;
-		color: var(--color-text-subtle);
-	}
-
-	.coord-field.invalid input {
-		border-color: var(--color-red);
-	}
-
-	.coord-field.invalid .field-hint {
-		color: var(--color-red);
-	}
-
-	.goto-btn {
-		margin-top: auto;
-		background: var(--color-red);
-		border: none;
-		border-radius: 16px;
-		box-sizing: border-box;
-		padding: 18px;
-		color: var(--color-white);
-		font-size: 1.2rem;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-		cursor: pointer;
-	}
-
-	.goto-btn:hover:not(:disabled) {
-		background: var(--color-red-dark);
-	}
-
-	.goto-btn:disabled {
-		opacity: 0.5;
 		cursor: default;
 	}
 
@@ -824,6 +667,20 @@
 			height: auto;
 		}
 
+		/* Stessa altezza di quando c'era anche "Go to": il pad occupa lo spazio in più,
+		   centrato. */
+		.move-panel {
+			min-height: min(593px, 100%);
+		}
+
+		.move-body {
+			flex: 1;
+		}
+
+		.jog-area {
+			flex: 1;
+		}
+
 		.xy-pad,
 		.z-column {
 			--jog-size: 84px;
@@ -837,12 +694,6 @@
 
 		.move-panel {
 			padding: 16px;
-		}
-
-		.readout {
-			order: 3;
-			width: 100%;
-			justify-content: space-between;
 		}
 	}
 </style>

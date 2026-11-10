@@ -111,7 +111,7 @@ export const customTemperaturePreset = writable<TemperaturePreset>({
 export const extrudePhase = writable<ExtrudePhase>('idle');
 
 /**
- * L'ultima sequenza è partita "sul posto" (solo modalità advanced): niente homing e niente
+ * L'ultima sequenza è partita "sul posto": niente homing e niente
  * spostamento alla zona di spurgo, si scalda e si estrude dove sta la testa, anche con i
  * motori XYZ spenti. Resta qui perché il pannello mostri gli step giusti e "Try again" la
  * ripeta uguale.
@@ -193,9 +193,9 @@ export type AxisPosition = Record<Axis, number>;
  */
 export const jogStepOptions: { mm: number; label: string }[] = [
 	{ mm: 1, label: '1 mm' },
-	{ mm: 10, label: '1 cm' },
-	{ mm: 100, label: '10 cm' },
-	{ mm: 500, label: '50 cm' }
+	{ mm: 10, label: '10 mm' },
+	{ mm: 100, label: '100 mm' },
+	{ mm: 500, label: '500 mm' }
 ];
 
 // Kept here rather than in the panel, so reopening it keeps the last step.
