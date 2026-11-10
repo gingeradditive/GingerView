@@ -25,8 +25,8 @@
 	let showFeederOffConfirm = $state(false);
 	let feederHint = $derived(
 		feederOn
-			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
-			: "The feeder's off and there's no pellet loaded. Tap to turn it on."
+			? 'Feeding enabled: pellet is loaded automatically. Tap to disable it.'
+			: "Feeding is disabled and there's no pellet loaded. Tap to enable it."
 	);
 
 	const updatePellet = (status: PelletStatus): void => {
@@ -76,8 +76,8 @@
 
 <section class="pellet-panel" aria-label="Pellet feeder">
 	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
-	     temperature. Il disegno è il gauge di FLOW trasformato nel simbolo d'accensione:
-	     cerchio aperto in alto con la barra nel varco. Rosso se acceso, grigio se spento. -->
+	     temperature. Il disegno è il simbolo d'accensione, non un gauge: cerchio aperto in
+	     alto con la barra nel varco. Rosso se acceso, grigio se spento. -->
 	<button
 		type="button"
 		class="pellet-switch"
@@ -85,22 +85,21 @@
 		class:busy={feederBusy}
 		role="switch"
 		aria-checked={feederOn}
-		aria-label="Feeder"
+		aria-label="Feeding"
 		aria-busy={feederBusy}
 		use:tooltip={feederHint}
 		onclick={toggleFeeder}
 	>
 		<span class="pellet-gauge">
 			<svg viewBox="0 0 220 220" class="power-symbol" aria-hidden="true">
-				<!-- Arco di 310° centrato in basso: il varco di 50° in alto ospita la barra.
-				     pathLength 100 per animare il disegno senza calcolare la lunghezza. -->
-				<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" pathLength="100" />
-				<line class="power-bar" x1="110" y1="12" x2="110" y2="62" />
+				<!-- Arco di 310° centrato in basso: il varco di 50° in alto ospita la barra. -->
+				<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" />
+				<line class="power-bar" x1="110" y1="-6" x2="110" y2="44" />
 			</svg>
 			<span class="gauge-content">
-				<span class="pellet-label">PELLET</span>
+				<span class="pellet-label">FEEDING</span>
 				<span class="feeder-value">
-					{feederBusy ? '…' : feederOn ? 'FEEDER ON' : 'FEEDER OFF'}
+					{feederBusy ? '…' : feederOn ? 'Enabled' : 'Disabled'}
 				</span>
 			</span>
 		</span>
@@ -188,7 +187,8 @@
 		overflow: visible;
 	}
 
-	/* Spento: grigio e sottile come il fondo del gauge di FLOW. */
+	/* Spento: grigio e sottile. Accensione e spegnimento hanno la stessa transizione:
+	   colore e spessore sfumano, senza animazioni diverse nei due versi. */
 	.power-arc,
 	.power-bar {
 		fill: none;
@@ -200,21 +200,11 @@
 			stroke-width 0.3s;
 	}
 
-	/* Acceso: rosso e spesso come l'arco pieno di FLOW. All'accensione l'arco si disegna
-	   da un capo all'altro e la barra scende nel varco. */
+	/* Acceso: rosso e spesso. */
 	.on .power-arc,
 	.on .power-bar {
 		stroke: var(--color-red);
 		stroke-width: 14;
-	}
-
-	.on .power-arc {
-		stroke-dasharray: 100;
-		animation: arc-draw 0.6s ease-out;
-	}
-
-	.on .power-bar {
-		animation: bar-drop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 	}
 
 	.gauge-content {
@@ -246,37 +236,12 @@
 		line-height: 1.3;
 	}
 
-	@keyframes arc-draw {
-		from {
-			stroke-dashoffset: 100;
-		}
-		to {
-			stroke-dashoffset: 0;
-		}
-	}
-
-	@keyframes bar-drop {
-		from {
-			transform: translateY(-14px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.pellet-switch,
 		.pellet-gauge,
 		.power-arc,
 		.power-bar {
 			transition: none;
-		}
-
-		.on .power-arc,
-		.on .power-bar {
-			animation: none;
 		}
 	}
 </style>
