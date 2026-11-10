@@ -97,10 +97,7 @@
 	</div>
 	<div class="z-info">
 		<span class="z-label">Z HEIGHT</span>
-		{#if isIdle}
-			<span class="z-value">To infinity and beyond!</span>
-			<span class="z-value-sub">Well… one meter, actually&nbsp;:)</span>
-		{:else}
+		{#if !isIdle}
 			<span class="z-value"
 				><Fraction value={currentHeight.toFixed(1)} total={String(maxHeight)} unit="mm" /></span
 			>
@@ -223,11 +220,5 @@
 		color: var(--color-text-soft);
 		font-weight: 500;
 		line-height: 1.3;
-	}
-
-	.z-value-sub {
-		font-size: 0.95rem;
-		color: var(--color-text-disabled);
-		font-weight: 600;
 	}
 </style>

@@ -70,9 +70,7 @@
 		</svg>
 		<div class="gauge-content">
 			<div class="flow-label">FLOW</div>
-			{#if isIdle}
-				<div class="flow-value">Ready when you are!</div>
-			{:else}
+			{#if !isIdle}
 				<div class="flow-value">{Math.round(clampedValue)} mm³/s</div>
 			{/if}
 		</div>

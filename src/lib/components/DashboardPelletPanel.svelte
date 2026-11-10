@@ -188,9 +188,7 @@
 		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
-			{#if isIdle}
-				<span class="pellet-value idle">Hungry for<br />pellets!</span>
-			{:else}
+			{#if !isIdle}
 				<span class="pellet-value"
 					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
 				>
@@ -396,10 +394,5 @@
 		color: var(--color-black-pure);
 		font-weight: 500;
 		line-height: 1.3;
-	}
-
-	/* A riposo non c'è il riempimento rosso sotto: grigio come "Let me extrude!". */
-	.pellet-value.idle {
-		color: var(--color-text-soft);
 	}
 </style>
