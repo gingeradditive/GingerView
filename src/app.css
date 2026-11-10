@@ -525,3 +525,28 @@ button {
 	stroke-linecap: round;
 	stroke-linejoin: round;
 }
+
+/* Disegni piccoli, affiancati (es. i tre controlli del materiale): tratto doppio sul
+   loro viewBox 240×200, così a un terzo della larghezza pesano come gli altri. */
+.gv-illu.bold .ln,
+.gv-illu.bold .sf,
+.gv-illu.bold .sf-gray {
+	stroke-width: 6;
+	stroke-linecap: round;
+}
+
+.gv-illu.bold .ln-accent {
+	stroke-width: 5;
+}
+
+.gv-illu.bold .ok-mark {
+	stroke-width: 5;
+}
+
+.gv-illu.bold .ln-detail {
+	fill: none;
+	stroke: var(--color-text-muted);
+	stroke-width: 4;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}

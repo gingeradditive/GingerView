@@ -5,7 +5,9 @@
 	import { resolve } from '$app/paths';
 	import { getMoonrakerApiUrl } from '$lib/services/config';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
-	import MaterialCheck from '$lib/illustrations/MaterialCheck.svelte';
+	import MaterialType from '$lib/illustrations/MaterialType.svelte';
+	import MaterialDry from '$lib/illustrations/MaterialDry.svelte';
+	import MaterialQuantity from '$lib/illustrations/MaterialQuantity.svelte';
 	import TubesEmpty from '$lib/illustrations/TubesEmpty.svelte';
 	import NozzleClean from '$lib/illustrations/NozzleClean.svelte';
 	import BedClear from '$lib/illustrations/BedClear.svelte';
@@ -14,23 +16,35 @@
 
 	// Uno step per controllo, ognuno col suo disegno: la checklist è solo un promemoria
 	// (niente spunte), chi la conosce passa con "Next, Next, Next" senza spostare il dito.
-	type WizardStep = { title: string; text: string; illustration: Component };
+	// Uno step può avere più disegni affiancati, uno per controllo (il materiale ne ha tre).
+	// `hint` è una riga più piccola sotto il testo, per dire perché il controllo conta.
+	type WizardStep = {
+		title: string;
+		text: string;
+		hint?: string;
+		illustrations: Component[];
+	};
 
 	const steps: WizardStep[] = [
 		{
 			title: 'Material check',
-			text: 'Right material, nice and dry and enough for the whole print',
-			illustration: MaterialCheck
+			text: 'Check material type, dryness and quantity',
+			illustrations: [MaterialType, MaterialDry, MaterialQuantity]
 		},
-		{ title: 'Feed tubes', text: 'Feed tubes are empty', illustration: TubesEmpty },
-		{ title: 'Nozzle check', text: 'Nozzle is clean', illustration: NozzleClean },
-		{ title: 'Bed check', text: 'Nothing left on the bed', illustration: BedClear },
+		{
+			title: 'Feed tubes',
+			text: 'Feed tubes are completely clear, with no leftover pellets',
+			hint: 'Even a single pellet from the last print can contaminate the new one',
+			illustrations: [TubesEmpty]
+		},
+		{ title: 'Nozzle check', text: 'Nozzle is clean', illustrations: [NozzleClean] },
+		{ title: 'Bed check', text: 'Nothing left on the bed', illustrations: [BedClear] },
 		{
 			title: 'Bed preparation',
 			text: 'Give the glass a coat of protective spray',
-			illustration: GlassSpray
+			illustrations: [GlassSpray]
 		},
-		{ title: 'Material feed', text: "Open the dryer's material valve", illustration: DryerValve }
+		{ title: 'Material feed', text: "Open the dryer's slide gate", illustrations: [DryerValve] }
 	];
 
 	let {
@@ -122,10 +136,9 @@
 
 {#if isOpen}
 	<Sheet
-		label={`Print start checklist — step ${stepIndex + 1} of ${steps.length}`}
+		label={`Print setup — step ${stepIndex + 1} of ${steps.length}: ${step.title}`}
 		onClose={cancel}
 		dismissible={false}
-		showClose
 		layer={1}
 		size="wide"
 		panelClass="wizard-panel"
@@ -140,18 +153,8 @@
 					height="44"
 				/>
 				<div class="file-text">
-					<span class="eyebrow">Ready to print</span>
-					<span class="file-name">{fileName}</span>
-				</div>
-			</div>
-			<div class="progress">
-				<span class="progress-label">
-					Step {stepIndex + 1} of {steps.length}
-				</span>
-				<div class="progress-bar" aria-hidden="true">
-					{#each steps as _, index (index)}
-						<div class="progress-segment" class:filled={index <= stepIndex}></div>
-					{/each}
+					<h2 class="sheet-title">Print setup</h2>
+					<p class="sheet-subtitle file-name">{fileName}</p>
 				</div>
 			</div>
 		{/snippet}
@@ -161,15 +164,26 @@
 				class="step"
 				in:fly={{ x: direction * 48, duration: reducedMotion ? 0 : 240, opacity: 0 }}
 			>
-				<h3 class="sheet-title">{step.title}</h3>
 				<div class="check">
-					<div class="art">
-						<step.illustration />
+					<div class="art" class:multi={step.illustrations.length > 1}>
+						{#each step.illustrations as Illustration, i (i)}
+							<div class="art-item"><Illustration /></div>
+						{/each}
 					</div>
 					<p class="check-text">{step.text}</p>
+					{#if step.hint}
+						<p class="check-hint">{step.hint}</p>
+					{/if}
 				</div>
 			</div>
 		{/key}
+
+		<!-- Sotto il disegno, appena sopra Back/Next: si vede a che punto si è mentre si va avanti. -->
+		<div class="progress-bar" aria-hidden="true">
+			{#each steps as _, index (index)}
+				<div class="progress-segment" class:filled={index <= stepIndex}></div>
+			{/each}
+		</div>
 
 		{#if startError}
 			<p class="sheet-error" role="alert">Print not started: {startError}</p>
@@ -184,7 +198,7 @@
 				{#if starting}
 					Starting…
 				{:else if isLastStep}
-					{startError ? 'Try again' : "Let's print!"}
+					{startError ? 'Try again' : 'Start print'}
 				{:else}
 					Next
 				{/if}
@@ -206,10 +220,12 @@
 		}
 	}
 
+	/* Testata, titoli, card e testi come nei popup di Home e Heat & extrude: al posto
+	   dell'icona c'è l'anteprima del file. */
 	.file-row {
 		display: flex;
-		align-items: center;
-		gap: 12px;
+		align-items: flex-start;
+		gap: 14px;
 		min-width: 0;
 	}
 
@@ -217,7 +233,7 @@
 		flex-shrink: 0;
 		width: 44px;
 		height: 44px;
-		border-radius: 10px;
+		border-radius: 12px;
 		object-fit: contain;
 		background: var(--color-background);
 	}
@@ -228,37 +244,15 @@
 		min-width: 0;
 	}
 
-	.eyebrow {
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--color-text-subtle);
-	}
-
 	.file-name {
-		font-size: 0.95rem;
-		font-weight: 700;
-		color: var(--color-black);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
-	.progress {
-		margin-top: 16px;
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-
-	.progress-label {
-		font-size: 0.8rem;
-		font-weight: 700;
-		color: var(--color-red);
-	}
-
 	.progress-bar {
+		flex-shrink: 0;
+		margin-top: 16px;
 		display: flex;
 		gap: 6px;
 	}
@@ -275,11 +269,18 @@
 		background: var(--color-red);
 	}
 
-	.step {
+	/* Lo step prende tutto lo spazio, la barra degli step resta in fondo. */
+	:global(.wizard-panel .sheet-body) {
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
-		height: 100%;
+	}
+
+	.step {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
 	}
 
 	.check {
@@ -288,8 +289,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-		padding: 16px 20px 20px;
-		border-radius: 16px;
+		padding: 10px 20px 16px;
+		border-radius: 14px;
 		background: var(--color-white);
 		box-shadow: inset 0 0 0 1px var(--color-border-light);
 	}
@@ -302,16 +303,53 @@
 		justify-content: center;
 	}
 
+	.art-item {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
 	.art :global(.gv-illu) {
 		max-height: 260px;
 	}
 
+	.art.multi {
+		gap: 8px;
+	}
+
+	/* Sul telefono in fila verrebbero larghi 90 px, mentre in altezza lo spazio avanza:
+	   uno sotto l'altro. */
+	@media (max-width: 767.98px) {
+		.art.multi {
+			flex-direction: column;
+			gap: 0;
+		}
+
+		.art.multi .art-item {
+			width: 100%;
+			height: auto;
+			min-height: 0;
+		}
+	}
+
 	.check-text {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: 0.9rem;
 		font-weight: 600;
 		line-height: 1.35;
 		color: var(--color-text-secondary);
+		text-align: center;
+	}
+
+	.check-hint {
+		margin: -6px 0 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1.35;
+		color: var(--color-text-subtle);
 		text-align: center;
 	}
 
