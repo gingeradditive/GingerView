@@ -28,9 +28,9 @@ export function formatDuration(seconds?: number | null): string {
 	if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return '--';
 	const h = Math.floor(seconds / 3600);
 	const m = Math.floor((seconds % 3600) / 60);
-	if (h > 0) return `${h}h ${pad2(m)} min`;
-	if (m > 0) return `${m} min`;
-	return `${Math.round(seconds)} s`;
+	if (h > 0) return `${h}h ${pad2(m)}min`;
+	if (m > 0) return `${m}min`;
+	return `${Math.round(seconds)}s`;
 }
 
 export function formatElapsed(ms: number): string {

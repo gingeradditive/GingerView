@@ -12,6 +12,7 @@
 		placeholder = '',
 		confirmLabel = 'Confirm',
 		hint = '',
+		hideLabel = false,
 		busy = false,
 		busyLabel = 'Working…',
 		validate,
@@ -26,6 +27,8 @@
 		confirmLabel?: string;
 		/** Una riga sotto il titolo, quando il campo da solo non basta a capire. */
 		hint?: string;
+		/** Etichetta solo per gli screen reader: il titolo basta a capire il campo. */
+		hideLabel?: boolean;
 		/** Mentre la richiesta è in volo: il pulsante si spegne e mostra `busyLabel`. */
 		busy?: boolean;
 		busyLabel?: string;
@@ -70,8 +73,9 @@
 		{/snippet}
 
 		<label class="sheet-field">
-			<span>{label}</span>
+			{#if !hideLabel}<span>{label}</span>{/if}
 			<input
+				aria-label={hideLabel ? label : undefined}
 				bind:this={input}
 				type="text"
 				bind:value={draft}

@@ -106,6 +106,11 @@
 		}
 	}
 
+	/** La cartella dove sta già: spostarlo lì è un no-op che Moonraker rifiuta con un 400. */
+	const parentDir = $derived(
+		item.filepath.includes('/') ? item.filepath.slice(0, item.filepath.lastIndexOf('/')) : ''
+	);
+
 	async function handleMove() {
 		closeContextMenu();
 		loadingDirs = true;
@@ -115,7 +120,9 @@
 			// Filter out the current directory and its subdirectories to prevent circular moves
 			if (item.isDirectory) {
 				const currentPath = item.filepath;
-				availableDirs = availableDirs.filter((dir) => !dir.path.startsWith(currentPath));
+				availableDirs = availableDirs.filter(
+					(dir) => dir.path !== currentPath && !dir.path.startsWith(`${currentPath}/`)
+				);
 			}
 		} catch (e) {
 			console.error('Failed to fetch directories:', e);
@@ -270,8 +277,8 @@
 <PromptModal
 	isOpen={showRenameModal}
 	title="Rename"
-	hint={item.isDirectory ? undefined : "Don't worry, we'll keep the extension"}
 	label="New name"
+	hideLabel
 	value={newName}
 	placeholder="New name"
 	confirmLabel="Rename"
@@ -294,12 +301,16 @@
 			</p>
 		{:else}
 			<div class="folder-list">
-				<button class="folder-option" onclick={() => confirmMove('')}>
+				<button class="folder-option" disabled={parentDir === ''} onclick={() => confirmMove('')}>
 					<House size={20} />
 					<span>Main folder</span>
 				</button>
 				{#each availableDirs as dir (dir.path)}
-					<button class="folder-option" onclick={() => confirmMove(dir.path)}>
+					<button
+						class="folder-option"
+						disabled={dir.path === parentDir}
+						onclick={() => confirmMove(dir.path)}
+					>
 						<Folder size={20} />
 						<span>/{dir.path}</span>
 					</button>
@@ -320,7 +331,6 @@
 	message={item.isDirectory
 		? `"${item.name}" and everything inside it will be deleted from the printer.`
 		: `"${item.name}" will be deleted from the printer.`}
-	details="Once it's gone, it's gone."
 	confirmLabel="Delete"
 	onConfirm={confirmDelete}
 	onCancel={() => (showDeleteConfirm = false)}
@@ -569,7 +579,12 @@
 		white-space: nowrap;
 	}
 
-	.folder-option:hover {
+	.folder-option:hover:not(:disabled) {
 		background: var(--color-surface-sunken);
+	}
+
+	.folder-option:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 </style>
