@@ -142,8 +142,8 @@
 
 <section class="temperature-panel" aria-label="Nozzle and bed temperatures">
 	{#if canSet}
-		<!-- Tutto il disegno è il pulsante: zone, ugello e piatto. Il badge in alto a destra
-		     dice che si tocca, ora che la barra "EXTRUDER · SET" non c'è più. -->
+		<!-- Tutta la card è il pulsante, bordi compresi, non solo il disegno. Il badge in alto
+		     a destra dice che si tocca, ora che la barra "EXTRUDER · SET" non c'è più. -->
 		<button
 			type="button"
 			class="drawing interactive"
@@ -212,11 +212,15 @@
 		justify-content: center;
 	}
 
+	/* Copre tutta la card, padding compreso: si tocca anche fuori dal disegno. */
 	button.drawing {
-		padding: 8px;
-		margin: -8px;
+		width: calc(100% + 32px);
+		height: calc(100% + 32px);
+		margin: -16px;
+		padding: 16px;
+		box-sizing: border-box;
 		border: none;
-		border-radius: 14px;
+		border-radius: 19.2px;
 		background: transparent;
 		font: inherit;
 		color: inherit;
@@ -237,7 +241,7 @@
 
 	button.drawing:focus-visible {
 		outline: 2px solid var(--color-red);
-		outline-offset: 2px;
+		outline-offset: -4px;
 	}
 
 	.set-badge {

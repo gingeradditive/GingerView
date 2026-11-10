@@ -73,7 +73,14 @@
 	);
 </script>
 
-<section class="job-info-card" aria-label="Print Job Info">
+<!-- A riposo tutta la card porta ai file, non solo la scritta in fondo. -->
+<svelte:element
+	this={hasJob ? 'section' : 'a'}
+	class="job-info-card"
+	class:link={!hasJob}
+	href={hasJob ? undefined : resolve('/filelist')}
+	aria-label={hasJob ? 'Print Job Info' : 'Pick a file to print'}
+>
 	{#if hasJob}
 		<span class="job-name" title={jobName}>{jobName}</span>
 	{:else}
@@ -90,9 +97,9 @@
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
 	{:else}
-		<a class="job-cta" href={resolve('/filelist')}>Pick a file and let's get going!</a>
+		<span class="job-cta">Pick a file and let's get going!</span>
 	{/if}
-</section>
+</svelte:element>
 
 <style>
 	.job-info-card {
@@ -165,8 +172,37 @@
 		text-decoration: none;
 	}
 
-	.job-cta:hover {
+	.job-info-card.link {
+		color: inherit;
+		text-decoration: none;
+		cursor: pointer;
+		transition:
+			background-color 0.15s,
+			transform 0.1s;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.job-info-card.link:hover {
+		background: var(--color-background);
+	}
+
+	.job-info-card.link:active {
+		transform: scale(0.98);
+	}
+
+	.job-info-card.link:focus-visible {
+		outline: 2px solid var(--color-red);
+		outline-offset: -4px;
+	}
+
+	.job-info-card.link:hover .job-cta {
 		text-decoration: underline;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.job-info-card.link {
+			transition: none;
+		}
 	}
 
 	.job-material {
