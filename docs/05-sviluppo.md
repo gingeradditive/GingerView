@@ -30,6 +30,25 @@ rifiuta il websocket da `localhost`). L'app resta same-origin come in produzione
 `cors_domains` da toccare sulle stampanti, e Moonraker e G2-Service passano entrambi dal
 loro nginx. Il proxy è in [vite.config.ts](../vite.config.ts) e non finisce mai nel bundle.
 
+### Stampante simulata
+
+Per sviluppare senza toccare una stampante vera:
+
+```bash
+./rundev.sh --sim          # oppure: VITE_DEMO=1 npm run dev
+```
+
+Con `VITE_DEMO=1` il simulatore di [src/lib/demo/](../src/lib/demo/) (lo stesso della demo per
+fiera) intercetta nel browser `fetch` e `WebSocket` verso le API della stampante e risponde con
+una G2 virtuale: temperature, movimenti, file, stampe, storico, aggiornamenti, rete, USB. Lo
+stato vive nel browser di chi apre la pagina. In questa modalità [vite.config.ts](../vite.config.ts)
+spegne il proxy, quindi nessuna richiesta può raggiungere `GINGERVIEW_PRINTER` anche se è
+impostata. Le pagine elencate in `hiddenRoutes` di [src/lib/demo/config.ts](../src/lib/demo/config.ts)
+sono nascoste anche qui.
+
+Senza il flag il simulatore non entra nel bundle, e una build con `VITE_DEMO=1` verso `build/`
+viene rifiutata: `build/` è ciò che scaricano le stampanti.
+
 Le variabili `VITE_*` restano come alternativa per chiamare un host direttamente, ma in quel
 caso il browser va cross-origin e `localhost:5173` deve essere tra le `cors_domains` di
 `moonraker.conf` (vedi [04 — CORS](04-moonraker.md#cors)).

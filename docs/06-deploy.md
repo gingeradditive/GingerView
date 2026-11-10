@@ -251,7 +251,7 @@ appena scaricati ereditano dalla umask.
 ### rundev.sh
 
 ```bash
-script/rundev.sh [--install|--no-install] [argomenti per Vite]
+script/rundev.sh [--install|--no-install] [--sim] [argomenti per Vite]
 ```
 
 Chiede se reinstallare le dipendenze prima di partire:
@@ -270,6 +270,9 @@ Accetta sia `s`/`si` sia `y`/`yes`. Il default cambia da solo in base alla situa
 Il confronto usa `node_modules/.package-lock.json`, che npm 7+ tiene allineato a ogni
 installazione: è un marcatore più affidabile della data di modifica della cartella, che si
 muove anche per scritture non correlate.
+
+`--sim` avvia l'app con la stampante simulata nel browser invece di una vera (vedi
+[05 — Stampante simulata](05-sviluppo.md#stampante-simulata)).
 
 Gli argomenti in più passano a Vite, quindi `./rundev.sh --host` espone il dev server sulla
 rete locale — comodo per aprirlo dal telefono, che è il dispositivo di destinazione reale.

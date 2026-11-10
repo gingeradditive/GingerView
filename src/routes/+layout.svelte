@@ -44,6 +44,12 @@
 <main class="page-content">{@render children()}</main>
 <StaleDataBanner />
 <KlipperDownOverlay />
+{#if import.meta.env.VITE_DEMO === '1'}
+	<!-- Demo per fiera (DEMO.md): senza VITE_DEMO il ramo sparisce dalla build. -->
+	{#await import('$lib/demo/DemoLayer.svelte') then { default: DemoLayer }}
+		<DemoLayer />
+	{/await}
+{/if}
 
 <nav class="dock" aria-label="Main navigation">
 	<div class="logo-container">
