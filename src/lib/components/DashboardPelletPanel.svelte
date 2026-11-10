@@ -190,8 +190,11 @@
 		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
-			<span class="feeder-power" class:on={feederOn} class:busy={feederBusy} aria-hidden="true">
-				<Power size="45%" strokeWidth={2.5} />
+			<span class="feeder-state" class:on={feederOn} aria-hidden="true">
+				<span class="feeder-power" class:on={feederOn} class:busy={feederBusy}>
+					<Power size="45%" strokeWidth={2.5} />
+				</span>
+				<span class="feeder-word">{feederBusy ? '…' : feederOn ? 'FEEDER ON' : 'FEEDER OFF'}</span>
 			</span>
 		</div>
 	</button>
@@ -225,24 +228,37 @@
 		container-type: inline-size;
 	}
 
-	/* Il tasto d'accensione del feeder sotto il titolo. Non è un pulsante a sé: tutta la
-	   card è l'interruttore, questo ne mostra lo stato. Anello bianco, così si stacca
-	   anche sopra il riempimento rosso. */
+	/* Lo stato del feeder sotto il titolo: tasto tondo d'accensione e la parola ON/OFF.
+	   Non è un pulsante a sé: tutta la card è l'interruttore, questo ne mostra lo stato.
+	   Acceso e spento devono distinguersi a colpo d'occhio, anche sopra il riempimento:
+	   acceso è rosso pieno, più grande, con onde che si allargano; spento è grigio, piccolo
+	   e fermo. Al cambio il tasto fa un piccolo scatto. */
+	.feeder-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		margin-top: 16px;
+	}
+
 	.feeder-power {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: min(56px, 18cqw);
+		width: min(84px, 27cqw);
 		aspect-ratio: 1;
 		border-radius: 50%;
-		background: var(--color-white);
-		color: var(--color-text-muted);
+		background: var(--color-surface-sunken);
+		color: var(--color-gray);
 		box-shadow:
-			inset 0 0 0 2px var(--color-gray),
+			inset 0 0 0 2px var(--color-gray-light),
 			0 0 0 3px var(--color-white);
+		transform: scale(0.88);
+		animation: power-off 0.3s ease-out;
 		transition:
-			background-color 0.15s,
-			color 0.15s,
+			background-color 0.2s,
+			color 0.2s,
 			opacity 0.15s;
 	}
 
@@ -251,15 +267,92 @@
 		color: var(--color-white);
 		box-shadow:
 			0 0 0 3px var(--color-white),
-			0 2px 10px rgba(var(--rgb-red), 0.35);
+			0 4px 16px rgba(var(--rgb-red), 0.5);
+		transform: scale(1);
+		animation: power-on 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+	}
+
+	/* Onde rosse con il bordo bianco: si vedono sul fondo bianco e sul riempimento rosso. */
+	.feeder-power.on::before,
+	.feeder-power.on::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		border: 2px solid var(--color-red);
+		box-shadow: 0 0 0 2px rgba(var(--rgb-white), 0.8);
+		animation: power-wave 2s ease-out infinite;
+		pointer-events: none;
+	}
+
+	.feeder-power.on::after {
+		animation-delay: 1s;
 	}
 
 	.feeder-power.busy {
 		opacity: 0.5;
 	}
 
+	.feeder-word {
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: var(--color-white);
+		color: var(--color-text-subtle);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		transition:
+			background-color 0.2s,
+			color 0.2s;
+	}
+
+	.feeder-state.on .feeder-word {
+		background: var(--color-red);
+		color: var(--color-white);
+		box-shadow: 0 0 0 2px var(--color-white);
+	}
+
+	@keyframes power-on {
+		0% {
+			transform: scale(0.88);
+		}
+		50% {
+			transform: scale(1.15);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+
+	@keyframes power-off {
+		0% {
+			transform: scale(1);
+		}
+		40% {
+			transform: scale(0.8);
+		}
+		100% {
+			transform: scale(0.88);
+		}
+	}
+
+	@keyframes power-wave {
+		0% {
+			transform: scale(1);
+			opacity: 0.9;
+		}
+		100% {
+			transform: scale(1.8);
+			opacity: 0;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.feeder-power {
+		.feeder-power,
+		.feeder-power.on,
+		.feeder-power.on::before,
+		.feeder-power.on::after {
+			animation: none;
 			transition: none;
 		}
 	}
