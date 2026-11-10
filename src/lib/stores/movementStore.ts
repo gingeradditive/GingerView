@@ -60,15 +60,13 @@ export const temperatureOptions: { value: Temperature; label: string }[] = [
 /**
  * Per-material settings.
  *
- * The temperatures are given as "the first zone" plus "all the others" rather
- * than one value per zone: the number of zones is only known once the machine
- * has been asked, and the presets never distinguished more than those two groups
- * anyway — PETG runs the zone Klipper calls `extruder` cooler than the rest,
- * PLA is flat.
+ * One temperature per nozzle zone, in Kalico order (`extruder`, `extruder1`, …).
+ * The number of zones is only known once the machine has been asked: a zone past
+ * the end of the list takes the last value (see `materialZoneTemperature`).
  */
 export type MaterialPreset = {
-	firstZoneC: number;
-	otherZonesC: number;
+	/** Z1, Z2, Z3, Z4 in °C. */
+	zonesC: number[];
 	/**
 	 * Piatto per questo materiale. Heat & Extrude non lo usa (scalda solo l'ugello): serve ai
 	 * preset del popup temperature della dashboard, che partono da qui.
@@ -79,9 +77,13 @@ export type MaterialPreset = {
 };
 
 export const materialPresets: Record<'petg' | 'pla', MaterialPreset> = {
-	petg: { firstZoneC: 200, otherZonesC: 220, bedC: 80, rotationVolume: 450 },
-	pla: { firstZoneC: 200, otherZonesC: 200, bedC: 60, rotationVolume: 330 }
+	petg: { zonesC: [180, 220, 240, 240], bedC: 80, rotationVolume: 450 },
+	pla: { zonesC: [170, 200, 200, 200], bedC: 50, rotationVolume: 330 }
 };
+
+/** Temperatura della zona `index` per il materiale; oltre la lista vale l'ultima. */
+export const materialZoneTemperature = (preset: MaterialPreset, index: number): number =>
+	preset.zonesC[Math.min(index, preset.zonesC.length - 1)];
 
 /**
  * Targets for `zones`, keeping whatever the stored preset already says and
@@ -253,7 +255,7 @@ const resolveTemperaturePreset = (zones: string[]): TemperaturePreset => {
 	const preset = materialPresets[selected];
 	return {
 		zones: Object.fromEntries(
-			zones.map((zone, index) => [zone, index === 0 ? preset.firstZoneC : preset.otherZonesC])
+			zones.map((zone, index) => [zone, materialZoneTemperature(preset, index)])
 		),
 		rotationVolume: preset.rotationVolume
 	};

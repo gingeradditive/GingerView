@@ -172,7 +172,7 @@
 		}
 		const preset = materialPresets[$extrudeTemperature];
 		const label = temperatureOptions.find((option) => option.value === $extrudeTemperature)!.label;
-		return `${label} · ${Math.max(preset.firstZoneC, preset.otherZonesC)} °C`;
+		return `${label} · ${Math.max(...preset.zonesC)} °C`;
 	});
 	const amountSummary = $derived.by(() => {
 		const option = amountOptions.find((o) => o.value === $extrudeAmount)!;
@@ -200,9 +200,11 @@
 	const temperatureHint = (value: Temperature): string => {
 		if (value === 'custom') return 'Set your own temperature for each nozzle zone';
 		const preset = materialPresets[value];
-		return preset.firstZoneC === preset.otherZonesC
-			? `All nozzle zones at ${preset.firstZoneC} °C`
-			: `Zone 1 at ${preset.firstZoneC} °C, other zones at ${preset.otherZonesC} °C`;
+		const [first, ...others] = preset.zonesC;
+		if (others.every((value) => value === first)) return `All nozzle zones at ${first} °C`;
+		if (others.every((value) => value === others[0]))
+			return `Zone 1 at ${first} °C, other zones at ${others[0]} °C`;
+		return `Nozzle zones at ${preset.zonesC.join(' / ')} °C`;
 	};
 
 	const selectAmount = (value: Amount): void => {

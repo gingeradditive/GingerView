@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { getDbItem, setDbItem } from '$lib/services/moonraker-database';
 import { sendGcode } from '$lib/services/moonraker-gcode';
-import { materialPresets } from '$lib/stores/movementStore';
+import { materialPresets, materialZoneTemperature } from '$lib/stores/movementStore';
 import { toastActions } from '$lib/stores/toastStore';
 
 /**
@@ -40,7 +40,7 @@ const DB_KEY = 'temperature_presets';
 
 export const customTemperaturePresets = writable<HeaterPreset[]>([]);
 
-/** PLA e PETG per le zone di questa macchina: la prima zona e "tutte le altre", come in Heat & Extrude. */
+/** PLA e PETG per le zone di questa macchina, zona per zona come in Heat & Extrude. */
 export function builtInPresets(zones: string[]): HeaterPreset[] {
 	return (['pla', 'petg'] as const).map((key) => {
 		const material = materialPresets[key];
@@ -48,7 +48,7 @@ export function builtInPresets(zones: string[]): HeaterPreset[] {
 			id: `builtin-${key}`,
 			name: key.toUpperCase(),
 			zones: Object.fromEntries(
-				zones.map((zone, index) => [zone, index === 0 ? material.firstZoneC : material.otherZonesC])
+				zones.map((zone, index) => [zone, materialZoneTemperature(material, index)])
 			),
 			bed: material.bedC,
 			builtIn: true
