@@ -2,7 +2,6 @@
 	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
-	import { getFileMetadata } from '$lib/services/moonraker-files';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
 
@@ -10,25 +9,14 @@
 	let { visible = true }: { visible?: boolean } = $props();
 
 	type PelletStatus = {
-		print_stats?: { state?: string; filename?: string; filament_used?: number };
+		print_stats?: { state?: string };
 		'output_pin _FEEDER_STATUS'?: { value?: number };
 	};
 
 	const dataSource = 'dashboard-pellet';
 	const dataQuery = 'print_stats&output_pin _FEEDER_STATUS';
-	const maxPelletKg = 5;
-	// I G-code Ginger contano il "filamento" in mm³: filament_diameter 1.1284 dà
-	// 1 mm³ per mm, e 1.24 g/cm³ è la densità che Orca usa di default.
-	const defaultGramsPerMm = 0.00124;
-	// Senza filament_used in crescita da questo tempo, la macchina non estrude.
-	const extrudingTimeoutMs = 2000;
 
-	let usedKg = $state(0);
-	let totalKg = $state(maxPelletKg);
 	let isIdle = $state(true);
-	// I pallini vibrano solo mentre il pellet scende davvero: fermi in pausa e
-	// durante il riscaldamento.
-	let extruding = $state(false);
 	// The feeder's on/off, as the machine reports it (`_FEEDER_STATUS` in
 	// 50_feeder.cfg). START_PRINT switches it on and END_PRINT off: this switch is
 	// for doing it by hand in between.
@@ -40,54 +28,6 @@
 			? 'Feeder on: pellet is loaded automatically. Tap to switch off'
 			: "The feeder's off and there's no pellet loaded. Tap to turn it on."
 	);
-	let remainingKg = $derived(Math.max(0, totalKg - usedKg));
-	// Solo nel dev server: card sempre mezza piena, per vedere il bordo tra pieno e vuoto
-	// anche a stampa ferma. Nella build per la stampante `DEV` è falso e sparisce.
-	const debugHalfFull = import.meta.env.DEV;
-	let percentage = $derived(debugHalfFull ? 50 : totalKg > 0 ? (remainingKg / totalKg) * 100 : 0);
-
-	// Generate circles for the SVG
-	const circles = Array.from({ length: 40 }, (_, i) => ({
-		cx: (i + 0.5) * 2.5,
-		cy: 24,
-		r: Math.random() * 12 + 6,
-		duration: (Math.random() * 0.6 + 0.6).toFixed(2),
-		delay: (Math.random() * 0.6).toFixed(2)
-	}));
-
-	let lastFilename: string | null = null;
-	let gramsPerMm = defaultGramsPerMm;
-	let lastFilamentUsed = 0;
-	let lastExtrusionAt = 0;
-	let printing = false;
-
-	const updateExtruding = (): void => {
-		extruding = printing && Date.now() - lastExtrusionAt < extrudingTimeoutMs;
-	};
-
-	// Lo stato arriva solo quando cambia: se filament_used smette di salire non
-	// arriva niente, e i pallini si fermano grazie a questo controllo.
-	$effect(() => {
-		const timer = setInterval(updateExtruding, 500);
-		return () => clearInterval(timer);
-	});
-
-	const loadFileWeight = async (filename: string): Promise<void> => {
-		if (!filename || filename === lastFilename) return;
-		lastFilename = filename;
-		try {
-			const metadata = await getFileMetadata(filename);
-			const weight = metadata.filament_weight_total ?? 0; // g
-			const length = metadata.filament_total ?? 0; // mm
-			totalKg = weight > 0 ? weight / 1000 : maxPelletKg;
-			// Il rapporto peso/lunghezza del file stesso vale qualunque diametro e
-			// densità abbia impostato lo slicer.
-			gramsPerMm = weight > 0 && length > 0 ? weight / length : defaultGramsPerMm;
-		} catch {
-			totalKg = maxPelletKg;
-			gramsPerMm = defaultGramsPerMm;
-		}
-	};
 
 	const updatePellet = (status: PelletStatus): void => {
 		const feederStatus = status['output_pin _FEEDER_STATUS'];
@@ -95,27 +35,8 @@
 			feederOn = feederStatus.value > 0;
 		}
 
-		const printStats = status.print_stats;
-		if (!printStats) return;
-
-		const printState = printStats.state ?? 'standby';
-		isIdle = printState !== 'printing' && printState !== 'paused';
-
-		const filename = printStats.filename ?? '';
-		if (filename) {
-			loadFileWeight(filename);
-		} else {
-			lastFilename = null;
-			totalKg = maxPelletKg;
-			gramsPerMm = defaultGramsPerMm;
-		}
-
-		const filamentUsed = printStats.filament_used ?? 0; // mm
-		if (filamentUsed > lastFilamentUsed) lastExtrusionAt = Date.now();
-		lastFilamentUsed = filamentUsed;
-		printing = printState === 'printing';
-		updateExtruding();
-		usedKg = (filamentUsed * gramsPerMm) / 1000;
+		const printState = status.print_stats?.state;
+		if (printState) isIdle = printState !== 'printing' && printState !== 'paused';
 	};
 
 	const setFeeder = async (enable: boolean): Promise<void> => {
@@ -153,13 +74,16 @@
 	);
 </script>
 
-<section class="pellet-panel" aria-label="Pellet Level">
+<section class="pellet-panel" aria-label="Pellet feeder">
 	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
-	     temperature. Lo stato sta nel tasto tondo d'accensione sotto il titolo: rosso pieno
-	     se acceso. -->
+	     temperature. Il disegno è il gauge di FLOW trasformato nel simbolo d'accensione:
+	     cerchio aperto in alto con la barra nel varco. Rosso e animato se acceso, grigio
+	     e fermo se spento. -->
 	<button
 		type="button"
-		class="pellet-visual"
+		class="pellet-switch"
+		class:on={feederOn}
+		class:busy={feederBusy}
 		role="switch"
 		aria-checked={feederOn}
 		aria-label="Feeder"
@@ -167,36 +91,20 @@
 		use:tooltip={feederHint}
 		onclick={toggleFeeder}
 	>
-		{#if !isIdle || debugHalfFull}
-			<div class="pellet-fill" style="height: {percentage}%">
-				<svg
-					width="100%"
-					height="48px"
-					style="position: absolute; top: -24px; left: 0;"
-					class:still={!extruding}
-				>
-					<!-- Lista statica di 40 bolle, mai riordinata: l'indice è una key corretta. -->
-					{#each circles as circle, i (i)}
-						<circle
-							cx="{circle.cx}%"
-							cy={circle.cy}
-							r={circle.r}
-							fill="#D72E28"
-							style="animation: pellet-vibrate {circle.duration}s ease-in-out {circle.delay}s infinite;"
-						/>
-					{/each}
-				</svg>
-			</div>
-		{/if}
-		<div class="pellet-text">
-			<span class="pellet-label">PELLET</span>
-			<span class="feeder-state" class:on={feederOn} aria-hidden="true">
-				<span class="feeder-power" class:on={feederOn} class:busy={feederBusy}>
-					<Power size="45%" strokeWidth={2.5} />
+		<span class="pellet-gauge">
+			<svg viewBox="0 0 220 220" class="power-symbol" aria-hidden="true">
+				<!-- Arco di 290° centrato in basso: il varco di 70° in alto ospita la barra.
+				     pathLength 100 per animare il disegno senza calcolare la lunghezza. -->
+				<path class="power-arc" d="M 160.47 37.91 A 88 88 0 1 1 59.53 37.91" pathLength="100" />
+				<line class="power-bar" x1="110" y1="12" x2="110" y2="62" />
+			</svg>
+			<span class="gauge-content">
+				<span class="pellet-label">PELLET</span>
+				<span class="feeder-value">
+					{feederBusy ? '…' : feederOn ? 'FEEDER ON' : 'FEEDER OFF'}
 				</span>
-				<span class="feeder-word">{feederBusy ? '…' : feederOn ? 'FEEDER ON' : 'FEEDER OFF'}</span>
 			</span>
-		</div>
+		</span>
 	</button>
 </section>
 
@@ -213,240 +121,185 @@
 
 <style>
 	.pellet-panel {
-		background: var(--color-white);
-		border-radius: 19.2px;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 100%;
-		box-sizing: border-box;
-		overflow: hidden;
-		position: relative;
-		box-shadow: var(--shadow-panel);
-		container-type: inline-size;
-	}
-
-	/* Lo stato del feeder sotto il titolo: tasto tondo d'accensione e la parola ON/OFF.
-	   Non è un pulsante a sé: tutta la card è l'interruttore, questo ne mostra lo stato.
-	   Acceso e spento devono distinguersi a colpo d'occhio, anche sopra il riempimento:
-	   acceso è rosso pieno, più grande, con onde che si allargano; spento è grigio, piccolo
-	   e fermo. Al cambio il tasto fa un piccolo scatto. */
-	.feeder-state {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 10px;
-		margin-top: 16px;
-	}
-
-	.feeder-power {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: min(84px, 27cqw);
-		aspect-ratio: 1;
-		border-radius: 50%;
-		background: var(--color-surface-sunken);
-		color: var(--color-gray);
-		box-shadow:
-			inset 0 0 0 2px var(--color-gray-light),
-			0 0 0 3px var(--color-white);
-		transform: scale(0.88);
-		animation: power-off 0.3s ease-out;
-		transition:
-			background-color 0.2s,
-			color 0.2s,
-			opacity 0.15s;
-	}
-
-	.feeder-power.on {
-		background: var(--color-red);
-		color: var(--color-white);
-		box-shadow:
-			0 0 0 3px var(--color-white),
-			0 4px 16px rgba(var(--rgb-red), 0.5);
-		transform: scale(1);
-		animation: power-on 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-	}
-
-	/* Onde rosse con il bordo bianco: si vedono sul fondo bianco e sul riempimento rosso. */
-	.feeder-power.on::before,
-	.feeder-power.on::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: 50%;
-		border: 2px solid var(--color-red);
-		box-shadow: 0 0 0 2px rgba(var(--rgb-white), 0.8);
-		animation: power-wave 2s ease-out infinite;
-		pointer-events: none;
-	}
-
-	.feeder-power.on::after {
-		animation-delay: 1s;
-	}
-
-	.feeder-power.busy {
-		opacity: 0.5;
-	}
-
-	.feeder-word {
-		padding: 2px 8px;
-		border-radius: 999px;
-		background: var(--color-white);
-		color: var(--color-text-subtle);
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		transition:
-			background-color 0.2s,
-			color 0.2s;
-	}
-
-	.feeder-state.on .feeder-word {
-		background: var(--color-red);
-		color: var(--color-white);
-		box-shadow: 0 0 0 2px var(--color-white);
-	}
-
-	@keyframes power-on {
-		0% {
-			transform: scale(0.88);
-		}
-		50% {
-			transform: scale(1.15);
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-
-	@keyframes power-off {
-		0% {
-			transform: scale(1);
-		}
-		40% {
-			transform: scale(0.8);
-		}
-		100% {
-			transform: scale(0.88);
-		}
-	}
-
-	@keyframes power-wave {
-		0% {
-			transform: scale(1);
-			opacity: 0.9;
-		}
-		100% {
-			transform: scale(1.8);
-			opacity: 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.feeder-power,
-		.feeder-power.on,
-		.feeder-power.on::before,
-		.feeder-power.on::after {
-			animation: none;
-			transition: none;
-		}
-	}
-
-	.pellet-visual {
 		width: 100%;
 		height: 100%;
-		padding: 0;
+		border-radius: 19.2px;
+		box-shadow: var(--shadow-panel);
+		overflow: hidden;
+	}
+
+	.pellet-switch {
+		width: 100%;
+		height: 100%;
+		padding: 16px;
+		box-sizing: border-box;
 		border: none;
+		border-radius: 19.2px;
+		background: var(--color-white);
 		font: inherit;
 		color: inherit;
-		background: var(--color-white);
-		border-radius: 19.2px;
-		overflow: hidden;
-		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: filter 0.15s;
+		/* Come FLOW: il gauge si misura sulla card, non sullo schermo. */
+		container-type: size;
+		transition: background-color 0.15s;
 		-webkit-tap-highlight-color: transparent;
 	}
 
-	.pellet-visual:hover {
-		filter: brightness(0.98);
+	.pellet-switch:hover {
+		background: var(--color-background);
 	}
 
-	.pellet-visual:active {
-		filter: brightness(0.94);
-	}
-
-	.pellet-visual:focus-visible {
+	.pellet-switch:focus-visible {
 		outline: 2px solid var(--color-red);
 		outline-offset: -4px;
 	}
 
-	.pellet-visual[aria-busy='true'] {
+	.pellet-switch.busy {
 		cursor: progress;
 	}
 
-	.pellet-fill {
-		position: absolute;
-		bottom: 0;
-		left: 0;
+	.pellet-gauge {
+		/* Lato del gauge: il quadrato più grande che sta nella card, come in FLOW. */
+		--gauge: min(100cqw, 100cqh);
+		position: relative;
+		width: var(--gauge);
+		height: var(--gauge);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition:
+			transform 0.1s,
+			opacity 0.15s;
+	}
+
+	.pellet-switch:active .pellet-gauge {
+		transform: scale(0.97);
+	}
+
+	.pellet-switch.busy .pellet-gauge {
+		opacity: 0.5;
+	}
+
+	.power-symbol {
 		width: 100%;
-		background: var(--color-red);
-		transition: height 0.3s ease;
-		z-index: 1;
+		height: 100%;
+		overflow: visible;
 	}
 
-	.still circle {
-		/* Lo stile inline imposta l'animazione: qui serve !important per fermarla. */
-		animation-play-state: paused !important;
+	/* Spento: grigio e sottile come il fondo del gauge di FLOW. */
+	.power-arc,
+	.power-bar {
+		fill: none;
+		stroke: var(--color-text-subtle);
+		stroke-width: 10;
+		stroke-linecap: round;
+		transition:
+			stroke 0.3s,
+			stroke-width 0.3s;
 	}
 
-	@keyframes -global-pellet-vibrate {
-		0%,
-		100% {
-			transform: translate(0, 0);
-		}
-		25% {
-			transform: translate(1px, -1.5px);
-		}
-		50% {
-			transform: translate(-1.5px, 1px);
-		}
-		75% {
-			transform: translate(1px, 1px);
-		}
+	/* Acceso: rosso e spesso come l'arco pieno di FLOW. All'accensione l'arco si disegna
+	   da un capo all'altro e la barra scende nel varco; poi il simbolo "respira". */
+	.on .power-arc,
+	.on .power-bar {
+		stroke: var(--color-red);
+		stroke-width: 14;
 	}
 
-	/* Tutta la larghezza del pannello: con left: 50% il testo ne aveva solo metà e andava a capo
-	   a ogni parola. */
-	.pellet-text {
+	.on .power-arc {
+		stroke-dasharray: 100;
+		animation: arc-draw 0.6s ease-out;
+	}
+
+	.on .power-bar {
+		animation: bar-drop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+	}
+
+	.on .power-symbol {
+		animation: power-glow 2s ease-in-out 0.6s infinite;
+	}
+
+	.gauge-content {
 		position: absolute;
 		inset: 0;
-		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW. */
-		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: calc(var(--dashboard-title-size) * 0.25);
-		z-index: 2;
-		color: var(--color-black-pure);
+		/* Il testo resta dentro l'anello, come in FLOW. */
+		padding: 0 calc(var(--gauge) * 0.2);
 		text-align: center;
 	}
 
-	/* Stesso font del titolo FLOW. */
+	/* Dimensioni comuni a tutte le card, calcolate in DashboardCarousel. */
 	.pellet-label {
-		font-size: min(var(--dashboard-title-size), 18cqw);
+		font-size: var(--dashboard-title-size);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;
+	}
+
+	.feeder-value {
+		font-size: var(--dashboard-subtitle-size);
+		font-weight: 500;
+		color: var(--color-text-soft);
+		line-height: 1.3;
+		transition: color 0.3s;
+	}
+
+	.on .feeder-value {
+		font-weight: 700;
+		color: var(--color-red);
+	}
+
+	@keyframes arc-draw {
+		from {
+			stroke-dashoffset: 100;
+		}
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+
+	@keyframes bar-drop {
+		from {
+			transform: translateY(-14px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	@keyframes power-glow {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 0 rgba(var(--rgb-red), 0));
+		}
+		50% {
+			filter: drop-shadow(0 0 8px rgba(var(--rgb-red), 0.55));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pellet-switch,
+		.pellet-gauge,
+		.power-arc,
+		.power-bar,
+		.feeder-value {
+			transition: none;
+		}
+
+		.on .power-arc,
+		.on .power-bar,
+		.on .power-symbol {
+			animation: none;
+		}
 	}
 </style>
