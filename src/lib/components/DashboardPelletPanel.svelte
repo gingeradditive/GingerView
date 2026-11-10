@@ -2,7 +2,6 @@
 	import { Power } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
-	import Fraction from '$lib/components/Fraction.svelte';
 	import { getFileMetadata } from '$lib/services/moonraker-files';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import { subscribeWhileVisible } from '$lib/services/panel-subscription.svelte';
@@ -153,8 +152,8 @@
 
 <section class="pellet-panel" aria-label="Pellet Level">
 	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
-	     temperature: niente più barre in fondo alle card. Lo stato sta nel badge in alto a
-	     destra, nella stessa posizione del badge dell'estrusore. -->
+	     temperature. Lo stato sta nel tasto tondo d'accensione sotto il titolo: rosso pieno
+	     se acceso. -->
 	<button
 		type="button"
 		class="pellet-visual"
@@ -188,18 +187,11 @@
 		{/if}
 		<div class="pellet-text">
 			<span class="pellet-label">PELLET</span>
-			{#if !isIdle}
-				<span class="pellet-value"
-					><Fraction value={remainingKg.toFixed(1)} total={totalKg.toFixed(1)} unit="KG" /></span
-				>
-			{/if}
+			<span class="feeder-power" class:on={feederOn} class:busy={feederBusy} aria-hidden="true">
+				<Power size="45%" strokeWidth={2.5} />
+			</span>
 		</div>
 	</button>
-	<span class="feeder-badge" class:on={feederOn} aria-hidden="true">
-		<span class="status-dot" class:on={feederOn}></span>
-		<span class="badge-label">FEEDER</span>
-		{feederBusy ? '…' : feederOn ? 'ON' : 'OFF'}
-	</span>
 </section>
 
 <ConfirmModal
@@ -230,67 +222,42 @@
 		container-type: inline-size;
 	}
 
-	/* Stato del feeder in alto a destra: stessa posizione e misura del badge dell'estrusore,
-	   ma con la parola, perché qui conta sapere se è acceso. Fondo pieno, così si legge
-	   anche sopra il riempimento rosso. Non riceve tocchi: passa tutto alla card. */
-	.feeder-badge {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		z-index: 3;
+	/* Il tasto d'accensione del feeder sotto il titolo. Non è un pulsante a sé: tutta la
+	   card è l'interruttore, questo ne mostra lo stato. Anello bianco, così si stacca
+	   anche sopra il riempimento rosso. */
+	.feeder-power {
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		height: 30px;
-		padding: 0 10px;
-		box-sizing: border-box;
-		border-radius: 10px;
-		border: 1px solid transparent;
-		background: var(--color-surface-sunken);
-		color: var(--color-text-muted);
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		pointer-events: none;
-	}
-
-	.feeder-badge.on {
-		background: var(--color-white);
-		border-color: var(--color-red);
-		color: var(--color-red);
-	}
-
-	.badge-label {
-		font-weight: 600;
-		opacity: 0.7;
-	}
-
-	/* Il pallino accanto a ON/OFF nel badge del feeder. */
-	.status-dot {
-		width: 8px;
-		height: 8px;
+		justify-content: center;
+		width: min(56px, 18cqw);
+		aspect-ratio: 1;
 		border-radius: 50%;
-		background: var(--color-gray-light);
+		background: var(--color-white);
+		color: var(--color-text-muted);
+		box-shadow:
+			inset 0 0 0 2px var(--color-gray),
+			0 0 0 3px var(--color-white);
+		transition:
+			background-color 0.15s,
+			color 0.15s,
+			opacity 0.15s;
 	}
 
-	.status-dot.on {
+	.feeder-power.on {
 		background: var(--color-red);
-		animation: status-pulse 1.6s ease-in-out infinite;
+		color: var(--color-white);
+		box-shadow:
+			0 0 0 3px var(--color-white),
+			0 2px 10px rgba(var(--rgb-red), 0.35);
 	}
 
-	@keyframes status-pulse {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(215, 46, 40, 0.45);
-		}
-		50% {
-			box-shadow: 0 0 0 5px rgba(215, 46, 40, 0);
-		}
+	.feeder-power.busy {
+		opacity: 0.5;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.status-dot.on {
-			animation: none;
+		.feeder-power {
+			transition: none;
 		}
 	}
 
@@ -366,10 +333,8 @@
 	.pellet-text {
 		position: absolute;
 		inset: 0;
-		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW: allineati alla stessa
-		   altezza. In alto resta lo spazio del badge del feeder, e lo stesso in fondo per
-		   restare in asse. */
-		padding: 48px 16px;
+		/* Centrato sulla card intera, come i testi di Z HEIGHT e FLOW. */
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -380,19 +345,12 @@
 		text-align: center;
 	}
 
-	/* Stessi font di FLOW e "Let me extrude!". */
+	/* Stesso font del titolo FLOW. */
 	.pellet-label {
 		font-size: min(var(--dashboard-title-size), 18cqw);
 		font-weight: 700;
 		color: var(--color-black);
 		line-height: 1.1;
 		letter-spacing: 0.02em;
-	}
-
-	.pellet-value {
-		font-size: min(var(--dashboard-subtitle-size), 13cqw);
-		color: var(--color-black-pure);
-		font-weight: 500;
-		line-height: 1.3;
 	}
 </style>
