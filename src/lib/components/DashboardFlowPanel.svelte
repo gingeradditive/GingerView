@@ -21,8 +21,12 @@
 	let isIdle = $state(true);
 
 	let clampedValue = $derived(Math.min(maxValue, Math.max(minValue, flowValue)));
-	let progress = $derived((clampedValue - minValue) / (maxValue - minValue));
-	let strokeDasharray = $derived(`${progress * circumference} ${circumference}`);
+	let progress = $derived(isIdle ? 0 : (clampedValue - minValue) / (maxValue - minValue));
+	// Mai lungo zero: col tratto arrotondato resta almeno un pallino pieno, anche a 0 mm³/s.
+	let strokeDasharray = $derived(`${Math.max(progress * circumference, 0.01)} ${circumference}`);
+	// A stampa ferma il flusso è zero: il ripiego su gcode_move darebbe la velocità
+	// dell'ultimo movimento anche a macchina ferma.
+	let shownValue = $derived(isIdle ? 0 : clampedValue);
 
 	const updateFlow = (status: FlowStatus): void => {
 		const printState = status.print_stats?.state ?? 'standby';
@@ -61,18 +65,14 @@
 			viewBox="0 0 220 220"
 			class="circular-progress"
 			role="img"
-			aria-label={isIdle ? 'Flow idle' : `Flow ${Math.round(clampedValue)} mm³/s`}
+			aria-label={`Flow ${Math.round(shownValue)} mm³/s`}
 		>
 			<circle class="circle-bg" cx="110" cy="110" r={radius} />
-			{#if !isIdle}
-				<circle class="circle" cx="110" cy="110" r={radius} stroke-dasharray={strokeDasharray} />
-			{/if}
+			<circle class="circle" cx="110" cy="110" r={radius} stroke-dasharray={strokeDasharray} />
 		</svg>
 		<div class="gauge-content">
 			<div class="flow-label">FLOW</div>
-			{#if !isIdle}
-				<div class="flow-value">{Math.round(clampedValue)} mm³/s</div>
-			{/if}
+			<div class="flow-value">{Math.round(shownValue)} mm³/s</div>
 		</div>
 	</div>
 </section>
