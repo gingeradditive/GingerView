@@ -77,8 +77,7 @@
 <section class="pellet-panel" aria-label="Pellet feeder">
 	<!-- Tutta la card è l'interruttore del feeder, come il disegno dell'estrusore apre le
 	     temperature. Il disegno è il gauge di FLOW trasformato nel simbolo d'accensione:
-	     cerchio aperto in alto con la barra nel varco. Rosso e animato se acceso, grigio
-	     e fermo se spento. -->
+	     cerchio aperto in alto con la barra nel varco. Rosso se acceso, grigio se spento. -->
 	<button
 		type="button"
 		class="pellet-switch"
@@ -93,9 +92,9 @@
 	>
 		<span class="pellet-gauge">
 			<svg viewBox="0 0 220 220" class="power-symbol" aria-hidden="true">
-				<!-- Arco di 290° centrato in basso: il varco di 70° in alto ospita la barra.
+				<!-- Arco di 310° centrato in basso: il varco di 50° in alto ospita la barra.
 				     pathLength 100 per animare il disegno senza calcolare la lunghezza. -->
-				<path class="power-arc" d="M 160.47 37.91 A 88 88 0 1 1 59.53 37.91" pathLength="100" />
+				<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" pathLength="100" />
 				<line class="power-bar" x1="110" y1="12" x2="110" y2="62" />
 			</svg>
 			<span class="gauge-content">
@@ -202,7 +201,7 @@
 	}
 
 	/* Acceso: rosso e spesso come l'arco pieno di FLOW. All'accensione l'arco si disegna
-	   da un capo all'altro e la barra scende nel varco; poi il simbolo "respira". */
+	   da un capo all'altro e la barra scende nel varco. */
 	.on .power-arc,
 	.on .power-bar {
 		stroke: var(--color-red);
@@ -216,10 +215,6 @@
 
 	.on .power-bar {
 		animation: bar-drop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-	}
-
-	.on .power-symbol {
-		animation: power-glow 2s ease-in-out 0.6s infinite;
 	}
 
 	.gauge-content {
@@ -249,12 +244,6 @@
 		font-weight: 500;
 		color: var(--color-text-soft);
 		line-height: 1.3;
-		transition: color 0.3s;
-	}
-
-	.on .feeder-value {
-		font-weight: 700;
-		color: var(--color-red);
 	}
 
 	@keyframes arc-draw {
@@ -277,28 +266,16 @@
 		}
 	}
 
-	@keyframes power-glow {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 0 rgba(var(--rgb-red), 0));
-		}
-		50% {
-			filter: drop-shadow(0 0 8px rgba(var(--rgb-red), 0.55));
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.pellet-switch,
 		.pellet-gauge,
 		.power-arc,
-		.power-bar,
-		.feeder-value {
+		.power-bar {
 			transition: none;
 		}
 
 		.on .power-arc,
-		.on .power-bar,
-		.on .power-symbol {
+		.on .power-bar {
 			animation: none;
 		}
 	}
