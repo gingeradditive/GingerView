@@ -66,6 +66,34 @@
 		onEdit?.();
 	};
 
+	// Solo gradi interi, al massimo 3 cifre: il campo è `number`, che ignora `maxlength`
+	// e accetta virgola, punto, segno ed esponente. Quei tasti non entrano, e quello che
+	// arriva lo stesso (incolla, tastiere che non mandano keydown) si ripulisce qui.
+	const MAX_DIGITS = 3;
+	const BLOCKED_KEYS = new Set(['.', ',', 'e', 'E', '+', '-']);
+
+	const readDigits = (event: Event): number | null => {
+		const input = event.currentTarget as HTMLInputElement;
+		const digits = input.value.replace(/\D/g, '').slice(0, MAX_DIGITS);
+		if (digits !== input.value) input.value = digits;
+		return digits === '' ? null : Number(digits);
+	};
+
+	const handleKeydown = (event: KeyboardEvent): void => {
+		if (BLOCKED_KEYS.has(event.key)) event.preventDefault();
+		else if (event.key === 'Enter') onEnter?.();
+	};
+
+	const editZone = (index: number, event: Event): void => {
+		values[index] = readDigits(event);
+		onEdit?.();
+	};
+
+	const editBed = (event: Event): void => {
+		bed = readDigits(event);
+		onEdit?.();
+	};
+
 	const formatCurrent = (value: number | null | undefined): string =>
 		value == null || Number.isNaN(value) ? '--' : `${Math.round(value)} °C`;
 </script>
@@ -101,9 +129,9 @@
 						{disabled}
 						aria-label={`Zone ${index + 1} target, °C`}
 						aria-invalid={invalid[index]}
-						bind:value={values[index]}
-						oninput={() => onEdit?.()}
-						onkeydown={(e) => e.key === 'Enter' && onEnter?.()}
+						value={values[index]}
+						oninput={(e) => editZone(index, e)}
+						onkeydown={handleKeydown}
 					/>
 					{#if values[index] != null}
 						<span class="unit" aria-hidden="true">°C</span>
@@ -150,9 +178,9 @@
 						{disabled}
 						aria-label="Bed target, °C"
 						aria-invalid={bedInvalid}
-						bind:value={bed}
-						oninput={() => onEdit?.()}
-						onkeydown={(e) => e.key === 'Enter' && onEnter?.()}
+						value={bed}
+						oninput={editBed}
+						onkeydown={handleKeydown}
 					/>
 					{#if bed != null}
 						<span class="unit" aria-hidden="true">°C</span>
@@ -307,6 +335,11 @@
 		font-size: 1rem;
 		font-weight: 600;
 		color: var(--color-text-subtle);
+	}
+
+	/* Con il cursore nel campo "Off" sparisce: si scrive in un campo vuoto. */
+	input:focus::placeholder {
+		color: transparent;
 	}
 
 	input::-webkit-outer-spin-button,
