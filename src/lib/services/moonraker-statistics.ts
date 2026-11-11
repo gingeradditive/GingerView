@@ -1,11 +1,5 @@
 import { configService } from './config';
-import { toastActions } from '$lib/stores/toastStore';
-import type {
-	HistoryTotalsResult,
-	SystemInfoResult,
-	ProcStatsResult,
-	ServerInfoResult
-} from '$lib/types/statistics';
+import type { DiskUsage, HistoryTotalsResult, ProcStatsResult } from '$lib/types/statistics';
 
 function getApiUrl(): string {
 	return configService.getKlipperConfig().moonrakerApiUrl;
@@ -26,39 +20,18 @@ export function fetchHistoryTotals(): Promise<HistoryTotalsResult | null> {
 	return getResult<HistoryTotalsResult>('/server/history/totals');
 }
 
-export function fetchSystemInfo(): Promise<SystemInfoResult | null> {
-	return getResult<SystemInfoResult>('/machine/system_info');
+/** Lo spazio del disco dove stanno i file di stampa, in byte. */
+export async function fetchDiskUsage(): Promise<DiskUsage | null> {
+	const result = await getResult<{ disk_usage?: DiskUsage }>('/server/files/directory?path=gcodes');
+	return result?.disk_usage ?? null;
 }
 
 export function fetchProcStats(): Promise<ProcStatsResult | null> {
 	return getResult<ProcStatsResult>('/machine/proc_stats');
 }
 
-export function fetchServerInfo(): Promise<ServerInfoResult | null> {
-	return getResult<ServerInfoResult>('/server/info');
-}
-
-/** `POST /server/history/totals/reset` — same "start over" Mainsail offers. */
-export async function resetHistoryTotals(): Promise<void> {
-	const apiUrl = getApiUrl();
-	const res = await fetch(`${apiUrl}/server/history/totals/reset`, { method: 'POST' });
-	if (!res.ok) {
-		const msg = `Failed to reset statistics: ${res.status} ${res.statusText}`;
-		toastActions.error('moonraker', 'Reset error', msg);
-		throw new Error(msg);
-	}
-}
-
 /** Job totals durations arrive in seconds, same convention as history entries. */
 export { formatDuration } from '$lib/utils/format';
-
-/** `total_memory`/`system_memory` figures from Moonraker are in KiB. */
-export function formatKib(kib?: number): string {
-	if (kib == null || kib < 0) return '--';
-	if (kib >= 1024 * 1024) return `${(kib / (1024 * 1024)).toFixed(1)} GB`;
-	if (kib >= 1024) return `${(kib / 1024).toFixed(1)} MB`;
-	return `${Math.round(kib)} KB`;
-}
 
 export function formatBytes(bytes?: number): string {
 	if (bytes == null || bytes < 0) return '--';

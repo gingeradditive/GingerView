@@ -226,12 +226,12 @@
 		box-sizing: content-box;
 	}
 
-	/* La colata: linee orizzontali impilate, la più larga sul piano. */
+	/* La colata: linee orizzontali impilate e a contatto, come gli strati veri; la più
+	   larga sul piano. */
 	.pile {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: calc(var(--u) * 2);
 	}
 
 	.pile.hidden {
@@ -253,6 +253,12 @@
 			linear-gradient(rgba(var(--rgb-red), 0.06), rgba(var(--rgb-red), 0.06)), var(--color-white);
 		border: calc(var(--u) * 1.5) dashed var(--color-red);
 		box-sizing: border-box;
+	}
+
+	/* Strati a contatto: il bordo di sopra si sovrappone a quello di sotto invece di
+	   raddoppiarlo. */
+	.pile.preview .line + .line {
+		margin-top: calc(var(--u) * -1.5);
 	}
 
 	/* Durante l'estrusione le linee compaiono dal basso, una per volta, nel tempo stimato. */

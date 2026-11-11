@@ -2,17 +2,15 @@
 	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
-	import { CheckCircle2, XCircle, Ban, Trash2, RefreshCw } from 'lucide-svelte';
+	import { Check, Hourglass, Info, Minus, Trash2, X } from 'lucide-svelte';
 	import type { MoonrakerHistoryJob, HistoryStatus } from '$lib/types/history';
 	import {
 		fetchHistoryList,
 		deleteHistoryJob,
 		deleteAllHistory,
 		getHistoryThumbnailUrl,
-		formatFilamentUsed,
-		formatHistoryDate
+		formatHistoryDateParts
 	} from '$lib/services/moonraker-history';
-	import { formatEstimatedTime } from '$lib/services/moonraker-files';
 	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import ConfirmModal from './ConfirmModal.svelte';
 	import HistoryDetailsPopup from './HistoryDetailsPopup.svelte';
@@ -151,15 +149,14 @@
 
 	function statusMeta(status: HistoryStatus): {
 		label: string;
-		icon: typeof CheckCircle2;
+		icon: typeof Check;
 		className: string;
 	} {
-		if (status === 'completed')
-			return { label: 'Completed', icon: CheckCircle2, className: 'success' };
-		if (status === 'cancelled') return { label: 'Cancelled', icon: Ban, className: 'warning' };
+		if (status === 'completed') return { label: 'Completed', icon: Check, className: 'success' };
+		if (status === 'cancelled') return { label: 'Cancelled', icon: Minus, className: 'warning' };
 		if (status === 'in_progress')
-			return { label: 'In progress', icon: RefreshCw, className: 'info' };
-		return { label: 'Error', icon: XCircle, className: 'danger' };
+			return { label: 'In progress', icon: Hourglass, className: 'info' };
+		return { label: 'Error', icon: X, className: 'danger' };
 	}
 
 	onMount(() => {
@@ -169,31 +166,31 @@
 </script>
 
 <SettingsSheet title="History" size="lg" tall>
-	{#snippet actions()}
+	<!-- I filtri a sinistra, Clear history sulla stessa riga a destra. -->
+	<div class="toolbar">
+		<div class="tabs" role="tablist">
+			{#each TABS as tab (tab.id)}
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeTab === tab.id}
+					class="tab"
+					class:active={activeTab === tab.id}
+					onclick={() => (activeTab = tab.id)}
+				>
+					{tab.label}
+				</button>
+			{/each}
+		</div>
 		<button
 			type="button"
 			class="clear-button"
 			disabled={jobs.length === 0}
 			onclick={() => (showClearAllConfirm = true)}
 		>
-			<Trash2 size={18} />
-			<span>Clear history</span>
+			<Trash2 size={18} aria-hidden="true" />
+			<span class="clear-label">Clear history</span>
 		</button>
-	{/snippet}
-
-	<div class="tabs" role="tablist">
-		{#each TABS as tab (tab.id)}
-			<button
-				type="button"
-				role="tab"
-				aria-selected={activeTab === tab.id}
-				class="tab"
-				class:active={activeTab === tab.id}
-				onclick={() => (activeTab = tab.id)}
-			>
-				{tab.label}
-			</button>
-		{/each}
 	</div>
 
 	<div class="list-area">
@@ -206,16 +203,15 @@
 		{:else}
 			<div class="table">
 				<div class="row header">
+					<span class="col status"><span class="sr-only">Status</span></span>
 					<span class="col thumb"></span>
 					<span class="col name">Name</span>
-					<span class="col status">Status</span>
 					<span class="col date">Started</span>
-					<span class="col duration">Print time</span>
-					<span class="col filament">Material used</span>
 					<span class="col actions"></span>
 				</div>
 				{#each filteredJobs as job (job.job_id)}
 					{@const meta = statusMeta(job.status)}
+					{@const started = formatHistoryDateParts(job.start_time, $printerTimezone)}
 					<div
 						class="row item"
 						role="button"
@@ -224,6 +220,11 @@
 						onkeydown={(e) =>
 							(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openDetails(job))}
 					>
+						<!-- Lo stato è solo icona e colore: il nome per esteso nel tooltip e per i lettori. -->
+						<span class="col status {meta.className}" use:tooltip={meta.label}>
+							<meta.icon size={14} strokeWidth={3} aria-hidden="true" />
+							<span class="sr-only">{meta.label}</span>
+						</span>
 						<span class="col thumb">
 							<img
 								src={getHistoryThumbnailUrl(job) ?? '/error-thumbnail.png'}
@@ -234,27 +235,21 @@
 						</span>
 						<span class="col main">
 							<span class="col name" title={job.filename}>{job.filename}</span>
-							<span class="col status">
-								<span class="status-badge {meta.className}">
-									<meta.icon size={14} />
-									{meta.label}
-								</span>
-							</span>
-							<span class="meta-line">
-								<span class="col date">{formatHistoryDate(job.start_time, $printerTimezone)}</span>
-								<span class="col duration">{formatEstimatedTime(job.print_duration)}</span>
-								<span class="col filament">{formatFilamentUsed(job.filament_used)}</span>
+							<span class="col date">
+								<span class="day">{started.day}</span>
+								<span class="time">{started.time}</span>
 							</span>
 						</span>
 						<span class="col actions">
+							<!-- Durata, materiale ed eliminazione stanno nei dettagli: (i) li apre come il tocco sulla riga. -->
 							<button
 								type="button"
-								class="delete-button"
-								aria-label="Delete entry"
+								class="info-button"
+								aria-label="Details"
 								use:tooltip
-								onclick={(e) => requestDelete(job, e)}
+								onclick={(e) => (e.stopPropagation(), openDetails(job))}
 							>
-								<Trash2 size={16} />
+								<Info size={20} />
 							</button>
 						</span>
 					</div>
@@ -319,7 +314,17 @@
 		cursor: not-allowed;
 	}
 
+	.toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-shrink: 0;
+	}
+
 	.tabs {
+		flex: 1;
+		min-width: 0;
 		display: flex;
 		gap: 6px;
 		flex-wrap: wrap;
@@ -351,14 +356,18 @@
 		box-sizing: border-box;
 	}
 
+	/* Intestazione e righe sulla stessa griglia, così le colonne restano in colonna.
+	   Stato, anteprima, nome, data, dettagli. La colonna dello stato è 5px più larga del tondo:
+	   lo stacca dall'anteprima. */
 	.table {
+		--history-columns: 29px 48px minmax(0, 1fr) 120px 44px;
 		display: flex;
 		flex-direction: column;
 	}
 
 	.row.header {
 		display: grid;
-		grid-template-columns: 48px 2fr 140px 140px 100px 100px 44px;
+		grid-template-columns: var(--history-columns);
 		align-items: center;
 		gap: 12px;
 		padding: 12px 16px;
@@ -375,7 +384,8 @@
 	}
 
 	.row.item {
-		display: flex;
+		display: grid;
+		grid-template-columns: var(--history-columns);
 		align-items: center;
 		gap: 12px;
 		width: 100%;
@@ -416,15 +426,69 @@
 	}
 
 	.col.main {
-		flex: 1;
-		min-width: 0;
-		display: grid;
-		grid-template-columns: 2fr 140px 140px 100px 100px;
-		align-items: center;
-		gap: 12px;
+		display: contents;
 	}
 
-	.col.name {
+	/* Lo stato: un tondo col fondo tenue e il simbolo pieno, come i vecchi badge senza testo. */
+	.row.item .col.status {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		justify-self: start;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+	}
+
+	.col.status.success {
+		background: var(--color-success-bg);
+		color: var(--color-success);
+	}
+
+	.col.status.warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+	}
+
+	.col.status.danger {
+		background: var(--color-danger-bg);
+		color: var(--color-red);
+	}
+
+	.col.status.info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+	}
+
+	/* Started centrata: intestazione e valori. */
+	.row.header .col.date {
+		text-align: center;
+	}
+
+	.row.item .col.date {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		line-height: 1.3;
+	}
+
+	.row.item .col.date .time {
+		color: var(--color-text-subtle);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.row.item .col.name {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -432,45 +496,9 @@
 		color: var(--color-black);
 	}
 
-	.meta-line {
-		display: contents;
-	}
-
-	.col.date,
-	.col.duration,
-	.col.filament {
+	.row.item .col.date {
 		font-size: 0.85rem;
 		color: var(--color-text-soft);
-	}
-
-	.status-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 4px 10px;
-		border-radius: 12px;
-		font-size: 0.78rem;
-		font-weight: 600;
-	}
-
-	.status-badge.success {
-		background: var(--color-success-bg);
-		color: var(--color-success);
-	}
-
-	.status-badge.warning {
-		background: var(--color-warning-bg);
-		color: var(--color-warning);
-	}
-
-	.status-badge.danger {
-		background: var(--color-danger-bg);
-		color: var(--color-red);
-	}
-
-	.status-badge.info {
-		background: var(--color-info-bg);
-		color: var(--color-info);
 	}
 
 	.col.actions {
@@ -479,7 +507,7 @@
 		flex-shrink: 0;
 	}
 
-	.delete-button {
+	.info-button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -492,9 +520,9 @@
 		cursor: pointer;
 	}
 
-	.delete-button:hover {
-		background: var(--color-danger-bg);
-		color: var(--color-red);
+	.info-button:hover {
+		background: var(--color-background);
+		color: var(--color-text-muted);
 	}
 
 	.status-message {
@@ -517,6 +545,53 @@
 			display: none;
 		}
 
+		/* Sul telefono non sta accanto ai filtri: resta il cestino, il nome lo leggono i lettori. */
+		.clear-button {
+			padding: 8px;
+			width: 36px;
+			height: 36px;
+			justify-content: center;
+		}
+
+		/* Chip un po' più strette; se non bastano scorrono di lato invece di andare a capo. */
+		.tabs {
+			flex-wrap: nowrap;
+			gap: 4px;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+
+		.tab {
+			padding: 8px 10px;
+			flex-shrink: 0;
+		}
+
+		.clear-button {
+			flex-shrink: 0;
+			margin-left: -4px;
+		}
+
+		.clear-label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+		}
+
+		.row.item {
+			grid-template-columns: 29px 40px minmax(0, 1fr) 32px;
+		}
+
+		/* Sul telefono la data torna su una riga, sotto il nome. */
+		.row.item .col.date {
+			flex-direction: row;
+			align-items: baseline;
+			gap: 4px;
+			line-height: inherit;
+		}
+
 		.col.main {
 			display: flex;
 			flex-direction: column;
@@ -524,22 +599,9 @@
 			gap: 4px;
 		}
 
-		.col.name {
+		.row.item .col.name {
 			white-space: normal;
 			max-width: 100%;
-		}
-
-		.meta-line {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 0 6px;
-		}
-
-		.col.date::after,
-		.col.duration::after {
-			content: '·';
-			margin-left: 6px;
-			color: var(--color-text-subtle);
 		}
 	}
 </style>

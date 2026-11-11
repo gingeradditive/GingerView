@@ -4,8 +4,8 @@
 	import { onMount } from 'svelte';
 	import {
 		ChevronRight,
-		Component,
 		EthernetPort,
+		EyeOff,
 		Wifi,
 		WifiHigh,
 		WifiLow,
@@ -303,7 +303,7 @@
 
 	<div class="card-footer">
 		<button type="button" class="network-row hidden-row" onclick={openHiddenDialog}>
-			<span class="row-icon"><Component /></span>
+			<span class="row-icon"><EyeOff /></span>
 			<div class="row-text">
 				<strong>Hidden Network</strong>
 				<span>Can't see yours? Add it by name</span>

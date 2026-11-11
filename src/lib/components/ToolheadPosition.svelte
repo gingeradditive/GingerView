@@ -11,14 +11,49 @@
 	let instanceCount = 0;
 	const testSetters: ((x: number, y: number, z: number) => void)[] = [];
 	const keyboardOwners: { id: number; isVisible: () => boolean }[] = [];
+
+	/**
+	 * Ultima posizione nota di ogni asse, per quando la macchina non è in home (avvio, motori
+	 * spenti): Kalico continua a riportare un numero, ma all'avvio è 0 e con i motori spenti
+	 * la testa può essere stata spostata a mano. Si ricorda tra una pagina e l'altra e, per
+	 * chi riapre il browser, in localStorage; se non c'è, un valore plausibile a caso.
+	 */
+	const LAST_KNOWN_KEY = 'g2.toolhead.lastKnown';
+	const lastKnown: Partial<Record<'x' | 'y' | 'z', number>> = (() => {
+		try {
+			const saved = JSON.parse(localStorage.getItem(LAST_KNOWN_KEY) ?? '{}');
+			return saved && typeof saved === 'object' ? saved : {};
+		} catch {
+			return {};
+		}
+	})();
+
+	const rememberPosition = (axis: 'x' | 'y' | 'z', value: number): void => {
+		if (lastKnown[axis] === value) return;
+		lastKnown[axis] = value;
+		try {
+			localStorage.setItem(LAST_KNOWN_KEY, JSON.stringify(lastKnown));
+		} catch {
+			// Senza storage resta in memoria fino al reload.
+		}
+	};
+
+	/** Frazione dell'asse dove cade il valore a caso: X e Y nel mezzo, Z in basso. */
+	const RANDOM_RANGE = { x: [0.2, 0.8], y: [0.2, 0.8], z: [0.05, 0.35] } as const;
+	const randomFraction = {
+		x: RANDOM_RANGE.x[0] + Math.random() * (RANDOM_RANGE.x[1] - RANDOM_RANGE.x[0]),
+		y: RANDOM_RANGE.y[0] + Math.random() * (RANDOM_RANGE.y[1] - RANDOM_RANGE.y[0]),
+		z: RANDOM_RANGE.z[0] + Math.random() * (RANDOM_RANGE.z[1] - RANDOM_RANGE.z[0])
+	};
 </script>
 
 <script lang="ts">
+	import { House, RefreshCwOff } from 'lucide-svelte';
+	import { mdiArrowDown, mdiArrowLeft, mdiArrowRight, mdiArrowUp } from '@mdi/js';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onDestroy, onMount } from 'svelte';
 	import { Tween } from 'svelte/motion';
 	import { cubicInOut, cubicOut, linear } from 'svelte/easing';
-	import { mdiArrowDown, mdiArrowLeft, mdiArrowRight, mdiArrowUp, mdiHome } from '@mdi/js';
 	import { sendGcode } from '$lib/services/moonraker-gcode';
 	import HomingWarningModal from '$lib/components/HomingWarningModal.svelte';
 	import {
@@ -276,6 +311,33 @@
 	// --- Jog ---------------------------------------------------------------
 
 	const homed = $derived(axes.every((axis) => homedAxes.includes(axis)));
+	// Un asse fuori da homed_axes non ha posizione nota: Kalico riporta l'ultima, ma con i
+	// motori spenti la testa può essere stata spostata a mano. Al posto del numero, "—".
+	const known = $derived({
+		x: homedAxes.includes('x'),
+		y: homedAxes.includes('y'),
+		z: homedAxes.includes('z')
+	});
+	// Asse in home: si ricorda dove arriva (il target, non ogni passo dell'animazione).
+	$effect(() => {
+		if (known.x) rememberPosition('x', actualX.target);
+		if (known.y) rememberPosition('y', actualY.target);
+		if (known.z) rememberPosition('z', actualZ.target);
+	});
+
+	/** Il valore a schermo di un asse non in home: l'ultimo noto o, se manca, uno plausibile. */
+	const guess = (axis: Axis): number =>
+		lastKnown[axis] ??
+		Math.round((randomFraction[axis] * (maximum[axis] - minimum[axis]) + minimum[axis]) * 10) / 10;
+	const shown = $derived({
+		x: known.x ? actualX.current : guess('x'),
+		y: known.y ? actualY.current : guess('y'),
+		z: known.z ? actualZ.current : guess('z')
+	});
+	/** Dove disegnare il pallino semitrasparente: la posizione a schermo, nota o supposta. */
+	const guessMarker = $derived(
+		project(clamp(shown.x / maximum.x), clamp(shown.y / maximum.y), clamp(shown.z / maximum.z))
+	);
 	const printing = $derived(printState === 'printing' || printState === 'paused');
 	const canMove = $derived(homed && !printing && limitsKnown && commanded !== null);
 
@@ -378,17 +440,21 @@
 							x2={p001.x}
 							y2={p001.y}
 						/>
-						<line
-							class="z-guide"
-							x1={pCenterAtZ.x}
-							y1={pCenterAtZ.y}
-							x2={pCenterBase.x}
-							y2={pCenterBase.y}
-						/>
+						{#if known.z}
+							<line
+								class="z-guide"
+								x1={pCenterAtZ.x}
+								y1={pCenterAtZ.y}
+								x2={pCenterBase.x}
+								y2={pCenterBase.y}
+							/>
+						{/if}
 
 						<polygon class="bed-fill" points={pointsToString(p000, p100, p110, p010)} />
 
-						<polygon class="z-plane" points={pointsToString(planeA, planeB, planeC, planeD)} />
+						{#if known.z}
+							<polygon class="z-plane" points={pointsToString(planeA, planeB, planeC, planeD)} />
+						{/if}
 
 						<line class="cube-edge" x1={p000.x} y1={p000.y} x2={p100.x} y2={p100.y} />
 						<line class="cube-edge" x1={p100.x} y1={p100.y} x2={p110.x} y2={p110.y} />
@@ -414,8 +480,19 @@
 						<line class="axis-y" x1={p010.x} y1={p010.y} x2={p010.x - 52} y2={p010.y + 28} />
 						<text class="axis-label axis-label-y" x={p010.x - 70} y={p010.y + 36}>Y</text>
 
-						<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
-						<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
+						{#if homed}
+							<circle class="toolhead-shadow" cx={actualMarker.x} cy={actualMarker.y + 2} r="5" />
+							<circle class="toolhead-marker" cx={actualMarker.x} cy={actualMarker.y} r="5" />
+						{:else}
+							<!-- Posizione non nota: il pallino semitrasparente dove la testa era l'ultima volta. -->
+							<circle
+								class="toolhead-marker unknown"
+								class:homing={$homingBusy}
+								cx={guessMarker.x}
+								cy={guessMarker.y}
+								r="5"
+							/>
+						{/if}
 					</svg>
 				</div>
 				<!-- Disable motors e Home, impilati sotto lo schema, grandi come Heat & extrude. -->
@@ -429,11 +506,7 @@
 						aria-disabled={!motorsEnabled || motorsBusy}
 						onclick={handleMotorOff}
 					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path
-								d="M2.5,3.77L6.87,8.14L5,10V13H3V10H1V18H3V15H5V18H8L10,20H18V19.27L21.23,22.5L22.5,21.22L3.78,2.5L2.5,3.77M16,18H11L9,16H7V11L8,10H8.73L16,17.27V18M23,9V19H22.82L16,12.18V10H13.82L7.82,4H15V6H12V8H18V12H20V9H23Z"
-							/>
-						</svg>
+						<RefreshCwOff class="action-icon" aria-hidden="true" />
 						<span>{motorsEnabled ? 'Disable motors' : 'Disabled motors'}</span>
 					</button>
 					<button
@@ -443,9 +516,7 @@
 						disabled={$homingBusy}
 						onclick={handleHome}
 					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d={mdiHome} />
-						</svg>
+						<House class="action-icon" aria-hidden="true" />
 						<span>{$homingBusy ? 'Homing…' : 'Home'}</span>
 					</button>
 				</div>
@@ -456,21 +527,51 @@
 			<div class="card coords-card" aria-live="polite">
 				<div class="position-row">
 					<span class="axis-name axis-x">X</span>
-					<span class="position-value"
-						>{actualX.current.toFixed(1)}<span class="position-unit">mm</span></span
-					>
+					{#if known.x}
+						<span class="position-value"
+							>{actualX.current.toFixed(1)}<span class="position-unit">mm</span></span
+						>
+					{:else}
+						<!-- Non in home: l'ultimo valore noto, semitrasparente perché potrebbe non valere più. -->
+						<span class="position-value unknown" use:tooltip={'Home to know the position'}>
+							<span class="guessed" class:homing={$homingBusy} aria-hidden="true"
+								>{shown.x.toFixed(1)}</span
+							><span class="position-unit" aria-hidden="true">mm</span>
+							<span class="sr-only">Unknown</span>
+						</span>
+					{/if}
 				</div>
 				<div class="position-row">
 					<span class="axis-name axis-y">Y</span>
-					<span class="position-value"
-						>{actualY.current.toFixed(1)}<span class="position-unit">mm</span></span
-					>
+					{#if known.y}
+						<span class="position-value"
+							>{actualY.current.toFixed(1)}<span class="position-unit">mm</span></span
+						>
+					{:else}
+						<!-- Non in home: l'ultimo valore noto, semitrasparente perché potrebbe non valere più. -->
+						<span class="position-value unknown" use:tooltip={'Home to know the position'}>
+							<span class="guessed" class:homing={$homingBusy} aria-hidden="true"
+								>{shown.y.toFixed(1)}</span
+							><span class="position-unit" aria-hidden="true">mm</span>
+							<span class="sr-only">Unknown</span>
+						</span>
+					{/if}
 				</div>
 				<div class="position-row">
 					<span class="axis-name axis-z">Z</span>
-					<span class="position-value"
-						>{actualZ.current.toFixed(1)}<span class="position-unit">mm</span></span
-					>
+					{#if known.z}
+						<span class="position-value"
+							>{actualZ.current.toFixed(1)}<span class="position-unit">mm</span></span
+						>
+					{:else}
+						<!-- Non in home: l'ultimo valore noto, semitrasparente perché potrebbe non valere più. -->
+						<span class="position-value unknown" use:tooltip={'Home to know the position'}>
+							<span class="guessed" class:homing={$homingBusy} aria-hidden="true"
+								>{shown.z.toFixed(1)}</span
+							><span class="position-unit" aria-hidden="true">mm</span>
+							<span class="sr-only">Unknown</span>
+						</span>
+					{/if}
 				</div>
 			</div>
 
@@ -726,6 +827,29 @@
 		fill: var(--color-red);
 	}
 
+	.toolhead-marker.unknown {
+		opacity: 0.35;
+	}
+
+	/* Durante l'homing pallino e valori non noti lampeggiano: la macchina sta cercando lo zero. */
+	.toolhead-marker.unknown.homing,
+	.guessed.homing {
+		animation: homing-blink 0.9s ease-in-out infinite;
+	}
+
+	@keyframes homing-blink {
+		50% {
+			opacity: 0.08;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.toolhead-marker.unknown.homing,
+		.guessed.homing {
+			animation: none;
+		}
+	}
+
 	/* --- Coordinate ---------------------------------------------------------- */
 
 	/* Sul telefono le tre coordinate in una riga; da tablet in su una per riga. */
@@ -758,6 +882,24 @@
 		font-weight: 600;
 		color: var(--color-text-muted);
 		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.position-value.unknown {
+		color: var(--color-text-subtle);
+	}
+
+	/* Posizione non nota: l'ultimo valore, semitrasparente come il pallino nello schema. */
+	.guessed {
+		opacity: 0.4;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
 		white-space: nowrap;
 	}
 
@@ -940,11 +1082,11 @@
 		cursor: pointer;
 	}
 
-	.action-btn svg {
+	/* Icone lucide (a tratto) di Disable motors e Home. */
+	.action-btn :global(.action-icon) {
 		flex-shrink: 0;
 		width: 24px;
 		height: 24px;
-		fill: currentColor;
 	}
 
 	.action-btn:hover {

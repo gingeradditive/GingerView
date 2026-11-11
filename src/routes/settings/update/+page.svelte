@@ -17,8 +17,6 @@
 		startRecover,
 		startUpgrade
 	} from '$lib/services/moonraker-update';
-	import { formatZoneTime } from '$lib/services/timezone';
-	import { ensurePrinterTimezone, printerTimezone } from '$lib/stores/timezoneStore';
 	import { toastActions } from '$lib/stores/toastStore';
 	import type { UpdateLogState, UpdateStatus } from '$lib/types/update';
 
@@ -87,7 +85,6 @@
 	);
 
 	onMount(() => {
-		ensurePrinterTimezone();
 		loadStatus();
 		updatePrintState();
 
@@ -305,12 +302,6 @@
 		confirmState = null;
 		pending?.run();
 	}
-
-	/** Nel fuso della stampante, come tutti gli orari dell'interfaccia. */
-	function formatResetTime(unixSeconds: number): string {
-		if (!unixSeconds) return '';
-		return formatZoneTime($printerTimezone, new Date(unixSeconds * 1000), true);
-	}
 </script>
 
 <svelte:head>
@@ -351,15 +342,6 @@
 			{/each}
 		{/if}
 	</div>
-
-	{#if status && status.github_rate_limit > 0}
-		<p class="rate-limit">
-			GitHub requests remaining: {status.github_requests_remaining}/{status.github_rate_limit}
-			{#if status.github_limit_reset_time}
-				· resets at {formatResetTime(status.github_limit_reset_time)}
-			{/if}
-		</p>
-	{/if}
 
 	{#snippet footer()}
 		<button
@@ -476,12 +458,6 @@
 		margin: 0;
 		color: var(--color-red);
 		font-size: 0.9rem;
-	}
-	.rate-limit {
-		margin: 0;
-		font-size: 0.78rem;
-		color: var(--color-gray-light);
-		flex-shrink: 0;
 	}
 	.ghost-btn {
 		display: inline-flex;

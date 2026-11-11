@@ -1,7 +1,5 @@
 <script lang="ts">
 	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
-	import { tooltip } from '$lib/actions/tooltip';
-	import { Trash2 } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
 	import { formatZoneTime } from '$lib/services/timezone';
@@ -167,10 +165,6 @@
 		connectWebSocket();
 	}
 
-	function clearTerminal() {
-		outputHistory = [];
-	}
-
 	function sendCommand() {
 		const command = currentCommand.trim();
 		if (!command) return;
@@ -277,21 +271,8 @@
 			type="text"
 			bind:value={currentCommand}
 			onkeydown={handleKeydown}
-			placeholder="Type a Klipper command…"
+			placeholder="Type a command…"
 		/>
-	</div>
-
-	<div class="actions-row">
-		<button
-			type="button"
-			class="clear-btn"
-			onclick={clearTerminal}
-			aria-label="Clear console"
-			use:tooltip
-			title="Clear console"
-		>
-			<Trash2 />
-		</button>
 		<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}
 			>Send</button
 		>
@@ -364,11 +345,16 @@
 		color: var(--color-red);
 		font-weight: 700;
 	}
+	/* Input e Send sulla stessa riga, alti uguali. */
 	.command-row {
+		display: flex;
+		align-items: stretch;
+		gap: 12px;
 		flex-shrink: 0;
 	}
 	.command-row input {
-		width: 100%;
+		flex: 1;
+		min-width: 0;
 		box-sizing: border-box;
 		border: 1px solid var(--color-border-light);
 		background: var(--color-white);
@@ -378,31 +364,12 @@
 		outline: none;
 		font-family: inherit;
 	}
-	.actions-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-shrink: 0;
-	}
-	.clear-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 44px;
-		height: 44px;
-		border-radius: 14px;
-		background: transparent;
-		color: var(--color-text-soft);
-	}
-	.clear-btn:hover {
-		color: var(--color-red);
-	}
 	.send-btn {
 		border: none;
 		background: var(--color-red);
 		color: var(--color-white);
 		border-radius: 16px;
-		padding: 12px 32px;
+		padding: 0 32px;
 		font-size: 1rem;
 		font-weight: 700;
 	}

@@ -11,7 +11,7 @@
 	import type { MoonrakerHistoryJob, HistoryStatus } from '$lib/types/history';
 	import {
 		getHistoryThumbnailUrl,
-		formatFilamentUsed,
+		formatMaterialKg,
 		formatHistoryDate
 	} from '$lib/services/moonraker-history';
 	import { formatEstimatedTime } from '$lib/services/moonraker-files';
@@ -100,11 +100,7 @@
 					value={formatEstimatedTime(job.print_duration)}
 					iconSrc="/PrintTime.svg"
 				/>
-				<StatTile
-					label="Material used"
-					value={formatFilamentUsed(job.filament_used)}
-					iconSrc="/Weight.svg"
-				/>
+				<StatTile label="Material used" value={formatMaterialKg(job)} iconSrc="/Weight.svg" />
 			</div>
 		</div>
 

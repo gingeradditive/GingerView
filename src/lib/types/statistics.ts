@@ -20,55 +20,6 @@ export interface HistoryTotalsResult {
 	job_totals: JobTotals;
 }
 
-/** `GET /machine/system_info` → `result.system_info`. */
-export interface CpuInfo {
-	cpu_count?: number;
-	bits?: string;
-	processor?: string;
-	cpu_desc?: string;
-	hardware_desc?: string;
-	model?: string;
-	total_memory?: number;
-	memory_units?: string;
-}
-
-export interface SdInfo {
-	manufacturer?: string;
-	product_name?: string;
-	capacity?: string;
-	total_bytes?: number;
-}
-
-export interface DistributionInfo {
-	name?: string;
-	id?: string;
-	version?: string;
-	codename?: string;
-}
-
-export interface NetworkIpAddress {
-	family: string;
-	address: string;
-	is_link_local: boolean;
-}
-
-export interface SystemNetworkInterface {
-	mac_address?: string;
-	ip_addresses?: NetworkIpAddress[];
-}
-
-export interface SystemInfo {
-	cpu_info?: CpuInfo;
-	sd_info?: SdInfo;
-	distribution?: DistributionInfo;
-	available_services?: string[];
-	network?: Record<string, SystemNetworkInterface>;
-}
-
-export interface SystemInfoResult {
-	system_info: SystemInfo;
-}
-
 /** `GET /machine/proc_stats` → `result`, refreshed periodically while the page is open. */
 export interface MoonrakerProcStat {
 	time: number;
@@ -109,21 +60,9 @@ export interface ProcStatsResult {
 	websocket_connections?: number;
 }
 
-/** `GET /server/info` → `result`. */
-export interface ServerInfoResult {
-	klippy_connected: boolean;
-	klippy_state: string;
-	components?: string[];
-	failed_components?: string[];
-	warnings?: string[];
-	websocket_count?: number;
-	moonraker_version?: string;
-	api_version_string?: string;
-}
-
-export interface StatisticsSnapshot {
-	historyTotals: HistoryTotalsResult | null;
-	systemInfo: SystemInfoResult | null;
-	procStats: ProcStatsResult | null;
-	serverInfo: ServerInfoResult | null;
+/** `GET /server/files/directory?path=gcodes` → `result.disk_usage`, in bytes. */
+export interface DiskUsage {
+	total: number;
+	used: number;
+	free: number;
 }

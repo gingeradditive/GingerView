@@ -18,9 +18,10 @@
 	 *
 	 * What it must not cover is the way out. Two things stay reachable:
 	 *
-	 * - **the dock**, geometrically — the overlay stops above it, so the emergency
-	 *   stop button (which turns into the firmware restart) and the navigation
-	 *   never sit under it, whatever the stacking order ends up being;
+	 * - **the dock** — the overlay covers the whole screen (stopping above the dock
+	 *   left an unblurred strip that looked like a stray shadow), and while it is
+	 *   up the dock is lifted above it, so the emergency stop button (which turns
+	 *   into the firmware restart) and the navigation stay clickable;
 	 * - **Settings and its subpages**, by route — Log, Update and Console are
 	 *   exactly where somebody goes to find out why Kalico stopped, so the overlay
 	 *   never appears there.
@@ -37,6 +38,8 @@
 		 * screen now.
 		 */
 		restart?: boolean;
+		/** The words before the dock button drawing; "Press" when not set. */
+		hintLead?: string;
 	}
 
 	function copyFor(state: KlippyState): Copy {
@@ -57,10 +60,10 @@
 			};
 		}
 		return {
-			title: 'Kalico is shut down',
-			message:
-				'The firmware has stopped. Nothing will move, heat up or start until you restart it.',
-			hint: 'in the dock to run a firmware restart, once the machine is safe.',
+			title: 'Printer stopped',
+			message: 'Nothing will happen until you restart the printer.',
+			hintLead: 'Once the machine is safe, press',
+			hint: 'in the dock to restart the firmware.',
 			restart: true
 		};
 	}
@@ -85,7 +88,7 @@
 			{/if}
 			<p class="hint">
 				{#if copy.restart}
-					Press
+					{copy.hintLead ?? 'Press'}
 					<span class="dock-restart" role="img" aria-label="the restart button">
 						<svg viewBox="0 0 24 24" aria-hidden="true"><path d={mdiRestart} /></svg>
 					</span>
@@ -102,14 +105,13 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		/* Clears the dock (88px tall from the bottom edge) instead of relying on
-		   z-index alone: the navigation and the emergency stop stay clickable. */
-		bottom: calc(96px + var(--safe-bottom));
+		bottom: 0;
 		z-index: 2900;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 24px;
+		/* La card si centra nello spazio sopra il dock (alto 88px dal bordo). */
+		padding: 24px 24px calc(96px + var(--safe-bottom));
 		box-sizing: border-box;
 		background: linear-gradient(
 			135deg,
@@ -120,12 +122,19 @@
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
 	}
 
+	/* Mentre l'avviso è su, il dock gli sta sopra: navigazione e restart restano cliccabili. */
+	:global(body:has(.klippy-down) .dock) {
+		z-index: 2950;
+	}
+
 	.card {
 		background: var(--color-white);
 		border-radius: 16px;
 		padding: 24px;
-		min-width: 300px;
-		max-width: 420px;
+		/* Telefono: mai oltre la larghezza disponibile. */
+		width: min(630px, 100%);
+		min-width: min(450px, 100%);
+		box-sizing: border-box;
 		max-height: 100%;
 		overflow-y: auto;
 		display: flex;

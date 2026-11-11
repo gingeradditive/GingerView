@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tooltip } from '$lib/actions/tooltip';
 	import { mdiHandBackRight, mdiRestart } from '@mdi/js';
-	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import {
 		KLIPPY_TOAST_KEY,
 		klippyState,
@@ -22,10 +21,10 @@
 	 * back is a firmware restart. So while the printer is running the button stops
 	 * it; once it is stopped, the same button offers the reset.
 	 *
-	 * The stop fires **without a confirmation** — it is what Mainsail does, and a
-	 * dialog in front of an emergency stop defeats the button. The reset does ask,
-	 * because it re-enables heaters and steppers on a machine somebody stopped on
-	 * purpose.
+	 * Neither fires behind a confirmation. The stop, because a dialog in front of an
+	 * emergency stop defeats the button (Mainsail does the same). The reset, because
+	 * the "Printer stopped" overlay already says to press it only once the machine
+	 * is safe: a second "are you sure?" added a step and no safety.
 	 */
 
 	/**
@@ -37,18 +36,14 @@
 	const haltedStates: KlippyState[] = ['shutdown', 'error'];
 
 	let busy = $state(false);
-	let confirmOpen = $state(false);
 
 	let isHalted = $derived(haltedStates.includes($klippyState));
 	let label = $derived(isHalted ? 'Firmware restart' : 'Emergency stop');
 
 	async function handleClick() {
 		if (busy) return;
-		if (isHalted) {
-			confirmOpen = true;
-			return;
-		}
-		await stopNow();
+		if (isHalted) await resetNow();
+		else await stopNow();
 	}
 
 	async function stopNow() {
@@ -75,7 +70,6 @@
 	 * shows up once Kalico is already halted, so there is no job left to abort.
 	 */
 	async function resetNow() {
-		confirmOpen = false;
 		busy = true;
 		toastActions.info('klipper', 'Firmware restart', 'Restarting Kalico and the boards…');
 
@@ -126,18 +120,6 @@
 		<path d={isHalted ? mdiRestart : mdiHandBackRight} />
 	</svg>
 </button>
-
-<ConfirmModal
-	tone="warning"
-	iconPath={mdiRestart}
-	isOpen={confirmOpen}
-	title="Restart the firmware?"
-	message="This restarts Kalico and the control boards to wake the printer up again."
-	details="Make sure the machine is safe first. Heaters and motors will be back under Kalico's control."
-	confirmLabel="Restart"
-	onConfirm={resetNow}
-	onCancel={() => (confirmOpen = false)}
-/>
 
 <style>
 	.estop {

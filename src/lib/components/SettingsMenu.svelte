@@ -145,7 +145,7 @@
 			items: [
 				{
 					id: 'wiki',
-					title: 'Open the wiki',
+					title: 'Wiki',
 					description: 'Visit the project wiki',
 					icon: BookOpen,
 					kind: 'external',
@@ -257,6 +257,8 @@
 		border: none;
 		text-align: left;
 		cursor: pointer;
+		/* La voce esterna è un <button>: senza questo prenderebbe il font del browser. */
+		font: inherit;
 		color: inherit;
 		text-decoration: none;
 	}

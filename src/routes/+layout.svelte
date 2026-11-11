@@ -11,6 +11,7 @@
 	import KlipperDownOverlay from '$lib/components/KlipperDownOverlay.svelte';
 	import StaleDataBanner from '$lib/components/StaleDataBanner.svelte';
 	import PrinterOfflineOverlay from '$lib/components/PrinterOfflineOverlay.svelte';
+	import RotatePhoneOverlay from '$lib/components/RotatePhoneOverlay.svelte';
 	import '@fontsource-variable/montserrat';
 	import '../app.css';
 
@@ -39,6 +40,7 @@
 <StaleDataBanner />
 <KlipperDownOverlay />
 <PrinterOfflineOverlay />
+<RotatePhoneOverlay />
 {#if import.meta.env.VITE_DEMO === '1'}
 	<!-- Demo per fiera (DEMO.md): senza VITE_DEMO il ramo sparisce dalla build. -->
 	{#await import('$lib/demo/DemoLayer.svelte') then { default: DemoLayer }}
@@ -47,9 +49,10 @@
 {/if}
 
 <nav class="dock" aria-label="Main navigation">
-	<div class="logo-container">
-		<img src={logoImage} alt="Logo" class="logo-image" />
-	</div>
+	<!-- Il logo porta alla home, senza enfasi: niente bordo attivo, hover o lampo al tocco. -->
+	<a href={resolve('/')} class="logo-container" aria-label="Home">
+		<img src={logoImage} alt="" class="logo-image" />
+	</a>
 	<a
 		href={resolve('/')}
 		class:active={$page.url.pathname === '/'}
@@ -185,13 +188,24 @@
 		border: 3px solid var(--color-red) !important;
 	}
 
-	.logo-container {
+	.dock a.logo-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 68px;
 		height: var(--dock-btn);
 		margin-right: 16px;
+		border-radius: 0;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	/* Hover e tocco cambiano solo l'aspetto, mai la misura (sul telefono la larghezza
+	   la decide la regola sotto). */
+	.dock a.logo-container,
+	.dock a.logo-container:hover,
+	.dock a.logo-container:active {
+		background: transparent;
+		border: none;
 	}
 
 	.logo-image {
@@ -213,7 +227,7 @@
 			border-radius: 16px;
 		}
 
-		.logo-container {
+		.dock a.logo-container {
 			width: calc(var(--dock-btn) * 0.9);
 			margin-right: 4px;
 		}

@@ -2,7 +2,7 @@
 	import { ArrowLeft, ArrowRight, Pointer } from 'lucide-svelte';
 
 	/**
-	 * La scritta sotto i caroselli della dashboard e di Movement: "← [dito] Swipe to see more →".
+	 * Il suggerimento sotto i caroselli della dashboard e di Movement: "← [dito] Swipe →".
 	 *
 	 * Sostituisce i puntini: gli utenti non capivano dal telefono che le card si scorrono, e
 	 * sapere su quale card si è non serviva a nessuno. Qui si dice solo il gesto, con il dito
@@ -15,12 +15,12 @@
 <p class="swipe-hint-label">
 	<ArrowLeft class="arrow" size={14} strokeWidth={2.4} aria-hidden="true" />
 	<span class="finger" aria-hidden="true"><Pointer size={16} strokeWidth={2.2} /></span>
-	<span>Swipe to see more</span>
+	<span>Swipe</span>
 	<ArrowRight class="arrow" size={14} strokeWidth={2.4} aria-hidden="true" />
 </p>
 
 <style>
-	/* Solo testo, senza sfondo né bordo: con la pillola bianca sembrava un pulsante. */
+	/* Senza sfondo né bordo: con la pillola bianca sembrava un pulsante. */
 	.swipe-hint-label {
 		display: inline-flex;
 		align-items: center;
