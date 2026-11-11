@@ -3,7 +3,8 @@
  *
  * Due forme, per due domande diverse:
  * - `formatClock` — "01:23:45", il cronometro della stampa in corso: cambia ogni
- *   secondo e le cifre non devono ballare;
+ *   secondo e le cifre non devono ballare; `formatClockHM` — "01:23", il tempo che
+ *   manca, senza secondi;
  * - `formatDuration` — "1h 05 min", "12 min", "40 s": quanto dura (o è durato)
  *   un lavoro, nella lista file, nella cronologia e nelle statistiche;
  * - `formatElapsed` — "12s", "3m", "1h 04m": da quanto dura un guasto (dati fermi,
@@ -22,6 +23,17 @@ export function formatClock(seconds?: number | null): string {
 	const m = Math.floor((seconds % 3600) / 60);
 	const s = Math.floor(seconds % 60);
 	return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+
+/**
+ * "01:23", ore e minuti, per i tempi della stampa in corso: i secondi lì sono solo
+ * rumore. `up` per il tempo che manca (l'ultimo minuto si legge "00:01", non "00:00"
+ * con la stampa ancora in corso), `down` per quello trascorso.
+ */
+export function formatClockHM(seconds?: number | null, round: 'up' | 'down' = 'up'): string {
+	if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return '--:--';
+	const minutes = round === 'up' ? Math.ceil(seconds / 60) : Math.floor(seconds / 60);
+	return `${pad2(Math.floor(minutes / 60))}:${pad2(minutes % 60)}`;
 }
 
 export function formatDuration(seconds?: number | null): string {

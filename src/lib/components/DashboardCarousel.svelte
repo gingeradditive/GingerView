@@ -8,6 +8,7 @@
 	import DashboardTemperaturePanel from '$lib/components/DashboardTemperaturePanel.svelte';
 	import DashboardFlowPanel from '$lib/components/DashboardFlowPanel.svelte';
 	import DashboardZHeightPanel from '$lib/components/DashboardZHeightPanel.svelte';
+	import DashboardZOffsetCard from '$lib/components/DashboardZOffsetCard.svelte';
 	import DashboardPelletPanel from '$lib/components/DashboardPelletPanel.svelte';
 
 	const pageCount = 5;
@@ -79,7 +80,11 @@
 	>
 		<div class="embla__container">
 			<div class="embla__slide">
-				<DashboardZHeightPanel visible={isInView(0)} />
+				<!-- Z HEIGHT e sotto, bassa, la card dello z-offset: stessa slide, una colonna. -->
+				<div class="z-stack">
+					<div class="z-stack-main"><DashboardZHeightPanel visible={isInView(0)} /></div>
+					<div class="z-stack-offset"><DashboardZOffsetCard visible={isInView(0)} /></div>
+				</div>
 			</div>
 			<div class="embla__slide">
 				<DashboardPelletPanel visible={isInView(1)} />
@@ -161,6 +166,25 @@
 		--dashboard-subtitle-size: min(1.7rem, calc((min(100cqw, 100cqh) - 32px) * 0.09));
 	}
 
+	/* Lo spazio tra le due card è lo stesso che c'è tra le slide: 1.5rem, 12px sul
+	   telefono (vedi sotto). */
+	.z-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		height: 100%;
+	}
+
+	.z-stack-main {
+		flex: 1;
+		min-height: 0;
+	}
+
+	.z-stack-offset {
+		flex-shrink: 0;
+		height: clamp(56px, 11cqh, 76px);
+	}
+
 	@media (min-width: 768px) and (max-width: 1199.98px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 calc(100% / 3);
@@ -189,6 +213,10 @@
 		.embla__slide {
 			flex: 0 0 84%;
 			padding: 0 6px;
+		}
+
+		.z-stack {
+			gap: 12px;
 		}
 	}
 

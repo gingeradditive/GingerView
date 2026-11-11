@@ -543,6 +543,18 @@ button {
 	stroke-width: 5;
 }
 
+/* Interni bianchi senza contorno (aperture, l'interno dei tubi). */
+.gv-illu .white {
+	fill: var(--color-white);
+}
+
+.gv-illu .ln-white {
+	fill: none;
+	stroke: var(--color-white);
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
 .gv-illu.bold .ln-detail {
 	fill: none;
 	stroke: var(--color-text-muted);

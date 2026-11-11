@@ -208,9 +208,10 @@
 		}
 	}
 
+	/* Antiorario, come la freccia di mdiRestart: in senso orario sembrava girare al contrario. */
 	@keyframes estop-spin {
 		to {
-			transform: rotate(360deg);
+			transform: rotate(-360deg);
 		}
 	}
 

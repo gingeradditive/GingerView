@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { formatClock as formatDuration } from '$lib/utils/format';
+	import { formatClockHM } from '$lib/utils/format';
+	import { loadNozzleZones } from '$lib/services/moonraker-zones';
+	import SoftValue from '$lib/components/ui/SoftValue.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { mdiLightbulb, mdiLightbulbOff, mdiFan, mdiStop } from '@mdi/js';
@@ -10,22 +12,59 @@
 	import QuickActionSliderPopup from '$lib/components/QuickActionSliderPopup.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
+	type Heater = { temperature?: number; target?: number };
 	type ControlStatus = {
-		print_stats?: { state?: string; filename?: string; print_duration?: number };
+		print_stats?: {
+			state?: string;
+			filename?: string;
+			print_duration?: number;
+			filament_used?: number;
+		};
 		virtual_sdcard?: { progress?: number };
 		fan?: { speed?: number };
 		'led LED_CAMERA'?: { color_data?: number[][] };
 	};
 
 	const dataSource = 'dashboard-control';
-	const dataQuery = 'print_stats&virtual_sdcard&fan&led LED_CAMERA';
+	// Le zone dell'ugello e il piano servono solo per dire cosa sta scaldando prima della
+	// prima estrusione; finché le zone non si sanno c'è solo il piano.
+	let zoneKeys = $state<string[]>([]);
+	const dataQuery = $derived(
+		['print_stats&virtual_sdcard&fan&led LED_CAMERA', 'heater_bed', ...zoneKeys].join('&')
+	);
 	const circumference = 2 * Math.PI * 16;
 
-	let elapsed = $state('--:--:--');
-	let remaining = $state('--:--:--');
-	/* L'istante di fine, non la stringa: vedi `DashboardPrintJobPanel`. */
+	let elapsed = $state('--:--');
+	/*
+	 * Stampa avviata ma non ancora partita davvero: riscaldamento, homing, spurgo. Kalico
+	 * conta print_duration solo dalla prima estrusione, quindi fin lì tempi e percentuale
+	 * restano fermi e sembrava tutto bloccato. La barra si anima e dice cosa succede.
+	 */
+	let preparing = $state(false);
+	let prepText = $state('Getting ready…');
+	/*
+	 * Tempo che manca e ora di fine sono stime ricalcolate a ogni aggiornamento, e ballano.
+	 * Si calcolano sempre (`raw*`), ma a schermo arrivano solo ogni ETA_REFRESH_MS, in
+	 * dissolvenza. Subito solo quando compaiono o spariscono (inizio e fine stampa).
+	 * L'istante di fine, non la stringa: vedi `DashboardPrintJobPanel`.
+	 */
+	const ETA_REFRESH_MS = 5000;
+	let rawRemaining: number | null = null;
+	let rawEtaAt: Date | null = null;
+	let remainingSeconds = $state<number | null>(null);
 	let etaAt = $state<Date | null>(null);
+	let remaining = $derived(formatClockHM(remainingSeconds));
 	let eta = $derived(etaAt ? formatZoneTime($printerTimezone, etaAt) : '--:--');
+
+	const publishEstimates = (): void => {
+		remainingSeconds = rawRemaining;
+		etaAt = rawEtaAt;
+	};
+
+	$effect(() => {
+		const timer = setInterval(publishEstimates, ETA_REFRESH_MS);
+		return () => clearInterval(timer);
+	});
 	let progress = $state(0);
 	let isPrinting = $state(false);
 	let isPaused = $state(false);
@@ -58,6 +97,22 @@
 		}
 	};
 
+	/** Il riscaldatore più indietro (in proporzione) tra zone dell'ugello e piano. */
+	const describePreparation = (status: ControlStatus): string => {
+		const record = status as Record<string, Heater | undefined>;
+		let worst: { label: string; temp: number; target: number } | null = null;
+		for (const [key, label] of [
+			...zoneKeys.map((zone) => [zone, 'nozzle'] as const),
+			['heater_bed', 'bed'] as const
+		]) {
+			const temp = record[key]?.temperature;
+			const target = record[key]?.target;
+			if (temp == null || target == null || target <= 0 || temp >= target - 3) continue;
+			if (!worst || temp / target < worst.temp / worst.target) worst = { label, temp, target };
+		}
+		return worst ? `Heating the ${worst.label}…` : 'Getting ready…';
+	};
+
 	const updateStatus = (status: ControlStatus): void => {
 		const printStats = status.print_stats;
 		const vsd = status.virtual_sdcard;
@@ -75,24 +130,24 @@
 		}
 
 		const printDuration = printStats?.print_duration ?? 0;
-		elapsed = formatDuration(printDuration);
+		elapsed = formatClockHM(printDuration, 'down');
+
+		preparing = isPrinting && (printDuration <= 0 || (printStats?.filament_used ?? 0) <= 0);
+		if (preparing) prepText = describePreparation(status);
 
 		const prog = vsd?.progress ?? 0;
 		progress = Math.round(prog * 100);
 
+		let left: number | null = null;
 		if (prog > 0.001 && printDuration > 0) {
-			const totalEstimated = printDuration / prog;
-			const remainingSeconds = totalEstimated - printDuration;
-			remaining = formatDuration(remainingSeconds);
-			etaAt = new Date(Date.now() + remainingSeconds * 1000);
+			left = printDuration / prog - printDuration;
 		} else if (estimatedTotalSeconds && estimatedTotalSeconds > 0) {
-			const remainingSeconds = Math.max(0, estimatedTotalSeconds - printDuration);
-			remaining = formatDuration(remainingSeconds);
-			etaAt = new Date(Date.now() + remainingSeconds * 1000);
-		} else {
-			remaining = '--:--:--';
-			etaAt = null;
+			left = Math.max(0, estimatedTotalSeconds - printDuration);
 		}
+		rawRemaining = left;
+		rawEtaAt = left != null ? new Date(Date.now() + left * 1000) : null;
+		// Comparsa e scomparsa non aspettano il prossimo giro.
+		if ((left == null) !== (remainingSeconds == null)) publishEstimates();
 
 		const fan = status.fan;
 		if (fan) {
@@ -179,6 +234,7 @@
 
 	onMount(() => {
 		ensurePrinterTimezone();
+		loadNozzleZones().then((zones) => (zoneKeys = zones));
 	});
 
 	subscribeWhileVisible<ControlStatus>(dataSource, () => dataQuery, updateStatus);
@@ -186,15 +242,19 @@
 
 <section class="control-panel" aria-label="Print Control">
 	<div class="time-row">
-		<span class="time-elapsed">{elapsed}</span>
-		<span class="time-eta">Done at: {eta}</span>
-		<span class="time-remaining">{remaining}</span>
+		<span class="time-elapsed">Elapsed: {elapsed}</span>
+		<span class="time-eta">Done at: <SoftValue value={eta} /></span>
+		<span class="time-remaining">Left: <SoftValue value={remaining} /></span>
 	</div>
 	<div class="progress-bar">
-		<div class="progress-track">
-			<div class="progress-fill" style="width: {progress}%">
-				<span class="progress-percentage">{progress}%</span>
-			</div>
+		<div class="progress-track" class:preparing>
+			{#if preparing}
+				<span class="progress-status" role="status">{prepText}</span>
+			{:else}
+				<div class="progress-fill" class:started={progress > 0} style="width: {progress}%">
+					<span class="progress-percentage">{progress}%</span>
+				</div>
+			{/if}
 		</div>
 	</div>
 	<div class="controls-row">
@@ -310,6 +370,43 @@
 		overflow: hidden;
 	}
 
+	/* In preparazione: strisce che scorrono, la scritta al centro. */
+	.progress-track.preparing {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--color-divider);
+		background-image: repeating-linear-gradient(
+			-45deg,
+			rgba(var(--rgb-red), 0.18) 0 12px,
+			transparent 12px 24px
+		);
+		background-size: 34px 34px;
+		animation: prep-stripes 1s linear infinite;
+	}
+
+	@keyframes prep-stripes {
+		to {
+			background-position: 34px 0;
+		}
+	}
+
+	.progress-status {
+		padding: 0 14px;
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		font-weight: 700;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.progress-track.preparing {
+			animation: none;
+		}
+	}
+
 	.progress-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
@@ -319,6 +416,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
+	}
+
+	/* Sotto il 3–4% la parte rossa era più stretta del numero, che veniva tagliato: da
+	   quando la stampa avanza è larga almeno quanto "99%". */
+	.progress-fill.started {
+		min-width: 3.75rem;
 	}
 
 	.progress-percentage {
@@ -333,9 +436,19 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 8px;
 		color: var(--color-text-secondary);
 		font-size: 0.95rem;
 		font-weight: 600;
+		white-space: nowrap;
+	}
+
+	/* Sul telefono le tre etichette non starebbero su una riga a 15px. */
+	@media (max-width: 479.98px) {
+		.time-row {
+			gap: 4px;
+			font-size: 0.8rem;
+		}
 	}
 
 	.controls-row {
