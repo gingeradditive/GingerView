@@ -112,6 +112,8 @@ let led = [0, 0, 0, 0];
 let feeder = 0;
 let speedFactor = 1;
 let extrudeFactor = 1;
+/** Lo z-offset di SET_GCODE_OFFSET: finisce in `gcode_move.homing_origin`. */
+let zOffset = 0;
 
 const printStats = {
 	filename: '',
@@ -230,7 +232,7 @@ export function getStatus(): Status {
 		gcode_move: {
 			gcode_position: gcodePosition,
 			position: gcodePosition,
-			homing_origin: [0, 0, 0, 0],
+			homing_origin: [0, 0, round(zOffset, 3), 0],
 			speed: job?.phase === 'printing' ? 6000 : feedRate,
 			speed_factor: speedFactor,
 			extrude_factor: extrudeFactor,
@@ -410,7 +412,8 @@ function stepJob(dt: number): void {
 	job.phaseElapsed += dt;
 
 	if (job.phase === 'heating') {
-		printStats.print_duration += dt;
+		// Come Kalico: print_duration parte dalla prima estrusione, il riscaldamento conta
+		// solo in total_duration.
 		printStats.total_duration += dt;
 		const ready = Object.values(heaters).every(
 			(heater) => heater.target <= 0 || heater.temperature >= heater.target - 1
@@ -426,8 +429,8 @@ function stepJob(dt: number): void {
 	}
 
 	progress = Math.min(1, job.phaseElapsed / job.printSeconds);
-	printStats.print_duration = job.heatingSeconds + progress * job.estimated;
-	printStats.total_duration = Math.max(printStats.total_duration, printStats.print_duration);
+	printStats.print_duration = progress * job.estimated;
+	printStats.total_duration = job.heatingSeconds + printStats.print_duration;
 	printStats.filament_used = progress * job.filamentTotal;
 
 	const layer = Math.min(job.layers, Math.floor(progress * job.layers) + 1);
@@ -499,7 +502,7 @@ function finishJob(state: 'complete' | 'cancelled' | 'error'): void {
 
 	if (state === 'complete') {
 		progress = 1;
-		printStats.print_duration = finished.heatingSeconds + finished.estimated;
+		printStats.print_duration = finished.estimated;
 		printStats.filament_used = finished.filamentTotal;
 	}
 	printStats.state = state;
@@ -625,6 +628,7 @@ export function emergencyStop(): void {
 	clearMotion();
 	homedAxes = '';
 	steppersOn = false;
+	zOffset = 0;
 	printStats.state = printStats.filename ? 'error' : 'standby';
 	printStats.message = 'Shutdown due to webhooks request';
 	rejectWaiters('Printer is shutdown');
@@ -641,6 +645,7 @@ export function restart(): void {
 	clearMotion();
 	homedAxes = '';
 	steppersOn = false;
+	zOffset = 0;
 	fanSpeed = 0;
 	feeder = 0;
 	rejectWaiters('Printer is restarting');
@@ -678,7 +683,6 @@ const SILENT_COMMANDS = new Set([
 	'BUZZER_TONE_INITIAL',
 	'BUZZER_TONE_FINAL',
 	'LED_MESSAGE',
-	'SET_GCODE_OFFSET',
 	'SAVE_CONFIG',
 	'SET_PIN',
 	'EXTRUDER_MIXING_MULTIPLIER',
@@ -898,6 +902,11 @@ async function runLine(line: string): Promise<string> {
 			return '';
 		case 'M221':
 			extrudeFactor = Math.max(0.1, number(params.S, 100) / 100);
+			return '';
+		case 'SET_GCODE_OFFSET':
+			// Solo Z: è l'unico offset che l'interfaccia regola.
+			if (params.Z !== undefined) zOffset = number(params.Z);
+			if (params.Z_ADJUST !== undefined) zOffset += number(params.Z_ADJUST);
 			return '';
 		case 'PAUSE':
 			return pause();

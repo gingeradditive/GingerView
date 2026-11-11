@@ -1,7 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
-	import { tooltip } from '$lib/actions/tooltip';
-	import { Trash2 } from 'lucide-svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { onMount } from 'svelte';
 	import { configService } from '$lib/services/config';
 	import { formatZoneTime } from '$lib/services/timezone';
@@ -167,10 +165,6 @@
 		connectWebSocket();
 	}
 
-	function clearTerminal() {
-		outputHistory = [];
-	}
-
 	function sendCommand() {
 		const command = currentCommand.trim();
 		if (!command) return;
@@ -238,101 +232,55 @@
 	<title>Console · G2</title>
 </svelte:head>
 
-<section class="console-page">
-	<div class="console-card">
-		<header class="console-header settings-header">
-			<SettingsBackButton />
-			<h1>Console</h1>
-			<button
-				type="button"
-				class="status-pill {isConnected ? 'connected' : 'disconnected'}"
-				onclick={manualReconnect}
-				disabled={isConnected}
-				title={isConnected ? 'Connected' : 'Click to reconnect'}
-			>
-				<span class="dot"></span>
-				{isConnected ? 'Connected' : 'Disconnected'}
-			</button>
-		</header>
+<SettingsSheet title="Console" size="xl" tall>
+	{#snippet actions()}
+		<button
+			type="button"
+			class="status-pill {isConnected ? 'connected' : 'disconnected'}"
+			onclick={manualReconnect}
+			disabled={isConnected}
+			title={isConnected ? 'Connected' : 'Click to reconnect'}
+		>
+			<span class="dot"></span>
+			{isConnected ? 'Connected' : 'Disconnected'}
+		</button>
+	{/snippet}
 
-		<div bind:this={terminalRef} class="terminal-output">
-			{#each outputHistory as entry (entry.id)}
-				<div class="line">
-					<!--
-						Il timestamp lo mette il browser quando la riga arriva, ma quello
-						che descrive è uno scambio con la stampante: si legge nel suo
-						fuso, come l'ETA.
-					-->
-					<span class="time">{formatZoneTime($printerTimezone, entry.timestamp, true)}</span>
-					{#if entry.type === 'command'}
-						<span class="cmd">&gt; {entry.content}</span>
-					{:else if entry.type === 'error'}
-						<span class="err">{entry.content}</span>
-					{:else}
-						<span class="res">{entry.content}</span>
-					{/if}
-				</div>
-			{/each}
-		</div>
-
-		<div class="command-row">
-			<input
-				type="text"
-				bind:value={currentCommand}
-				onkeydown={handleKeydown}
-				placeholder="Type a Klipper command…"
-			/>
-		</div>
-
-		<div class="actions-row">
-			<button
-				type="button"
-				class="clear-btn"
-				onclick={clearTerminal}
-				aria-label="Clear console"
-				use:tooltip
-				title="Clear console"
-			>
-				<Trash2 />
-			</button>
-			<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}
-				>Send</button
-			>
-		</div>
+	<div bind:this={terminalRef} class="terminal-output">
+		{#each outputHistory as entry (entry.id)}
+			<div class="line">
+				<!--
+					Il timestamp lo mette il browser quando la riga arriva, ma quello
+					che descrive è uno scambio con la stampante: si legge nel suo
+					fuso, come l'ETA.
+				-->
+				<span class="time">{formatZoneTime($printerTimezone, entry.timestamp, true)}</span>
+				{#if entry.type === 'command'}
+					<span class="cmd">&gt; {entry.content}</span>
+				{:else if entry.type === 'error'}
+					<span class="err">{entry.content}</span>
+				{:else}
+					<span class="res">{entry.content}</span>
+				{/if}
+			</div>
+		{/each}
 	</div>
-</section>
+
+	<div class="command-row">
+		<input
+			type="text"
+			bind:value={currentCommand}
+			onkeydown={handleKeydown}
+			placeholder="Type a command…"
+		/>
+		<button type="button" class="send-btn" onclick={sendCommand} disabled={!currentCommand.trim()}
+			>Send</button
+		>
+	</div>
+</SettingsSheet>
 
 <style>
-	.console-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.console-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.console-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-	.console-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.status-pill {
-		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
@@ -397,11 +345,16 @@
 		color: var(--color-red);
 		font-weight: 700;
 	}
+	/* Input e Send sulla stessa riga, alti uguali. */
 	.command-row {
+		display: flex;
+		align-items: stretch;
+		gap: 12px;
 		flex-shrink: 0;
 	}
 	.command-row input {
-		width: 100%;
+		flex: 1;
+		min-width: 0;
 		box-sizing: border-box;
 		border: 1px solid var(--color-border-light);
 		background: var(--color-white);
@@ -411,31 +364,12 @@
 		outline: none;
 		font-family: inherit;
 	}
-	.actions-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-shrink: 0;
-	}
-	.clear-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 44px;
-		height: 44px;
-		border-radius: 14px;
-		background: transparent;
-		color: var(--color-text-soft);
-	}
-	.clear-btn:hover {
-		color: var(--color-red);
-	}
 	.send-btn {
 		border: none;
 		background: var(--color-red);
 		color: var(--color-white);
 		border-radius: 16px;
-		padding: 12px 32px;
+		padding: 0 32px;
 		font-size: 1rem;
 		font-weight: 700;
 	}

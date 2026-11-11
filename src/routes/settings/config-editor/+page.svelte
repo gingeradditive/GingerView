@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import {
@@ -463,215 +463,206 @@
 	<title>Config editor · G2</title>
 </svelte:head>
 
-<section class="config-page">
-	<div class="config-card">
-		<header class="config-header settings-header">
-			<SettingsBackButton />
-			<h1>Config editor</h1>
-			<span class="dev-badge">Development</span>
-			<span class="status-pill {statePill.tone}">
-				<span class="dot"></span>
-				{statePill.text}
-			</span>
-		</header>
+<SettingsSheet title="Config editor" size="xl" tall dismissible={false}>
+	{#snippet actions()}
+		<span class="dev-badge">Development</span>
+		<span class="status-pill {statePill.tone}">
+			<span class="dot"></span>
+			{statePill.text}
+		</span>
+	{/snippet}
 
-		{#if !CONFIG_EDITOR_ENABLED}
-			<p class="placeholder">
-				The config editor is disabled on this machine. Edit the printer configuration over SSH.
-			</p>
-		{:else}
-			<div class="toolbar">
-				<button type="button" class="ghost-btn" onclick={loadRoot} disabled={isLoading || busy}>
-					{#if isLoading}
-						<LoaderCircle class="spin" size={16} />
-					{:else}
-						<RefreshCw size={16} />
-					{/if}
-					Reload
-				</button>
-				{#if writable}
-					<button type="button" class="ghost-btn" onclick={promptNewFile} disabled={busy}>
-						<FilePlus size={16} />
-						New file
-					</button>
-					<button type="button" class="ghost-btn" onclick={promptNewFolder} disabled={busy}>
-						<FolderPlus size={16} />
-						New folder
-					</button>
-					<button
-						type="button"
-						class="ghost-btn"
-						onclick={() => fileInput?.click()}
-						disabled={busy}
-					>
-						<Upload size={16} />
-						Upload
-					</button>
+	{#if !CONFIG_EDITOR_ENABLED}
+		<p class="placeholder">
+			The config editor is disabled on this machine. Edit the printer configuration over SSH.
+		</p>
+	{:else}
+		<div class="toolbar">
+			<button type="button" class="ghost-btn" onclick={loadRoot} disabled={isLoading || busy}>
+				{#if isLoading}
+					<LoaderCircle class="spin" size={16} />
+				{:else}
+					<RefreshCw size={16} />
 				{/if}
+				Reload
+			</button>
+			{#if writable}
+				<button type="button" class="ghost-btn" onclick={promptNewFile} disabled={busy}>
+					<FilePlus size={16} />
+					New file
+				</button>
+				<button type="button" class="ghost-btn" onclick={promptNewFolder} disabled={busy}>
+					<FolderPlus size={16} />
+					New folder
+				</button>
+				<button type="button" class="ghost-btn" onclick={() => fileInput?.click()} disabled={busy}>
+					<Upload size={16} />
+					Upload
+				</button>
+			{/if}
 
-				<span class="toolbar-spacer"></span>
+			<span class="toolbar-spacer"></span>
 
-				<select class="restart-select" bind:value={restartTarget} disabled={restartDisabled}>
-					{#each Object.entries(RESTART_TARGETS) as [key, info] (key)}
-						<option value={key}>{info.label}</option>
-					{/each}
-				</select>
+			<select class="restart-select" bind:value={restartTarget} disabled={restartDisabled}>
+				{#each Object.entries(RESTART_TARGETS) as [key, info] (key)}
+					<option value={key}>{info.label}</option>
+				{/each}
+			</select>
+			<button
+				type="button"
+				class="restart-btn"
+				onclick={() => confirmRestart(restartTarget)}
+				disabled={restartDisabled}
+				title={restartBlockedReason || RESTART_TARGETS[restartTarget].description}
+			>
+				{#if isRestarting}
+					<LoaderCircle class="spin" size={16} />
+				{:else}
+					<RotateCcw size={16} />
+				{/if}
+				Restart
+			</button>
+		</div>
+
+		{#if restartBlockedReason}
+			<div class="banner warn">
+				<TriangleAlert size={18} />
+				<span>{restartBlockedReason}</span>
+			</div>
+		{/if}
+
+		{#if !writable}
+			<div class="banner warn">
+				<TriangleAlert size={18} />
+				<span>
+					The config folder is read-only here. You can open and download files, but not save them.
+				</span>
+			</div>
+		{/if}
+
+		{#if pendingRestart}
+			<div class="banner suggest">
+				<TriangleAlert size={18} />
+				<span>
+					Saved. The change takes effect after a {RESTART_TARGETS[
+						pendingRestart
+					].label.toLowerCase()}.
+				</span>
 				<button
 					type="button"
-					class="restart-btn"
-					onclick={() => confirmRestart(restartTarget)}
+					class="banner-btn"
+					onclick={() => pendingRestart && confirmRestart(pendingRestart)}
 					disabled={restartDisabled}
-					title={restartBlockedReason || RESTART_TARGETS[restartTarget].description}
 				>
-					{#if isRestarting}
-						<LoaderCircle class="spin" size={16} />
-					{:else}
-						<RotateCcw size={16} />
-					{/if}
-					Restart
+					{RESTART_TARGETS[pendingRestart].label}
+				</button>
+				<button type="button" class="banner-dismiss" onclick={() => (pendingRestart = null)}>
+					Later
 				</button>
 			</div>
+		{/if}
 
-			{#if restartBlockedReason}
-				<div class="banner warn">
-					<TriangleAlert size={18} />
-					<span>{restartBlockedReason}</span>
+		<div class="split">
+			<aside class="tree-pane">
+				<div class="pane-head">
+					<span class="pane-title">{CONFIG_ROOT}</span>
 				</div>
-			{/if}
-
-			{#if !writable}
-				<div class="banner warn">
-					<TriangleAlert size={18} />
-					<span>
-						The config folder is read-only here. You can open and download files, but not save them.
-					</span>
-				</div>
-			{/if}
-
-			{#if pendingRestart}
-				<div class="banner suggest">
-					<TriangleAlert size={18} />
-					<span>
-						Saved. The change takes effect after a {RESTART_TARGETS[
-							pendingRestart
-						].label.toLowerCase()}.
-					</span>
-					<button
-						type="button"
-						class="banner-btn"
-						onclick={() => pendingRestart && confirmRestart(pendingRestart)}
-						disabled={restartDisabled}
-					>
-						{RESTART_TARGETS[pendingRestart].label}
-					</button>
-					<button type="button" class="banner-dismiss" onclick={() => (pendingRestart = null)}>
-						Later
-					</button>
-				</div>
-			{/if}
-
-			<div class="split">
-				<aside class="tree-pane">
-					<div class="pane-head">
-						<span class="pane-title">{CONFIG_ROOT}</span>
-					</div>
-					<div class="tree-scroll">
-						{#if isLoading}
-							<p class="placeholder">Loading your config files…</p>
-						{:else if loadError}
-							<div class="load-error">
-								<p>{loadError}</p>
-								<button type="button" class="ghost-btn" onclick={loadRoot}>Try again</button>
-							</div>
-						{:else if tree.length === 0}
-							<p class="placeholder">No config files here yet.</p>
-						{:else}
-							<ConfigFileTree
-								nodes={tree}
-								{selectedPath}
-								{loadingPath}
-								readOnly={!writable}
-								onSelect={selectFile}
-								onToggle={toggleFolder}
-								onRename={promptRename}
-								onDelete={promptDelete}
-							/>
-						{/if}
-					</div>
-				</aside>
-
-				<div class="editor-pane">
-					{#if !selectedPath}
-						<p class="placeholder">Pick a file on the left to start editing.</p>
+				<div class="tree-scroll">
+					{#if isLoading}
+						<p class="placeholder">Loading your config files…</p>
+					{:else if loadError}
+						<div class="load-error">
+							<p>{loadError}</p>
+							<button type="button" class="ghost-btn" onclick={loadRoot}>Try again</button>
+						</div>
+					{:else if tree.length === 0}
+						<p class="placeholder">No config files here yet.</p>
 					{:else}
-						<div class="pane-head">
-							<span class="file-path" title={selectedPath}>
-								{selectedPath}
-								{#if isDirty}<span class="dirty" title="Not saved yet">●</span>{/if}
-							</span>
-							<span class="line-count">{lineCount} lines</span>
-							<button
-								type="button"
-								class="icon-btn"
-								onclick={() => downloadConfigFile(selectedPath)}
-								aria-label="Download file"
-								use:tooltip
-								title="Download"
-							>
-								<Download size={16} />
-							</button>
-						</div>
-
-						<CodeEditor bind:value={content} path={selectedPath} readOnly={!writable} />
-
-						<div class="editor-actions">
-							<button
-								type="button"
-								class="ghost-btn"
-								onclick={() => guardUnsaved(() => openFile(selectedPath, 0))}
-								disabled={busy}
-							>
-								Undo changes
-							</button>
-							<span class="toolbar-spacer"></span>
-							<button
-								type="button"
-								class="ghost-btn"
-								onclick={save}
-								disabled={!writable || !isDirty || busy}
-							>
-								{#if isSaving}
-									<LoaderCircle class="spin" size={16} />
-								{:else}
-									<Save size={16} />
-								{/if}
-								Save
-							</button>
-							<button
-								type="button"
-								class="save-restart-btn"
-								onclick={saveAndRestart}
-								disabled={!writable || !isDirty || busy || restartDisabled}
-								title={restartBlockedReason}
-							>
-								<RotateCcw size={16} />
-								Save &amp; restart
-							</button>
-						</div>
+						<ConfigFileTree
+							nodes={tree}
+							{selectedPath}
+							{loadingPath}
+							readOnly={!writable}
+							onSelect={selectFile}
+							onToggle={toggleFolder}
+							onRename={promptRename}
+							onDelete={promptDelete}
+						/>
 					{/if}
 				</div>
-			</div>
+			</aside>
 
-			<input
-				bind:this={fileInput}
-				type="file"
-				accept=".cfg,.conf,.json,.md,.txt"
-				onchange={handleUpload}
-				style="display: none"
-			/>
-		{/if}
-	</div>
-</section>
+			<div class="editor-pane">
+				{#if !selectedPath}
+					<p class="placeholder">Pick a file on the left to start editing.</p>
+				{:else}
+					<div class="pane-head">
+						<span class="file-path" title={selectedPath}>
+							{selectedPath}
+							{#if isDirty}<span class="dirty" title="Not saved yet">●</span>{/if}
+						</span>
+						<span class="line-count">{lineCount} lines</span>
+						<button
+							type="button"
+							class="icon-btn"
+							onclick={() => downloadConfigFile(selectedPath)}
+							aria-label="Download file"
+							use:tooltip
+							title="Download"
+						>
+							<Download size={16} />
+						</button>
+					</div>
+
+					<CodeEditor bind:value={content} path={selectedPath} readOnly={!writable} />
+
+					<div class="editor-actions">
+						<button
+							type="button"
+							class="ghost-btn"
+							onclick={() => guardUnsaved(() => openFile(selectedPath, 0))}
+							disabled={busy}
+						>
+							Undo changes
+						</button>
+						<span class="toolbar-spacer"></span>
+						<button
+							type="button"
+							class="ghost-btn"
+							onclick={save}
+							disabled={!writable || !isDirty || busy}
+						>
+							{#if isSaving}
+								<LoaderCircle class="spin" size={16} />
+							{:else}
+								<Save size={16} />
+							{/if}
+							Save
+						</button>
+						<button
+							type="button"
+							class="save-restart-btn"
+							onclick={saveAndRestart}
+							disabled={!writable || !isDirty || busy || restartDisabled}
+							title={restartBlockedReason}
+						>
+							<RotateCcw size={16} />
+							Save &amp; restart
+						</button>
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<input
+			bind:this={fileInput}
+			type="file"
+			accept=".cfg,.conf,.json,.md,.txt"
+			onchange={handleUpload}
+			style="display: none"
+		/>
+	{/if}
+</SettingsSheet>
 
 <PromptModal
 	isOpen={promptState !== null}
@@ -696,34 +687,6 @@
 />
 
 <style>
-	.config-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.config-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 14px;
-		box-sizing: border-box;
-	}
-	.config-header {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		flex-shrink: 0;
-	}
-	.config-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.dev-badge {
 		border-radius: 999px;
 		padding: 4px 12px;
@@ -735,7 +698,6 @@
 		letter-spacing: 0.04em;
 	}
 	.status-pill {
-		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
@@ -977,14 +939,6 @@
 		.split {
 			grid-template-columns: 1fr;
 			grid-template-rows: minmax(120px, 30%) 1fr;
-		}
-	}
-	@media (max-width: 767.98px) {
-		.config-page {
-			padding: 16px 16px calc(112px + var(--safe-bottom));
-		}
-		.config-card {
-			padding: 16px;
 		}
 	}
 </style>

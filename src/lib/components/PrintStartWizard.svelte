@@ -316,23 +316,32 @@
 		max-height: 260px;
 	}
 
+	/* Più disegni (il materiale ne ha tre): a triangolo, il primo in alto al centro e gli
+	   altri due sotto, su tutti gli schermi. */
 	.art.multi {
-		gap: 8px;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+		gap: 4px 8px;
 	}
 
-	/* Sul telefono in fila verrebbero larghi 90 px, mentre in altezza lo spazio avanza:
-	   uno sotto l'altro. */
-	@media (max-width: 767.98px) {
-		.art.multi {
-			flex-direction: column;
-			gap: 0;
-		}
+	/* Le file si stringono verso il centro: quello sopra appoggiato in basso, gli altri
+	   due in alto, così sul telefono non resta un buco in mezzo. */
+	.art.multi .art-item {
+		min-height: 0;
+		align-items: flex-start;
+	}
 
-		.art.multi .art-item {
-			width: 100%;
-			height: auto;
-			min-height: 0;
-		}
+	.art.multi .art-item:first-child {
+		grid-column: 1 / -1;
+		justify-self: center;
+		width: 50%;
+		align-items: flex-end;
+	}
+
+	.art.multi :global(.gv-illu) {
+		height: auto;
+		max-height: 100%;
 	}
 
 	.check-text {

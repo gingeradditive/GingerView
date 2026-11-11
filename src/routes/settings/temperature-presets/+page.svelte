@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { onMount } from 'svelte';
 	import { Lock, Pencil, Plus, Thermometer, Trash2 } from 'lucide-svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
@@ -124,99 +124,95 @@
 	<title>Temperature presets · G2</title>
 </svelte:head>
 
-<section class="presets-page">
-	<div class="presets-card">
-		<header class="presets-header settings-header">
-			<SettingsBackButton />
-			<h1>Temperature presets</h1>
-			<button
-				type="button"
-				class="btn btn-primary new-btn"
-				disabled={loading || zones.length === 0}
-				onclick={openNew}
-			>
-				<Plus size={18} />
-				New preset
-			</button>
-		</header>
+<SettingsSheet title="Temperature presets" size="wide">
+	{#snippet actions()}
+		<button
+			type="button"
+			class="btn btn-primary new-btn"
+			disabled={loading || zones.length === 0}
+			onclick={openNew}
+		>
+			<Plus size={18} />
+			New preset
+		</button>
+	{/snippet}
 
-		<p class="intro">
-			Tap the extruder on the dashboard and pick a preset: every nozzle zone and the bed go straight
-			to these targets.
-		</p>
+	<p class="intro">
+		Tap the extruder on the dashboard and pick a preset: every nozzle zone and the bed go straight
+		to these targets.
+	</p>
 
-		{#if loading}
-			<p class="state">Loading presets…</p>
-		{:else if zones.length === 0}
-			<p class="state">Can't read the nozzle zones from the printer right now.</p>
-		{:else}
-			<section class="group" aria-labelledby="builtin-title">
-				<h2 id="builtin-title" class="group-title">Built-in</h2>
+	{#if loading}
+		<p class="state">Loading presets…</p>
+	{:else if zones.length === 0}
+		<p class="state">Can't read the nozzle zones from the printer right now.</p>
+	{:else}
+		<section class="group" aria-labelledby="builtin-title">
+			<h2 id="builtin-title" class="group-title">Built-in</h2>
+			<ul class="list">
+				{#each builtIns as preset (preset.id)}
+					<li class="row">
+						<span class="badge" aria-hidden="true"><Thermometer size={20} /></span>
+						<div class="row-text">
+							<span class="row-name">{preset.name}</span>
+							<span class="row-detail">{detail(preset)}</span>
+						</div>
+						<span class="locked" aria-label="Built-in, can't be changed" use:tooltip>
+							<Lock size={16} />
+						</span>
+					</li>
+				{/each}
+			</ul>
+		</section>
+
+		<section class="group" aria-labelledby="custom-title">
+			<h2 id="custom-title" class="group-title">Your presets</h2>
+			{#if $customTemperaturePresets.length === 0}
+				<div class="empty">
+					<p>No custom presets yet.</p>
+					<p class="empty-hint">Create one with New preset.</p>
+				</div>
+			{:else}
 				<ul class="list">
-					{#each builtIns as preset (preset.id)}
+					{#each $customTemperaturePresets as preset (preset.id)}
 						<li class="row">
-							<span class="badge" aria-hidden="true"><Thermometer size={20} /></span>
-							<div class="row-text">
-								<span class="row-name">{preset.name}</span>
-								<span class="row-detail">{detail(preset)}</span>
-							</div>
-							<span class="locked" aria-label="Built-in, can't be changed" use:tooltip>
-								<Lock size={16} />
-							</span>
+							<button
+								type="button"
+								class="row-main"
+								onclick={() => openEdit(preset)}
+								aria-label="Edit {preset.name}"
+							>
+								<span class="badge custom" aria-hidden="true"><Thermometer size={20} /></span>
+								<span class="row-text">
+									<span class="row-name">{preset.name}</span>
+									<span class="row-detail">{detail(preset)}</span>
+								</span>
+							</button>
+							<button
+								type="button"
+								class="row-action"
+								onclick={() => openEdit(preset)}
+								aria-label="Edit {preset.name}"
+								use:tooltip
+							>
+								<Pencil size={18} />
+							</button>
+							<button
+								type="button"
+								class="row-action danger"
+								onclick={() => (deleting = preset)}
+								aria-label="Delete {preset.name}"
+								use:tooltip
+							>
+								<Trash2 size={18} />
+							</button>
 						</li>
 					{/each}
 				</ul>
-			</section>
-
-			<section class="group" aria-labelledby="custom-title">
-				<h2 id="custom-title" class="group-title">Your presets</h2>
-				{#if $customTemperaturePresets.length === 0}
-					<div class="empty">
-						<p>No custom presets yet.</p>
-						<p class="empty-hint">Create one with New preset.</p>
-					</div>
-				{:else}
-					<ul class="list">
-						{#each $customTemperaturePresets as preset (preset.id)}
-							<li class="row">
-								<button
-									type="button"
-									class="row-main"
-									onclick={() => openEdit(preset)}
-									aria-label="Edit {preset.name}"
-								>
-									<span class="badge custom" aria-hidden="true"><Thermometer size={20} /></span>
-									<span class="row-text">
-										<span class="row-name">{preset.name}</span>
-										<span class="row-detail">{detail(preset)}</span>
-									</span>
-								</button>
-								<button
-									type="button"
-									class="row-action"
-									onclick={() => openEdit(preset)}
-									aria-label="Edit {preset.name}"
-									use:tooltip
-								>
-									<Pencil size={18} />
-								</button>
-								<button
-									type="button"
-									class="row-action danger"
-									onclick={() => (deleting = preset)}
-									aria-label="Delete {preset.name}"
-									use:tooltip
-								>
-									<Trash2 size={18} />
-								</button>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</section>
-		{/if}
-	</div>
-</section>
+			{/if}
+		</section>
+	{/if}
+</SettingsSheet>
 
 {#if editing}
 	<Sheet label={editing.isNew ? 'New preset' : 'Edit preset'} onClose={closeEditor} size="sm">
@@ -292,42 +288,8 @@
 />
 
 <style>
-	.presets-page {
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-
-	.presets-card {
-		max-width: 760px;
-		margin: 0 auto;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-
-	.presets-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-
-	.presets-header h1 {
-		flex: 1;
-		min-width: 0;
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
-
 	.new-btn {
-		min-height: 44px;
+		min-height: 40px;
 	}
 
 	.intro {
@@ -506,24 +468,5 @@
 
 	.zones-error {
 		margin-top: 12px;
-	}
-
-	@media (max-width: 767.98px) {
-		.presets-page {
-			padding: 16px 16px calc(112px + var(--safe-bottom));
-		}
-
-		.presets-card {
-			padding: 20px 16px;
-		}
-
-		.presets-header h1 {
-			font-size: 1.6rem;
-		}
-
-		.new-btn {
-			width: 100%;
-			order: 3;
-		}
 	}
 </style>

@@ -161,6 +161,8 @@
 		--dashboard-subtitle-size: min(1.7rem, calc((min(100cqw, 100cqh) - 32px) * 0.09));
 	}
 
+	/* Lo spazio tra le due card è lo stesso che c'è tra le slide: 1.5rem, 12px sul
+	   telefono (vedi sotto). */
 	@media (min-width: 768px) and (max-width: 1199.98px) and (min-height: 600px) {
 		.embla__slide {
 			flex: 0 0 calc(100% / 3);
