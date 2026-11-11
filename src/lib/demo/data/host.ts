@@ -149,9 +149,9 @@ export const usbTree: Record<
 		dirs: ['Prototypes'],
 		files: [
 			{
-				name: 'Exhaust Flange v2.2_PLA_5h10m.gcode',
+				name: 'Exhaust Flange v2.2.gcode',
 				size: 14_029_373,
-				source: 'Exhaust Flange v2.2_PLA_5h10m.gcode'
+				source: 'Exhaust Flange v2.2.gcode'
 			}
 		]
 	},
@@ -159,14 +159,14 @@ export const usbTree: Record<
 		dirs: [],
 		files: [
 			{
-				name: 'Dryer cap v0.3_PLA_1h26m.gcode',
+				name: 'Dryer cap v0.3.gcode',
 				size: 2_911_050,
-				source: 'Dryer cap v0.2_PLA_1h26m.gcode'
+				source: 'Dryer cap v0.2.gcode'
 			},
 			{
-				name: '2nd Ring Gear v2_PLA_8h54m.gcode',
+				name: '2nd Ring Gear v2.gcode',
 				size: 12_115_897,
-				source: '2nd Ring Gear_PLA_8h54m.gcode'
+				source: 'Turbine/2nd Ring Gear.gcode'
 			}
 		]
 	}

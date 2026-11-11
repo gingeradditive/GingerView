@@ -1,66 +1,10 @@
 [
 	{
-		"path": "1st Stage Propeller_PLA_4h24m.gcode",
-		"size": 15551238,
-		"modified": 1794407599,
-		"thumbnail": {
-			"file": "1st-stage-propeller-pla-4h24m.png",
-			"width": 250,
-			"height": 250,
-			"size": 12134
-		},
-		"metadata": {
-			"slicer": "OrcaSlicer",
-			"slicer_version": "3.0.1",
-			"estimated_time": 15830,
-			"layer_height": 1.3,
-			"first_layer_height": 1,
-			"object_height": 43.9,
-			"filament_total": 1461249.92,
-			"filament_weight_total": 1797.34,
-			"filament_type": "PLA",
-			"filament_name": "FormFutura PLA - G2 - DEV",
-			"nozzle_diameter": 3,
-			"first_layer_extr_temp": 220,
-			"first_layer_bed_temp": 50,
-			"extruder_temp": 220,
-			"bed_temp": 50
-		}
-	},
-	{
-		"path": "2nd Ring Gear_PLA_8h54m.gcode",
-		"size": 12115897,
-		"modified": 1794407717,
-		"thumbnail": {
-			"file": "2nd-ring-gear-pla-8h54m.png",
-			"width": 250,
-			"height": 250,
-			"size": 6525
-		},
-		"metadata": {
-			"slicer": "OrcaSlicer",
-			"slicer_version": "3.0.1",
-			"estimated_time": 32024,
-			"layer_height": 1.3,
-			"first_layer_height": 1,
-			"object_height": 95.9,
-			"filament_total": 3314218.49,
-			"filament_weight_total": 4076.49,
-			"filament_type": "PLA",
-			"filament_name": "FormFutura PLA - G2 - DEV",
-			"nozzle_diameter": 3,
-			"first_layer_extr_temp": 220,
-			"first_layer_bed_temp": 50,
-			"extruder_temp": 220,
-			"bed_temp": 50
-		}
-	},
-	{
-		"path": "Dryer cap v0.2_PLA_1h26m.gcode",
+		"path": "Dryer cap v0.2.gcode",
 		"size": 2911050,
 		"modified": 1794407758,
 		"thumbnail": {
-			"file": "dryer-cap-v0-2-pla-1h26m.png",
+			"file": "dryer-cap-v0-2.png",
 			"width": 250,
 			"height": 250,
 			"size": 4178
@@ -84,11 +28,11 @@
 		}
 	},
 	{
-		"path": "Dryer tank v0.5_PLA_1d3h20m.gcode",
+		"path": "Dryer tank v0.5.gcode",
 		"size": 34516299,
 		"modified": 1794407790,
 		"thumbnail": {
-			"file": "dryer-tank-v0-5-pla-1d3h20m.png",
+			"file": "dryer-tank-v0-5.png",
 			"width": 250,
 			"height": 250,
 			"size": 4870
@@ -112,11 +56,11 @@
 		}
 	},
 	{
-		"path": "Exhaust Flange v2.2_PLA_5h10m.gcode",
+		"path": "Exhaust Flange v2.2.gcode",
 		"size": 14029373,
 		"modified": 1794407818,
 		"thumbnail": {
-			"file": "exhaust-flange-v2-2-pla-5h10m.png",
+			"file": "exhaust-flange-v2-2.png",
 			"width": 250,
 			"height": 250,
 			"size": 10025
@@ -130,6 +74,62 @@
 			"object_height": 207.7,
 			"filament_total": 1868637.59,
 			"filament_weight_total": 2298.43,
+			"filament_type": "PLA",
+			"filament_name": "FormFutura PLA - G2 - DEV",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 220,
+			"first_layer_bed_temp": 50,
+			"extruder_temp": 220,
+			"bed_temp": 50
+		}
+	},
+	{
+		"path": "Turbine/1st Stage Propeller.gcode",
+		"size": 15551238,
+		"modified": 1794407599,
+		"thumbnail": {
+			"file": "turbine-1st-stage-propeller.png",
+			"width": 250,
+			"height": 250,
+			"size": 12134
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "3.0.1",
+			"estimated_time": 15830,
+			"layer_height": 1.3,
+			"first_layer_height": 1,
+			"object_height": 43.9,
+			"filament_total": 1461249.92,
+			"filament_weight_total": 1797.34,
+			"filament_type": "PLA",
+			"filament_name": "FormFutura PLA - G2 - DEV",
+			"nozzle_diameter": 3,
+			"first_layer_extr_temp": 220,
+			"first_layer_bed_temp": 50,
+			"extruder_temp": 220,
+			"bed_temp": 50
+		}
+	},
+	{
+		"path": "Turbine/2nd Ring Gear.gcode",
+		"size": 12115897,
+		"modified": 1794407717,
+		"thumbnail": {
+			"file": "turbine-2nd-ring-gear.png",
+			"width": 250,
+			"height": 250,
+			"size": 6525
+		},
+		"metadata": {
+			"slicer": "OrcaSlicer",
+			"slicer_version": "3.0.1",
+			"estimated_time": 32024,
+			"layer_height": 1.3,
+			"first_layer_height": 1,
+			"object_height": 95.9,
+			"filament_total": 3314218.49,
+			"filament_weight_total": 4076.49,
 			"filament_type": "PLA",
 			"filament_name": "FormFutura PLA - G2 - DEV",
 			"nozzle_diameter": 3,

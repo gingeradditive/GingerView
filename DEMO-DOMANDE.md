@@ -7,11 +7,14 @@ aggiorna DEMO.md e si cancella la voce da qui.
 ## Da decidere o fornire
 
 1. **File G-code veri della G2: fatto.** La lista contiene cinque file veri
-   della G2 (1st Stage Propeller, 2nd Ring Gear, Dryer cap, Dryer tank,
-   Exhaust Flange), tutti con miniatura 250×250. Per cambiarli:
+   della G2: Dryer cap, Dryer tank ed Exhaust Flange nella radice, 1st Stage
+   Propeller e 2nd Ring Gear nella cartella "Turbine". Tutti con miniatura
+   250×250 e con il nome ripulito da materiale e durata (il nome mostrato è
+   quello del file passato allo strumento). Per cambiarli:
 
    ```sh
    node src/lib/demo/tools/import-gcode.mjs --reset file1.gcode file2.gcode
+   node src/lib/demo/tools/import-gcode.mjs --dir Turbine file3.gcode
    ```
 
    Il G-code non viene pubblicato, solo metadati e miniatura. La chiavetta
