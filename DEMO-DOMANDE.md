@@ -6,22 +6,17 @@ aggiorna DEMO.md e si cancella la voce da qui.
 
 ## Da decidere o fornire
 
-1. **File G-code veri della G2.** Ora la lista contiene due file veri della
-   **G1** (Bloom Vase, JUG) e quattro **segnaposto** G2 con miniature
-   disegnate da me (Planter XL, Lamp Shade, Stool, Vase Wave in
-   "Customer samples"). I metadati dei segnaposto sono inventati ma
-   plausibili (9–19 h, 3–12 kg).
-   Per sostituirli:
+1. **File G-code veri della G2: fatto.** La lista contiene cinque file veri
+   della G2 (1st Stage Propeller, 2nd Ring Gear, Dryer cap, Dryer tank,
+   Exhaust Flange), tutti con miniatura 250×250. Per cambiarli:
 
    ```sh
    node src/lib/demo/tools/import-gcode.mjs --reset file1.gcode file2.gcode
-   node src/lib/demo/tools/import-gcode.mjs --dir "Customer samples" file3.gcode
    ```
 
-   Il G-code non viene pubblicato, solo metadati e miniatura. Consiglio di
-   esportare da Orca con **miniature grandi (300×300)**: quelle dei file G1
-   sono 50×50 e si vedono sgranate. Le miniature dei segnaposto restano in
-   `src/lib/demo/files/thumbs/` finché non le cancelli a mano.
+   Il G-code non viene pubblicato, solo metadati e miniatura. La chiavetta
+   USB finta (`usbTree` in `src/lib/demo/data/host.ts`) punta a file del
+   catalogo: se cambiano i nomi va aggiornata.
 
 2. **Config editor: deciso, nascosto.** La configurazione ridotta e inventata
    resta nel simulatore (`src/lib/demo/data/config-files.ts`), ma la pagina
