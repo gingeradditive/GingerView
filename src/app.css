@@ -233,19 +233,6 @@ button {
 }
 
 /*
- * Intestazione delle sottopagine di Settings: freccia indietro (SettingsBackButton), titolo
- * e, in alcune, una pill o un pulsante. Su telefono non ci stanno tutti in una riga: quello che
- * avanza va a capo sotto il titolo invece di uscire dalla card. Ogni pagina tiene il proprio
- * stile dell'header, qui c'è solo la regola che vale per tutte.
- */
-@media (max-width: 767.98px) {
-	.settings-header {
-		flex-wrap: wrap;
-		row-gap: 10px;
-	}
-}
-
-/*
  * Spinta di invito dei caroselli (azione `swipeHint`): le card scivolano verso sinistra e
  * tornano, due volte, la seconda più piano. Anima `translate`, che si somma al `transform`
  * con cui Embla posiziona le slide senza sovrascriverlo.

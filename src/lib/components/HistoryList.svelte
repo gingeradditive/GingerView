@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { onMount } from 'svelte';
 	import { CheckCircle2, XCircle, Ban, Trash2, RefreshCw } from 'lucide-svelte';
@@ -168,113 +168,108 @@
 	});
 </script>
 
-<section class="history-page">
-	<div class="history-card">
-		<header class="history-header settings-header">
-			<SettingsBackButton />
-			<h1>History</h1>
+<SettingsSheet title="History" size="lg" tall>
+	{#snippet actions()}
+		<button
+			type="button"
+			class="clear-button"
+			disabled={jobs.length === 0}
+			onclick={() => (showClearAllConfirm = true)}
+		>
+			<Trash2 size={18} />
+			<span>Clear history</span>
+		</button>
+	{/snippet}
+
+	<div class="tabs" role="tablist">
+		{#each TABS as tab (tab.id)}
 			<button
 				type="button"
-				class="clear-button"
-				disabled={jobs.length === 0}
-				onclick={() => (showClearAllConfirm = true)}
+				role="tab"
+				aria-selected={activeTab === tab.id}
+				class="tab"
+				class:active={activeTab === tab.id}
+				onclick={() => (activeTab = tab.id)}
 			>
-				<Trash2 size={18} />
-				<span>Clear history</span>
+				{tab.label}
 			</button>
-		</header>
-
-		<div class="tabs" role="tablist">
-			{#each TABS as tab (tab.id)}
-				<button
-					type="button"
-					role="tab"
-					aria-selected={activeTab === tab.id}
-					class="tab"
-					class:active={activeTab === tab.id}
-					onclick={() => (activeTab = tab.id)}
-				>
-					{tab.label}
-				</button>
-			{/each}
-		</div>
-
-		<div class="list-area">
-			{#if loading}
-				<div class="status-message">Just a sec…</div>
-			{:else if error}
-				<div class="status-message error">{error}</div>
-			{:else if filteredJobs.length === 0}
-				<div class="status-message">No prints here yet. Time to make something!</div>
-			{:else}
-				<div class="table">
-					<div class="row header">
-						<span class="col thumb"></span>
-						<span class="col name">Name</span>
-						<span class="col status">Status</span>
-						<span class="col date">Started</span>
-						<span class="col duration">Print time</span>
-						<span class="col filament">Material used</span>
-						<span class="col actions"></span>
-					</div>
-					{#each filteredJobs as job (job.job_id)}
-						{@const meta = statusMeta(job.status)}
-						<div
-							class="row item"
-							role="button"
-							tabindex="0"
-							onclick={() => openDetails(job)}
-							onkeydown={(e) =>
-								(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openDetails(job))}
-						>
-							<span class="col thumb">
-								<img
-									src={getHistoryThumbnailUrl(job) ?? '/error-thumbnail.png'}
-									alt=""
-									width="40"
-									height="40"
-								/>
-							</span>
-							<span class="col main">
-								<span class="col name" title={job.filename}>{job.filename}</span>
-								<span class="col status">
-									<span class="status-badge {meta.className}">
-										<meta.icon size={14} />
-										{meta.label}
-									</span>
-								</span>
-								<span class="meta-line">
-									<span class="col date">{formatHistoryDate(job.start_time, $printerTimezone)}</span
-									>
-									<span class="col duration">{formatEstimatedTime(job.print_duration)}</span>
-									<span class="col filament">{formatFilamentUsed(job.filament_used)}</span>
-								</span>
-							</span>
-							<span class="col actions">
-								<button
-									type="button"
-									class="delete-button"
-									aria-label="Delete entry"
-									use:tooltip
-									onclick={(e) => requestDelete(job, e)}
-								>
-									<Trash2 size={16} />
-								</button>
-							</span>
-						</div>
-					{/each}
-				</div>
-
-				{#if !exhausted}
-					<div bind:this={sentinel} class="sentinel"></div>
-				{/if}
-				{#if loadingMore}
-					<div class="status-message">Loading more…</div>
-				{/if}
-			{/if}
-		</div>
+		{/each}
 	</div>
-</section>
+
+	<div class="list-area">
+		{#if loading}
+			<div class="status-message">Just a sec…</div>
+		{:else if error}
+			<div class="status-message error">{error}</div>
+		{:else if filteredJobs.length === 0}
+			<div class="status-message">No prints here yet. Time to make something!</div>
+		{:else}
+			<div class="table">
+				<div class="row header">
+					<span class="col thumb"></span>
+					<span class="col name">Name</span>
+					<span class="col status">Status</span>
+					<span class="col date">Started</span>
+					<span class="col duration">Print time</span>
+					<span class="col filament">Material used</span>
+					<span class="col actions"></span>
+				</div>
+				{#each filteredJobs as job (job.job_id)}
+					{@const meta = statusMeta(job.status)}
+					<div
+						class="row item"
+						role="button"
+						tabindex="0"
+						onclick={() => openDetails(job)}
+						onkeydown={(e) =>
+							(e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openDetails(job))}
+					>
+						<span class="col thumb">
+							<img
+								src={getHistoryThumbnailUrl(job) ?? '/error-thumbnail.png'}
+								alt=""
+								width="40"
+								height="40"
+							/>
+						</span>
+						<span class="col main">
+							<span class="col name" title={job.filename}>{job.filename}</span>
+							<span class="col status">
+								<span class="status-badge {meta.className}">
+									<meta.icon size={14} />
+									{meta.label}
+								</span>
+							</span>
+							<span class="meta-line">
+								<span class="col date">{formatHistoryDate(job.start_time, $printerTimezone)}</span>
+								<span class="col duration">{formatEstimatedTime(job.print_duration)}</span>
+								<span class="col filament">{formatFilamentUsed(job.filament_used)}</span>
+							</span>
+						</span>
+						<span class="col actions">
+							<button
+								type="button"
+								class="delete-button"
+								aria-label="Delete entry"
+								use:tooltip
+								onclick={(e) => requestDelete(job, e)}
+							>
+								<Trash2 size={16} />
+							</button>
+						</span>
+					</div>
+				{/each}
+			</div>
+
+			{#if !exhausted}
+				<div bind:this={sentinel} class="sentinel"></div>
+			{/if}
+			{#if loadingMore}
+				<div class="status-message">Loading more…</div>
+			{/if}
+		{/if}
+	</div>
+</SettingsSheet>
 
 <HistoryDetailsPopup
 	job={selectedJob}
@@ -304,41 +299,7 @@
 />
 
 <style>
-	.history-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-
-	.history-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-		min-height: 0;
-	}
-
-	.history-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-
-	.history-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
-
 	.clear-button {
-		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;

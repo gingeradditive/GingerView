@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { onMount } from 'svelte';
 	import { LoaderCircle, TriangleAlert } from 'lucide-svelte';
 	import TimezoneMap from '$lib/components/TimezoneMap.svelte';
@@ -88,101 +88,59 @@
 	<title>Timezone · G2</title>
 </svelte:head>
 
-<section class="timezone-page">
-	<div class="timezone-card">
-		<header class="timezone-header settings-header">
-			<SettingsBackButton />
-			<h1>Timezone</h1>
-		</header>
-
-		{#if isLoading}
-			<div class="state"><LoaderCircle class="spin" /> Checking your time zone…</div>
-		{:else if loadError}
-			<div class="state error">
-				<TriangleAlert />
-				{loadError}
-			</div>
-		{:else}
-			<!--
+<SettingsSheet title="Timezone" size="md">
+	{#if isLoading}
+		<div class="state"><LoaderCircle class="spin" /> Checking your time zone…</div>
+	{:else if loadError}
+		<div class="state error">
+			<TriangleAlert />
+			{loadError}
+		</div>
+	{:else}
+		<!--
 				La tendina sta sopra la mappa: il pannello dei risultati si apre verso il
-				basso e ha davanti a sé tutta la parte bassa della scheda, invece di
-				finire sotto il bordo dello schermo.
+				basso, sopra la mappa, invece di finire sotto il bordo del popup.
 			-->
-			<TimezoneSelect
-				value={selectedTimezone}
-				onSelect={(id) => (selectedTimezone = id)}
-				disabled={isSaving}
-			/>
+		<TimezoneSelect
+			value={selectedTimezone}
+			onSelect={(id) => (selectedTimezone = id)}
+			disabled={isSaving}
+		/>
 
-			<TimezoneMap zone={selectedZone} {offsetMinutes} label={mapLabel} />
+		<TimezoneMap zone={selectedZone} {offsetMinutes} label={mapLabel} />
 
-			<div class="clock">
-				<span class="time">{formatZoneTime(selectedTimezone, now)}</span>
-				<span class="date">{formatZoneDate(selectedTimezone, now)}</span>
-				<span class="zone-id">{selectedTimezone}</span>
-			</div>
+		<div class="clock">
+			<span class="time">{formatZoneTime(selectedTimezone, now)}</span>
+			<span class="date">{formatZoneDate(selectedTimezone, now)}</span>
+			<span class="zone-id">{selectedTimezone}</span>
+		</div>
 
-			{#if !ntpSynchronized}
-				<p class="warning">
-					<TriangleAlert />
-					The clock isn't synced over the internet, so times might be off whatever zone you pick.
-				</p>
-			{/if}
-
-			<div class="actions-row">
-				<button
-					type="button"
-					class="save-btn"
-					onclick={handleSave}
-					disabled={!hasChanges || isSaving}
-				>
-					{#if isSaving}
-						<LoaderCircle class="spin" />
-					{/if}
-					{isSaving ? 'Saving…' : 'Save timezone'}
-				</button>
-			</div>
+		{#if !ntpSynchronized}
+			<p class="warning">
+				<TriangleAlert />
+				The clock isn't synced over the internet, so times might be off whatever zone you pick.
+			</p>
 		{/if}
-	</div>
-</section>
+	{/if}
+
+	{#snippet footer()}
+		{#if !isLoading && !loadError}
+			<button
+				type="button"
+				class="btn btn-primary"
+				onclick={handleSave}
+				disabled={!hasChanges || isSaving}
+			>
+				{#if isSaving}
+					<LoaderCircle class="spin" />
+				{/if}
+				{isSaving ? 'Saving…' : 'Save timezone'}
+			</button>
+		{/if}
+	{/snippet}
+</SettingsSheet>
 
 <style>
-	/*
-		`min-height` invece di `height`: la scheda riempie lo schermo quando c'è
-		spazio — così il pulsante di salvataggio sta in fondo come nelle altre
-		sottopagine — ma su uno schermo basso cresce e lascia scorrere la pagina
-		invece di farsi tagliare.
-	*/
-	.timezone-page {
-		min-height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		display: flex;
-		flex-direction: column;
-		box-sizing: border-box;
-	}
-	.timezone-card {
-		flex: 1;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.timezone-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-	.timezone-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.state {
 		display: flex;
 		align-items: center;
@@ -226,26 +184,5 @@
 		font-size: 0.85rem;
 		color: var(--color-red);
 		font-weight: 600;
-	}
-	.actions-row {
-		display: flex;
-		justify-content: flex-end;
-		flex-shrink: 0;
-		margin-top: auto;
-	}
-	.save-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-		border-radius: 16px;
-		padding: 12px 32px;
-		font-size: 1rem;
-		font-weight: 700;
-	}
-	.save-btn:disabled {
-		opacity: 0.55;
 	}
 </style>

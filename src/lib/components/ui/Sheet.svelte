@@ -32,6 +32,7 @@
 		dismissible = true,
 		showClose = false,
 		size = 'md',
+		tall = false,
 		layer = 0,
 		panelClass = '',
 		header,
@@ -42,7 +43,9 @@
 		onClose?: () => void;
 		dismissible?: boolean;
 		showClose?: boolean;
-		size?: 'sm' | 'md' | 'wide' | 'lg';
+		size?: 'sm' | 'md' | 'wide' | 'lg' | 'xl';
+		/** Altezza piena invece che sul contenuto: per console ed editor, che riempiono il popup. */
+		tall?: boolean;
 		/** 1 per una finestra aperta sopra un'altra (conferma sopra un dettaglio). */
 		layer?: number;
 		panelClass?: string;
@@ -97,6 +100,7 @@
 >
 	<div
 		class="sheet-panel size-{size} {panelClass}"
+		class:tall
 		class:dragging={dragStart !== null}
 		style:transform={dragOffset ? `translateY(${dragOffset}px)` : undefined}
 	>
@@ -179,6 +183,14 @@
 	.size-lg {
 		max-width: 820px;
 	}
+	.size-xl {
+		max-width: 1200px;
+	}
+
+	.sheet-panel.tall {
+		height: min(900px, calc(100dvh - 48px));
+		max-height: none;
+	}
 
 	.sheet-grab {
 		flex-shrink: 0;
@@ -230,6 +242,10 @@
 			border-radius: 22px 22px 0 0;
 			animation: sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
 			transition: transform 0.2s ease-out;
+		}
+
+		.sheet-panel.tall {
+			height: calc(100dvh - 24px);
 		}
 
 		.sheet-panel.dragging {

@@ -1,8 +1,9 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { onMount } from 'svelte';
 	import { ChevronRight, LoaderCircle, Play, Search, SquareFunction } from 'lucide-svelte';
 	import { modal } from '$lib/actions/modal';
+	import { portal } from '$lib/actions/portal';
 	import { sendGcode, describeError } from '$lib/services/moonraker-gcode';
 	import { fetchMacros, macroCommand, type Macro } from '$lib/services/moonraker-macros';
 	import { toastActions } from '$lib/stores/toastStore';
@@ -72,64 +73,57 @@
 	<title>Macros · G2</title>
 </svelte:head>
 
-<section class="macros-page">
-	<div class="macros-card">
-		<header class="macros-header settings-header">
-			<SettingsBackButton />
-			<h1>Macros</h1>
-		</header>
+<SettingsSheet title="Macros" size="lg">
+	<label class="search">
+		<Search />
+		<input
+			type="search"
+			placeholder="Search macros"
+			bind:value={query}
+			spellcheck="false"
+			autocapitalize="off"
+			aria-label="Search macros"
+		/>
+	</label>
 
-		<label class="search">
-			<Search />
-			<input
-				type="search"
-				placeholder="Search macros"
-				bind:value={query}
-				spellcheck="false"
-				autocapitalize="off"
-				aria-label="Search macros"
-			/>
-		</label>
-
-		{#if isLoading}
-			<p class="status"><LoaderCircle class="spin" /> Loading the macros…</p>
-		{:else if loadError}
-			<div class="status">
-				<p>{loadError}</p>
-				<button type="button" class="retry-btn" onclick={load}>Try again</button>
-			</div>
-		{:else if visible.length === 0}
-			<p class="status">
-				{query ? 'No macro matches your search.' : 'This printer has no macros.'}
-			</p>
-		{:else}
-			<div class="macro-list">
-				{#each visible as macro (macro.name)}
-					<button type="button" class="macro-row" onclick={() => open(macro)}>
-						<span class="icon"><SquareFunction /></span>
-						<div class="row-text">
-							<!-- Nomi lunghi in colonna: a capo dopo un `_`, non a metà parola. -->
-							<h2>
-								{#each macro.name.split('_') as part, index (index)}{#if index > 0}_<wbr
-										/>{/if}{part}{/each}
-							</h2>
-							{#if macro.description}
-								<p>{macro.description}</p>
-							{/if}
-							{#if macro.params.length > 0}
-								<span class="chip">
-									{macro.params.length}
-									{macro.params.length === 1 ? 'parameter' : 'parameters'}
-								</span>
-							{/if}
-						</div>
-						<span class="chevron"><ChevronRight /></span>
-					</button>
-				{/each}
-			</div>
-		{/if}
-	</div>
-</section>
+	{#if isLoading}
+		<p class="status"><LoaderCircle class="spin" /> Loading the macros…</p>
+	{:else if loadError}
+		<div class="status">
+			<p>{loadError}</p>
+			<button type="button" class="retry-btn" onclick={load}>Try again</button>
+		</div>
+	{:else if visible.length === 0}
+		<p class="status">
+			{query ? 'No macro matches your search.' : 'This printer has no macros.'}
+		</p>
+	{:else}
+		<div class="macro-list">
+			{#each visible as macro (macro.name)}
+				<button type="button" class="macro-row" onclick={() => open(macro)}>
+					<span class="icon"><SquareFunction /></span>
+					<div class="row-text">
+						<!-- Nomi lunghi in colonna: a capo dopo un `_`, non a metà parola. -->
+						<h2>
+							{#each macro.name.split('_') as part, index (index)}{#if index > 0}_<wbr
+									/>{/if}{part}{/each}
+						</h2>
+						{#if macro.description}
+							<p>{macro.description}</p>
+						{/if}
+						{#if macro.params.length > 0}
+							<span class="chip">
+								{macro.params.length}
+								{macro.params.length === 1 ? 'parameter' : 'parameters'}
+							</span>
+						{/if}
+					</div>
+					<span class="chevron"><ChevronRight /></span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+</SettingsSheet>
 
 {#if selected}
 	<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
@@ -140,6 +134,7 @@
 		aria-label={selected.name}
 		tabindex="-1"
 		onclick={close}
+		use:portal
 		use:modal={{ onClose: close }}
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events,a11y_no_noninteractive_element_interactions -->
@@ -190,32 +185,6 @@
 {/if}
 
 <style>
-	.macros-page {
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.macros-card {
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.macros-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-	.macros-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.search {
 		display: flex;
 		align-items: center;
@@ -270,21 +239,12 @@
 	/* Una colonna sul telefono, due sul tablet, tre sul computer. Le righe di una
 	   stessa fila hanno la stessa altezza, quindi i bordi dell'ultima fila stanno
 	   tutti sul fondo: il clip li toglie insieme. */
+	/* Colonne secondo la larghezza del popup, non dello schermo. */
 	.macro-list {
 		display: grid;
-		grid-template-columns: 1fr;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 		column-gap: 32px;
 		clip-path: inset(0 0 1px 0);
-	}
-	@media (min-width: 768px) {
-		.macro-list {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
-	@media (min-width: 1200px) {
-		.macro-list {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-		}
 	}
 	.macro-row {
 		width: 100%;
@@ -339,15 +299,6 @@
 		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
-	@media (max-width: 767.98px) {
-		.macros-page {
-			padding: 16px 16px calc(112px + var(--safe-bottom));
-		}
-		.macros-card {
-			padding: 20px 16px;
-		}
-	}
-
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
@@ -358,7 +309,8 @@
 		);
 		backdrop-filter: blur(12px) saturate(130%);
 		-webkit-backdrop-filter: blur(12px) saturate(130%);
-		z-index: 3000;
+		/* Sopra il popup della pagina (3000). */
+		z-index: 3100;
 		display: flex;
 		align-items: center;
 		justify-content: center;

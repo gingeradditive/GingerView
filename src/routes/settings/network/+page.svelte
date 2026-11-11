@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import Sheet from '$lib/components/ui/Sheet.svelte';
 	import { onMount } from 'svelte';
 	import {
@@ -249,83 +249,75 @@
 	<title>Network · G2</title>
 </svelte:head>
 
-<section class="network-page">
-	<div class="network-card">
-		<header class="page-header settings-header">
-			<SettingsBackButton />
-			<span class="header-icon" aria-hidden="true"><Wifi /></span>
-			<h1>Network</h1>
-		</header>
-
-		<div class="status-banner {!isConnected ? 'disconnected' : isWired ? 'wired' : 'connected'}">
-			<span class="banner-icon">
-				{#if isWired}
-					<EthernetPort />
-				{:else}
-					{@const SignalIcon = wifiIconFor(isConnected ? currentSignalBars : 4)}
-					<SignalIcon />
-				{/if}
-			</span>
-			<div class="banner-text">
-				{#if !isConnected}
-					<strong>Not connected</strong>
-					<span class="ip">{disconnectedReason}</span>
-				{:else if isWired}
-					<strong>Wired</strong>
-					<span class="ip">IP: {ipAddress}</span>
-				{:else}
-					<strong>{currentSsid || 'Connected'}</strong>
-					<span class="ip">IP: {ipAddress}</span>
-					<strong class="signal-label">{signalLabel(currentSignalBars)} Signal</strong>
-				{/if}
-			</div>
+<SettingsSheet title="Network" size="wide">
+	<div class="status-banner {!isConnected ? 'disconnected' : isWired ? 'wired' : 'connected'}">
+		<span class="banner-icon">
+			{#if isWired}
+				<EthernetPort />
+			{:else}
+				{@const SignalIcon = wifiIconFor(isConnected ? currentSignalBars : 4)}
+				<SignalIcon />
+			{/if}
+		</span>
+		<div class="banner-text">
+			{#if !isConnected}
+				<strong>Not connected</strong>
+				<span class="ip">{disconnectedReason}</span>
+			{:else if isWired}
+				<strong>Wired</strong>
+				<span class="ip">IP: {ipAddress}</span>
+			{:else}
+				<strong>{currentSsid || 'Connected'}</strong>
+				<span class="ip">IP: {ipAddress}</span>
+				<strong class="signal-label">{signalLabel(currentSignalBars)} Signal</strong>
+			{/if}
 		</div>
+	</div>
 
-		{#if error}
-			<div class="error-box">{error}</div>
-		{/if}
+	{#if error}
+		<div class="error-box">{error}</div>
+	{/if}
 
-		<!--
-			Joining a network can take up to a minute, and an open one is connected
-			straight from the list: without this the page would look idle while the
-			printer works.
-		-->
-		{#if connecting && !showPasswordDialog && !showHiddenDialog}
-			<div class="info-box">Connecting to {connectingSsid}...</div>
-		{/if}
+	<!--
+		Joining a network can take up to a minute, and an open one is connected
+		straight from the list: without this the page would look idle while the
+		printer works.
+	-->
+	{#if connecting && !showPasswordDialog && !showHiddenDialog}
+		<div class="info-box">Connecting to {connectingSsid}...</div>
+	{/if}
 
-		<div class="network-list">
-			{#each availableNetworks as network (network.ssid)}
-				{@const SignalIcon = wifiIconFor(network.signal)}
-				<button type="button" class="network-row" onclick={() => selectNetwork(network)}>
-					<span class="row-icon {network.current ? 'active' : ''}"><SignalIcon /></span>
-					<div class="row-text">
-						<strong>{network.ssid}</strong>
-						<span>{signalLabel(network.signal)}</span>
-					</div>
-					<span class="chevron"><ChevronRight /></span>
-				</button>
-			{/each}
-		</div>
-
-		<div class="card-footer">
-			<div class="scan-row">
-				<button type="button" class="scan-btn" onclick={scanNetworks} disabled={isScanning}>
-					{isScanning ? 'Scanning…' : 'Scan'}
-				</button>
-			</div>
-
-			<button type="button" class="network-row hidden-row" onclick={openHiddenDialog}>
-				<span class="row-icon"><Component /></span>
+	<div class="network-list">
+		{#each availableNetworks as network (network.ssid)}
+			{@const SignalIcon = wifiIconFor(network.signal)}
+			<button type="button" class="network-row" onclick={() => selectNetwork(network)}>
+				<span class="row-icon {network.current ? 'active' : ''}"><SignalIcon /></span>
 				<div class="row-text">
-					<strong>Hidden Network</strong>
-					<span>Can't see yours? Add it by name</span>
+					<strong>{network.ssid}</strong>
+					<span>{signalLabel(network.signal)}</span>
 				</div>
 				<span class="chevron"><ChevronRight /></span>
 			</button>
-		</div>
+		{/each}
 	</div>
-</section>
+
+	<div class="card-footer">
+		<button type="button" class="network-row hidden-row" onclick={openHiddenDialog}>
+			<span class="row-icon"><Component /></span>
+			<div class="row-text">
+				<strong>Hidden Network</strong>
+				<span>Can't see yours? Add it by name</span>
+			</div>
+			<span class="chevron"><ChevronRight /></span>
+		</button>
+	</div>
+
+	{#snippet footer()}
+		<button type="button" class="btn btn-secondary" onclick={scanNetworks} disabled={isScanning}>
+			{isScanning ? 'Scanning…' : 'Scan'}
+		</button>
+	{/snippet}
+</SettingsSheet>
 
 {#if showPasswordDialog && selectedNetwork}
 	{@const network = selectedNetwork}
@@ -436,46 +428,10 @@
 {/if}
 
 <style>
-	.network-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.network-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.page-header,
 	.status-banner,
 	.error-box,
 	.info-box {
 		flex-shrink: 0;
-	}
-	.page-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-	}
-	.header-icon {
-		display: inline-flex;
-		color: var(--color-red);
-	}
-	.header-icon :global(svg) {
-		width: 30px;
-		height: 30px;
-	}
-	.page-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
 	}
 	.status-banner {
 		display: flex;
@@ -541,9 +497,6 @@
 		font-size: 0.9rem;
 	}
 	.network-list {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
@@ -596,22 +549,6 @@
 		display: inline-flex;
 		color: var(--color-gray-light);
 		flex-shrink: 0;
-	}
-	.scan-row {
-		display: flex;
-		justify-content: flex-end;
-	}
-	.scan-btn {
-		border: 1px solid var(--color-red);
-		background: transparent;
-		color: var(--color-red);
-		border-radius: 14px;
-		padding: 12px 28px;
-		font-size: 1rem;
-		font-weight: 700;
-	}
-	.scan-btn:disabled {
-		opacity: 0.6;
 	}
 	.dialog-header {
 		display: flex;

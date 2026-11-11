@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { onMount } from 'svelte';
 	import { CloudDownload, LoaderCircle, RefreshCw, TriangleAlert } from 'lucide-svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
@@ -317,84 +317,75 @@
 	<title>Update · G2</title>
 </svelte:head>
 
-<section class="update-page">
-	<div class="update-card">
-		<header class="update-header settings-header">
-			<SettingsBackButton />
-			<h1>Update</h1>
-			<span class="status-pill {headerBadge.tone}">
-				<span class="dot"></span>
-				{headerBadge.text}
-			</span>
-		</header>
+<SettingsSheet title="Update" size="wide">
+	{#snippet actions()}
+		<span class="status-pill {headerBadge.tone}">
+			<span class="dot"></span>
+			{headerBadge.text}
+		</span>
+	{/snippet}
 
-		{#if blockedReason}
-			<div class="banner">
-				<TriangleAlert size={18} />
-				<span>{blockedReason}</span>
+	{#if blockedReason}
+		<div class="banner">
+			<TriangleAlert size={18} />
+			<span>{blockedReason}</span>
+		</div>
+	{/if}
+
+	<div class="item-list">
+		{#if isLoading}
+			<p class="placeholder">Checking for updates…</p>
+		{:else if loadError}
+			<div class="load-error">
+				<p>{loadError}</p>
+				<button type="button" class="ghost-btn" onclick={loadStatus}>Try again</button>
 			</div>
-		{/if}
-
-		<div class="item-list">
-			{#if isLoading}
-				<p class="placeholder">Checking for updates…</p>
-			{:else if loadError}
-				<div class="load-error">
-					<p>{loadError}</p>
-					<button type="button" class="ghost-btn" onclick={loadStatus}>Try again</button>
-				</div>
-			{:else if items.length === 0}
-				<p class="placeholder">
-					Nothing's set up for updates yet. Add components to the <code>[update_manager]</code>
-					section of <code>moonraker.conf</code>.
-				</p>
-			{:else}
-				{#each items as item (item.name)}
-					<UpdateItemRow
-						{item}
-						busy={isOperationRunning}
-						{blockedReason}
-						onRecover={handleRecover}
-					/>
-				{/each}
-			{/if}
-		</div>
-
-		{#if status && status.github_rate_limit > 0}
-			<p class="rate-limit">
-				GitHub requests remaining: {status.github_requests_remaining}/{status.github_rate_limit}
-				{#if status.github_limit_reset_time}
-					· resets at {formatResetTime(status.github_limit_reset_time)}
-				{/if}
+		{:else if items.length === 0}
+			<p class="placeholder">
+				Nothing's set up for updates yet. Add components to the <code>[update_manager]</code>
+				section of <code>moonraker.conf</code>.
 			</p>
+		{:else}
+			{#each items as item (item.name)}
+				<UpdateItemRow {item} busy={isOperationRunning} {blockedReason} onRecover={handleRecover} />
+			{/each}
 		{/if}
-
-		<div class="actions-row">
-			<button
-				type="button"
-				class="ghost-btn"
-				onclick={handleRefresh}
-				disabled={actionsDisabled || isLoading}
-			>
-				{#if isRefreshing}
-					<LoaderCircle class="spin" size={18} />
-				{:else}
-					<RefreshCw size={18} />
-				{/if}
-				Check for updates
-			</button>
-			<button
-				type="button"
-				class="update-all-btn"
-				onclick={handleUpdateAll}
-				disabled={actionsDisabled || updatesAvailable === 0}
-			>
-				<CloudDownload size={18} />
-				Update all
-			</button>
-		</div>
 	</div>
-</section>
+
+	{#if status && status.github_rate_limit > 0}
+		<p class="rate-limit">
+			GitHub requests remaining: {status.github_requests_remaining}/{status.github_rate_limit}
+			{#if status.github_limit_reset_time}
+				· resets at {formatResetTime(status.github_limit_reset_time)}
+			{/if}
+		</p>
+	{/if}
+
+	{#snippet footer()}
+		<button
+			type="button"
+			class="btn btn-secondary"
+			onclick={handleRefresh}
+			disabled={actionsDisabled || isLoading}
+		>
+			{#if isRefreshing}
+				<LoaderCircle class="spin" size={18} />
+			{:else}
+				<RefreshCw size={18} />
+			{/if}
+			Check for updates
+		</button>
+		<button
+			type="button"
+			class="btn btn-primary"
+			onclick={handleUpdateAll}
+			disabled={actionsDisabled || updatesAvailable === 0}
+		>
+			<CloudDownload size={18} />
+			Update all
+		</button>
+	{/snippet}
+</SettingsSheet>
 
 <UpdateLogModal
 	isOpen={logOpen}
@@ -421,36 +412,7 @@
 />
 
 <style>
-	.update-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.update-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.update-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-	.update-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.status-pill {
-		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
@@ -487,9 +449,6 @@
 		flex-shrink: 0;
 	}
 	.item-list {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
 		border: 1px solid var(--color-border-light);
 		border-radius: 16px;
 		padding: 4px 20px;
@@ -524,13 +483,6 @@
 		color: var(--color-gray-light);
 		flex-shrink: 0;
 	}
-	.actions-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		flex-shrink: 0;
-	}
 	.ghost-btn {
 		display: inline-flex;
 		align-items: center;
@@ -550,38 +502,5 @@
 	.ghost-btn:disabled {
 		opacity: 0.55;
 		cursor: default;
-	}
-	.update-all-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-		border-radius: 16px;
-		padding: 12px 28px;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-	}
-	.update-all-btn:disabled {
-		opacity: 0.55;
-		cursor: default;
-	}
-	@media (max-width: 767.98px) {
-		.update-page {
-			padding: 16px 16px calc(112px + var(--safe-bottom));
-		}
-		.update-card {
-			padding: 18px;
-		}
-		.actions-row {
-			flex-direction: column-reverse;
-			align-items: stretch;
-		}
-		.ghost-btn,
-		.update-all-btn {
-			justify-content: center;
-		}
 	}
 </style>

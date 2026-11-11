@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SettingsBackButton from '$lib/components/SettingsBackButton.svelte';
+	import SettingsSheet from '$lib/components/SettingsSheet.svelte';
 	import { tooltip } from '$lib/actions/tooltip';
 	import { Download, FileText, Trash2, LoaderCircle } from 'lucide-svelte';
 	import { LOG_FILES, downloadLog, clearLogs, type LogFile } from '$lib/services/moonraker-logs';
@@ -45,52 +45,45 @@
 	<title>Logs · G2</title>
 </svelte:head>
 
-<section class="logs-page">
-	<div class="logs-card">
-		<header class="logs-header settings-header">
-			<SettingsBackButton />
-			<h1>Logs</h1>
-		</header>
-
-		<div class="log-list">
-			{#each LOG_FILES as file (file.id)}
-				<div class="log-row">
-					<span class="icon"><FileText /></span>
-					<div class="row-text">
-						<h2>{file.label}</h2>
-						<p>{file.filename}</p>
-					</div>
-					<button
-						type="button"
-						class="download-btn"
-						onclick={() => handleDownload(file)}
-						disabled={downloadingId === file.id}
-						aria-label="Download {file.label} log"
-						use:tooltip
-						title="Download {file.label} log"
-					>
-						{#if downloadingId === file.id}
-							<LoaderCircle class="spin" />
-						{:else}
-							<Download />
-						{/if}
-					</button>
+<SettingsSheet title="Logs" size="md">
+	<div class="log-list">
+		{#each LOG_FILES as file (file.id)}
+			<div class="log-row">
+				<span class="icon"><FileText /></span>
+				<div class="row-text">
+					<h2>{file.label}</h2>
+					<p>{file.filename}</p>
 				</div>
-			{/each}
-		</div>
-
-		<div class="actions-row">
-			<button type="button" class="clear-btn" onclick={handleClear} disabled={isClearing}>
-				{#if isClearing}
-					<LoaderCircle class="spin" />
-				{:else}
-					<Trash2 />
-				{/if}
-				Clear logs
-			</button>
-		</div>
+				<button
+					type="button"
+					class="download-btn"
+					onclick={() => handleDownload(file)}
+					disabled={downloadingId === file.id}
+					aria-label="Download {file.label} log"
+					use:tooltip
+					title="Download {file.label} log"
+				>
+					{#if downloadingId === file.id}
+						<LoaderCircle class="spin" />
+					{:else}
+						<Download />
+					{/if}
+				</button>
+			</div>
+		{/each}
 	</div>
-</section>
+
+	{#snippet footer()}
+		<button type="button" class="btn btn-primary" onclick={handleClear} disabled={isClearing}>
+			{#if isClearing}
+				<LoaderCircle class="spin" />
+			{:else}
+				<Trash2 />
+			{/if}
+			Clear logs
+		</button>
+	{/snippet}
+</SettingsSheet>
 
 <ConfirmModal
 	icon={Trash2}
@@ -104,34 +97,6 @@
 />
 
 <style>
-	.logs-page {
-		height: 100%;
-		padding: 24px 24px calc(112px + var(--safe-bottom));
-		box-sizing: border-box;
-	}
-	.logs-card {
-		height: 100%;
-		background: var(--color-white);
-		border-radius: 20px;
-		box-shadow: var(--shadow-float);
-		padding: 24px;
-		display: flex;
-		flex-direction: column;
-		gap: 16px;
-		box-sizing: border-box;
-	}
-	.logs-header {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-		flex-shrink: 0;
-	}
-	.logs-header h1 {
-		margin: 0;
-		font-size: 2rem;
-		font-weight: 700;
-		color: var(--color-text-secondary);
-	}
 	.log-list {
 		display: flex;
 		flex-direction: column;
@@ -185,26 +150,5 @@
 	}
 	.download-btn:disabled {
 		opacity: 0.6;
-	}
-	.actions-row {
-		display: flex;
-		justify-content: flex-end;
-		flex-shrink: 0;
-		margin-top: auto;
-	}
-	.clear-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 10px;
-		border: none;
-		background: var(--color-red);
-		color: var(--color-white);
-		border-radius: 16px;
-		padding: 12px 24px;
-		font-size: 1rem;
-		font-weight: 700;
-	}
-	.clear-btn:disabled {
-		opacity: 0.55;
 	}
 </style>
