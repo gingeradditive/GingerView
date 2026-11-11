@@ -90,17 +90,18 @@
 		use:tooltip={feederHint}
 		onclick={toggleFeeder}
 	>
-		<span class="pellet-gauge">
-			<svg viewBox="0 0 220 220" class="power-symbol" aria-hidden="true">
-				<!-- Arco di 310° centrato in basso: il varco di 50° in alto ospita la barra. -->
-				<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" />
-				<line class="power-bar" x1="110" y1="-6" x2="110" y2="44" />
-			</svg>
-			<span class="gauge-content">
-				<span class="pellet-label">FEEDING</span>
-				<span class="feeder-value">
-					{feederBusy ? '…' : feederOn ? 'Enabled' : 'Disabled'}
-				</span>
+		<span class="pellet-content">
+			<span class="pellet-label">FEEDING</span>
+			<span class="feeder-value">
+				{feederBusy ? '…' : feederOn ? 'Enabled' : 'Disabled'}
+			</span>
+			<!-- Sotto il testo il simbolo d'accensione: cerchio aperto in alto con la barra nel
+			     varco. Arco di 310° centrato in basso, il varco di 50° in alto ospita la barra. -->
+			<span class="power-button" aria-hidden="true">
+				<svg viewBox="-16 -16 252 252" class="power-symbol" aria-hidden="true">
+					<path class="power-arc" d="M 147.19 30.24 A 88 88 0 1 1 72.81 30.24" />
+					<line class="power-bar" x1="110" y1="2" x2="110" y2="62" />
+				</svg>
 			</span>
 		</span>
 	</button>
@@ -140,7 +141,7 @@
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		/* Come FLOW: il gauge si misura sulla card, non sullo schermo. */
+		/* Il simbolo si misura sulla card, non sullo schermo. */
 		container-type: size;
 		transition: background-color 0.15s;
 		-webkit-tap-highlight-color: transparent;
@@ -159,32 +160,56 @@
 		cursor: progress;
 	}
 
-	.pellet-gauge {
-		/* Lato del gauge: il quadrato più grande che sta nella card, come in FLOW. */
-		--gauge: min(100cqw, 100cqh);
-		position: relative;
-		width: var(--gauge);
-		height: var(--gauge);
+	/* Titolo e stato sopra, il simbolo d'accensione più piccolo sotto. */
+	.pellet-content {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		gap: calc(var(--dashboard-title-size) * 0.25);
+		max-width: 100%;
+		max-height: 100%;
+		text-align: center;
 		transition:
 			transform 0.1s,
 			opacity 0.15s;
 	}
 
-	.pellet-switch:active .pellet-gauge {
+	.pellet-switch:active .pellet-content {
 		transform: scale(0.97);
 	}
 
-	.pellet-switch.busy .pellet-gauge {
+	.pellet-switch.busy .pellet-content {
 		opacity: 0.5;
 	}
 
+	/* Misurato sulla card, come il resto: il lato corto per metà. */
+	/* Il simbolo dentro un anello, come un pulsante. Anello e simbolo cambiano colore insieme. */
+	.power-button {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: calc(min(100cqw, 100cqh) * 0.42);
+		height: calc(min(100cqw, 100cqh) * 0.42);
+		margin-top: calc(var(--dashboard-title-size) * 0.35);
+		border: 3px solid var(--color-text-subtle);
+		border-radius: 50%;
+		box-sizing: border-box;
+		transition:
+			border-color 0.3s,
+			background-color 0.3s;
+	}
+
+	/* Acceso: fondo rosso velato, lo stesso delle strisce della barra in riscaldamento. */
+	.on .power-button {
+		border-color: var(--color-red);
+		background: rgba(var(--rgb-red), 0.18);
+	}
+
 	.power-symbol {
-		width: 100%;
-		height: 100%;
-		overflow: visible;
+		width: 58%;
+		height: 58%;
 	}
 
 	/* Spento: grigio e sottile. Accensione e spegnimento hanno la stessa transizione:
@@ -193,7 +218,7 @@
 	.power-bar {
 		fill: none;
 		stroke: var(--color-text-subtle);
-		stroke-width: 10;
+		stroke-width: 24;
 		stroke-linecap: round;
 		transition:
 			stroke 0.3s,
@@ -204,20 +229,7 @@
 	.on .power-arc,
 	.on .power-bar {
 		stroke: var(--color-red);
-		stroke-width: 14;
-	}
-
-	.gauge-content {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: calc(var(--dashboard-title-size) * 0.25);
-		/* Il testo resta dentro l'anello, come in FLOW. */
-		padding: 0 calc(var(--gauge) * 0.2);
-		text-align: center;
+		stroke-width: 30;
 	}
 
 	/* Dimensioni comuni a tutte le card, calcolate in DashboardCarousel. */
@@ -238,7 +250,8 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.pellet-switch,
-		.pellet-gauge,
+		.pellet-content,
+		.power-button,
 		.power-arc,
 		.power-bar {
 			transition: none;

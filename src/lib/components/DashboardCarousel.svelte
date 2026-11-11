@@ -9,6 +9,7 @@
 	import DashboardFlowPanel from '$lib/components/DashboardFlowPanel.svelte';
 	import DashboardZHeightPanel from '$lib/components/DashboardZHeightPanel.svelte';
 	import DashboardPelletPanel from '$lib/components/DashboardPelletPanel.svelte';
+	import DashboardSpeedPanel from '$lib/components/DashboardSpeedPanel.svelte';
 
 	const pageCount = 5;
 
@@ -82,16 +83,24 @@
 				<DashboardZHeightPanel visible={isInView(0)} />
 			</div>
 			<div class="embla__slide">
-				<DashboardPelletPanel visible={isInView(1)} />
+				<DashboardSpeedPanel visible={isInView(1)} />
+			</div>
+			<!-- Al centro il job e, sotto, il feeding: metà altezza ciascuno. -->
+			<div class="embla__slide">
+				<div class="slide-stack">
+					<div class="stack-half">
+						<DashboardJobInfoCard visible={isInView(2)} />
+					</div>
+					<div class="stack-half">
+						<DashboardPelletPanel visible={isInView(2)} />
+					</div>
+				</div>
 			</div>
 			<div class="embla__slide">
-				<DashboardJobInfoCard visible={isInView(2)} />
+				<DashboardFlowPanel visible={isInView(3)} />
 			</div>
 			<div class="embla__slide">
-				<DashboardTemperaturePanel visible={isInView(3)} />
-			</div>
-			<div class="embla__slide">
-				<DashboardFlowPanel visible={isInView(4)} />
+				<DashboardTemperaturePanel visible={isInView(4)} />
 			</div>
 		</div>
 	</div>
@@ -161,6 +170,30 @@
 		--dashboard-subtitle-size: min(1.7rem, calc((min(100cqw, 100cqh) - 32px) * 0.09));
 	}
 
+	/* Colonna centrale: due card una sopra l'altra, metà altezza ciascuna. */
+	.slide-stack {
+		display: flex;
+		flex-direction: column;
+		/* Lo stesso spazio che c'è tra le slide: 1.5rem, 12px sul telefono (vedi sotto). */
+		gap: 1.5rem;
+		height: 100%;
+	}
+
+	/* Ogni metà ha le sue misure di titolo e sottotitolo: con quelle della slide intera
+	   "FEEDING" non starebbe nell'anello, che qui è grande la metà. */
+	.stack-half {
+		flex: 1 1 0;
+		min-height: 0;
+		container-type: size;
+	}
+
+	/* Sulla card dentro la metà, non sulla metà: le unità cq di un container si riferiscono
+	   al container sopra di lui, qui la slide intera. */
+	.stack-half > :global(*) {
+		--dashboard-title-size: min(2rem, calc((min(100cqw, 100cqh) - 32px) * 0.12));
+		--dashboard-subtitle-size: min(1.7rem, calc((min(100cqw, 100cqh) - 32px) * 0.09));
+	}
+
 	/* Lo spazio tra le due card è lo stesso che c'è tra le slide: 1.5rem, 12px sul
 	   telefono (vedi sotto). */
 	@media (min-width: 768px) and (max-width: 1199.98px) and (min-height: 600px) {
@@ -191,6 +224,10 @@
 		.embla__slide {
 			flex: 0 0 84%;
 			padding: 0 6px;
+		}
+
+		.slide-stack {
+			gap: 12px;
 		}
 	}
 

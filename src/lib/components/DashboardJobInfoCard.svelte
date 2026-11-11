@@ -88,14 +88,15 @@
 		{#if hasJob}
 			<img src={thumbnailUrl} alt="Print preview" />
 		{:else}
-			<!-- A riposo il logo della G2, lo stesso del dock, con l'invito subito sotto:
-			     insieme stanno al centro della card. -->
+			<!-- A riposo il logo della G2, lo stesso del dock, al centro della card; l'invito
+			     sta in fondo. -->
 			<img class="idle-logo" src="/Printers/G2/Logo.svg" alt="" />
-			<span class="job-cta">Browse file</span>
 		{/if}
 	</div>
 	{#if hasJob}
 		<span class="job-material">{jobMaterial}</span>
+	{:else}
+		<span class="job-cta">Browse file</span>
 	{/if}
 </svelte:element>
 
@@ -151,10 +152,10 @@
 		height: auto;
 	}
 
-	/* Come "Disabled" di FEEDING e "0 mm³/s" di FLOW: dimensione comune, da DashboardCarousel. */
+	/* In fondo alla card, più piccolo del sottotitolo comune (DashboardCarousel). */
 	.job-cta {
 		flex-shrink: 0;
-		font-size: var(--dashboard-subtitle-size);
+		font-size: max(0.85rem, calc(var(--dashboard-subtitle-size) * 0.7));
 		font-weight: 500;
 		color: var(--color-text-soft);
 		line-height: 1.3;
