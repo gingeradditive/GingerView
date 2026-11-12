@@ -1,0 +1,1 @@
+import"../chunks/DsnmJJEf.js";import"../chunks/CZoudY9B.js";import{e as t,$ as o}from"../chunks/B0Eqh_0e.js";import{h as e}from"../chunks/BGV9yxf9.js";function p(r){e("1i19ct2",a=>{t(()=>{o.title="Settings · G2"})})}export{p as component};
