@@ -5,6 +5,7 @@ node_modules
 
 # Output
 .output
+/build-demo
 .vercel
 .netlify
 .wrangler

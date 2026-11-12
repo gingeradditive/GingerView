@@ -147,17 +147,27 @@ export const usbTree: Record<
 > = {
 	'': {
 		dirs: ['Prototypes'],
-		files: [{ name: 'Planter_XL_rPETG.gcode', size: 16_640_000, source: 'Planter_XL_rPETG.gcode' }]
+		files: [
+			{
+				name: 'Exhaust Flange v2.2.gcode',
+				size: 14_029_373,
+				source: 'Exhaust Flange v2.2.gcode'
+			}
+		]
 	},
 	Prototypes: {
 		dirs: [],
 		files: [
 			{
-				name: 'Lamp_Shade_Twist_PLA_v2.gcode',
-				size: 8_060_000,
-				source: 'Lamp_Shade_Twist_PLA.gcode'
+				name: 'Dryer cap v0.3.gcode',
+				size: 2_911_050,
+				source: 'Dryer cap v0.2.gcode'
 			},
-			{ name: 'Stool_rPP_v3.gcode', size: 25_480_000, source: 'Stool_rPP.gcode' }
+			{
+				name: '2nd Ring Gear v2.gcode',
+				size: 12_115_897,
+				source: 'Turbine/2nd Ring Gear.gcode'
+			}
 		]
 	}
 };
